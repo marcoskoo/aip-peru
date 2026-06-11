@@ -89,3 +89,27 @@ Stage Summary:
 - No broken layouts
 - Search and filtering working
 - 10 airports, 5 detail tabs, dark mode all verified
+
+---
+Task ID: 7
+Agent: Subagent (general-purpose)
+Task: Add 9 airports to seed file
+
+Work Log:
+- Read existing seed file structure: 10 airports (SPCL, SPHI, SPJL, SPQT, SPQU, SPRU, SPSO, SPTN, SPYL, SPZO) with obstacle seeding
+- Added 9 new airport objects to the airports array: SPUR, SPHY, SPAS, SPHZ, SPAY, SPHO, SPJR, SPPY, SPEO
+- Each airport includes: ICAO code, name, city, region, department, ARP coordinates, elevation, temperature, operating hours, fire category, fuel types, platform/taxiway data, runways with PAPI/slope/dthr/lights where applicable, and declared distances
+- Added communications seeding for all 9 airports (15 total communications): APP/TWR, ATIS, EMERGENCIA, FIS/AFIS, etc.
+- Added radioNavAids seeding for airports that have them (8 total): SPUR (VOR/DME URA), SPHY (VOR/DME AND, ILS/LOC IAND, ILS GP/DME), SPAS (NDB OAS, VOR/DME OAS), SPPY (VOR/DME POY), SPEO (VOR BTE)
+- SPHZ, SPAY, SPHO, SPJR have no radioNavAids (NIL)
+- Runway bearings calculated from designator (e.g., RWY 01=010°, RWY 19=190°, RWY 16=160°, etc.)
+- ASDA includes SWY additions where applicable (e.g., +60 for 60x45 SWY)
+- Lint passes with no errors
+- Seed runs successfully: 19 airports, 15 communications, 8 radioNavAids, 26 obstacles
+
+Stage Summary:
+- Seed script at /home/z/my-project/prisma/seed.ts updated
+- 19 airports total (10 original + 9 new)
+- 15 communications seeded for the 9 new airports
+- 8 radioNavAids seeded for 5 of the 9 new airports
+- All data verified in database

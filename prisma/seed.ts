@@ -1220,6 +1220,631 @@ async function main() {
         { rwy: "10", tora: 3400, toda: 3400, asda: 3460, lda: 3400, remarks: "NIL" },
         { rwy: "28", tora: 3400, toda: 3400, asda: 3460, lda: 3400, remarks: "NIL" }
       ])
+    },
+    {
+      icaoCode: "SPUR",
+      name: "CAPITÁN FAP GUILLERMO CONCHA IBERICO",
+      city: "PIURA",
+      region: "PIURA",
+      department: "PIURA",
+      arpLatitude: "05°12'20.7\"S",
+      arpLongitude: "080°36'59\"W",
+      elevation: "35 m / 116 ft",
+      temperature: "34.2°C (FEB)",
+      geoidalUndulation: "NIL",
+      magneticDeclination: "NIL",
+      annualChange: "NIL",
+      distanceFromCity: "2 km E",
+      administrationType: "AEROPUERTOS DEL PERÚ S.A. - ADP",
+      aftn: "SPURYSYX",
+      authorizedTraffic: "VFR / IFR",
+      remarks: "Pernocte no disponible. Coeficiente fricción 0.69. Prohibido virajes en pista. Nueva edificación 150 ft a 970 m Sur extremo Pista 19. Árboles al NW umbral Pista 01. Obstáculo 30 m altura 1340 m Umbral Pista 19. Antena iluminada 372 ft COORD: 05°10'35''S - 080°37'06''W. ATZ: círculo 6 NM radio centro VOR URA, GND/1700 ft AMSL. Peligro aviario.",
+      operatingHours: JSON.stringify({
+        oficinaAIS: "1200-0200",
+        oficinaARO: "1200-0200",
+        oficinaMET: "h24",
+        ats: "1200-0200 y O/R",
+        combustible: "1200-0200 y O/R",
+        seguridad: "1200-0200 y O/R",
+        com: "h24"
+      }),
+      fireCategory: "CAT 7",
+      fuelTypes: "Turbo A1",
+      platformData: JSON.stringify({ superficie: "Asfalto", resistencia: "PCN 45 R/B/W/T" }),
+      taxiwayData: JSON.stringify({ ancho: "23 m", superficie: "Asfalto", resistencia: "TWY A-A1: PCN 41 F/C/X/T, TWY B-C: PCN 40 F/C/X/T" }),
+      runways: JSON.stringify([
+        {
+          designator: "01",
+          brgGeo: "010°",
+          brgMag: "010°",
+          dimensions: "2500 X 45",
+          pcn: "PCN 40 F/B/X/T",
+          surface: "Asfalto",
+          thrCoords: "05°13'00.5''S - 080°37'07.7''W",
+          thrElevation: "51.36 ft / 15.65 m",
+          swyDimensions: "NIL",
+          cwyDimensions: "NIL",
+          stripDimensions: "NIL",
+          ofz: "NIL",
+          resa: "NIL",
+          slope: "0.3%",
+          papi: "PAPI 3° RWY 01 Elevation 51.36 ft / 15.65 m",
+          lights: "RTHL/REDL/RENL"
+        },
+        {
+          designator: "19",
+          brgGeo: "190°",
+          brgMag: "190°",
+          dimensions: "2500 X 45",
+          pcn: "PCN 40 F/B/X/T",
+          surface: "Asfalto",
+          thrCoords: "05°11'41.0''S - 080°36'50.3''W",
+          thrElevation: "56.40 ft / 17.19 m",
+          swyDimensions: "NIL",
+          cwyDimensions: "NIL",
+          stripDimensions: "NIL",
+          ofz: "NIL",
+          resa: "NIL",
+          slope: "0.3%",
+          papi: "PAPI 3° RWY 19 Elevation 56.40 ft / 17.19 m",
+          lights: "SALS/RTHL/REDL/RENL"
+        }
+      ]),
+      declaredDistances: JSON.stringify([
+        { rwy: "01", tora: 2500, toda: 2500, asda: 2500, lda: 2500, remarks: "NIL" },
+        { rwy: "19", tora: 2500, toda: 2500, asda: 2500, lda: 2500, remarks: "NIL" }
+      ])
+    },
+    {
+      icaoCode: "SPHY",
+      name: "ANDAHUAYLAS",
+      city: "ANDAHUAYLAS",
+      region: "APURIMAC",
+      department: "APURIMAC",
+      arpLatitude: "13°42'31.75\"S",
+      arpLongitude: "073°21'5.60\"W",
+      elevation: "3565 m / 11706 ft",
+      temperature: "17°C (NOV)",
+      geoidalUndulation: "NIL",
+      magneticDeclination: "NIL",
+      annualChange: "NIL",
+      distanceFromCity: "17.5 km N",
+      administrationType: "CORPAC S.A.",
+      authorizedTraffic: "VFR",
+      remarks: "Zona FIZ: Círculo 20 DME centro VOR AND, GND/FL200. Sólo operaciones diurnas VMC. APAPI restricción no mayor 3 NM THR 03.",
+      operatingHours: JSON.stringify({
+        oficinaMET: "1000-2300",
+        ats: "1100-2300",
+        seguridad: "1100-2300",
+        com: "1000-2300"
+      }),
+      fireCategory: "CAT 6",
+      fuelTypes: "NIL",
+      platformData: JSON.stringify({ superficie: "Asfalto", resistencia: "PCN 28/F/C/X/T" }),
+      taxiwayData: JSON.stringify({ superficie: "Asfalto", resistencia: "PCN 28/F/C/X/T" }),
+      runways: JSON.stringify([
+        {
+          designator: "03",
+          brgGeo: "030°",
+          brgMag: "030°",
+          dimensions: "2500 X 45",
+          pcn: "PCN 28/F/C/X/T",
+          surface: "Asfalto",
+          thrCoords: "13°43'06.38''S - 073°21'27.17''W",
+          thrElevation: "11627 ft",
+          swyDimensions: "NIL",
+          cwyDimensions: "NIL",
+          stripDimensions: "2620 X 130",
+          ofz: "NIL",
+          resa: "90 X 90",
+          slope: "0.963%",
+          papi: "APAPI 3° RWY 03 Elev 47.05 ft / 14.34 m"
+        },
+        {
+          designator: "21",
+          brgGeo: "210°",
+          brgMag: "210°",
+          dimensions: "2500 X 45",
+          pcn: "PCN 28/F/C/X/T",
+          surface: "Asfalto",
+          thrCoords: "13°41'57.43''S - 073°20'43.09''W",
+          thrElevation: "11706 ft",
+          swyDimensions: "NIL",
+          cwyDimensions: "NIL",
+          stripDimensions: "2620 X 130",
+          ofz: "NIL",
+          resa: "90 X 90",
+          slope: "0.963%",
+          papi: "PAPI 3° RWY 21 Elev 62.50 ft / 19.05 m",
+          dthr: "DTHR 21: 13°42'03.40''S - 073°20'46.90''W, 11699 ft, Dist desplazada 216.3 m"
+        }
+      ]),
+      declaredDistances: JSON.stringify([
+        { rwy: "03", tora: 2500, toda: 2500, asda: 2500, lda: 2500, remarks: "NIL" },
+        { rwy: "21", tora: 2500, toda: 2500, asda: 2500, lda: 2500, remarks: "NIL" }
+      ])
+    },
+    {
+      icaoCode: "SPAS",
+      name: "ANDOAS",
+      city: "ANDOAS",
+      region: "LORETO",
+      department: "LORETO",
+      arpLatitude: "02°47'45.99\"S",
+      arpLongitude: "076°27'59.75\"W",
+      elevation: "222 m / 728 ft",
+      temperature: "32.8°C",
+      geoidalUndulation: "NIL",
+      magneticDeclination: "NIL",
+      annualChange: "NIL",
+      distanceFromCity: "1.5 km del campamento",
+      administrationType: "PACIFIC STRATUS ENERGY DEL PERÚ S.A.",
+      authorizedTraffic: "VFR",
+      remarks: "Uso Privado. AFIS. Horario según necesidad del explotador. Plataforma 114.5 m x 55 m. No se permite aterrizaje/despegue helicópteros en PEA durante operaciones.",
+      operatingHours: JSON.stringify({
+        combustible: "HJ",
+        seguridad: "HJ",
+        com: "HJ"
+      }),
+      fireCategory: "CAT 6",
+      fuelTypes: "AVGAS, Turbo A1",
+      platformData: JSON.stringify({ superficie: "Asfalto", resistencia: "NIL" }),
+      runways: JSON.stringify([
+        {
+          designator: "12",
+          brgGeo: "120°",
+          brgMag: "120°",
+          dimensions: "2057 X 45",
+          pcn: "PCN 27 F/D/X/T",
+          surface: "Asfalto",
+          thrCoords: "02°47'29.79''S - 076°28'28.91''W",
+          thrElevation: "NIL",
+          swyDimensions: "NIL",
+          cwyDimensions: "NIL",
+          stripDimensions: "NIL",
+          ofz: "NIL",
+          resa: "NIL",
+          slope: "0.35%",
+          papi: "ALS / PAPI 3° doble barra de ala RWY 12",
+          lights: "RTHL RWY 12/30, REDL"
+        },
+        {
+          designator: "30",
+          brgGeo: "300°",
+          brgMag: "300°",
+          dimensions: "2057 X 45",
+          pcn: "PCN 27 F/D/X/T",
+          surface: "Asfalto",
+          thrCoords: "02°48'02.20''S - 076°27'30.60''W",
+          thrElevation: "NIL",
+          swyDimensions: "60 X 45",
+          cwyDimensions: "NIL",
+          stripDimensions: "NIL",
+          ofz: "NIL",
+          resa: "NIL",
+          slope: "0.35%",
+          lights: "RTHL RWY 12/30, REDL, WDI ambas RWY 12/30"
+        }
+      ]),
+      declaredDistances: JSON.stringify([
+        { rwy: "12", tora: 2057, toda: 2057, asda: 2117, lda: 2057, remarks: "NIL" },
+        { rwy: "30", tora: 2057, toda: 2057, asda: 2117, lda: 2057, remarks: "NIL" }
+      ])
+    },
+    {
+      icaoCode: "SPHZ",
+      name: "COMANDANTE FAP GERMÁN ARIAS GRAZIANI",
+      city: "ANTA HUARAZ",
+      region: "ANCASH",
+      department: "ANCASH",
+      arpLatitude: "09°21'38\"S",
+      arpLongitude: "077°35'38\"W",
+      elevation: "2748 m / 9015.2 ft",
+      temperature: "24.2° C",
+      geoidalUndulation: "NIL",
+      magneticDeclination: "NIL",
+      annualChange: "NIL",
+      distanceFromCity: "28 km de la ciudad de Huaraz",
+      administrationType: "AEROPUERTOS DEL PERÚ S.A. - ADP",
+      aftn: "SPHZYSYX",
+      authorizedTraffic: "VFR",
+      remarks: "Uso Público. Plataforma 200 m x 80 m al NE de pista. Calle rodaje perpendicular 27 m x 23 m. Transponder código 2000.",
+      operatingHours: JSON.stringify({
+        administracion: "1300-2100 UTC",
+        oficinaMET: "1300-2100 UTC",
+        ats: "1300-2100 UTC",
+        com: "1300-2100 UTC",
+        notas: "CLSD SUN"
+      }),
+      fireCategory: "CAT A5",
+      fuelTypes: "NIL",
+      platformData: JSON.stringify({ superficie: "Asfalto", resistencia: "PCN 490/F/D/X/T" }),
+      taxiwayData: JSON.stringify({ nombre: "ALFA", ancho: "23 m", superficie: "Asfalto", resistencia: "PCN 490/F/D/X/T" }),
+      runways: JSON.stringify([
+        {
+          designator: "16",
+          brgGeo: "160°",
+          brgMag: "160°",
+          dimensions: "2900 X 30",
+          pcn: "PCN 420/F/B/X/T",
+          surface: "Asfalto",
+          thrCoords: "09°20'08.01''S - 077°36'07.68''W",
+          thrElevation: "NIL",
+          swyDimensions: "NIL",
+          cwyDimensions: "NIL",
+          stripDimensions: "3020 X 80",
+          ofz: "NIL",
+          resa: "90 X 60",
+          slope: "+1.435%"
+        },
+        {
+          designator: "34",
+          brgGeo: "340°",
+          brgMag: "340°",
+          dimensions: "2900 X 30",
+          pcn: "PCN 420/F/B/X/T",
+          surface: "Asfalto",
+          thrCoords: "09°21'37.77''S - 077°35'38.47''W",
+          thrElevation: "NIL",
+          swyDimensions: "NIL",
+          cwyDimensions: "NIL",
+          stripDimensions: "3020 X 80",
+          ofz: "NIL",
+          resa: "90 X 60",
+          slope: "+1.435%",
+          papi: "APAPI 3° RWY 34",
+          dthr: "DTHR RWY 34: 09°21'26.937''S - 077°35'41.991''W (350M)"
+        }
+      ]),
+      declaredDistances: JSON.stringify([
+        { rwy: "16", tora: 2900, toda: 2900, asda: 2900, lda: 2900, remarks: "NIL" },
+        { rwy: "34", tora: 2900, toda: 2900, asda: 2900, lda: 2900, remarks: "NIL" }
+      ])
+    },
+    {
+      icaoCode: "SPAY",
+      name: "ATALAYA",
+      city: "ATALAYA",
+      region: "UCAYALI",
+      department: "UCAYALI",
+      arpLatitude: "10°43'43\"S",
+      arpLongitude: "073°45'58\"W",
+      elevation: "579 m / 1900 ft",
+      temperature: "32.7° C",
+      geoidalUndulation: "NIL",
+      magneticDeclination: "NIL",
+      annualChange: "NIL",
+      distanceFromCity: "2 km",
+      administrationType: "CORPAC S.A.",
+      aftn: "SPAYYSYX",
+      authorizedTraffic: "VFR",
+      remarks: "Uso Público. Peligro aviario RWY 04. Deterioro capa asfáltica RWY 22. AFIS sin visualización de pista. Postes cemento 8 m a 150 m umbral RWY 22.",
+      operatingHours: JSON.stringify({
+        administracion: "HJ",
+        oficinaMET: "1300-2100 UTC",
+        ats: "1300-2100 UTC",
+        com: "1300-2100 UTC"
+      }),
+      fireCategory: "CAT A3",
+      fuelTypes: "NIL",
+      runways: JSON.stringify([
+        {
+          designator: "04",
+          brgGeo: "040°",
+          brgMag: "040°",
+          dimensions: "1500 X 30",
+          pcn: "PCN 27/F/A/X/T",
+          surface: "Asfalto",
+          thrCoords: "NIL",
+          thrElevation: "NIL",
+          swyDimensions: "NIL",
+          cwyDimensions: "NIL",
+          stripDimensions: "1620 X 150",
+          ofz: "NIL",
+          resa: "NIL"
+        },
+        {
+          designator: "22",
+          brgGeo: "220°",
+          brgMag: "220°",
+          dimensions: "1500 X 30",
+          pcn: "PCN 27/F/A/X/T",
+          surface: "Asfalto",
+          thrCoords: "NIL",
+          thrElevation: "NIL",
+          swyDimensions: "NIL",
+          cwyDimensions: "NIL",
+          stripDimensions: "1620 X 150",
+          ofz: "NIL",
+          resa: "NIL",
+          papi: "PAPI 3° RWY 22, Elev 29.38 ft"
+        }
+      ]),
+      declaredDistances: JSON.stringify([
+        { rwy: "04", tora: 1500, toda: 1500, asda: 1500, lda: 1500, remarks: "NIL" },
+        { rwy: "22", tora: 1500, toda: 1500, asda: 1500, lda: 1500, remarks: "NIL" }
+      ])
+    },
+    {
+      icaoCode: "SPHO",
+      name: "CORONEL FAP ALFREDO MENDÍVIL DUARTE",
+      city: "AYACUCHO",
+      region: "AYACUCHO",
+      department: "AYACUCHO",
+      arpLatitude: "13°09'17\"S",
+      arpLongitude: "074°12'16\"W",
+      elevation: "2743 m / 8999.32 ft",
+      temperature: "27.1° C",
+      geoidalUndulation: "NIL",
+      magneticDeclination: "NIL",
+      annualChange: "NIL",
+      distanceFromCity: "3.4 km NE",
+      administrationType: "Aeropuertos Andinos del Perú S.A.",
+      aftn: "SPHOZTZX",
+      authorizedTraffic: "VFR",
+      remarks: "Uso Público. Jet A1 requiere coordinación con HERCO. Operadores vuelos no regulares coordinar FPL 24h antes a aypcoordinacionesfpl@aap.com.pe",
+      operatingHours: JSON.stringify({
+        administracion: "1100-2300 UTC",
+        oficinaAIS: "1000-2300 UTC",
+        oficinaARO: "1000-2300 UTC",
+        oficinaMET: "1000-2300 UTC",
+        ats: "1000-2300 UTC",
+        combustible: "1100-2300 UTC",
+        com: "1000-2300 UTC"
+      }),
+      fireCategory: "CAT A5",
+      fuelTypes: "AVGAS 100, JET A1",
+      platformData: JSON.stringify({ superficie: "Asfalto", resistencia: "PCN 52/F/B/X/T" }),
+      taxiwayData: JSON.stringify({ ancho: "23 m", superficie: "Asfalto", resistencia: "PCN 52/F/B/X/T" }),
+      runways: JSON.stringify([
+        {
+          designator: "02",
+          brgGeo: "020°",
+          brgMag: "020°",
+          dimensions: "2800 X 45",
+          pcn: "PCN 52/F/B/X/T",
+          surface: "Asfalto",
+          thrCoords: "13°09'59.11''S - 074°12'33.74''W",
+          thrElevation: "2736 M / 8976 FT",
+          swyDimensions: "NIL",
+          cwyDimensions: "NIL",
+          stripDimensions: "2920 X 100",
+          ofz: "NIL",
+          resa: "NIL",
+          slope: "+0.256%",
+          remarks: "TKOF RWY 02 sin restricciones, LDG RWY 02 No disponible"
+        },
+        {
+          designator: "20",
+          brgGeo: "200°",
+          brgMag: "200°",
+          dimensions: "2800 X 45",
+          pcn: "PCN 52/F/B/X/T",
+          surface: "Asfalto",
+          thrCoords: "13°08'34.96''S - 074°11'58.00''W",
+          thrElevation: "2743 M / 8999 FT",
+          swyDimensions: "NIL",
+          cwyDimensions: "NIL",
+          stripDimensions: "2920 X 100",
+          ofz: "NIL",
+          resa: "NIL",
+          slope: "+0.256%",
+          papi: "PAPI Left side/2.8° RWY 20, Elev 49.78 ft",
+          remarks: "TKOF RWY 20 No disponible, LDG RWY 20 NPA y Visual"
+        }
+      ]),
+      declaredDistances: JSON.stringify([
+        { rwy: "02", tora: 2800, toda: 2800, asda: 2800, lda: 2800, remarks: "NIL" },
+        { rwy: "20", tora: 2800, toda: 2800, asda: 2800, lda: 2800, remarks: "NIL" }
+      ])
+    },
+    {
+      icaoCode: "SPJR",
+      name: "MAYOR GENERAL FAP ARMANDO REVOREDO IGLESIAS",
+      city: "CAJAMARCA",
+      region: "CAJAMARCA",
+      department: "CAJAMARCA",
+      arpLatitude: "07°08'21\"S",
+      arpLongitude: "078°29'22\"W",
+      elevation: "2697 m / 8848 ft",
+      temperature: "21.9° C",
+      geoidalUndulation: "NIL",
+      magneticDeclination: "NIL",
+      annualChange: "NIL",
+      distanceFromCity: "3.5 km SE",
+      administrationType: "AEROPUERTOS DEL PERÚ S.A. - ADP",
+      aftn: "SPJRZTZX",
+      authorizedTraffic: "IFR/VFR",
+      remarks: "Uso Público. ATZ: círculo 4 NM centro ARP, GND/13000 ft AMSL, Clase D. Despegue turbohélice hasta 15 min antes puesta sol. Solo IFR bajo RNAV RNP-AR ceiling 1200 ft VIS 5 km. MSA 16000 ft RDO 25 NM THR 34. Pernocte no disponible. RNP RWY34 (AR) suspendido. Viraje en pista no permitido para medianas o superiores.",
+      operatingHours: JSON.stringify({
+        administracion: "1100-2300 UTC",
+        oficinaAIS: "1100-2300 UTC",
+        oficinaARO: "1100-2300 UTC",
+        oficinaMET: "1100-2300 UTC",
+        ats: "1100-2300 UTC",
+        seguridad: "1100-2300 UTC",
+        com: "1100-2300 UTC"
+      }),
+      fireCategory: "CAT A7",
+      fuelTypes: "NIL",
+      platformData: JSON.stringify({ superficie: "Asfalto", resistencia: "PCN 480/F/D/X/T" }),
+      taxiwayData: JSON.stringify({ nombre: "ALFA", ancho: "23 m", superficie: "Asfalto", resistencia: "PCN 500/F/D/X/T" }),
+      runways: JSON.stringify([
+        {
+          designator: "16",
+          brgGeo: "160°",
+          brgMag: "160°",
+          dimensions: "2500 X 45",
+          pcn: "PCN 440/F/C/X/T",
+          surface: "Asfalto",
+          thrCoords: "07°07'43.44''S - 078°29'38.28''W",
+          thrElevation: "8848 FT",
+          swyDimensions: "60 X 45",
+          cwyDimensions: "NIL",
+          stripDimensions: "2620 X 150",
+          ofz: "NIL",
+          resa: "NIL",
+          slope: "+1.907%"
+        },
+        {
+          designator: "34",
+          brgGeo: "340°",
+          brgMag: "340°",
+          dimensions: "2500 X 45",
+          pcn: "PCN 440/F/C/X/T",
+          surface: "Asfalto",
+          thrCoords: "07°08'58.41''S - 078°29'06.71''W",
+          thrElevation: "8758 FT",
+          swyDimensions: "60 X 45",
+          cwyDimensions: "NIL",
+          stripDimensions: "2620 X 150",
+          ofz: "NIL",
+          resa: "NIL",
+          slope: "+1.907%",
+          papi: "PAPI 3° RWY 34, Elev 45.17 ft"
+        }
+      ]),
+      declaredDistances: JSON.stringify([
+        { rwy: "16", tora: 2500, toda: 2500, asda: 2560, lda: 2500, remarks: "NIL" },
+        { rwy: "34", tora: 2500, toda: 2500, asda: 2560, lda: 2500, remarks: "NIL" }
+      ])
+    },
+    {
+      icaoCode: "SPPY",
+      name: "CHACHAPOYAS",
+      city: "CHACHAPOYAS",
+      region: "AMAZONAS",
+      department: "AMAZONAS",
+      arpLatitude: "06°12'07\"S",
+      arpLongitude: "077°51'22\"W",
+      elevation: "2540 m / 8333 ft",
+      temperature: "20.9° C",
+      geoidalUndulation: "NIL",
+      magneticDeclination: "NIL",
+      annualChange: "NIL",
+      distanceFromCity: "5 km N",
+      administrationType: "AEROPUERTOS DEL PERÚ S.A.- ADP",
+      aftn: "SPPYYSYX",
+      authorizedTraffic: "VFR",
+      remarks: "Uso Público. Calle rodaje perpendicular 380 m Umbral RWY 31, 105 m x 23 m. Plataforma SE de pista 380 m Umbral RWY 31, 100 m x 80 m.",
+      operatingHours: JSON.stringify({
+        administracion: "1300-2100 UTC",
+        oficinaARO: "1300-2100 UTC",
+        oficinaMET: "1300-2100 UTC",
+        ats: "1300-2100 UTC O/R",
+        com: "1300-2100 UTC O/R",
+        notas: "CLSD SUN"
+      }),
+      fireCategory: "CAT A5",
+      fuelTypes: "NIL",
+      platformData: JSON.stringify({ superficie: "Asfalto", resistencia: "PCN 270/F/C/X/T" }),
+      taxiwayData: JSON.stringify({ nombre: "ALFA", ancho: "23 m", superficie: "Asfalto", resistencia: "PCN 270/F/C/X/T" }),
+      runways: JSON.stringify([
+        {
+          designator: "13",
+          brgGeo: "130°",
+          brgMag: "130°",
+          dimensions: "1980 X 30",
+          pcn: "PCN 260/F/D/X/T",
+          surface: "Asfalto",
+          thrCoords: "06°11'45.70''S - 077°51'45.40''W",
+          thrElevation: "8302 FT",
+          swyDimensions: "60 X 30",
+          cwyDimensions: "NIL",
+          stripDimensions: "2100 X 100",
+          ofz: "NIL",
+          resa: "NIL",
+          slope: "+0.86%",
+          papi: "APAPI 3° RWY 13, Elev 33.42 ft"
+        },
+        {
+          designator: "31",
+          brgGeo: "310°",
+          brgMag: "310°",
+          dimensions: "1980 X 30",
+          pcn: "PCN 260/F/D/X/T",
+          surface: "Asfalto",
+          thrCoords: "06°12'29.00''S - 077°50'57.80''W",
+          thrElevation: "8358 FT",
+          swyDimensions: "60 X 30",
+          cwyDimensions: "NIL",
+          stripDimensions: "2100 X 100",
+          ofz: "NIL",
+          resa: "NIL",
+          slope: "+0.86%",
+          remarks: "LDG/TKOF ambas Visual"
+        }
+      ]),
+      declaredDistances: JSON.stringify([
+        { rwy: "13", tora: 1980, toda: 1980, asda: 2040, lda: 1980, remarks: "NIL" },
+        { rwy: "31", tora: 1980, toda: 1980, asda: 2040, lda: 1980, remarks: "NIL" }
+      ])
+    },
+    {
+      icaoCode: "SPEO",
+      name: "TENIENTE FAP JAIME A. DE MONTREUIL MORALES",
+      city: "CHIMBOTE",
+      region: "ANCASH",
+      department: "ANCASH",
+      arpLatitude: "09°09'04.2\"S",
+      arpLongitude: "078°31'25.8\"W",
+      elevation: "21 m / 69 ft",
+      temperature: "27.9°C (FEB)",
+      geoidalUndulation: "NIL",
+      magneticDeclination: "NIL",
+      annualChange: "NIL",
+      distanceFromCity: "12 km SE",
+      administrationType: "CORPAC S.A.",
+      authorizedTraffic: "VFR",
+      remarks: "Uso Público. AFIS/FIS/ALRS/COM/MET/AIS/ARO. FIZ: Círculo 22 NM radio centro VOR BTE, GND/FL065. Despegues VFR solo diurnas. Peligro aviario RWY 01. Obstáculo antena 30 m a 496 m Umbral RWY 19 y 25 m a 570 m Umbral RWY 19.",
+      operatingHours: JSON.stringify({
+        oficinaMET: "1300-2100",
+        ats: "1300-2100 y O/R",
+        seguridad: "1300-2100 y O/R",
+        com: "1300-2100",
+        notas: "Aeródromo opera L-S, cerrado domingos"
+      }),
+      fireCategory: "CAT 5",
+      fuelTypes: "NIL",
+      runways: JSON.stringify([
+        {
+          designator: "01",
+          brgGeo: "010°",
+          brgMag: "010°",
+          dimensions: "1800 X 30",
+          pcn: "PCN 21 F/A/Y/U",
+          surface: "Asfalto",
+          thrCoords: "09°09'28.1''S - 078°31'29.3''W",
+          thrElevation: "NIL",
+          swyDimensions: "60 X 30",
+          cwyDimensions: "NIL",
+          stripDimensions: "2100 X 150",
+          ofz: "NIL",
+          resa: "NIL",
+          slope: "0.89%"
+        },
+        {
+          designator: "19",
+          brgGeo: "190°",
+          brgMag: "190°",
+          dimensions: "1800 X 30",
+          pcn: "PCN 21 F/A/Y/U",
+          surface: "Asfalto",
+          thrCoords: "09°08'30.1''S - 078°31'20.7''W",
+          thrElevation: "NIL",
+          swyDimensions: "60 X 30",
+          cwyDimensions: "NIL",
+          stripDimensions: "2100 X 150",
+          ofz: "NIL",
+          resa: "NIL",
+          slope: "0.89%",
+          papi: "PAPI 3° RWY 19"
+        }
+      ]),
+      declaredDistances: JSON.stringify([
+        { rwy: "01", tora: 1800, toda: 1800, asda: 1860, lda: 1800, remarks: "NIL" },
+        { rwy: "19", tora: 1800, toda: 1800, asda: 1860, lda: 1800, remarks: "NIL" }
+      ])
     }
   ];
 
@@ -1323,10 +1948,156 @@ async function main() {
     }
   }
 
+  // Add communications for SPUR - PIURA
+  const spurAirport = await db.airport.findUnique({ where: { icaoCode: "SPUR" } });
+  if (spurAirport) {
+    const comms = [
+      { service: "APP/TWR", callsign: "PIURA TORRE", frequency: "118.4 MHz", hours: "1200-0200 y O/R" },
+      { service: "ATIS", callsign: "PIURA", frequency: "132.9 MHz", hours: "1200-0200 y O/R" },
+      { service: "EMERGENCIA", callsign: "EMERGENCIA", frequency: "121.5 MHz", hours: "1200-0200 y O/R" },
+    ];
+    for (const comm of comms) {
+      await db.communication.create({ data: { ...comm, airportId: spurAirport.id } });
+    }
+    const navAids = [
+      { type: "VOR/DME", identifier: "URA", frequency: "117.7 MHz CH 124X", coordinates: "05°12'35.66''S - 080°36'58.43''W", remarks: "H24" },
+    ];
+    for (const navAid of navAids) {
+      await db.radioNavAid.create({ data: { ...navAid, airportId: spurAirport.id } });
+    }
+  }
+
+  // Add communications for SPHY - ANDAHUAYLAS
+  const sphyAirport = await db.airport.findUnique({ where: { icaoCode: "SPHY" } });
+  if (sphyAirport) {
+    const comms = [
+      { service: "FIS/AFIS", callsign: "ANDAHUAYLAS INFO DE AD", frequency: "126.9 MHz", hours: "1100-2300" },
+      { service: "EMERGENCIA", callsign: "EMERGENCIA", frequency: "121.5 MHz", hours: "1100-2300" },
+    ];
+    for (const comm of comms) {
+      await db.communication.create({ data: { ...comm, airportId: sphyAirport.id } });
+    }
+    const navAids = [
+      { type: "VOR/DME", identifier: "AND", frequency: "114.3 MHz / CH 90X", coordinates: "13°42'51''S - 073°22'40''W", remarks: "H24" },
+      { type: "ILS/LOC", identifier: "IAND", frequency: "109.7 MHz", coordinates: "13°43'14.690''S - 073°21'32.484''W", remarks: "H24" },
+      { type: "ILS GP/DME", identifier: "IAND GP/DME", frequency: "333.2 MHz / CH 34X", coordinates: "13°42'13.841''S - 073°20'56.528''W", remarks: "H24" },
+    ];
+    for (const navAid of navAids) {
+      await db.radioNavAid.create({ data: { ...navAid, airportId: sphyAirport.id } });
+    }
+  }
+
+  // Add communications for SPAS - ANDOAS
+  const spasAirport = await db.airport.findUnique({ where: { icaoCode: "SPAS" } });
+  if (spasAirport) {
+    const comms = [
+      { service: "AFIS", callsign: "ANDOAS INFO DE AD", frequency: "118.2 MHz", hours: "HJ" },
+    ];
+    for (const comm of comms) {
+      await db.communication.create({ data: { ...comm, airportId: spasAirport.id } });
+    }
+    const navAids = [
+      { type: "NDB", identifier: "OAS", frequency: "360 kHz", coordinates: "02°48'25''S - 076°27'18''W", remarks: "HJ" },
+      { type: "VOR/DME", identifier: "OAS", frequency: "116.8 MHz / CH115x", coordinates: "02°47'22''S - 076°28'39''W", remarks: "H24" },
+    ];
+    for (const navAid of navAids) {
+      await db.radioNavAid.create({ data: { ...navAid, airportId: spasAirport.id } });
+    }
+  }
+
+  // Add communications for SPHZ - ANTA HUARAZ
+  const sphzAirport = await db.airport.findUnique({ where: { icaoCode: "SPHZ" } });
+  if (sphzAirport) {
+    const comms = [
+      { service: "AFIS", callsign: "ANTA INFO DE AD", frequency: "118.300 MHz", hours: "1300-2100 UTC O/R" },
+      { service: "FIS", callsign: "ANTA INFO DE AD", frequency: "126.900 MHz", hours: "1300-2100 UTC O/R" },
+    ];
+    for (const comm of comms) {
+      await db.communication.create({ data: { ...comm, airportId: sphzAirport.id } });
+    }
+    // RadioNavAids: NIL
+  }
+
+  // Add communications for SPAY - ATALAYA
+  const spayAirport = await db.airport.findUnique({ where: { icaoCode: "SPAY" } });
+  if (spayAirport) {
+    const comms = [
+      { service: "FIS/AFIS", callsign: "ATALAYA INFO DE AD", frequency: "126.900 MHz", hours: "1300-2100 UTC" },
+    ];
+    for (const comm of comms) {
+      await db.communication.create({ data: { ...comm, airportId: spayAirport.id } });
+    }
+    // RadioNavAids: NIL
+  }
+
+  // Add communications for SPHO - AYACUCHO
+  const sphoAirport = await db.airport.findUnique({ where: { icaoCode: "SPHO" } });
+  if (sphoAirport) {
+    const comms = [
+      { service: "FIS", callsign: "AYACUCHO TORRE", frequency: "126.900 MHz", hours: "1000-2300" },
+      { service: "TWR", callsign: "AYACUCHO TORRE", frequency: "118.100 MHz", hours: "1000-2300" },
+    ];
+    for (const comm of comms) {
+      await db.communication.create({ data: { ...comm, airportId: sphoAirport.id } });
+    }
+    // RadioNavAids: NIL
+  }
+
+  // Add communications for SPJR - CAJAMARCA
+  const spjrAirport = await db.airport.findUnique({ where: { icaoCode: "SPJR" } });
+  if (spjrAirport) {
+    const comms = [
+      { service: "EMERGENCIA", callsign: "EMERGENCIA", frequency: "121.500 MHz", hours: "1100-2300 UTC" },
+      { service: "TWR", callsign: "CAJAMARCA TORRE", frequency: "120.100 MHz", hours: "1100-2300 UTC" },
+    ];
+    for (const comm of comms) {
+      await db.communication.create({ data: { ...comm, airportId: spjrAirport.id } });
+    }
+    // RadioNavAids: NIL
+  }
+
+  // Add communications for SPPY - CHACHAPOYAS
+  const sppyAirport = await db.airport.findUnique({ where: { icaoCode: "SPPY" } });
+  if (sppyAirport) {
+    const comms = [
+      { service: "FIS/AFIS", callsign: "CHACHAPOYAS INFO DE AD", frequency: "126.900 MHz", hours: "1300-2100 UTC" },
+    ];
+    for (const comm of comms) {
+      await db.communication.create({ data: { ...comm, airportId: sppyAirport.id } });
+    }
+    const navAids = [
+      { type: "VOR/DME", identifier: "POY", frequency: "115.100 MHz CH 98X", coordinates: "06°12'02.0''S - 077°51'35.0''W", remarks: "H24 (3° W)" },
+    ];
+    for (const navAid of navAids) {
+      await db.radioNavAid.create({ data: { ...navAid, airportId: sppyAirport.id } });
+    }
+  }
+
+  // Add communications for SPEO - CHIMBOTE
+  const speoAirport = await db.airport.findUnique({ where: { icaoCode: "SPEO" } });
+  if (speoAirport) {
+    const comms = [
+      { service: "FIS/AFIS", callsign: "CHIMBOTE INFO DE AD", frequency: "118.1 MHz", hours: "1300-2100 y O/R" },
+    ];
+    for (const comm of comms) {
+      await db.communication.create({ data: { ...comm, airportId: speoAirport.id } });
+    }
+    const navAids = [
+      { type: "VOR", identifier: "BTE", frequency: "112.5 MHz", coordinates: "09°08'51''S - 078°31'19''W", remarks: "H24" },
+    ];
+    for (const navAid of navAids) {
+      await db.radioNavAid.create({ data: { ...navAid, airportId: speoAirport.id } });
+    }
+  }
+
   console.log("Seed completed successfully!");
   console.log(`Created ${airports.length} airports`);
   const obstacleCount = await db.obstacle.count();
   console.log(`Created ${obstacleCount} obstacles`);
+  const commCount = await db.communication.count();
+  console.log(`Created ${commCount} communications`);
+  const navAidCount = await db.radioNavAid.count();
+  console.log(`Created ${navAidCount} radio navigation aids`);
 }
 
 main()
