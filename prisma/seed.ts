@@ -2187,6 +2187,343 @@ async function main() {
         { rwy: "15", tora: 1760, toda: 1760, asda: 1800, lda: 1760, remarks: "NIL" },
         { rwy: "33", tora: 1760, toda: 1760, asda: 1760, lda: 1760, remarks: "NIL" }
       ])
+    },
+    {
+      icaoCode: "SPJA",
+      name: "AERÓDROMO RIOJA",
+      city: "RIOJA",
+      region: "SAN MARTÍN",
+      department: "SAN MARTÍN",
+      province: "RIOJA",
+      district: "RIOJA",
+      arpLatitude: "06º04'04.05\"S",
+      arpLongitude: "077º09'35.3\"W",
+      elevation: "2707 ft",
+      temperature: "29.4°C (NOV)",
+      geoidalUndulation: "NIL",
+      magneticDeclination: "NIL",
+      annualChange: "NIL",
+      distanceFromCity: "1 km E",
+      administrationType: "CORPAC S.A.",
+      authorizedTraffic: "VFR",
+      remarks: "Solo operaciones diurnas y en condiciones visuales. Se brindan servicios AFIS/FIS/ALRS/COM/MET/ARO/AIS/RFFS.",
+      operatingHours: JSON.stringify({
+        ats: "HJ",
+        com: "HJ",
+        notas: "Solo operaciones diurnas"
+      }),
+      fireCategory: "NIL",
+      fuelTypes: "NIL",
+      runways: JSON.stringify([
+        {
+          designator: "16",
+          brgGeo: "160°",
+          brgMag: "NIL",
+          dimensions: "1880 X 30",
+          pcn: "PCN F/C/X/T",
+          surface: "Asfalto",
+          thrCoords: "06°03'34.4''S - 077°09'42.8''W",
+          thrElevation: "NIL",
+          swyDimensions: "60 X 30",
+          cwyDimensions: "NIL",
+          stripDimensions: "2000 X 150",
+          ofz: "NIL",
+          resa: "NIL",
+          slope: "0.296%",
+          papi: "PAPI 3° RWY 16"
+        },
+        {
+          designator: "34",
+          brgGeo: "340°",
+          brgMag: "NIL",
+          dimensions: "1880 X 30",
+          pcn: "PCN F/C/X/T",
+          surface: "Asfalto",
+          thrCoords: "06°04'33.7''S - 077°09'27.8''W",
+          thrElevation: "NIL",
+          swyDimensions: "60 X 30",
+          cwyDimensions: "NIL",
+          stripDimensions: "2000 X 150",
+          ofz: "NIL",
+          resa: "NIL",
+          slope: "0.296%"
+        }
+      ]),
+      declaredDistances: JSON.stringify([
+        { rwy: "16", tora: 1880, toda: 1880, asda: 1880, lda: 1880, remarks: "NIL" },
+        { rwy: "34", tora: 1880, toda: 1880, asda: 1880, lda: 1880, remarks: "NIL" }
+      ]),
+      taxiwayData: JSON.stringify({ tipo: "Perpendicular", distancia: "637 m del umbral RWY 16", dimensiones: "120 m x 23 m", superficie: "Asfalto" }),
+      platformData: JSON.stringify({ ubicacion: "Suroeste de pista", distancia: "587 m del umbral RWY 16", dimensiones: "100 m x 60 m", superficie: "Concreto" })
+    },
+    {
+      icaoCode: "SPST",
+      name: "AEROPUERTO NACIONAL CADETE FAP GUILLERMO DEL CASTILLO PAREDES",
+      city: "TARAPOTO",
+      region: "SAN MARTÍN",
+      department: "SAN MARTÍN",
+      province: "SAN MARTÍN",
+      district: "TARAPOTO",
+      arpLatitude: "06º30'31.5\"S",
+      arpLongitude: "076°22'23.7\"W",
+      elevation: "264 m / 868 ft",
+      temperature: "33.4°C (NOV)",
+      geoidalUndulation: "NIL",
+      magneticDeclination: "4°W (JAN 2020)",
+      annualChange: "0°10' W",
+      distanceFromCity: "2.7 km SW",
+      administrationType: "Aeropuertos del Perú S.A. - ADP",
+      address: "Av. Aviación 662, Tarapoto - San Martín",
+      phone: "NIL",
+      fax: "NIL",
+      aftn: "NIL",
+      email: "NIL",
+      authorizedTraffic: "VFR / IFR",
+      remarks: "NIL",
+      operatingHours: JSON.stringify({
+        administracion: "1200-2359 y O/R",
+        aduana: "NIL",
+        inmigracion: "NIL",
+        serviciosMedicos: "NIL",
+        oficinaAIS: "1200-2359 y O/R",
+        oficinaARO: "1200-2359 y O/R",
+        oficinaMET: "1200-2359 y O/R",
+        ats: "1200-2359 y O/R",
+        combustible: "1200-2359 y O/R",
+        despacho: "NIL",
+        seguridad: "NIL",
+        descongelamiento: "NIL",
+        com: "1200-2359 y O/R"
+      }),
+      cargoHandlingFacilities: "Cargo by SEAS/particular",
+      fuelTypes: "AVGAS Turbo A1",
+      lubricantTypes: "NIL",
+      refuelingFacilities: "NIL",
+      deIcingFacilities: "NIL",
+      hangarSpace: "NIL",
+      repairFacilities: "NIL",
+      scaleRemarks: "NIL",
+      hotels: "NIL",
+      restaurants: "NIL",
+      transport: "NIL",
+      medicalFacilities: "NIL",
+      bankingPost: "NIL",
+      tourismOffice: "NIL",
+      passengerRemarks: "NIL",
+      fireCategory: "CAT 7",
+      rescueEquipment: "NIL",
+      aircraftRemovalCapacity: "NIL",
+      rescueRemarks: "NIL",
+      platformData: JSON.stringify({ superficie: "Concreto", resistencia: "PCN 44 R/B/W/T" }),
+      taxiwayData: JSON.stringify([
+        { nombre: "ALFA", ancho: "23 m", superficie: "Asfalto", resistencia: "PCN 40 F/C/X/T" },
+        { nombre: "BRAVO", ancho: "23 m", superficie: "Asfalto", resistencia: "PCN 25 F/C/X/T" },
+        { nombre: "PARALELA 1", ancho: "23 m", superficie: "Asfalto", resistencia: "PCN 45 F/B/X/T" },
+        { nombre: "PARALELA 2", ancho: "23 m", superficie: "Asfalto", resistencia: "PCN 36 F/B/X/T" }
+      ]),
+      checkpointData: JSON.stringify({ altimetro: "NIL", ins: "NIL", vordme: "NIL" }),
+      platformRemarks: "Coeficiente de fricción: 0.85",
+      surfaceGuidance: "NIL",
+      runwaySigns: "NIL",
+      taxiwaySigns: "NIL",
+      stopBars: "NIL",
+      metOffice: "EMA",
+      metHours: "1300-0100, O/R fuera de horario",
+      metForecastOffice: "OMA/SPJC",
+      metValidity: "6 y 12 horas",
+      metLandingForecast: "NO AVBL",
+      metTrendInterval: "NO AVBL",
+      metBriefing: "Sí",
+      metConsultation: "Personal",
+      metDocumentation: "Pronóstico Observaciones e Informes MET",
+      metLanguage: "ES",
+      metCharts: "Mapas meteorológicos",
+      metSupplementary: "Terminal AMHS CADAS/Banco datos/Internet",
+      metAtsDependencies: "TWR",
+      metAdditionalInfo: "NIL",
+      runways: JSON.stringify([
+        {
+          designator: "17",
+          brgGeo: "169.8°",
+          brgMag: "174°",
+          dimensions: "2600 X 45",
+          pcn: "PCN 41 F/B/X/T",
+          surface: "Asfalto",
+          thrCoords: "06°29'49.82''S - 076°22'31.17''W",
+          thrElevation: "866 ft",
+          swyDimensions: "NIL",
+          cwyDimensions: "NIL",
+          stripDimensions: "2720 X 150",
+          ofz: "NIL",
+          resa: "NIL",
+          slope: "0.904%",
+          dthr: "DTHR 350 m"
+        },
+        {
+          designator: "35",
+          brgGeo: "349.8°",
+          brgMag: "354°",
+          dimensions: "2600 X 45",
+          pcn: "PCN 41 F/B/X/T",
+          surface: "Asfalto",
+          thrCoords: "06°31'13.14''S - 076°22'16.20''W",
+          thrElevation: "789 ft",
+          swyDimensions: "NIL",
+          cwyDimensions: "NIL",
+          stripDimensions: "2720 X 150",
+          ofz: "NIL",
+          resa: "NIL",
+          slope: "0.904%"
+        }
+      ]),
+      declaredDistances: JSON.stringify([
+        { rwy: "17", tora: 2600, toda: 2600, asda: 2600, lda: 2250, remarks: "DTHR 350 m" },
+        { rwy: "35", tora: 2600, toda: 2600, asda: 2600, lda: 2600, remarks: "NIL" }
+      ])
+    },
+    {
+      icaoCode: "SPGM",
+      name: "AERÓDROMO TINGO MARÍA",
+      city: "TINGO MARÍA",
+      region: "HUÁNUCO",
+      department: "HUÁNUCO",
+      province: "LEONCIO PRADO",
+      district: "RUPA-RUPA",
+      arpLatitude: "09º17'22.8\"S",
+      arpLongitude: "076º00'18.2\"W",
+      elevation: "2146 ft",
+      temperature: "30.9°C (SEP)",
+      geoidalUndulation: "NIL",
+      magneticDeclination: "NIL",
+      annualChange: "NIL",
+      distanceFromCity: "0.9 km",
+      administrationType: "CORPAC S.A.",
+      authorizedTraffic: "VFR",
+      remarks: "Solo operaciones diurnas y condiciones visuales. Primeros 300 m de Pista 19 no disponibles. Peligro aviario Pista 19. Aeronaves que operen en Tocache (SPCH) y Palmas del Espino (SPPN) coordinarán en frecuencia 126.9 MHz.",
+      operatingHours: JSON.stringify({
+        oficinaMET: "1300-2100",
+        ats: "1300-2100",
+        com: "1300-2100",
+        notas: "Lunes a Sábado, cerrado domingos"
+      }),
+      fireCategory: "CAT 5",
+      fuelTypes: "NIL",
+      runways: JSON.stringify([
+        {
+          designator: "19",
+          brgGeo: "190°",
+          brgMag: "NIL",
+          dimensions: "2100 X 30",
+          pcn: "PCN 14 F/D/X/U",
+          surface: "Grava",
+          thrCoords: "09°16'47.9''S - 076°00'14.8''W",
+          thrElevation: "NIL",
+          swyDimensions: "60 X 30",
+          cwyDimensions: "NIL",
+          stripDimensions: "2190 X 120",
+          ofz: "NIL",
+          resa: "NIL",
+          slope: "0.47%",
+          papi: "APAPI 3° RWY 19",
+          restrictions: "LDG RWY 19 visual approach only"
+        },
+        {
+          designator: "01",
+          brgGeo: "010°",
+          brgMag: "NIL",
+          dimensions: "2100 X 30",
+          pcn: "PCN 14 F/D/X/U",
+          surface: "Grava",
+          thrCoords: "09°17'55.6''S - 076°00'21.5''W",
+          thrElevation: "NIL",
+          swyDimensions: "60 X 30",
+          cwyDimensions: "NIL",
+          stripDimensions: "2190 X 120",
+          ofz: "NIL",
+          resa: "NIL",
+          slope: "0.47%",
+          restrictions: "TKOF RWY 01 sin restricciones"
+        }
+      ]),
+      declaredDistances: JSON.stringify([
+        { rwy: "19", tora: 1800, toda: 1860, asda: 1860, lda: 1800, remarks: "Primeros 300 m no disponibles" },
+        { rwy: "01", tora: 1800, toda: 1800, asda: 1800, lda: 1800, remarks: "NIL" }
+      ]),
+      platformData: JSON.stringify({ ubicacion: "Adyacente a pista", distancia: "160 m del umbral RWY 01", dimensiones: "90 m x 50 m" })
+    },
+    {
+      icaoCode: "SPMS",
+      name: "AERÓDROMO MOISÉS BENZAQUEN RENGIFO",
+      city: "YURIMAGUAS",
+      region: "LORETO",
+      department: "LORETO",
+      province: "ALTO AMAZONAS",
+      district: "YURIMAGUAS",
+      arpLatitude: "05º53'37\"S",
+      arpLongitude: "076º07'05\"W",
+      elevation: "587 ft",
+      temperature: "33.2°C (SEP)",
+      geoidalUndulation: "NIL",
+      magneticDeclination: "NIL",
+      annualChange: "NIL",
+      distanceFromCity: "1 km W",
+      administrationType: "CORPAC S.A.",
+      authorizedTraffic: "VFR",
+      remarks: "Solo operaciones diurnas y condiciones visuales. Aterrizajes Pista 09, despegues Pista 27. Peligro aviario Pista 09.",
+      operatingHours: JSON.stringify({
+        oficinaMET: "1200-2300",
+        ats: "1200-2300",
+        com: "1200-2300",
+        notas: "Solo operaciones diurnas"
+      }),
+      fireCategory: "CAT 5",
+      fuelTypes: "NIL",
+      runways: JSON.stringify([
+        {
+          designator: "09",
+          brgGeo: "090°",
+          brgMag: "NIL",
+          dimensions: "1800 X 30",
+          pcn: "PCN 20 F/C/Y/U",
+          surface: "Asfalto",
+          thrCoords: "NIL",
+          thrElevation: "NIL",
+          swyDimensions: "60 X 30",
+          cwyDimensions: "NIL",
+          stripDimensions: "1920 X 80",
+          ofz: "NIL",
+          resa: "NIL",
+          slope: "0.8%",
+          papi: "APAPI 2.8° RWY 09",
+          restrictions: "LDG RWY 09"
+        },
+        {
+          designator: "27",
+          brgGeo: "270°",
+          brgMag: "NIL",
+          dimensions: "1800 X 30",
+          pcn: "PCN 20 F/C/Y/U",
+          surface: "Asfalto",
+          thrCoords: "NIL",
+          thrElevation: "NIL",
+          swyDimensions: "60 X 30",
+          cwyDimensions: "NIL",
+          stripDimensions: "1920 X 80",
+          ofz: "NIL",
+          resa: "NIL",
+          slope: "0.8%",
+          restrictions: "TKOF RWY 27"
+        }
+      ]),
+      declaredDistances: JSON.stringify([
+        { rwy: "09", tora: 1800, toda: 1800, asda: 1800, lda: 1800, remarks: "NIL" },
+        { rwy: "27", tora: 1800, toda: 1800, asda: 1800, lda: 1800, remarks: "NIL" }
+      ]),
+      taxiwayData: JSON.stringify([
+        { tipo: "Perpendicular", distancia: "22 m umbral RWY 27", dimensiones: "52 m x 23 m" },
+        { tipo: "Perpendicular", distancia: "105 m umbral RWY 27", dimensiones: "52 m x 23 m" }
+      ]),
+      platformData: JSON.stringify({ ubicacion: "Lado Sur de pista, cercana umbral RWY 27", dimensiones: "135 m x 40 m" })
     }
   ];
 
@@ -2527,6 +2864,100 @@ async function main() {
     for (const obs of obstacles) {
       await db.obstacle.create({ data: { ...obs, airportId: spmfAirport.id } });
     }
+  }
+
+  // Add obstacles for SPJA - RIOJA
+  const spjaAirport = await db.airport.findUnique({ where: { icaoCode: "SPJA" } });
+  if (spjaAirport) {
+    const obstacles = [
+      { runwayArea: "RWY 16 approach", obstacleType: "Torre de alta tensión", elevation: "155 m del eje de Pista 16, lado derecho", markingLighting: "LGTD" },
+      { runwayArea: "RWY 16 approach", obstacleType: "Torre metálica", elevation: "50 m al Oeste", markingLighting: "NIL" },
+      { runwayArea: "RWY 34 approach", obstacleType: "Obstáculo", elevation: "330 m del eje, lado izquierdo Pista 34", markingLighting: "NIL" },
+    ];
+    for (const obs of obstacles) {
+      await db.obstacle.create({ data: { ...obs, airportId: spjaAirport.id } });
+    }
+  }
+
+  // Add obstacles for SPST - TARAPOTO
+  const spstAirport = await db.airport.findUnique({ where: { icaoCode: "SPST" } });
+  if (spstAirport) {
+    const obstacles = [
+      { runwayArea: "RWY 17 approach", obstacleType: "Poste de concreto energía eléctrica", elevation: "11 m", markingLighting: "NIL", coordinates: "135 m del THR de RWY 17" },
+    ];
+    for (const obs of obstacles) {
+      await db.obstacle.create({ data: { ...obs, airportId: spstAirport.id } });
+    }
+  }
+
+  // Add obstacles for SPMS - YURIMAGUAS
+  const spmsAirport = await db.airport.findUnique({ where: { icaoCode: "SPMS" } });
+  if (spmsAirport) {
+    const obstacles = [
+      { runwayArea: "RWY 09 approach", obstacleType: "Obstáculo por edificación", elevation: "2.5 m altura", markingLighting: "NIL", coordinates: "54.5 m lado izquierdo eje Pista 09" },
+      { runwayArea: "RWY 09 approach", obstacleType: "Estación gasolina", markingLighting: "NIL", coordinates: "420 m Pista 09 y 70.5 m lado izquierdo eje Pista 09" },
+      { runwayArea: "RWY 27 approach", obstacleType: "Antenas", markingLighting: "NIL", coordinates: "Ambos lados aproximación Pista 27" },
+      { runwayArea: "Plataforma", obstacleType: "Estación AVGAS", elevation: "11 m", markingLighting: "NIL", coordinates: "Lado Este plataforma" },
+      { runwayArea: "RWY 27 approach", obstacleType: "Cúpula iglesia", elevation: "40 m alto aprox.", markingLighting: "NIL", coordinates: "600 m umbral Pista 27, lado este" },
+    ];
+    for (const obs of obstacles) {
+      await db.obstacle.create({ data: { ...obs, airportId: spmsAirport.id } });
+    }
+  }
+
+  // Add communications for SPJA - RIOJA
+  if (spjaAirport) {
+    const comms = [
+      { service: "AFIS", callsign: "RIOJA INFO DE AD", frequency: "126.9 MHz", hours: "HJ" },
+    ];
+    for (const comm of comms) {
+      await db.communication.create({ data: { ...comm, airportId: spjaAirport.id } });
+    }
+    // RadioNavAids: NIL
+  }
+
+  // Add communications and radio nav aids for SPST - TARAPOTO
+  if (spstAirport) {
+    const comms = [
+      { service: "APP/TWR", callsign: "TARAPOTO TORRE", frequency: "118.4 MHz", hours: "1200-2359 y O/R" },
+      { service: "ATIS", callsign: "AEROPUERTO TARAPOTO", frequency: "130.85 MHz", hours: "1200-2359 y O/R" },
+      { service: "EMERGENCIA", callsign: "EMERGENCIA", frequency: "121.5 MHz", hours: "1200-2359 y O/R" },
+    ];
+    for (const comm of comms) {
+      await db.communication.create({ data: { ...comm, airportId: spstAirport.id } });
+    }
+    const navAids = [
+      { type: "VOR/DME", identifier: "TAP", frequency: "115.5 MHz CH 102X", coordinates: "06°39'29.2''S - 076°21'04.4''W", remarks: "H24" },
+      { type: "LOC/DME", identifier: "IGDP", frequency: "109.7 MHz CH 34X", coordinates: "06°29'47''S - 076°22'32''W", remarks: "H24, RWY 35" },
+    ];
+    for (const navAid of navAids) {
+      await db.radioNavAid.create({ data: { ...navAid, airportId: spstAirport.id } });
+    }
+  }
+
+  // Add communications for SPGM - TINGO MARÍA
+  const spgmAirport = await db.airport.findUnique({ where: { icaoCode: "SPGM" } });
+  if (spgmAirport) {
+    const comms = [
+      { service: "AFIS", callsign: "TINGO MARÍA INFO DE AD", frequency: "118.7 MHz", hours: "1300-2100" },
+      { service: "FIS", callsign: "TINGO MARÍA INFO DE AD", frequency: "126.9 MHz", hours: "1300-2100" },
+    ];
+    for (const comm of comms) {
+      await db.communication.create({ data: { ...comm, airportId: spgmAirport.id } });
+    }
+    // RadioNavAids: NIL
+  }
+
+  // Add communications for SPMS - YURIMAGUAS
+  if (spmsAirport) {
+    const comms = [
+      { service: "AFIS", callsign: "YURIMAGUAS INFO DE AD", frequency: "118.1 MHz", hours: "1200-2300" },
+      { service: "EMERGENCIA", callsign: "EMERGENCIA", frequency: "121.5 MHz", hours: "1200-2300" },
+    ];
+    for (const comm of comms) {
+      await db.communication.create({ data: { ...comm, airportId: spmsAirport.id } });
+    }
+    // RadioNavAids: NIL
   }
 
   console.log("Seed completed successfully!");

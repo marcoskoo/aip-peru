@@ -165,5 +165,40 @@
       {"type": "IAC", "name": "RNP RWY 28 Codificación", "file": "iac_rnp_rwy28_coding.png"},
       {"type": "IAC", "name": "RNP RWY 28 Codificación (2)", "file": "iac_rnp_rwy28_coding2.png"}
     ]
+  },
+  {
+    "icaoCode": "SPST",
+    "charts": [
+      {"type": "ADC", "name": "Plano de Aeródromo", "file": "adc.png"},
+      {"type": "TMA", "name": "Área de Control Terminal", "file": "tma.png"},
+      {"type": "TMA", "name": "TMA Tarapoto (2)", "file": "tma2.png"},
+      {"type": "SID", "name": "SID RWY 17 ISRES 1F / UTKIK 1F", "file": "sid_rwy17.png"},
+      {"type": "SID", "name": "SID RWY 17 IKARO 2F / MOXOV 1F", "file": "sid_rwy17b.png"},
+      {"type": "STAR", "name": "STAR RWY 35 ISRES 1A / UTKIK 1A", "file": "star_rwy35.png"},
+      {"type": "STAR", "name": "STAR RWY 35 ENPAP 1A / 1B / 1D", "file": "star_rwy35b.png"},
+      {"type": "STAR", "name": "STAR RWY 35 IKARO 2A / MOXOV 1A", "file": "star_rwy35c.png"},
+      {"type": "IAC", "name": "Aproximación VOR Z RWY 35", "file": "iac_vor_rwy35.png"},
+      {"type": "IAC", "name": "Aproximación VOR Y RWY 35", "file": "iac_vor_rwy35b.png"},
+      {"type": "IAC", "name": "Aproximación LOC RWY 35", "file": "iac_loc_rwy35.png"},
+      {"type": "VAC", "name": "Carta de Aproximación Visual", "file": "vac.png"}
+    ]
+  },
+  {
+    "icaoCode": "SPJA",
+    "charts": [
+      {"type": "ADC", "name": "Datos del Aeródromo", "file": "adc.png"}
+    ]
+  },
+  {
+    "icaoCode": "SPGM",
+    "charts": [
+      {"type": "ADC", "name": "Datos del Aeródromo", "file": "adc.png"}
+    ]
+  },
+  {
+    "icaoCode": "SPMS",
+    "charts": [
+      {"type": "ADC", "name": "Datos del Aeródromo", "file": "adc.png"}
+    ]
   }
 ]
