@@ -1,0 +1,92 @@
+[
+  {
+    "url": "https://metar-taf.com/fir/SPIM-Lima",
+    "name": "SPIM Lima FIR - Flight Information Region - Metar-Taf.com",
+    "snippet": "SPIM Lima FIR ; Type, Flight Information Region ; Center, -9.1907, -79.33695 ; Airports, 173 ; NOTAM, Lima FIR NOTAMs ; METARs, 14.",
+    "host_name": "metar-taf.com",
+    "rank": 0,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://en.wikipedia.org/wiki/List_of_flight_information_regions_and_area_control_centers",
+    "name": "List of flight information regions and area control centers - Wikipedia",
+    "snippet": "This is a list of flight information regions (FIRs) and the area control centers (ACCs) that control them based on the ICAO list from 2013\nThis is a list of flight information regions (FIRs) and the area control ... Lima, Lima ACC, Peru. SUEO, Montevideo, Montevideo ACC, Uruguay. SVZM, Maiquetia ...\nThis is a list of flight information regions (FIRs) and the area control centers (ACCs) that control them based on the ICAO list from 2013 . [needs update] ...",
+    "host_name": "en.wikipedia.org",
+    "rank": 1,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://observablehq.com/@openaviation/flight-information-regions",
+    "name": "Flight Information Regions / Open Aviation - Observable Notebooks",
+    "snippet": "Flight Information Regions (FIR) are the largest regular division of airspace in use in the world today.",
+    "host_name": "observablehq.com",
+    "rank": 2,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.icao.int/sites/default/files/sp-files/SAM/Documents/ATSRO04/SAMATSRO4_Item2_WP05.pdf",
+    "name": "[PDF] Analysis of Version 01 of the SAM ATS routes network Flexible Use",
+    "snippet": "Flight Information Region (FIR). An airspace of defined dimensions within which flight information service and alerting service are provided.",
+    "host_name": "www.icao.int",
+    "rank": 3,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://traffic-viz.github.io/data_sources/airspaces.html",
+    "name": "How to access airspace information?",
+    "snippet": "a Flight Information Region (FIR) is the largest regular division of airspace in use in the world today, roughly corresponding to a country, map of the areas\nNote that the FIR and UIR boundaries do not presume anything about how air traffic control is organised in that area. See below a map of the areas ...",
+    "host_name": "traffic-viz.github.io",
+    "rank": 4,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.eurocontrol.int/publication/flight-information-region-firuir-charts-2024",
+    "name": "Flight information region (FIR/UIR) charts - 2024 - Eurocontrol",
+    "snippet": "Here you will find charts depicting the flight information region (FIR/UIR) in Europe, for the lower and upper airspaces.",
+    "host_name": "www.eurocontrol.int",
+    "rank": 5,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.faa.gov/Air_traffic/publications/media/AIP_Basic_w_Amnd_1_and_2_dtd_2-20-25.pdf",
+    "name": "[PDF] aip aeronautical information publication united states of america",
+    "snippet": "GEN 0.4−1 through GEN 0.4−3 . . . . . . . . 5 SEP 24 GEN 0.4− through GEN 0.4−3 . . . . . . . . . 20 FEB 25. GEN 1.7−39 .",
+    "host_name": "www.faa.gov",
+    "rank": 6,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.reddit.com/r/flying/comments/1l4iht2/why_is_it_so_hard_to_find_uptodate_coordinates",
+    "name": "Why is it so hard to find up-to-date coordinates for the FIR boundaries?",
+    "snippet": "The FAA AIP won't have other countries airspace boundaries, you'll need to go to the other countries AIP to seek the info you're looking for.",
+    "host_name": "www.reddit.com",
+    "rank": 7,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://airtrails.weebly.com/peruacute/beyond-the-airspace-flying-around-lima",
+    "name": "BEYOND THE AIRSPACE - FLYING AROUND LIMA",
+    "snippet": "The Airport lacks an Aeronautical Information Publication (AIP) ... Hi Yasmina Platt, searching the web for information about the new Jorge ...\nSPLX is a GA airport approximately 70 km (43 miles) south of Lima. The Airport has one other flight school: Master of the Sky (http://www.",
+    "host_name": "airtrails.weebly.com",
+    "rank": 8,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://aviation.flights/business/services/api/fir/documentation",
+    "name": "Flight Information Region (FIR) API Documentation",
+    "snippet": "This is the documentation to access the Flight Information Region (FIR) API. It returns information about Flight Information Regions.",
+    "host_name": "aviation.flights",
+    "rank": 9,
+    "date": "",
+    "favicon": ""
+  }
+]

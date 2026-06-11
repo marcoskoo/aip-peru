@@ -1,0 +1,1285 @@
+     1→AIP PERÚ
+     2→CORPAC S.A.
+     3→
+     4→ENR 5.1 - 1
+     5→30 JUL 2025
+     6→
+     7→ENR 5.1 ZONAS PROHIBIDAS, RESTRINGIDAS
+     8→Y PELIGROSAS
+     9→
+    10→ENR 5.1 PROHIBITED, RESTRICTED AND
+    11→DANGER AREAS
+    12→
+    13→Identificación, Nombre y Límites Laterales
+    14→
+    15→Límite Superior
+    16→Límite Inferior
+    17→
+    18→Identification, Name & Lateral Limits
+    19→
+    20→Upper Limit
+    21→Lower Limit
+    22→
+    23→1
+    24→SPP01 EL SALTO - TUMBES
+    25→Desde 032400S 0802100W 032400S 0801741W 032439S 0801600W - 032800S 0801600W 032800S 0802100W para o ponto de origem.
+    26→Area bounded by lines joining points
+    27→032400S 0802100W - 032400S 0801741W 032439S 0801600W - 032800S 0801600W 032800S 0802100W to point of origin.
+    28→SPP02 ESTERO SANTA TERESA IQUITOS
+    29→Desde 032200S 0725100W 032200S 0725200W - 032800S 0725800W 032800S 0725200W para o ponto de origem.
+    30→Area bounded by lines joining points
+    31→032200S 0725100W - 032200S 0725200W 032800S 0725800W - 032800S 0725200W
+    32→to point of origin.
+    33→SPP03 PAMPAS DE HUARANGAL
+    34→Circulo con centro en 121544S 0765114W
+    35→con radio de 1 NM.
+    36→Circular area centered on
+    37→121544S 0765114W within a 1 NM radius.
+    38→SPP04 PLANTA MELCHORITA
+    39→Circulo con centro en 131447S 0761756W
+    40→con radio de 2 KM.
+    41→Circular area centered on
+    42→131447S 0761756W within a 2 KM radius.
+    43→SPP05 PLANTA LA LOBERA
+    44→Circulo con centro en 134627S 0761335W
+    45→con radio de 1 KM.
+    46→Circular area centered on
+    47→134627S 0761335W within a 1 KM radius.
+    48→SPP28 LIMA
+    49→Circulo con centro en 120055S 0765718W
+    50→con radio de 2 NM.
+    51→Circular area centered on
+    52→120055S 0765718W within a 2 NM radius.
+    53→SPP29 ISLA SAN LORENZO
+    54→Desde 120212S 0771400W 120630S 0771000W - 120800S 0771100W 120500S 0771600W para o ponto de origem.
+    55→Area bounded by lines joining points
+    56→120212S 0771400W - 120630S 0771000W 120800S 0771100W - 120500S 0771600W
+    57→to point of origin.
+    58→
+    59→2
+    60→
+    61→CORPAC S.A.
+    62→
+    63→1500 FT AGL
+    64→GND
+    65→
+    66→Observaciones
+    67→(Hora de la actividad, tipo de
+    68→restricción, naturaleza del
+    69→peligro, riesgo de interceptación)
+    70→Remarks
+    71→(Time of activity, type of restriction,
+    72→nature of hazard, risk of interception)
+    73→3
+    74→Zona activada de manera permanente.
+    75→Permanently activated zone.
+    76→
+    77→1500 FT AGL
+    78→GND
+    79→
+    80→Zona activada de manera permanente.
+    81→Permanently activated zone.
+    82→
+    83→3000 FT AGL
+    84→GND
+    85→
+    86→Zona activada de manera permanente a 20
+    87→NM al Sureste del JCL DVOR.
+    88→Permanently activated zone at 20 NM
+    89→Southeast of JCL DVOR.
+    90→
+    91→1500 FT AGL
+    92→GND
+    93→
+    94→Zona permanentemente activada a 55 km al
+    95→norte de AD PISCO
+    96→Permanently activated zone 55 km North of
+    97→PISCO AD
+    98→
+    99→1500 FT AGL
+   100→GND
+   101→
+   102→Zona permanentemente activada a 5 km al
+   103→Sur de AD PISCO
+   104→Permanently activated zone 5 km South of
+   105→PISCO AD
+   106→
+   107→3000 FT AMSL
+   108→GND
+   109→
+   110→Zona permanentemente activada.
+   111→Permanently activated zone.
+   112→
+   113→2000 FT AGL
+   114→GND
+   115→
+   116→Zona permanentemente activada.
+   117→Permanently activated zone.
+   118→
+   119→AMDT 33/2025
+   120→
+   121→ENR 5.1 - 2
+   122→30 JUL 2025
+   123→
+   124→AIP PERÚ
+   125→CORPAC S.A.
+   126→
+   127→Identificación, Nombre y Límites Laterales
+   128→
+   129→Límite Superior
+   130→Límite Inferior
+   131→
+   132→Identification, Name & Lateral Limits
+   133→
+   134→Upper Limit
+   135→Lower Limit
+   136→
+   137→1
+   138→
+   139→2
+   140→
+   141→SPP69 PISCO
+   142→Desde 134652S 0763000W 134652S 0761740W - 134720S 0761740W 134900S 0761825W - 135126S 0761455W 134913S 0761435W - 134942S 0761043W 135404S 0761043W - 140617S 0760125W 142000S 0760000W - 142642S 0760000W 142642S 0763000W para o ponto de origem.
+   143→Area bounded by lines joining points
+   144→134652S 0763000W - 134652S 0761740W 134720S 0761740W - 134900S 0761825W 135126S 0761455W - 134913S 0761435W 134942S 0761043W - 135404S 0761043W 140617S 0760125W - 142000S 0760000W 142642S 0760000W - 142642S 0763000W
+   145→to point of origin.
+   146→SPP72 PAMPAS DE LA JOYA
+   147→Desde 163200S 0714100W 170630S 0711630W - 173200S 0712400W 165000S 0722800W para o ponto de origem.
+   148→Area bounded by lines joining points
+   149→163200S 0714100W - 170630S 0711630W 173200S 0712400W - 165000S 0722800W
+   150→to point of origin.
+   151→SPP74 MAZO CRUZ
+   152→Desde 163600S 0701400W 164000S 0690200W 171300S 0693700W para o ponto de origem.
+   153→Area bounded by lines joining points
+   154→163600S 0701400W - 164000S 0690200W 171300S 0693700W to point of origin.
+   155→SPP75 ILAVE
+   156→Desde 153900S 0700600W 160300S 0704600W 161500S 0703500W - 162100S 0684600W 160900S 0691500W para o ponto de origem.
+   157→Area bounded by lines joining points
+   158→153900S 0700600W - 160300S 0704600W 161500S 0703500W - 162100S 0684600W 160900S 0691500W to point of origin.
+   159→SPP78 LA BREA
+   160→Desde 034600S 0803400W 041200S 0804300W - 043800S 0810300W 042300S 0810300W - 042300S 0811500W 041900S 0811700W para o ponto de origem.
+   161→Area bounded by lines joining points
+   162→034600S 0803400W - 041200S 0804300W 043800S 0810300W - 042300S 0810300W 042300S 0811500W - 041900S 0811700W
+   163→to point of origin.
+   164→
+   165→2500 FT AMSL
+   166→GND
+   167→
+   168→AMDT 33/2025
+   169→
+   170→Observaciones
+   171→(Hora de la actividad, tipo de
+   172→restricción, naturaleza del
+   173→peligro, riesgo de interceptación)
+   174→Remarks
+   175→(Time of activity, type of restriction,
+   176→nature of hazard, risk of interception)
+   177→3
+   178→Zona permanentemente activada. Reserva
+   179→Natural de Paracas, Concentración de aves
+   180→y protección para la fauna sensible.
+   181→Permanently activated zone. Paracas
+   182→Natural Reserve. Concentration of birds and
+   183→protection for sensitive fauna.
+   184→
+   185→UNL
+   186→GND
+   187→
+   188→Zona permanentemente activada.
+   189→Permanently activated zone.
+   190→
+   191→FL150
+   192→GND
+   193→
+   194→Zona permanentemente activada.
+   195→Permanently activated zone.
+   196→
+   197→FL150
+   198→GND
+   199→
+   200→Zona permanentemente activada.
+   201→Permanently activated zone.
+   202→
+   203→UNL
+   204→GND
+   205→
+   206→Zona permanentemente activada.
+   207→Permanently activated zone.
+   208→
+   209→CORPAC S.A.
+   210→
+   211→AIP PERÚ
+   212→CORPAC S.A.
+   213→
+   214→ENR 5.1 - 3
+   215→30 JUL 2025
+   216→
+   217→Identificación, Nombre y Límites Laterales
+   218→
+   219→Límite Superior
+   220→Límite Inferior
+   221→
+   222→Identification, Name & Lateral Limits
+   223→
+   224→Upper Limit
+   225→Lower Limit
+   226→
+   227→1
+   228→SPP81 QUERECOTILLO
+   229→Desde 042000S 0803600W 044000S 0801000W - 045500S 0801000W 045500S 0804500W para o ponto de origem.
+   230→Area bounded by lines joining points
+   231→042000S 0803600W - 044000S 0801000W 045500S 0801000W - 045500S 0804500W
+   232→to point of origin.
+   233→SPP82 PAITA
+   234→Desde 045400S 0812500W 045400S 0810900W 051600S 0804700W - 060000S 0805000W 060000S 0812500W para o ponto de origem.
+   235→Area bounded by lines joining points
+   236→045400S 0812500W - 045400S 0810900W 051600S 0804700W - 060000S 0805000W 060000S 0812500W to point of origin.
+   237→SPP83 BAYOVAR
+   238→Desde 053500S 0804200W 055100S 0804900W - 062000S 0802600W 062000S 0801600W para o ponto de origem.
+   239→Area bounded by lines joining points
+   240→053500S 0804200W - 055100S 0804900W 062000S 0802600W - 062000S 0801600W
+   241→to point of origin.
+   242→SPP88 LIMA
+   243→Desde 120217S 0770303W por un arco
+   244→de sentido horario de 2 KM de radio
+   245→con centro no ponto de coordenadas
+   246→120239S 0770201W 120301S 0770059W 120429S 0770131W por un arco de sentido
+   247→horario de 2 KM de radio con centro no
+   248→ponto de coordenadas 120407S 0770233W
+   249→120344S 0770335W para o ponto de origem.
+   250→Area bounded by lines joining points
+   251→120217S 0770303W then along the
+   252→clockwise arc of a circle of 2 KM radius
+   253→centred on 120239S 0770201W to
+   254→120301S 0770059W - 120429S 0770131W
+   255→then along the clockwise arc of a circle of 2
+   256→KM radius centred on 120407S 0770233W to
+   257→120344S 0770335W to point of origin.
+   258→SPP89 LIMA
+   259→Desde 120636S 0765913W por un arco
+   260→de sentido horario de 1 KM de radio
+   261→con centro no ponto de coordenadas
+   262→120603S 0765913W 120530S 0765913W 120530S 0765808W por un arco de sentido
+   263→horario de 1 KM de radio con centro no
+   264→
+   265→2
+   266→
+   267→CORPAC S.A.
+   268→
+   269→FL070
+   270→GND
+   271→
+   272→FL080
+   273→GND
+   274→
+   275→Observaciones
+   276→(Hora de la actividad, tipo de
+   277→restricción, naturaleza del
+   278→peligro, riesgo de interceptación)
+   279→Remarks
+   280→(Time of activity, type of restriction,
+   281→nature of hazard, risk of interception)
+   282→3
+   283→Zona permanentemente activada.
+   284→Permanently activated zone.
+   285→
+   286→Zona permanentemente activada. Polígono
+   287→FAP.
+   288→Permanently activated zone. FAP Polygon.
+   289→
+   290→2000 FT AGL
+   291→GND
+   292→
+   293→Zona permanentemente activada.
+   294→Permanently activated zone.
+   295→
+   296→4000 FT AMSL
+   297→GND
+   298→
+   299→Zona permanentemente activada.
+   300→Permanently activated zone.
+   301→
+   302→4000 FT AMSL
+   303→GND
+   304→
+   305→Zona permanentemente activada. Cuartel
+   306→General Ejército Peruano. Embajada de
+   307→EE.UU. Prohibido actividades aéreas,
+   308→excepto aeronaves de Estado con previa
+   309→coordinación con LAS PALMAS TWR.
+   310→Permanently activated zone. Peruvian Army
+   311→Headquarters. US Embassy Air activities
+   312→
+   313→AMDT 33/2025
+   314→
+   315→ENR 5.1 - 4
+   316→30 JUL 2025
+   317→
+   318→AIP PERÚ
+   319→CORPAC S.A.
+   320→
+   321→Identificación, Nombre y Límites Laterales
+   322→
+   323→Límite Superior
+   324→Límite Inferior
+   325→
+   326→Identification, Name & Lateral Limits
+   327→
+   328→Upper Limit
+   329→Lower Limit
+   330→
+   331→1
+   332→ponto de coordenadas 120602S 0765808W
+   333→120635S 0765808W para o ponto de origem.
+   334→Area bounded by lines joining points
+   335→120636S 0765913W then along the
+   336→clockwise arc of a circle of 1 KM radius
+   337→centred on 120603S 0765913W to
+   338→120530S 0765913W - 120530S 0765808W
+   339→then along the clockwise arc of a circle of 1
+   340→KM radius centred on 120602S 0765808W to
+   341→120635S 0765808W to point of origin.
+   342→SPP92 CNOIS
+   343→Desde 122943S 0764817W 122940S 0764713W - 123055S 0764713W 123029S 0764809W para o ponto de origem.
+   344→Area bounded by lines joining points
+   345→122943S 0764817W - 122940S 0764713W 123055S 0764713W - 123029S 0764809W
+   346→to point of origin.
+   347→
+   348→2
+   349→
+   350→SPP93 ZED ILO
+   351→Desde 174113S 0711956W 174055S 0712030W 174021S 0712009W - 174018S 0711946W 174053S 0711840W - 174054S 0711840W 174115S 0711944W - 174114S 0711950W 174114S 0711953W para o ponto de origem.
+   352→Area bounded by lines joining points
+   353→174113S 0711956W - 174055S 0712030W 174021S 0712009W - 174018S 0711946W 174053S 0711840W - 174054S 0711840W 174115S 0711944W - 174114S 0711950W 174114S 0711953W to point of origin.
+   354→SPP94 LA PAMPILLA
+   355→Desde 115416S 0770801W 115605S 0770810W - 115607S 0770739W 115415S 0770731W para o ponto de origem.
+   356→Area bounded by lines joining points
+   357→115416S 0770801W - 115605S 0770810W 115607S 0770739W - 115415S 0770731W
+   358→to point of origin.
+   359→
+   360→AMDT 33/2025
+   361→
+   362→3000 FT AMSL
+   363→GND
+   364→
+   365→1500 FT AMSL
+   366→GND
+   367→
+   368→2000 FT AMSL
+   369→GND
+   370→
+   371→Observaciones
+   372→(Hora de la actividad, tipo de
+   373→restricción, naturaleza del
+   374→peligro, riesgo de interceptación)
+   375→Remarks
+   376→(Time of activity, type of restriction,
+   377→nature of hazard, risk of interception)
+   378→3
+   379→prohibited, except state aircraft with prior
+   380→coordination with LAS PALMAS TWR.
+   381→
+   382→Zona permanentemente activada. Centro
+   383→Nacional de Operaciones de Imágenes
+   384→Satelitales (CNOIS) y Base Militar FAP.
+   385→Prohibido actividades aéreas, excepto
+   386→aeronaves de Estado y/o civiles con previa
+   387→coordinación con LAS PALMAS TWR.
+   388→Permanently activated zone. National Center
+   389→for Satellite Image Operations (CNOIS) and
+   390→FAP Military Base. Air activities prohibited,
+   391→except for State and/or civil aircraft with prior
+   392→coordination with LAS PALMAS TWR.
+   393→Activada de manera permanente. Prohibido
+   394→sobrevuelo de aeronaves (aviones y
+   395→helicópteros) y aeronaves pilotadas a
+   396→distancia.
+   397→Permanently activated. Overflight by aircraft
+   398→(planes and helicopters) and remotely piloted
+   399→aircraft is prohibited.
+   400→
+   401→Activada de manera permanente. Prohibido
+   402→sobrevuelo de aeronaves (aviones y
+   403→helicópteros) - y sistemas de aeronaves
+   404→pilotadas a distancia civiles y militares.
+   405→Permanently activated. Area Overflight of
+   406→aircraft (aircraft and helicopters) - and civil
+   407→and military remotely piloted aircraft systems
+   408→is prohibited.
+   409→
+   410→CORPAC S.A.
+   411→
+   412→AIP PERÚ
+   413→CORPAC S.A.
+   414→
+   415→ENR 5.1 - 5
+   416→30 JUL 2025
+   417→
+   418→Identificación, Nombre
+   419→y Límites Laterales
+   420→
+   421→Límite Superior
+   422→Límite Inferior
+   423→
+   424→Identification, Name & Lateral Limits
+   425→
+   426→Upper Limit
+   427→Lower Limit
+   428→
+   429→1
+   430→SPR40 LAMBAYEQUE - PICSI
+   431→Circulo con centro en 064307S 0794540W
+   432→con radio de 1 NM.
+   433→Circular area centered on
+   434→064307S 0794540W within a 1 NM radius.
+   435→
+   436→2
+   437→1500 FT AGL
+   438→GND
+   439→
+   440→SPR41 CAJAMARCA - HUACARIZ
+   441→Circulo con centro en 071122S 0782910W
+   442→con radio de 1 NM.
+   443→Circular area centered on
+   444→071122S 0782910W within a 1 NM radius.
+   445→
+   446→1500 FT AGL
+   447→GND
+   448→
+   449→SPR42 HUANCAYO - HUAMANCACA
+   450→Circulo con centro en 120518S 0751352W
+   451→con radio de 1 NM.
+   452→Circular area centered on
+   453→120518S 0751352W within a 1 NM radius.
+   454→
+   455→1500 FT AGL
+   456→GND
+   457→
+   458→SPR43 CUSCO - QUENCORO
+   459→Circulo con centro en 133232S 0715334W
+   460→con radio de 1 NM.
+   461→Circular area centered on
+   462→133232S 0715334W within a 1 NM radius.
+   463→
+   464→1500 FT AGL
+   465→
+   466→SPR44 PUNO - YANAMAYO
+   467→Circulo con centro en 154810S 0700202W
+   468→con radio de 1 NM.
+   469→Circular area centered on
+   470→154810S 0700202W within a 1 NM radius.
+   471→
+   472→1500 FT AGL
+   473→GND
+   474→
+   475→SPR45 AREQUIPA - SOCABAYA
+   476→Circulo con centro en 162905S 0713010W
+   477→con radio de 1 NM.
+   478→
+   479→1500 FT AGL
+   480→GND
+   481→
+   482→CORPAC S.A.
+   483→
+   484→GND
+   485→
+   486→Observaciones
+   487→(Hora de la actividad, tipo de
+   488→restricción, naturaleza del
+   489→peligro, riesgo de interceptación)
+   490→Remarks
+   491→(Time of activity, type of restriction,
+   492→nature of hazard, risk of interception)
+   493→3
+   494→Zona permanentemente activada.
+   495→Establecimiento Penitenciario. Prohibido
+   496→actividades aéreas, excepto para aeronaves
+   497→de Estado.
+   498→Permanently activated zone. Penitentiary
+   499→Establishment. Air activities prohibited,
+   500→except for state aircraft.
+   501→Zona permanentemente activada.
+   502→Establecimiento penitenciario. Prohibido
+   503→actividades aéreas, excepto el sobrevuelo
+   504→para aterrizar en RWY 34 o despegar de
+   505→RWY 16 de AD SPJR. Toda aeronave debe
+   506→mantener comunicación en ambos sentidos
+   507→con CAJAMARCA TWR.
+   508→Permanently activated zone. Penitentiary
+   509→establishment. Air activities prohibited,
+   510→except overflight to land on RWY 34 or
+   511→take off from RWY 16 of AD SPJR. All
+   512→aircraft must maintain communication in both
+   513→directions with CAJAMARCA TWR.
+   514→Zona permanentemente activada.
+   515→Establecimiento Penitenciario. Prohibido
+   516→actividades aéreas, excepto para aeronaves
+   517→de Estado.
+   518→Permanently activated zone. Penitentiary
+   519→Establishment. Air activities prohibited,
+   520→except for state aircraft.
+   521→Zona permanentemente activada.
+   522→Establecimiento penitenciario. Prohibido
+   523→actividades aéreas, excepto el sobrevuelo
+   524→para aterrizar en RWY 28 o despegar de
+   525→RWY 10 de AD SPZO. Toda aeronave debe
+   526→mantener comunicación en ambos sentidos
+   527→con CUSCO TWR.
+   528→Zona permanentemente activada.
+   529→Penitentiary establishment. Air activities
+   530→prohibited, except overflight to land on RWY
+   531→28 or take off from RWY 10 of SPZO AD. All
+   532→aircraft must maintain communication in both
+   533→directions with CUSCO TWR.
+   534→Zona permanentemente activada.
+   535→Establecimiento Penitenciario. Prohibido
+   536→actividades aéreas, excepto para aeronaves
+   537→de Estado.
+   538→Permanently activated zone. Penitentiary
+   539→Establishment. Air activities prohibited,
+   540→except for state aircraft.
+   541→Zona permanentemente activada.
+   542→Establecimiento Penitenciario. Prohibido
+   543→
+   544→AMDT 33/2025
+   545→
+   546→ENR 5.1 - 6
+   547→30 JUL 2025
+   548→
+   549→AIP PERÚ
+   550→CORPAC S.A.
+   551→
+   552→Identificación, Nombre
+   553→y Límites Laterales
+   554→
+   555→Límite Superior
+   556→Límite Inferior
+   557→
+   558→Identification, Name & Lateral Limits
+   559→
+   560→Upper Limit
+   561→Lower Limit
+   562→
+   563→1
+   564→Circular area centered on
+   565→162905S 0713010W within a 1 NM radius.
+   566→
+   567→2
+   568→
+   569→SPR46 LIMA - MIGUEL CASTRO CASTRO
+   570→Circulo con centro en 115900S 0765923W
+   571→con radio de 1 NM.
+   572→Circular area centered on
+   573→115900S 0765923W within a 1 NM radius.
+   574→
+   575→1500 FT AGL
+   576→GND
+   577→
+   578→SPR61 PUENTE PIEDRA
+   579→Circulo con centro en 115340S 0770530W
+   580→con radio de 1.5 NM.
+   581→Circular area centered on
+   582→115340S 0770530W within a 1.5 NM radius.
+   583→SPR66 ZONA DE HUARANGAL
+   584→Circulo con centro en 114757S 0770043W
+   585→con radio de 1.3 NM.
+   586→Circular area centered on
+   587→114757S 0770043W within a 1.3 NM radius.
+   588→SPR68 CORREDOR AEREO
+   589→Desde 121200S 0770323W 121200S 0765000W - 130440S 0761735W 131051S 0763017W para o ponto de origem.
+   590→Area bounded by lines joining points
+   591→121200S 0770323W - 121200S 0765000W 130440S 0761735W - 131051S 0763017W
+   592→to point of origin.
+   593→
+   594→3000 FT AGL
+   595→GND
+   596→
+   597→AMDT 33/2025
+   598→
+   599→Observaciones
+   600→(Hora de la actividad, tipo de
+   601→restricción, naturaleza del
+   602→peligro, riesgo de interceptación)
+   603→Remarks
+   604→(Time of activity, type of restriction,
+   605→nature of hazard, risk of interception)
+   606→3
+   607→actividades aéreas, excepto para aeronaves
+   608→de Estado.
+   609→Permanently activated zone. Penitentiary
+   610→Establishment. Air activities prohibited,
+   611→except for state aircraft.
+   612→Zona permanentemente activada.
+   613→Establecimiento Penitenciario. Prohibido
+   614→actividades aéreas, excepto para aeronaves
+   615→de Estado.
+   616→Permanently activated zone. Penitentiary
+   617→Establishment. Air activities prohibited,
+   618→except for state aircraft.
+   619→Zona permanentemente activada.
+   620→Permanently activated zone.
+   621→
+   622→3000 FT AGL
+   623→GND
+   624→
+   625→Zona permanentemente activada.
+   626→Permanently activated zone.
+   627→
+   628→3000 FT AMSL
+   629→GND
+   630→
+   631→Zona permanentemente activada. Autoridad
+   632→responsable: Fuerza Aérea del Perú (FAP).
+   633→Tipo de operaciones: Aeronaves de Estado
+   634→(vuelos militares, OMC, OPM, entre otros).
+   635→Aeronaves civiles, de acuerdo con los
+   636→lineamientos descritos a continuación.
+   637→Dependencia ATS responsable: LAS
+   638→PALMAS APP, ÚNICAMENTE para
+   639→aeronaves de Estado. Frecuencia principal:
+   640→127.7 MHz. Frecuencia alterna: 122.2
+   641→MHz. LAS PALMAS TWR, para aeronaves
+   642→civiles. Frecuencia principal: 127.7 MHz.
+   643→Frecuencia alterna: 122.2 MHz. Servicio ATS
+   644→brindado: Control de tránsito aéreo militar
+   645→para aeronaves de Estado. Información
+   646→de vuelo y alerta para aeronaves civiles.
+   647→Reglas de operación para aeronaves civiles:
+   648→Mantener comunicaciones aeroterrestres
+   649→en ambos sentidos con la dependencia
+   650→ATS correspondiente. Toda aeronave
+   651→que despegue de un aeródromo ubicado
+   652→dentro de la zona SPR 68, que vaya a
+   653→operar sobre los 3000 pies, debe ascender
+   654→sobre la vertical del aeródromo a un
+   655→nivel previamente coordinado entre
+   656→LAS PALMAS TWR y LIMA APP. Podrá
+   657→seguirse otro encaminamiento, previamente
+   658→solicitado por la tripulación, de acuerdo
+   659→
+   660→CORPAC S.A.
+   661→
+   662→AIP PERÚ
+   663→CORPAC S.A.
+   664→
+   665→ENR 5.1 - 7
+   666→30 JUL 2025
+   667→
+   668→Identificación, Nombre
+   669→y Límites Laterales
+   670→
+   671→Límite Superior
+   672→Límite Inferior
+   673→
+   674→Identification, Name & Lateral Limits
+   675→
+   676→Upper Limit
+   677→Lower Limit
+   678→
+   679→1
+   680→
+   681→2
+   682→
+   683→SPR68A CORREDOR AEREO ALFA
+   684→Desde 130440S 0761735W 132500S 0760500W - 133000S 0760400W 134200S 0760000W - 133900S 0761600W 131051S 0763017W para o ponto de origem.
+   685→Area bounded by lines joining points
+   686→130440S 0761735W - 132500S 0760500W 133000S 0760400W - 134200S 0760000W 133900S 0761600W - 131051S 0763017W
+   687→to point of origin.
+   688→
+   689→3000 FT AMSL
+   690→GND
+   691→
+   692→CORPAC S.A.
+   693→
+   694→Observaciones
+   695→(Hora de la actividad, tipo de
+   696→restricción, naturaleza del
+   697→peligro, riesgo de interceptación)
+   698→Remarks
+   699→(Time of activity, type of restriction,
+   700→nature of hazard, risk of interception)
+   701→3
+   702→con las condiciones de tránsito. Toda
+   703→aeronave que vaya a aterrizar en un
+   704→aeródromo ubicado dentro de la zona
+   705→SPR 68 proseguirá de acuerdo con lo
+   706→coordinado entre LAS PALMAS TWR
+   707→y LIMA APP. Cualquier otra operación
+   708→dentro de la zona SPR 68 estará sujeta a
+   709→la aprobación de LAS PALMAS TWR. Todo
+   710→vuelo que vaya a operar en la zona SPR
+   711→68 debe presentar un plan de vuelo, con
+   712→una anticipación mínima de 60 minutos
+   713→a la hora prevista de fuera de calzos,
+   714→vía correo electrónico a las siguientes
+   715→direcciones: aislaspalmas@gmail.com y
+   716→aisspso@corpac.gob.pe Sólo se permiten
+   717→operaciones VFR diurnas. Toda aeronave
+   718→que vaya a operar en la zona SPR 68 debe
+   719→llevar activado el equipo transponder en el
+   720→código asignado por LAS PALMAS TWR,
+   721→los cuáles se encuentran en el rango de
+   722→1340 a 1377. Las aeronaves que tengan
+   723→el equipo transponder inoperativo, deben
+   724→obtener la aprobación excepcional de LAS
+   725→PALMAS TWR para volar a sus bases de
+   726→mantenimiento con la finalidad de reparar
+   727→dicho equipo. Las rutas de vuelo VFR deben
+   728→considerar las SPR, SPP y SPD publicadas
+   729→en la AIP.
+   730→La zona se activará previa coordinación
+   731→entre LAS PALMAS TWR y PISCO
+   732→TWR. Se emitirá NOTAM. Autoridad
+   733→responsable: Fuerza Aérea del Perú (FAP).
+   734→Las comunicaciones podrán ser delegadas
+   735→a PISCO TWR. Tipo de operaciones:
+   736→Aeronaves de Estado (vuelos militares,
+   737→OMC, OPM, entre otros). Aeronaves
+   738→civiles, de acuerdo con los lineamientos
+   739→descritos a continuación. Dependencia
+   740→ATS responsable: LAS PALMAS APP,
+   741→UNICAMENTE para aeronaves de Estado.
+   742→Frecuencia principal: 127.7 MHz. Frecuencia
+   743→alterna: 122.2 MHz. LAS PALMAS TWR,
+   744→para aeronaves civiles. Frecuencia principal:
+   745→127.7 MHz. Frecuencia alterna: 122.2
+   746→MHz. Servicio ATS brindado: Control de
+   747→tránsito aéreo militar para aeronaves de
+   748→Estado. Información de vuelo y alerta para
+   749→aeronaves civiles. Reglas de operación para
+   750→aeronaves civiles: Mantener comunicaciones
+   751→aeroterrestres en ambos sentidos con la
+   752→dependencia ATS correspondiente. Toda
+   753→
+   754→AMDT 33/2025
+   755→
+   756→ENR 5.1 - 8
+   757→30 JUL 2025
+   758→
+   759→AIP PERÚ
+   760→CORPAC S.A.
+   761→
+   762→Identificación, Nombre
+   763→y Límites Laterales
+   764→
+   765→Límite Superior
+   766→Límite Inferior
+   767→
+   768→Identification, Name & Lateral Limits
+   769→
+   770→Upper Limit
+   771→Lower Limit
+   772→
+   773→1
+   774→
+   775→2
+   776→
+   777→SPR70 SAN JUAN DE MARCONA
+   778→Desde 153200S 0741000W 155600S 0742900W - 145600S 0754500W 142500S 0751300W para o ponto de origem.
+   779→Area bounded by lines joining points
+   780→153200S 0741000W - 155600S 0742900W 145600S 0754500W - 142500S 0751300W
+   781→to point of origin.
+   782→SPR71 VITOR
+   783→Desde 163200S 0725800W 162600S 0714600W - 163200S 0714100W 165000S 0722800W para o ponto de origem.
+   784→Area bounded by lines joining points
+   785→163200S 0725800W - 162600S 0714600W 163200S 0714100W - 165000S 0722800W
+   786→to point of origin.
+   787→SPR73 ESTIQUE
+   788→Desde 163200S 0711600W 163400S 0704000W 173800S 0693600W - 174200S 0694700W 180000S 0701100W para o ponto de origem.
+   789→Area bounded by lines joining points
+   790→163200S 0711600W - 163400S 0704000W 173800S 0693600W - 174200S 0694700W 180000S 0701100W to point of origin.
+   791→
+   792→FL120
+   793→GND
+   794→
+   795→AMDT 33/2025
+   796→
+   797→Observaciones
+   798→(Hora de la actividad, tipo de
+   799→restricción, naturaleza del
+   800→peligro, riesgo de interceptación)
+   801→Remarks
+   802→(Time of activity, type of restriction,
+   803→nature of hazard, risk of interception)
+   804→3
+   805→aeronave que despegue de un aeródromo
+   806→ubicado dentro de la zona SPR 68A, que
+   807→vaya a operar sobre los 3000 pies, debe
+   808→ascender sobre la vertical del aeródromo
+   809→a un nivel previamente coordinado entre
+   810→LAS PALMAS TWR y PISCO TWR. Podrá
+   811→seguirse otro encaminamiento, previamente
+   812→solicitado por la tripulación, de acuerdo
+   813→con las condiciones de tránsito. Toda
+   814→aeronave que vaya a aterrizar en un
+   815→aeródromo ubicado dentro de la zona
+   816→SPR 68A proseguirá de acuerdo con lo
+   817→coordinado entre LAS PALMAS TWR o
+   818→PISCO TWR, según correspondan. Todo
+   819→vuelo que vaya a operar en la zona SPR
+   820→68A debe presentar un plan de vuelo, con
+   821→una anticipación mínima de 60 minutos
+   822→a la hora prevista de fuera de calzos,
+   823→vía correo electrónico a las siguientes
+   824→direcciones: aislaspalmas@gmail.com y
+   825→aisspso@corpac.gob.pe
+   826→Zona activada de manera permanente.
+   827→Operaciones militares, ingresos con
+   828→autorización.
+   829→Permanently activated area. Military
+   830→operations, entry with authorization.
+   831→
+   832→FL180
+   833→GND
+   834→
+   835→Zona activada previa emisión de NOTAM.
+   836→Zona de entrenamiento militar. Operaciones
+   837→militares, ingresos con autorización.
+   838→Zone activated after issuance of NOTAM.
+   839→Military training area.
+   840→Military operations, entry with authorization.
+   841→
+   842→FL180
+   843→GND
+   844→
+   845→Zona activada de manera permanente.
+   846→Prohibido actividades aéreas, excepto el
+   847→sobrevuelo para ejecutar las SID y STAR
+   848→vigentes para la RWY 20 y RWY 02. Toda
+   849→aeronave debe mantener comunicación en
+   850→ambos sentidos con TACNA TWR.
+   851→Permanently activated area. Air activities
+   852→are prohibited, except for overflight to
+   853→execute SIDs and STARs in force for RWY
+   854→20 and RWY 02. All aircraft must maintain
+   855→communication in both directions with
+   856→TACNA TWR.
+   857→
+   858→CORPAC S.A.
+   859→
+   860→AIP PERÚ
+   861→CORPAC S.A.
+   862→
+   863→ENR 5.1 - 9
+   864→30 JUL 2025
+   865→
+   866→Identificación, Nombre
+   867→y Límites Laterales
+   868→
+   869→Límite Superior
+   870→Límite Inferior
+   871→
+   872→Identification, Name & Lateral Limits
+   873→
+   874→Upper Limit
+   875→Lower Limit
+   876→
+   877→1
+   878→
+   879→2
+   880→
+   881→SPR76 ILO
+   882→Desde 173200S 0712400W 170630S 0711630W - 175700S 0704000W 175400S 0705000W para o ponto de origem.
+   883→Area bounded by lines joining points
+   884→173200S 0712400W - 170630S 0711630W 175700S 0704000W - 175400S 0705000W
+   885→to point of origin.
+   886→SPR77 ZORRITOS
+   887→Desde 033800S 0805700W 033800S 0803100W - 034600S 0803400W 041900S 0811700W - 041300S 0811800W 035800S 0805800W para o ponto de origem.
+   888→Area bounded by lines joining points
+   889→033800S 0805700W - 033800S 0803100W 034600S 0803400W - 041900S 0811700W 041300S 0811800W - 035800S 0805800W
+   890→to point of origin.
+   891→SPR80 TALARA
+   892→Desde 042300S 0811450W 042300S 0810300W 044000S 0810300W - 044000S 0810838W 043423S 0811430W para o ponto de origem.
+   893→Area bounded by lines joining points
+   894→042300S 0811450W - 042300S 0810300W 044000S 0810300W - 044000S 0810838W 043423S 0811430W to point of origin.
+   895→
+   896→FL180
+   897→GND
+   898→
+   899→SPR84 LAMBAYEQUE
+   900→Desde 052300S 0802300W 063600S 0794700W - 062700S 0791300W 054000S 0793800W para o ponto de origem.
+   901→Area bounded by lines joining points
+   902→052300S 0802300W - 063600S 0794700W 062700S 0791300W - 054000S 0793800W
+   903→to point of origin.
+   904→SPR85 CHICLAYO
+   905→Desde 065600S 0795400W 064600S 0792200W - 071300S 0785600W 074600S 0791000W para o ponto de origem.
+   906→
+   907→CORPAC S.A.
+   908→
+   909→Observaciones
+   910→(Hora de la actividad, tipo de
+   911→restricción, naturaleza del
+   912→peligro, riesgo de interceptación)
+   913→Remarks
+   914→(Time of activity, type of restriction,
+   915→nature of hazard, risk of interception)
+   916→3
+   917→Zona activada previa emisión de NOTAM.
+   918→Zona de entrenamiento militar.
+   919→Zone activated after issuance of NOTAM.
+   920→Military training area.
+   921→
+   922→3000 FT AGL
+   923→GND
+   924→
+   925→Zona activa de manera permanente. Zona
+   926→de entrenamiento FAP.
+   927→Permanently active area. FAP training area
+   928→
+   929→FL240
+   930→GND
+   931→
+   932→Zona activa de manera permanente. Zona
+   933→de trabajo de la Fuerza Aérea del Perú
+   934→(FAP). Ingreso a los circuitos de espera
+   935→de los procedimientos instrumentales del
+   936→Aeropuerto de Talara (SPYL) requieren
+   937→previa coordinación entre dependencias ATS
+   938→de Talara y El Pato. Toda aeronave civil que
+   939→opere en las inmediaciones del Aeropuerto
+   940→de Talara debe mantener comunicación
+   941→aeroterrestre en ambos sentidos con
+   942→dependencia ATS Talara.
+   943→Permanently active area. Training area of
+   944→the Peruvian Air Force (FAP). Entry to the
+   945→holding patterns of instrumental procedures
+   946→of the Talara Airport (SPYL) require prior
+   947→coordination between ATS units of Talara
+   948→and El Pato. All civil aircraft operating in the
+   949→vicinity of the Talara Airport must maintain
+   950→air-ground communication in both directions
+   951→with the ATS Talara unit.
+   952→Zona activada previa emisión de NOTAM.
+   953→Zona de entrenamiento militar. Cuando
+   954→se encuentra activada, se prohibe toda
+   955→actividad aérea, excepto aeronaves de
+   956→Estado.
+   957→Zone activated after issuance of NOTAM.
+   958→Military training area. When it is activated, all
+   959→air activity is prohibited, except State aircraft.
+   960→Zona activada previa emisión de NOTAM.
+   961→Zona de entrenamiento militar. Cuando
+   962→se encuentra activada, se prohibe toda
+   963→
+   964→FL240
+   965→GND
+   966→
+   967→FL230
+   968→GND
+   969→
+   970→AMDT 33/2025
+   971→
+   972→ENR 5.1 - 10
+   973→30 JUL 2025
+   974→
+   975→AIP PERÚ
+   976→CORPAC S.A.
+   977→
+   978→Identificación, Nombre
+   979→y Límites Laterales
+   980→
+   981→Límite Superior
+   982→Límite Inferior
+   983→
+   984→Identification, Name & Lateral Limits
+   985→
+   986→Upper Limit
+   987→Lower Limit
+   988→
+   989→1
+   990→Area bounded by lines joining points
+   991→065600S 0795400W - 064600S 0792200W 071300S 0785600W - 074600S 0791000W
+   992→to point of origin.
+   993→
+   994→2
+   995→
+   996→SPR86 CHICLAYO
+   997→Circulo con centro en 064000S 0805400W
+   998→con radio de 15 NM.
+   999→Circular area centered on
+  1000→064000S 0805400W within a 15 NM radius.
+  1001→SPR87 CHICLAYO
+  1002→Desde 062100S 0804300W 062700S 0805100W - 080400S 0793400W 075800S 0792600W para o ponto de origem.
+  1003→Area bounded by lines joining points
+  1004→062100S 0804300W - 062700S 0805100W 080400S 0793400W - 075800S 0792600W
+  1005→to point of origin.
+  1006→SPR90 VRAEM
+  1007→Desde 105951S 0745000W 124326S 0735358W - 121256S 0724114W 104024S 0733632W para o ponto de origem.
+  1008→Area bounded by lines joining points
+  1009→105951S 0745000W - 124326S 0735358W 121256S 0724114W - 104024S 0733632W
+  1010→to point of origin.
+  1011→SPR91 LAS PALMAS
+  1012→Desde 121200S 0770323W 121200S 0765000W - 120321S 0765610W 120932S 0770446W para o ponto de origem.
+  1013→Area bounded by lines joining points
+  1014→121200S 0770323W - 121200S 0765000W 120321S 0765610W - 120932S 0770446W
+  1015→to point of origin.
+  1016→
+  1017→FL100
+  1018→MSL
+  1019→
+  1020→AMDT 33/2025
+  1021→
+  1022→Observaciones
+  1023→(Hora de la actividad, tipo de
+  1024→restricción, naturaleza del
+  1025→peligro, riesgo de interceptación)
+  1026→Remarks
+  1027→(Time of activity, type of restriction,
+  1028→nature of hazard, risk of interception)
+  1029→3
+  1030→actividad aérea, excepto aeronaves de
+  1031→Estado.
+  1032→Zone activated after issuance of NOTAM.
+  1033→Military training area. When it is activated, all
+  1034→air activity is prohibited, except State aircraft.
+  1035→Zona activa de manera permanente.
+  1036→Polígono FAP.
+  1037→Permanently active area. FAP polygon.
+  1038→
+  1039→UNL
+  1040→FL410
+  1041→
+  1042→Corredor supersónico se activa a solicitud,
+  1043→bajo coordinación del ATC y emisión de
+  1044→NOTAM.
+  1045→
+  1046→FL080
+  1047→GND
+  1048→
+  1049→Zona activada de manera permanente.
+  1050→Todas las aeronaves civiles deben
+  1051→establecer contacto radiotelefónico en
+  1052→ambos sentidos con la dependencia ATS
+  1053→más cercana y cumplir con lo establecido en
+  1054→la AIP ENR 5.2-1 Zona ADIZ.
+  1055→
+  1056→2000 FT AMSL
+  1057→
+  1058→Autoridad responsable: Fuerza Aérea
+  1059→del Perú (FAP). Activada de manera
+  1060→permanente. Tipo de operaciones:
+  1061→Aeronaves de Estado (vuelos militares,
+  1062→OMC, OPM, entre otros). Aeronaves
+  1063→civiles, de acuerdo a los lineamientos
+  1064→descritos a continuación. Dependencia ATS
+  1065→responsable: Las Palmas Torre. Frecuencia
+  1066→principal: 126.4 MHz. Frecuencia alterna:
+  1067→124.1 MHz. Servicio ATS brindado: Control
+  1068→de tránsito aéreo militar para aeronaves de
+  1069→Estado. Información de vuelo y alerta para
+  1070→aeronaves civiles. Reglas de operación para
+  1071→aeronaves civiles: Mantener comunicaciones
+  1072→aeroterrestres en ambos sentidos. Previo al
+  1073→despegue, las aeronaves deben establecer
+  1074→contacto con Las Palmas Torre. Todo
+  1075→vuelo que vaya a operar en la zona SPR91
+  1076→debe presentar un plan de vuelo, con
+  1077→una anticipación mínima de 60 minutos
+  1078→a la hora prevista de fuera de calzos,
+  1079→vía correo electrónico a las siguientes
+  1080→direcciones: aislaspalmas@gmail.com,
+  1081→aislima@corpac.gob.pe,
+  1082→
+  1083→GND
+  1084→
+  1085→CORPAC S.A.
+  1086→
+  1087→AIP PERÚ
+  1088→CORPAC S.A.
+  1089→
+  1090→ENR 5.1 - 11
+  1091→30 JUL 2025
+  1092→
+  1093→Identificación, Nombre
+  1094→y Límites Laterales
+  1095→
+  1096→Límite Superior
+  1097→Límite Inferior
+  1098→
+  1099→Identification, Name & Lateral Limits
+  1100→
+  1101→Upper Limit
+  1102→Lower Limit
+  1103→
+  1104→1
+  1105→
+  1106→2
+  1107→
+  1108→SPR93 CHALLAPALCA - PUNO
+  1109→Circulo con centro en 171404S 0694753W
+  1110→con radio de 1 NM.
+  1111→Circular area centered on
+  1112→171404S 0694753W within a 1 NM radius.
+  1113→
+  1114→1500 FT AGL
+  1115→GND
+  1116→
+  1117→SPR94 CHINCHA - ICA
+  1118→Circulo con centro en 132245S 0760453W
+  1119→con radio de 1 NM.
+  1120→Circular area centered on
+  1121→132245S 0760453W within a 1 NM radius.
+  1122→
+  1123→1500 FT AGL
+  1124→GND
+  1125→
+  1126→Identificación, Nombre
+  1127→y Límites Laterales
+  1128→
+  1129→Límite Superior
+  1130→Límite Inferior
+  1131→
+  1132→Identification, Name & Lateral Limits
+  1133→
+  1134→Upper Limit
+  1135→Lower Limit
+  1136→
+  1137→1
+  1138→SPD03 JICAMARCA
+  1139→Desde 115553S 0765220W 115700S 0765335W - 115806S 0765232W 115716S 0765124W para o ponto de origem.
+  1140→Area bounded by lines joining points
+  1141→115553S 0765220W - 115700S 0765335W 115806S 0765232W - 115716S 0765124W
+  1142→to point of origin.
+  1143→SPD15 POLIGONO
+  1144→Desde 135411S 0760540W 140047S 0760100W por un arco
+  1145→de sentido horario de 20 NM de
+  1146→radio con centro no ponto de
+  1147→coordenadas 134419S 0761246W ( ) 140226S 0760353W - 135546S 0760857W
+  1148→
+  1149→2
+  1150→
+  1151→CORPAC S.A.
+  1152→
+  1153→FL060
+  1154→GND
+  1155→
+  1156→2500 FT AGL
+  1157→GND
+  1158→
+  1159→Observaciones
+  1160→(Hora de la actividad, tipo de
+  1161→restricción, naturaleza del
+  1162→peligro, riesgo de interceptación)
+  1163→Remarks
+  1164→(Time of activity, type of restriction,
+  1165→nature of hazard, risk of interception)
+  1166→3
+  1167→aislimaperu@gmail.com. Sólo se permiten
+  1168→operaciones VFR diurnas. Toda aeronave
+  1169→que vaya a operar en la zona SPR 91 debe
+  1170→llevar activado el equipo transponder en el
+  1171→código asignado por Las Palmas Torre, los
+  1172→cuáles se encuentran en el rango de 1340 a
+  1173→1377. Las aeronaves que tengan el equipo
+  1174→transponder inoperativo, deben obtener la
+  1175→aprobación excepcional de las Palmas Torre
+  1176→para volar a sus bases de mantenimiento
+  1177→con la finalidad de reparar dicho equipo. Las
+  1178→rutas de vuelo VFR deben considerar las
+  1179→SPR, SPP y SPD publicadas en la AIP.
+  1180→Zona activada de manera permanente.
+  1181→Establecimiento penitenciario. Prohibido
+  1182→actividades aéreas, excepto para aeronaves
+  1183→de Estado.
+  1184→Permanently activated area. Penitentiary
+  1185→establishment. Air activities prohibited,
+  1186→except for state aircraft.
+  1187→Zona activada de manera permanente.
+  1188→Establecimiento penitenciario. Prohibido
+  1189→actividades aéreas, excepto para aeronaves
+  1190→de Estado.
+  1191→Permanently activated area. Penitentiary
+  1192→establishment. Air activities prohibited,
+  1193→except for state aircraft.
+  1194→Observaciones
+  1195→(Hora de la actividad, tipo de
+  1196→restricción, naturaleza del
+  1197→peligro, riesgo de interceptación)
+  1198→Remarks
+  1199→(Time of activity, type of restriction,
+  1200→nature of hazard, risk of interception)
+  1201→3
+  1202→Zona activada de manera permanente
+  1203→debido a altas ondas de radio de energía
+  1204→Permanently active zone due to high energy
+  1205→radio waves
+  1206→
+  1207→Activada de manera permanente, Zona de
+  1208→entrenamiento. Permanently activated area.
+  1209→Training zone
+  1210→
+  1211→AMDT 33/2025
+  1212→
+  1213→ENR 5.1 - 12
+  1214→30 JUL 2025
+  1215→
+  1216→AIP PERÚ
+  1217→CORPAC S.A.
+  1218→
+  1219→Identificación, Nombre
+  1220→y Límites Laterales
+  1221→
+  1222→Límite Superior
+  1223→Límite Inferior
+  1224→
+  1225→Identification, Name & Lateral Limits
+  1226→
+  1227→Upper Limit
+  1228→Lower Limit
+  1229→
+  1230→1
+  1231→por un arco de sentido anti-horario de
+  1232→12 NM de radio con centro no ponto de
+  1233→coordenadas 134419S 0761246W ( ) - para
+  1234→o ponto de origem.
+  1235→Area bounded by lines joining points
+  1236→135411S 0760540W - 140047S 0760100W
+  1237→then along the clockwise arc of
+  1238→a circle of 20 NM radius centred
+  1239→on 134419S 0761246W ( ) to
+  1240→140226S 0760353W - 135546S 0760857W
+  1241→then along the counter clockwise arc
+  1242→of a circle of 12 NM radius centred on
+  1243→134419S 0761246W ( ) to point of origin.
+  1244→SPD17 POLIGONO
+  1245→Desde 135411S 0760540W 140453S 0755759W por un arco
+  1246→de sentido horario de 25 NM de
+  1247→radio con centro no ponto de
+  1248→coordenadas 134419S 0761246W ( ) 140901S 0760820W - 135611S 0761037W
+  1249→por un arco de sentido anti-horario de
+  1250→12 NM de radio con centro no ponto de
+  1251→coordenadas 134419S 0761246W ( ) - para
+  1252→o ponto de origem.
+  1253→Area bounded by lines joining points
+  1254→135411S 0760540W - 140453S 0755759W
+  1255→then along the clockwise arc of
+  1256→a circle of 25 NM radius centred
+  1257→on 134419S 0761246W ( ) to
+  1258→140901S 0760820W - 135611S 0761037W
+  1259→then along the counter clockwise arc
+  1260→of a circle of 12 NM radius centred on
+  1261→134419S 0761246W ( ) to point of origin.
+  1262→
+  1263→2
+  1264→
+  1265→AMDT 33/2025
+  1266→
+  1267→FL050
+  1268→2500 FT AGL
+  1269→
+  1270→Observaciones
+  1271→(Hora de la actividad, tipo de
+  1272→restricción, naturaleza del
+  1273→peligro, riesgo de interceptación)
+  1274→Remarks
+  1275→(Time of activity, type of restriction,
+  1276→nature of hazard, risk of interception)
+  1277→3
+  1278→
+  1279→Activada de manera permanente, Zona de
+  1280→entrenamiento. Permanently activated area.
+  1281→Training zone
+  1282→
+  1283→CORPAC S.A.
+  1284→
+  1285→

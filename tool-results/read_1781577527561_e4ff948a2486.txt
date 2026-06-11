@@ -1,0 +1,1152 @@
+     1→/**
+     2→ * AIP PERÚ Seed Script — Real Data from Official Publications
+     3→ *
+     4→ * Sources:
+     5→ *   ENR 3.1 – Lower Airspace Conventional Routes
+     6→ *   ENR 3.2 – Upper Airspace Conventional Routes
+     7→ *   ENR 3.3 – RNAV Routes (Lower)
+     8→ *   ENR 4.1 – Radio Navigation Aids
+     9→ *   ENR 4.4 – Waypoints
+    10→ *   ENR 5.1 – Airspace Restrictions (Prohibited / Restricted / Danger)
+    11→ *
+    12→ * Task ID: 2
+    13→ */
+    14→
+    15→import { db } from '../src/lib/db';
+    16→
+    17→// ═══════════════════════════════════════════════════════════════════════
+    18→// Helpers
+    19→// ═══════════════════════════════════════════════════════════════════════
+    20→
+    21→function haversine(lat1: number, lon1: number, lat2: number, lon2: number): number {
+    22→  const R = 3440.065; // NM
+    23→  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    24→  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+    25→  const a =
+    26→    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    27→    Math.cos((lat1 * Math.PI) / 180) *
+    28→      Math.cos((lat2 * Math.PI) / 180) *
+    29→      Math.sin(dLon / 2) *
+    30→      Math.sin(dLon / 2);
+    31→  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    32→}
+    33→
+    34→function bearing(lat1: number, lon1: number, lat2: number, lon2: number): number {
+    35→  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+    36→  const y = Math.sin(dLon) * Math.cos((lat2 * Math.PI) / 180);
+    37→  const x =
+    38→    Math.cos((lat1 * Math.PI) / 180) * Math.sin((lat2 * Math.PI) / 180) -
+    39→    Math.sin((lat1 * Math.PI) / 180) *
+    40→      Math.cos((lat2 * Math.PI) / 180) *
+    41→      Math.cos(dLon);
+    42→  return ((Math.atan2(y, x) * 180) / Math.PI + 360) % 360;
+    43→}
+    44→
+    45→/** Parse a coordinate string like `02°25'05"S` or `070°35'00"W` into decimal degrees */
+    46→function parseCoord(s: string): number {
+    47→  const m = s.match(/(\d+)°(\d+)'(\d+(?:\.\d+)?)"([NSWE])/);
+    48→  if (!m) throw new Error(`Cannot parse coordinate: ${s}`);
+    49→  const [, deg, min, sec, dir] = m;
+    50→  let val = parseFloat(deg) + parseFloat(min) / 60 + parseFloat(sec) / 3600;
+    51→  if (dir === 'S' || dir === 'W') val = -val;
+    52→  return Math.round(val * 100000) / 100000;
+    53→}
+    54→
+    55→// ═══════════════════════════════════════════════════════════════════════
+    56→// ENR 4.1 — Navaids (REAL data)
+    57→// ═══════════════════════════════════════════════════════════════════════
+    58→
+    59→interface NavaidDef {
+    60→  id: string;
+    61→  name: string;
+    62→  type: string;
+    63→  frequency: string;
+    64→  channel?: string;
+    65→  lat: number;
+    66→  lon: number;
+    67→  elevation?: number;
+    68→  hours?: string;
+    69→}
+    70→
+    71→const navaids: NavaidDef[] = [
+    72→  { id: 'AND', name: 'ANDAHUAYLAS',  type: 'VOR/DME',  frequency: '114.30 MHz', channel: 'CH 90X',  lat: parseCoord(`13°42'51"S`), lon: parseCoord(`073°22'40"W`), hours: 'H24' },
+    73→  { id: 'OAS', name: 'ANDOAS',       type: 'NDB',      frequency: '360.00 KHz',                    lat: parseCoord(`02°48'25"S`), lon: parseCoord(`076°27'18"W`), hours: 'HJ' },
+    74→  { id: 'OAS', name: 'ANDOAS',       type: 'VOR/DME',  frequency: '116.80 MHz', channel: 'CH 115X', lat: parseCoord(`02°47'22"S`), lon: parseCoord(`076°28'39"W`), hours: 'H24' },
+    75→  // NOTE: OAS has both NDB and VOR/DME — we'll store the VOR/DME as the primary
+    76→  { id: 'AQP', name: 'AREQUIPA',     type: 'VOR/DME',  frequency: '113.70 MHz', channel: 'CH 84X',  lat: parseCoord(`16°20'21"S`), lon: parseCoord(`071°35'50"W`), elevation: 39, hours: 'H24' },
+    77→  { id: 'ARI', name: 'ARICA',        type: 'VOR/DME',  frequency: '116.50 MHz', channel: 'CH 112X', lat: parseCoord(`18°22'10"S`), lon: parseCoord(`070°20'47"W`), hours: 'H24' },
+    78→  { id: 'POY', name: 'CHACHAPOYAS',  type: 'VOR/DME',  frequency: '115.10 MHz', channel: 'CH 98X',  lat: parseCoord(`06°12'02"S`), lon: parseCoord(`077°51'35"W`), hours: 'H24' },
+    79→  { id: 'CLA', name: 'CHICLAYO',     type: 'VOR/DME',  frequency: '114.90 MHz', channel: 'CH 96X',  lat: parseCoord(`06°43'02"S`), lon: parseCoord(`079°49'09"W`), elevation: 121, hours: 'H24' },
+    80→  { id: 'BTE', name: 'CHIMBOTE',     type: 'VOR',      frequency: '112.50 MHz',                    lat: parseCoord(`09°08'51"S`), lon: parseCoord(`078°31'19"W`), hours: 'H24' },
+    81→  { id: 'ZCO', name: 'CUSCO',        type: 'VOR/DME',  frequency: '114.90 MHz', channel: 'CH 96X',  lat: parseCoord(`13°31'09"S`), lon: parseCoord(`072°00'36"W`), hours: 'H24' },
+    82→  { id: 'ILO', name: 'ILO',          type: 'VOR',      frequency: '112.50 MHz',                    lat: parseCoord(`17°41'28"S`), lon: parseCoord(`071°21'02"W`), hours: 'H24' },
+    83→  { id: 'IQT', name: 'IQUITOS',      type: 'VOR/DME',  frequency: '116.50 MHz', channel: 'CH 112X', lat: parseCoord(`03°47'33"S`), lon: parseCoord(`073°19'04"W`), elevation: 335, hours: 'H24' },
+    84→  { id: 'JCL', name: 'JORGE CHAVEZ', type: 'DVOR/DME', frequency: '116.90 MHz', channel: 'CH 116X', lat: parseCoord(`12°02'23"S`), lon: parseCoord(`077°06'20"W`), elevation: 115, hours: 'H24' },
+    85→  { id: 'JUL', name: 'JULIACA',      type: 'VOR/DME',  frequency: '115.50 MHz', channel: 'CH 102X', lat: parseCoord(`15°28'05"S`), lon: parseCoord(`070°09'04"W`), hours: 'H24' },
+    86→  { id: 'LPA', name: 'LAS PALMAS',   type: 'DVOR/DME', frequency: '113.30 MHz', channel: 'CH 80X',  lat: parseCoord(`12°09'21"S`), lon: parseCoord(`076°59'58"W`), hours: 'H24' },
+    87→  { id: 'LET', name: 'LETICIA',      type: 'DVOR/DME', frequency: '117.50 MHz', channel: 'CH 122X', lat: parseCoord(`04°11'42"S`), lon: parseCoord(`069°56'24"W`), elevation: 285, hours: 'H24' },
+    88→  { id: 'MLV', name: 'MALVINAS',     type: 'VOR/DME',  frequency: '117.20 MHz', channel: 'CH 119X', lat: parseCoord(`11°51'30"S`), lon: parseCoord(`072°56'16"W`), hours: 'H24' },
+    89→  { id: 'SCO', name: 'PISCO',        type: 'VOR/DME',  frequency: '114.10 MHz', channel: 'CH 88X',  lat: parseCoord(`13°44'19"S`), lon: parseCoord(`076°12'46"W`), elevation: 100, hours: 'H24' },
+    90→  { id: 'URA', name: 'PIURA',        type: 'VOR/DME',  frequency: '117.70 MHz', channel: 'CH 124X', lat: parseCoord(`05°12'36"S`), lon: parseCoord(`080°36'58"W`), hours: 'H24' },
+    91→  { id: 'PZA', name: 'PTO ESPERANZA', type: 'VOR',     frequency: '113.90 MHz',                    lat: parseCoord(`09°46'09"S`), lon: parseCoord(`070°42'18"W`), hours: 'HJ' },
+    92→  { id: 'PUL', name: 'PUCALLPA',     type: 'VOR/DME',  frequency: '116.70 MHz', channel: 'CH 114X', lat: parseCoord(`08°22'33"S`), lon: parseCoord(`074°34'20"W`), elevation: 537, hours: 'H24' },
+    93→  { id: 'PLG', name: 'PUERTO LEGUIZAMO', type: 'VOR/DME', frequency: '112.80 MHz', channel: 'CH 75X', lat: parseCoord(`00°10'43"S`), lon: parseCoord(`074°46'32"W`), elevation: 665, hours: 'H24' },
+    94→  { id: 'PDO', name: 'PUERTO MALDONADO', type: 'VOR/DME', frequency: '116.10 MHz', channel: 'CH 108X', lat: parseCoord(`12°36'28"S`), lon: parseCoord(`069°13'38"W`), hours: 'H24' },
+    95→  { id: 'SLS', name: 'SALINAS',      type: 'DVOR/DME', frequency: '114.70 MHz', channel: 'CH 94X',  lat: parseCoord(`11°17'15"S`), lon: parseCoord(`077°33'45"W`), hours: 'H24' },
+    96→  { id: 'SRV', name: 'SANTA ROSA',   type: 'VOR',      frequency: '116.60 MHz',                    lat: parseCoord(`03°26'50"S`), lon: parseCoord(`080°00'34"W`), hours: 'H24' },
+    97→  { id: 'UAS', name: 'SIHUAS',       type: 'VOR',      frequency: '113.50 MHz',                    lat: parseCoord(`16°22'16"S`), lon: parseCoord(`072°08'01"W`), hours: 'H24' },
+    98→  { id: 'TCA', name: 'TACNA',        type: 'VOR/DME',  frequency: '116.80 MHz', channel: 'CH 115X', lat: parseCoord(`18°03'28"S`), lon: parseCoord(`070°16'35"W`), elevation: 1277, hours: 'H24' },
+    99→  { id: 'TAL', name: 'TALARA',       type: 'VOR',      frequency: '116.10 MHz',                    lat: parseCoord(`04°34'49"S`), lon: parseCoord(`081°15'09"W`), hours: 'H24' },
+   100→  { id: 'TAP', name: 'TARAPOTO',     type: 'VOR/DME',  frequency: '115.50 MHz', channel: 'CH 102X', lat: parseCoord(`06°39'29"S`), lon: parseCoord(`076°21'04"W`), hours: 'H24' },
+   101→  { id: 'TRO', name: 'TROMPETEROS',  type: 'VOR/DME',  frequency: '114.80 MHz', channel: 'CH 95X',  lat: parseCoord(`03°48'10"S`), lon: parseCoord(`075°03'03"W`), hours: 'H24' },
+   102→  { id: 'TRU', name: 'TRUJILLO',     type: 'DVOR/DME', frequency: '116.30 MHz', channel: 'CH 110X', lat: parseCoord(`08°05'15"S`), lon: parseCoord(`079°06'45"W`), hours: 'H24' },
+   103→  { id: 'BES', name: 'TUMBES',       type: 'VOR/DME',  frequency: '112.90 MHz', channel: 'CH 76X',  lat: parseCoord(`03°32'40"S`), lon: parseCoord(`080°23'21"W`), hours: 'H24' },
+   104→  { id: 'URC', name: 'URCOS',        type: 'VOR/DME',  frequency: '115.60 MHz', channel: 'CH 103X', lat: parseCoord(`13°38'58"S`), lon: parseCoord(`071°35'11"W`), elevation: 14086, hours: 'H24' },
+   105→];
+   106→
+   107→// For OAS, we have both NDB and VOR/DME with same ID — keep VOR/DME (later entry overwrites)
+   108→// We'll deduplicate by id, preferring the VOR/DME version
+   109→const navaidMap = new Map<string, NavaidDef>();
+   110→for (const n of navaids) {
+   111→  // If there's already an entry and the new one is VOR/DME, prefer it over NDB
+   112→  const existing = navaidMap.get(n.id);
+   113→  if (!existing || n.type.includes('VOR')) {
+   114→    navaidMap.set(n.id, n);
+   115→  }
+   116→}
+   117→const uniqueNavaids = Array.from(navaidMap.values());
+   118→
+   119→// Build coordinate lookup from navaids
+   120→const navaidCoords: Record<string, { lat: number; lon: number }> = {};
+   121→for (const n of uniqueNavaids) {
+   122→  navaidCoords[n.id] = { lat: n.lat, lon: n.lon };
+   123→}
+   124→
+   125→// ═══════════════════════════════════════════════════════════════════════
+   126→// ENR 4.4 — Waypoints (REAL data)
+   127→// ═══════════════════════════════════════════════════════════════════════
+   128→
+   129→interface WaypointDef {
+   130→  id: string;
+   131→  name: string;
+   132→  type: string; // WAYPOINT (5-letter) or NAVAID
+   133→  lat: number;
+   134→  lon: number;
+   135→  description?: string;
+   136→}
+   137→
+   138→const waypointDefs: WaypointDef[] = [
+   139→  // ─── Primary waypoints from the task specification ───────────────
+   140→  { id: 'DADIL', name: 'DADIL', type: 'WAYPOINT', lat: parseCoord(`02°25'05"S`), lon: parseCoord(`070°35'00"W`) },
+   141→  { id: 'PAPEM', name: 'PAPEM', type: 'WAYPOINT', lat: parseCoord(`03°10'41"S`), lon: parseCoord(`070°18'17"W`) },
+   142→  { id: 'ELAKO', name: 'ELAKO', type: 'WAYPOINT', lat: parseCoord(`15°55'36"S`), lon: parseCoord(`069°18'18"W`) },
+   143→  { id: 'KORBO', name: 'KORBO', type: 'WAYPOINT', lat: parseCoord(`03°01'06"S`), lon: parseCoord(`077°51'28"W`) },
+   144→  { id: 'OSUBU', name: 'OSUBU', type: 'WAYPOINT', lat: parseCoord(`03°19'44"S`), lon: parseCoord(`076°03'07"W`) },
+   145→  { id: 'PABAM', name: 'PABAM', type: 'WAYPOINT', lat: parseCoord(`03°24'13"S`), lon: parseCoord(`075°36'49"W`) },
+   146→  { id: 'ISAPA', name: 'ISAPA', type: 'WAYPOINT', lat: parseCoord(`03°39'14"S`), lon: parseCoord(`074°08'22"W`) },
+   147→  { id: 'SURIX', name: 'SURIX', type: 'WAYPOINT', lat: parseCoord(`03°53'29"S`), lon: parseCoord(`072°29'22"W`) },
+   148→  { id: 'KALOR', name: 'KALOR', type: 'WAYPOINT', lat: parseCoord(`04°05'45"S`), lon: parseCoord(`070°46'01"W`) },
+   149→  { id: 'DANKI', name: 'DANKI', type: 'WAYPOINT', lat: parseCoord(`18°18'24"S`), lon: parseCoord(`070°16'30"W`) },
+   150→  { id: 'LOLES', name: 'LOLES', type: 'WAYPOINT', lat: parseCoord(`17°54'00"S`), lon: parseCoord(`069°47'00"W`) },
+   151→  { id: 'ORALO', name: 'ORALO', type: 'WAYPOINT', lat: parseCoord(`17°17'46"S`), lon: parseCoord(`069°37'30"W`) },
+   152→  { id: 'KEBOM', name: 'KEBOM', type: 'WAYPOINT', lat: parseCoord(`08°00'00"S`), lon: parseCoord(`073°40'40"W`) },
+   153→  { id: 'PAGUR', name: 'PAGUR', type: 'WAYPOINT', lat: parseCoord(`04°28'35"S`), lon: parseCoord(`080°21'49"W`) },
+   154→  { id: 'OGTAM', name: 'OGTAM', type: 'WAYPOINT', lat: parseCoord(`06°03'09"S`), lon: parseCoord(`080°21'10"W`) },
+   155→  { id: 'KIBAN', name: 'KIBAN', type: 'WAYPOINT', lat: parseCoord(`06°53'38"S`), lon: parseCoord(`080°05'22"W`) },
+   156→  { id: 'REPIB', name: 'REPIB', type: 'WAYPOINT', lat: parseCoord(`07°32'00"S`), lon: parseCoord(`079°34'00"W`) },
+   157→  { id: 'ESMIL', name: 'ESMIL', type: 'WAYPOINT', lat: parseCoord(`08°49'11"S`), lon: parseCoord(`078°42'17"W`) },
+   158→  { id: 'ARPEN', name: 'ARPEN', type: 'WAYPOINT', lat: parseCoord(`02°23'19"S`), lon: parseCoord(`072°07'12"W`) },
+   159→  { id: 'AROTI', name: 'AROTI', type: 'WAYPOINT', lat: parseCoord(`03°39'46"S`), lon: parseCoord(`070°35'04"W`) },
+   160→  { id: 'MOXOM', name: 'MOXOM', type: 'WAYPOINT', lat: parseCoord(`03°30'03"S`), lon: parseCoord(`080°13'07"W`) },
+   161→  { id: 'DOMVO', name: 'DOMVO', type: 'WAYPOINT', lat: parseCoord(`04°15'00"S`), lon: parseCoord(`081°20'00"W`) },
+   162→  { id: 'CHIRA', name: 'CHIRA', type: 'WAYPOINT', lat: parseCoord(`04°56'07"S`), lon: parseCoord(`080°53'38"W`) },
+   163→  { id: 'ROKOL', name: 'ROKOL', type: 'WAYPOINT', lat: parseCoord(`05°58'38"S`), lon: parseCoord(`080°12'39"W`) },
+   164→  { id: 'PALOP', name: 'PALOP', type: 'WAYPOINT', lat: parseCoord(`07°27'42"S`), lon: parseCoord(`079°26'08"W`) },
+   165→  { id: 'EGASI', name: 'EGASI', type: 'WAYPOINT', lat: parseCoord(`04°12'29"S`), lon: parseCoord(`080°28'46"W`) },
+   166→  { id: 'DORAN', name: 'DORAN', type: 'WAYPOINT', lat: parseCoord(`04°11'08"S`), lon: parseCoord(`074°03'13"W`) },
+   167→  { id: 'VUKOK', name: 'VUKOK', type: 'WAYPOINT', lat: parseCoord(`05°20'36"S`), lon: parseCoord(`076°13'57"W`) },
+   168→  { id: 'ATATU', name: 'ATATU', type: 'WAYPOINT', lat: parseCoord(`10°11'49"S`), lon: parseCoord(`078°00'38"W`) },
+   169→  { id: 'KALAR', name: 'KALAR', type: 'WAYPOINT', lat: parseCoord(`11°14'45"S`), lon: parseCoord(`077°29'49"W`) },
+   170→  { id: 'ROBIG', name: 'ROBIG', type: 'WAYPOINT', lat: parseCoord(`06°41'33"S`), lon: parseCoord(`078°11'07"W`) },
+   171→  { id: 'PUPMI', name: 'PUPMI', type: 'WAYPOINT', lat: parseCoord(`06°40'48"S`), lon: parseCoord(`077°28'59"W`) },
+   172→  { id: 'LODIN', name: 'LODIN', type: 'WAYPOINT', lat: parseCoord(`07°24'26"S`), lon: parseCoord(`075°34'42"W`) },
+   173→  { id: 'BORLA', name: 'BORLA', type: 'WAYPOINT', lat: parseCoord(`07°44'14"S`), lon: parseCoord(`075°14'11"W`) },
+   174→  { id: 'RONSO', name: 'RONSO', type: 'WAYPOINT', lat: parseCoord(`04°22'04"S`), lon: parseCoord(`073°55'24"W`) },
+   175→  { id: 'IKARO', name: 'IKARO', type: 'WAYPOINT', lat: parseCoord(`06°15'25"S`), lon: parseCoord(`075°55'26"W`) },
+   176→  { id: 'UTKIK', name: 'UTKIK', type: 'WAYPOINT', lat: parseCoord(`07°02'43"S`), lon: parseCoord(`077°05'39"W`) },
+   177→  { id: 'RELOR', name: 'RELOR', type: 'WAYPOINT', lat: parseCoord(`07°14'00"S`), lon: parseCoord(`077°27'23"W`) },
+   178→  { id: 'MANPA', name: 'MANPA', type: 'WAYPOINT', lat: parseCoord(`07°35'15"S`), lon: parseCoord(`078°08'28"W`) },
+   179→  { id: 'VATES', name: 'VATES', type: 'WAYPOINT', lat: parseCoord(`07°42'12"S`), lon: parseCoord(`078°21'56"W`) },
+   180→  { id: 'TAPIR', name: 'TAPIR', type: 'WAYPOINT', lat: parseCoord(`04°36'01"S`), lon: parseCoord(`073°32'15"W`) },
+   181→  { id: 'FANES', name: 'FANES', type: 'WAYPOINT', lat: parseCoord(`07°29'16"S`), lon: parseCoord(`074°19'39"W`) },
+   182→  { id: 'TILPA', name: 'TILPA', type: 'WAYPOINT', lat: parseCoord(`13°41'52"S`), lon: parseCoord(`072°53'12"W`) },
+   183→  { id: 'ILMOX', name: 'ILMOX', type: 'WAYPOINT', lat: parseCoord(`14°35'40"S`), lon: parseCoord(`070°50'40"W`) },
+   184→  { id: 'CEMIL', name: 'CEMIL', type: 'WAYPOINT', lat: parseCoord(`13°14'23"S`), lon: parseCoord(`070°38'59"W`) },
+   185→  { id: 'ILMAR', name: 'ILMAR', type: 'WAYPOINT', lat: parseCoord(`14°16'29"S`), lon: parseCoord(`076°30'48"W`) },
+   186→  { id: 'IREMI', name: 'IREMI', type: 'WAYPOINT', lat: parseCoord(`18°21'00"S`), lon: parseCoord(`075°23'00"W`) },
+   187→  { id: 'ASOXI', name: 'ASOXI', type: 'WAYPOINT', lat: parseCoord(`12°45'38"S`), lon: parseCoord(`076°36'23"W`) },
+   188→  { id: 'ESIRA', name: 'ESIRA', type: 'WAYPOINT', lat: parseCoord(`14°54'02"S`), lon: parseCoord(`074°58'38"W`) },
+   189→  { id: 'ISOKI', name: 'ISOKI', type: 'WAYPOINT', lat: parseCoord(`16°14'37"S`), lon: parseCoord(`073°34'43"W`) },
+   190→  { id: 'MIGEB', name: 'MIGEB', type: 'WAYPOINT', lat: parseCoord(`17°13'32"S`), lon: parseCoord(`072°04'30"W`) },
+   191→  { id: 'MAJAZ', name: 'MAJAZ', type: 'WAYPOINT', lat: parseCoord(`04°32'44"S`), lon: parseCoord(`073°40'54"W`) },
+   192→  { id: 'IBARE', name: 'IBARE', type: 'WAYPOINT', lat: parseCoord(`09°17'47"S`), lon: parseCoord(`076°00'17"W`) },
+   193→  { id: 'KONTA', name: 'KONTA', type: 'WAYPOINT', lat: parseCoord(`12°06'11"S`), lon: parseCoord(`076°11'32"W`) },
+   194→  { id: 'ILPIP', name: 'ILPIP', type: 'WAYPOINT', lat: parseCoord(`12°06'49"S`), lon: parseCoord(`076°01'21"W`) },
+   195→  { id: 'LOKEB', name: 'LOKEB', type: 'WAYPOINT', lat: parseCoord(`12°08'03"S`), lon: parseCoord(`075°40'58"W`) },
+   196→  { id: 'BODET', name: 'BODET', type: 'WAYPOINT', lat: parseCoord(`12°14'07"S`), lon: parseCoord(`073°54'03"W`) },
+   197→  { id: 'ANKUG', name: 'ANKUG', type: 'WAYPOINT', lat: parseCoord(`12°23'01"S`), lon: parseCoord(`072°09'36"W`) },
+   198→  { id: 'ETEBA', name: 'ETEBA', type: 'WAYPOINT', lat: parseCoord(`12°25'46"S`), lon: parseCoord(`071°35'44"W`) },
+   199→  { id: 'ANBON', name: 'ANBON', type: 'WAYPOINT', lat: parseCoord(`12°32'48"S`), lon: parseCoord(`070°04'37"W`) },
+   200→  { id: 'ASEMO', name: 'ASEMO', type: 'WAYPOINT', lat: parseCoord(`11°41'20"S`), lon: parseCoord(`073°25'03"W`) },
+   201→  { id: 'OGNUM', name: 'OGNUM', type: 'WAYPOINT', lat: parseCoord(`11°40'25"S`), lon: parseCoord(`073°57'22"W`) },
+   202→  { id: 'MONKU', name: 'MONKU', type: 'WAYPOINT', lat: parseCoord(`11°45'43"S`), lon: parseCoord(`075°54'27"W`) },
+   203→  { id: 'ALDAL', name: 'ALDAL', type: 'WAYPOINT', lat: parseCoord(`11°46'34"S`), lon: parseCoord(`076°14'50"W`) },
+   204→
+   205→  // ─── Additional waypoints from ENR 4.4 ───────────────────────────
+   206→  { id: 'KUSKU', name: 'KUSKU', type: 'WAYPOINT', lat: parseCoord(`06°01'09"S`), lon: parseCoord(`077°30'53"W`) },
+   207→  { id: 'AKSOL', name: 'AKSOL', type: 'WAYPOINT', lat: parseCoord(`13°19'48"S`), lon: parseCoord(`075°45'45"W`) },
+   208→  { id: 'ALDAX', name: 'ALDAX', type: 'WAYPOINT', lat: parseCoord(`18°21'00"S`), lon: parseCoord(`072°28'20"W`) },
+   209→  { id: 'AMERO', name: 'AMERO', type: 'WAYPOINT', lat: parseCoord(`03°24'00"S`), lon: parseCoord(`083°46'00"W`) },
+   210→  { id: 'AMVEX', name: 'AMVEX', type: 'WAYPOINT', lat: parseCoord(`10°48'02"S`), lon: parseCoord(`076°48'12"W`) },
+   211→  { id: 'ANBIS', name: 'ANBIS', type: 'WAYPOINT', lat: parseCoord(`10°13'06"S`), lon: parseCoord(`076°12'17"W`) },
+   212→  { id: 'ANDID', name: 'ANDID', type: 'WAYPOINT', lat: parseCoord(`02°25'20"S`), lon: parseCoord(`075°19'08"W`) },
+   213→  { id: 'ANPAL', name: 'ANPAL', type: 'WAYPOINT', lat: parseCoord(`03°24'00"S`), lon: parseCoord(`083°00'12"W`) },
+   214→  { id: 'ARNEL', name: 'ARNEL', type: 'WAYPOINT', lat: parseCoord(`03°24'00"S`), lon: parseCoord(`081°35'00"W`) },
+   215→  { id: 'ASBOB', name: 'ASBOB', type: 'WAYPOINT', lat: parseCoord(`09°26'31"S`), lon: parseCoord(`073°28'15"W`) },
+   216→  { id: 'ASOLA', name: 'ASOLA', type: 'WAYPOINT', lat: parseCoord(`09°47'42"S`), lon: parseCoord(`070°58'24"W`) },
+   217→  { id: 'BOBUG', name: 'BOBUG', type: 'WAYPOINT', lat: parseCoord(`08°09'22"S`), lon: parseCoord(`078°06'46"W`) },
+   218→  { id: 'COCOS', name: 'COCOS', type: 'WAYPOINT', lat: parseCoord(`08°52'35"S`), lon: parseCoord(`075°20'57"W`) },
+   219→  { id: 'DALGI', name: 'DALGI', type: 'WAYPOINT', lat: parseCoord(`09°42'27"S`), lon: parseCoord(`075°18'51"W`) },
+   220→  { id: 'DAMDU', name: 'DAMDU', type: 'WAYPOINT', lat: parseCoord(`04°30'47"S`), lon: parseCoord(`071°53'42"W`) },
+   221→  { id: 'DARKI', name: 'DARKI', type: 'WAYPOINT', lat: parseCoord(`13°27'05"S`), lon: parseCoord(`072°52'23"W`) },
+   222→  { id: 'DIKOS', name: 'DIKOS', type: 'WAYPOINT', lat: parseCoord(`14°47'59"S`), lon: parseCoord(`074°09'11"W`) },
+   223→  { id: 'DOBNI', name: 'DOBNI', type: 'WAYPOINT', lat: parseCoord(`15°43'07"S`), lon: parseCoord(`069°22'54"W`) },
+   224→  { id: 'EKUVA', name: 'EKUVA', type: 'WAYPOINT', lat: parseCoord(`13°44'00"S`), lon: parseCoord(`075°09'35"W`) },
+   225→  { id: 'ENPAP', name: 'ENPAP', type: 'WAYPOINT', lat: parseCoord(`08°29'22"S`), lon: parseCoord(`076°33'00"W`) },
+   226→  { id: 'ENSUB', name: 'ENSUB', type: 'WAYPOINT', lat: parseCoord(`08°57'23"S`), lon: parseCoord(`073°51'14"W`) },
+   227→  { id: 'ERINI', name: 'ERINI', type: 'WAYPOINT', lat: parseCoord(`09°10'25"S`), lon: parseCoord(`074°05'52"W`) },
+   228→  { id: 'ESDIN', name: 'ESDIN', type: 'WAYPOINT', lat: parseCoord(`18°21'00"S`), lon: parseCoord(`080°12'12"W`) },
+   229→  { id: 'ESKOM', name: 'ESKOM', type: 'WAYPOINT', lat: parseCoord(`10°15'07"S`), lon: parseCoord(`072°14'05"W`) },
+   230→  { id: 'ESOGO', name: 'ESOGO', type: 'WAYPOINT', lat: parseCoord(`15°04'09"S`), lon: parseCoord(`074°20'32"W`) },
+   231→  { id: 'EVLAR', name: 'EVLAR', type: 'WAYPOINT', lat: parseCoord(`16°36'37"S`), lon: parseCoord(`070°43'24"W`) },
+   232→  { id: 'EVLEP', name: 'EVLEP', type: 'WAYPOINT', lat: parseCoord(`16°33'55"S`), lon: parseCoord(`073°56'51"W`) },
+   233→  { id: 'GAVAR', name: 'GAVAR', type: 'WAYPOINT', lat: parseCoord(`16°58'21"S`), lon: parseCoord(`071°06'51"W`) },
+   234→  { id: 'GAXUN', name: 'GAXUN', type: 'WAYPOINT', lat: parseCoord(`13°06'00"S`), lon: parseCoord(`072°47'09"W`) },
+   235→  { id: 'GELVO', name: 'GELVO', type: 'WAYPOINT', lat: parseCoord(`03°48'04"S`), lon: parseCoord(`074°43'03"W`) },
+   236→  { id: 'ILMUX', name: 'ILMUX', type: 'WAYPOINT', lat: parseCoord(`02°27'43"S`), lon: parseCoord(`072°50'56"W`) },
+   237→  { id: 'ILNAM', name: 'ILNAM', type: 'WAYPOINT', lat: parseCoord(`09°31'19"S`), lon: parseCoord(`072°11'08"W`) },
+   238→  { id: 'ILROL', name: 'ILROL', type: 'WAYPOINT', lat: parseCoord(`10°30'50"S`), lon: parseCoord(`077°17'50"W`) },
+   239→  { id: 'ILVOS', name: 'ILVOS', type: 'WAYPOINT', lat: parseCoord(`10°00'00"S`), lon: parseCoord(`084°25'13"W`) },
+   240→  { id: 'IRESO', name: 'IRESO', type: 'WAYPOINT', lat: parseCoord(`11°22'29"S`), lon: parseCoord(`075°27'41"W`) },
+   241→  { id: 'ISIDI', name: 'ISIDI', type: 'WAYPOINT', lat: parseCoord(`04°41'02"S`), lon: parseCoord(`072°05'19"W`) },
+   242→  { id: 'ISLOD', name: 'ISLOD', type: 'WAYPOINT', lat: parseCoord(`17°30'21"S`), lon: parseCoord(`070°31'57"W`) },
+   243→  { id: 'ISREN', name: 'ISREN', type: 'WAYPOINT', lat: parseCoord(`09°42'12"S`), lon: parseCoord(`078°40'36"W`) },
+   244→  { id: 'ISRES', name: 'ISRES', type: 'WAYPOINT', lat: parseCoord(`06°40'19"S`), lon: parseCoord(`077°11'19"W`) },
+   245→  { id: 'ITALU', name: 'ITALU', type: 'WAYPOINT', lat: parseCoord(`05°29'56"S`), lon: parseCoord(`081°34'36"W`) },
+   246→  { id: 'ITARA', name: 'ITARA', type: 'WAYPOINT', lat: parseCoord(`12°47'39"S`), lon: parseCoord(`074°06'55"W`) },
+   247→  { id: 'KABAG', name: 'KABAG', type: 'WAYPOINT', lat: parseCoord(`02°51'28"S`), lon: parseCoord(`077°24'35"W`) },
+   248→  { id: 'KAMAK', name: 'KAMAK', type: 'WAYPOINT', lat: parseCoord(`15°43'55"S`), lon: parseCoord(`072°06'20"W`) },
+   249→  { id: 'KEVES', name: 'KEVES', type: 'WAYPOINT', lat: parseCoord(`14°40'13"S`), lon: parseCoord(`069°53'27"W`) },
+   250→  { id: 'KOKRO', name: 'KOKRO', type: 'WAYPOINT', lat: parseCoord(`03°47'52"S`), lon: parseCoord(`074°09'05"W`) },
+   251→  { id: 'KOLKA', name: 'KOLKA', type: 'WAYPOINT', lat: parseCoord(`15°40'53"S`), lon: parseCoord(`071°59'37"W`) },
+   252→  { id: 'KOMGO', name: 'KOMGO', type: 'WAYPOINT', lat: parseCoord(`10°18'23"S`), lon: parseCoord(`077°47'02"W`) },
+   253→  { id: 'KOMLA', name: 'KOMLA', type: 'WAYPOINT', lat: parseCoord(`05°15'12"S`), lon: parseCoord(`079°38'55"W`) },
+   254→  { id: 'KOMPA', name: 'KOMPA', type: 'WAYPOINT', lat: parseCoord(`16°28'30"S`), lon: parseCoord(`069°00'00"W`) },
+   255→  { id: 'KOSKO', name: 'KOSKO', type: 'WAYPOINT', lat: parseCoord(`13°32'31"S`), lon: parseCoord(`075°31'57"W`) },
+   256→  { id: 'KOTKU', name: 'KOTKU', type: 'WAYPOINT', lat: parseCoord(`06°58'32"S`), lon: parseCoord(`075°20'31"W`) },
+   257→  { id: 'KULIS', name: 'KULIS', type: 'WAYPOINT', lat: parseCoord(`13°28'38"S`), lon: parseCoord(`074°57'04"W`) },
+   258→  { id: 'KUMET', name: 'KUMET', type: 'WAYPOINT', lat: parseCoord(`03°04'59"S`), lon: parseCoord(`077°56'12"W`) },
+   259→  { id: 'LITOT', name: 'LITOT', type: 'WAYPOINT', lat: parseCoord(`14°47'36"S`), lon: parseCoord(`071°48'53"W`) },
+   260→  { id: 'LIVAT', name: 'LIVAT', type: 'WAYPOINT', lat: parseCoord(`10°43'40"S`), lon: parseCoord(`073°46'11"W`) },
+   261→  { id: 'LIXIT', name: 'LIXIT', type: 'WAYPOINT', lat: parseCoord(`13°24'53"S`), lon: parseCoord(`075°05'49"W`) },
+   262→  { id: 'LOBOT', name: 'LOBOT', type: 'WAYPOINT', lat: parseCoord(`02°56'32"S`), lon: parseCoord(`077°39'40"W`) },
+   263→  { id: 'LOMOL', name: 'LOMOL', type: 'WAYPOINT', lat: parseCoord(`12°45'03"S`), lon: parseCoord(`071°31'47"W`) },
+   264→  { id: 'LUVSO', name: 'LUVSO', type: 'WAYPOINT', lat: parseCoord(`09°29'49"S`), lon: parseCoord(`075°40'05"W`) },
+   265→  { id: 'MANDO', name: 'MANDO', type: 'WAYPOINT', lat: parseCoord(`04°13'53"S`), lon: parseCoord(`080°23'18"W`) },
+   266→  { id: 'MARBA', name: 'MARBA', type: 'WAYPOINT', lat: parseCoord(`07°08'24"S`), lon: parseCoord(`078°29'26"W`) },
+   267→  { id: 'MASPO', name: 'MASPO', type: 'WAYPOINT', lat: parseCoord(`03°04'47"S`), lon: parseCoord(`076°04'10"W`) },
+   268→  { id: 'MELIX', name: 'MELIX', type: 'WAYPOINT', lat: parseCoord(`06°30'16"S`), lon: parseCoord(`079°00'33"W`) },
+   269→  { id: 'MEXUR', name: 'MEXUR', type: 'WAYPOINT', lat: parseCoord(`13°10'04"S`), lon: parseCoord(`075°40'13"W`) },
+   270→  { id: 'MIPAS', name: 'MIPAS', type: 'WAYPOINT', lat: parseCoord(`08°14'33"S`), lon: parseCoord(`079°25'06"W`) },
+   271→  { id: 'MOXES', name: 'MOXES', type: 'WAYPOINT', lat: parseCoord(`14°16'29"S`), lon: parseCoord(`077°25'04"W`) },
+   272→  { id: 'MOXOV', name: 'MOXOV', type: 'WAYPOINT', lat: parseCoord(`07°14'28"S`), lon: parseCoord(`075°45'00"W`) },
+   273→  { id: 'MUBIN', name: 'MUBIN', type: 'WAYPOINT', lat: parseCoord(`13°24'23"S`), lon: parseCoord(`069°28'58"W`) },
+   274→  { id: 'MULMA', name: 'MULMA', type: 'WAYPOINT', lat: parseCoord(`08°50'22"S`), lon: parseCoord(`073°44'09"W`) },
+   275→  { id: 'MULON', name: 'MULON', type: 'WAYPOINT', lat: parseCoord(`05°44'22"S`), lon: parseCoord(`081°53'23"W`) },
+   276→  { id: 'NAXUS', name: 'NAXUS', type: 'WAYPOINT', lat: parseCoord(`08°01'49"S`), lon: parseCoord(`078°17'35"W`) },
+   277→  { id: 'NENER', name: 'NENER', type: 'WAYPOINT', lat: parseCoord(`08°26'52"S`), lon: parseCoord(`076°47'16"W`) },
+   278→  { id: 'NILSA', name: 'NILSA', type: 'WAYPOINT', lat: parseCoord(`09°38'49"S`), lon: parseCoord(`073°48'54"W`) },
+   279→  { id: 'NUXON', name: 'NUXON', type: 'WAYPOINT', lat: parseCoord(`15°03'51"S`), lon: parseCoord(`070°54'22"W`) },
+   280→  { id: 'NUXUM', name: 'NUXUM', type: 'WAYPOINT', lat: parseCoord(`09°08'06"S`), lon: parseCoord(`072°57'23"W`) },
+   281→  { id: 'OBLIR', name: 'OBLIR', type: 'WAYPOINT', lat: parseCoord(`14°08'42"S`), lon: parseCoord(`068°51'18"W`) },
+   282→  { id: 'OGMAS', name: 'OGMAS', type: 'WAYPOINT', lat: parseCoord(`16°23'08"S`), lon: parseCoord(`070°46'16"W`) },
+   283→  { id: 'OKASO', name: 'OKASO', type: 'WAYPOINT', lat: parseCoord(`05°08'40"S`), lon: parseCoord(`080°58'12"W`) },
+   284→  { id: 'OPKUL', name: 'OPKUL', type: 'WAYPOINT', lat: parseCoord(`15°06'34"S`), lon: parseCoord(`071°02'25"W`) },
+   285→  { id: 'OPROS', name: 'OPROS', type: 'WAYPOINT', lat: parseCoord(`11°23'41"S`), lon: parseCoord(`076°28'45"W`) },
+   286→  { id: 'OPTOP', name: 'OPTOP', type: 'WAYPOINT', lat: parseCoord(`14°04'35"S`), lon: parseCoord(`069°14'37"W`) },
+   287→  { id: 'OSORA', name: 'OSORA', type: 'WAYPOINT', lat: parseCoord(`05°42'58"S`), lon: parseCoord(`072°56'34"W`) },
+   288→  { id: 'PABOB', name: 'PABOB', type: 'WAYPOINT', lat: parseCoord(`03°24'00"S`), lon: parseCoord(`087°34'30"W`) },
+   289→  { id: 'PADIS', name: 'PADIS', type: 'WAYPOINT', lat: parseCoord(`11°11'16"S`), lon: parseCoord(`076°34'53"W`) },
+   290→  { id: 'PAKOL', name: 'PAKOL', type: 'WAYPOINT', lat: parseCoord(`12°44'42"S`), lon: parseCoord(`075°57'49"W`) },
+   291→];
+   292→
+   293→// Also add navaid-referenced waypoints (for airway segments that reference navaids)
+   294→for (const n of uniqueNavaids) {
+   295→  waypointDefs.push({
+   296→    id: n.id,
+   297→    name: n.name,
+   298→    type: 'NAVAID',
+   299→    lat: n.lat,
+   300→    lon: n.lon,
+   301→    description: `${n.type} ${n.frequency}`,
+   302→  });
+   303→}
+   304→
+   305→// Deduplicate waypoints by id (navaids override if same id)
+   306→const waypointMap = new Map<string, WaypointDef>();
+   307→for (const w of waypointDefs) {
+   308→  // Navaid entries override waypoint entries with same id
+   309→  const existing = waypointMap.get(w.id);
+   310→  if (!existing || w.type === 'NAVAID') {
+   311→    waypointMap.set(w.id, w);
+   312→  }
+   313→}
+   314→const uniqueWaypoints = Array.from(waypointMap.values());
+   315→
+   316→// Build full coordinate lookup
+   317→const allCoords: Record<string, { lat: number; lon: number }> = {};
+   318→for (const w of uniqueWaypoints) {
+   319→  allCoords[w.id] = { lat: w.lat, lon: w.lon };
+   320→}
+   321→
+   322→// ═══════════════════════════════════════════════════════════════════════
+   323→// ENR 3 — Airway Segment Definitions (REAL data)
+   324→// ═══════════════════════════════════════════════════════════════════════
+   325→
+   326→interface SegDef {
+   327→  from: string;
+   328→  to: string;
+   329→  magTrack?: number;       // Magnetic track from the AIP
+   330→  revMagTrack?: number;    // Reverse magnetic track from the AIP
+   331→  distance?: number;       // NM from the AIP (if provided)
+   332→  classification?: string; // Airspace class: A, D, G, F
+   333→  widthNM?: number;        // Route width in NM
+   334→  upperLimit?: string;     // e.g. "FL240", "UNL"
+   335→  lowerLimit?: string;     // e.g. "FL080", "FL200"
+   336→  minFL?: number;          // Numeric min FL (for compatibility)
+   337→  maxFL?: number;          // Numeric max FL (for compatibility)
+   338→  minEnrouteAltitude?: string;
+   339→  remarks?: string;
+   340→}
+   341→
+   342→interface AirwayDef {
+   343→  designator: string;
+   344→  type: 'CONVENTIONAL' | 'RNAV';
+   345→  level: 'LOWER' | 'UPPER';
+   346→  segments: SegDef[];
+   347→}
+   348→
+   349→const airways: AirwayDef[] = [
+   350→  // ═══════════════════════════════════════════════════════════════════
+   351→  // ENR 3.1 — Lower Airspace (CONVENTIONAL)
+   352→  // ═══════════════════════════════════════════════════════════════════
+   353→  {
+   354→    designator: 'A301',
+   355→    type: 'CONVENTIONAL',
+   356→    level: 'LOWER',
+   357→    segments: [
+   358→      { from: 'DADIL', to: 'PAPEM', magTrack: 169, revMagTrack: 349, distance: 48, classification: 'G', widthNM: 20, upperLimit: 'FL240', lowerLimit: 'FL080', minFL: 80, maxFL: 240, remarks: 'Ruta ATS delegada a Bogotá ACC 128.8 MHz' },
+   359→    ],
+   360→  },
+   361→  {
+   362→    designator: 'A304',
+   363→    type: 'CONVENTIONAL',
+   364→    level: 'LOWER',
+   365→    segments: [
+   366→      { from: 'JUL', to: 'ELAKO', magTrack: 126, revMagTrack: 307, distance: 56, classification: 'D', widthNM: 20, upperLimit: 'FL240', lowerLimit: 'FL200', minFL: 200, maxFL: 240, remarks: 'Juliaca TWR 118.1 MHz, FIR La Paz 128.2 MHz' },
+   367→    ],
+   368→  },
+   369→  {
+   370→    designator: 'A566',
+   371→    type: 'CONVENTIONAL',
+   372→    level: 'LOWER',
+   373→    segments: [
+   374→      { from: 'KORBO', to: 'OSUBU', magTrack: 104, revMagTrack: 285, distance: 110, classification: 'G', widthNM: 20, upperLimit: 'FL240', lowerLimit: 'FL080', minFL: 80, maxFL: 240, remarks: 'Andoas AFIS 118.2 MHz' },
+   375→      { from: 'OSUBU', to: 'PABAM', magTrack: 105, revMagTrack: 285, distance: 27, classification: 'G', widthNM: 20, upperLimit: 'FL240', lowerLimit: 'FL080', minFL: 80, maxFL: 240 },
+   376→      { from: 'PABAM', to: 'ISAPA', magTrack: 105, revMagTrack: 286, distance: 90, classification: 'G', widthNM: 20, upperLimit: 'FL240', lowerLimit: 'FL080', minFL: 80, maxFL: 240, remarks: 'Oriente radar 128.5 MHz' },
+   377→      { from: 'ISAPA', to: 'IQT', magTrack: 106, revMagTrack: 286, distance: 50, classification: 'A', widthNM: 20, upperLimit: 'FL240', lowerLimit: 'FL210', minFL: 210, maxFL: 240, minEnrouteAltitude: 'FL200 D FL080', remarks: 'Iquitos APP 124.1 MHz' },
+   378→      { from: 'IQT', to: 'SURIX', magTrack: 104, revMagTrack: 284, distance: 50, classification: 'D', widthNM: 20, upperLimit: 'FL240', lowerLimit: 'FL080', minFL: 80, maxFL: 240 },
+   379→      { from: 'SURIX', to: 'KALOR', magTrack: 104, revMagTrack: 285, distance: 104, classification: 'G', widthNM: 20, upperLimit: 'FL240', lowerLimit: 'FL080', minFL: 80, maxFL: 240 },
+   380→      { from: 'KALOR', to: 'LET', magTrack: 106, revMagTrack: 286, distance: 50, classification: 'G', widthNM: 20, upperLimit: 'FL240', lowerLimit: 'FL080', minFL: 80, maxFL: 240, remarks: 'Leticia FIS 127.5 MHz' },
+   381→    ],
+   382→  },
+   383→  {
+   384→    designator: 'A568',
+   385→    type: 'CONVENTIONAL',
+   386→    level: 'LOWER',
+   387→    segments: [
+   388→      { from: 'DANKI', to: 'LOLES', magTrack: 55, revMagTrack: 236, distance: 37, classification: 'A', widthNM: 20, upperLimit: 'FL240', lowerLimit: 'FL220', minFL: 220, maxFL: 240, remarks: 'Tacna TWR 118.4 MHz, Sur-dos radar 128.8 MHz' },
+   389→    ],
+   390→  },
+   391→  {
+   392→    designator: 'A573',
+   393→    type: 'CONVENTIONAL',
+   394→    level: 'LOWER',
+   395→    segments: [
+   396→      { from: 'ILO', to: 'ORALO', magTrack: 82, revMagTrack: 263, distance: 102, classification: 'A', widthNM: 20, upperLimit: 'FL240', lowerLimit: 'FL220', minFL: 220, maxFL: 240, remarks: 'Tacna TWR 118.4 MHz, Sur-dos radar 128.8 MHz' },
+   397→    ],
+   398→  },
+   399→  {
+   400→    designator: 'B552',
+   401→    type: 'CONVENTIONAL',
+   402→    level: 'LOWER',
+   403→    segments: [
+   404→      { from: 'PUL', to: 'KEBOM', magTrack: 72, revMagTrack: 253, distance: 58, classification: 'A', widthNM: 20, upperLimit: 'FL240', lowerLimit: 'FL210', minFL: 210, maxFL: 240, minEnrouteAltitude: 'FL200 D FL080', remarks: 'Oriente radar 128.5 MHz, Pucallpa TWR 118.1 MHz' },
+   405→    ],
+   406→  },
+   407→  {
+   408→    designator: 'G675',
+   409→    type: 'CONVENTIONAL',
+   410→    level: 'LOWER',
+   411→    segments: [
+   412→      { from: 'PAGUR', to: 'URA', magTrack: 201, revMagTrack: 20, distance: 46, classification: 'A', widthNM: 20, upperLimit: 'FL240', lowerLimit: 'FL100', minFL: 100, maxFL: 240, minEnrouteAltitude: 'FL210/D FL200', remarks: 'Piura TWR 118.4 MHz' },
+   413→      { from: 'URA', to: 'OGTAM', magTrack: 164, revMagTrack: 344, distance: 53, classification: 'A', widthNM: 20, upperLimit: 'FL240', lowerLimit: 'FL080', minFL: 80, maxFL: 240, minEnrouteAltitude: 'FL210/D FL200' },
+   414→      { from: 'OGTAM', to: 'KIBAN', magTrack: 164, revMagTrack: 344, distance: 53, widthNM: 20, remarks: 'Chiclayo TWR 118.3 MHz' },
+   415→      { from: 'KIBAN', to: 'REPIB', magTrack: 142, revMagTrack: 322, distance: 49, widthNM: 20 },
+   416→      { from: 'REPIB', to: 'TRU', magTrack: 142, revMagTrack: 322, distance: 43, classification: 'A', widthNM: 20, upperLimit: 'FL240', lowerLimit: 'FL080', minFL: 80, maxFL: 240, minEnrouteAltitude: 'FL210' },
+   417→      { from: 'TRU', to: 'ESMIL', magTrack: 153, revMagTrack: 333, distance: 50, classification: 'D', widthNM: 20, upperLimit: 'FL200', lowerLimit: 'FL080', minFL: 80, maxFL: 200 },
+   418→      { from: 'ESMIL', to: 'BTE', magTrack: 153, revMagTrack: 333, distance: 22, widthNM: 20, remarks: 'Nor-uno 119.5 MHz, Nor-dos 128.1 MHz' },
+   419→      { from: 'BTE', to: 'SLS', magTrack: 158, revMagTrack: 338, distance: 140, widthNM: 20 },
+   420→      { from: 'SLS', to: 'JCL', magTrack: 151, revMagTrack: 331, distance: 52, widthNM: 20, remarks: 'Lima Radar 119.7 MHz' },
+   421→    ],
+   422→  },
+   423→  {
+   424→    designator: 'R567',
+   425→    type: 'CONVENTIONAL',
+   426→    level: 'LOWER',
+   427→    segments: [
+   428→      { from: 'ARPEN', to: 'AROTI', magTrack: 138, revMagTrack: 318, distance: 120, classification: 'G', widthNM: 20, upperLimit: 'FL240', lowerLimit: 'FL100', minFL: 100, maxFL: 240, remarks: 'Ruta ATS delegada a Bogotá ACC 128.8 MHz' },
+   429→    ],
+   430→  },
+   431→  {
+   432→    designator: 'V1',
+   433→    type: 'CONVENTIONAL',
+   434→    level: 'LOWER',
+   435→    segments: [
+   436→      { from: 'SRV', to: 'MOXOM', magTrack: 258, revMagTrack: 78, distance: 13, remarks: 'FIR Guayaquil, Santa Rosa APP 122.9 MHz' },
+   437→      { from: 'MOXOM', to: 'BES', magTrack: 258, revMagTrack: 78, distance: 11 },
+   438→      { from: 'BES', to: 'DOMVO', magTrack: 235, revMagTrack: 54, distance: 71, classification: 'A', widthNM: 20, upperLimit: 'FL240', lowerLimit: 'FL210', minFL: 210, maxFL: 240, remarks: 'Tumbes TWR 126.8 MHz' },
+   439→      { from: 'DOMVO', to: 'TAL', magTrack: 167, revMagTrack: 347, distance: 20 },
+   440→      { from: 'TAL', to: 'CHIRA', magTrack: 136, revMagTrack: 316, distance: 30 },
+   441→      { from: 'CHIRA', to: 'URA', magTrack: 136, revMagTrack: 316, distance: 23, classification: 'D', widthNM: 20, upperLimit: 'FL200', lowerLimit: 'FL040', minFL: 40, maxFL: 200, remarks: 'Piura TWR 118.4 MHz' },
+   442→      { from: 'URA', to: 'ROKOL', magTrack: 153, revMagTrack: 334, distance: 52 },
+   443→      { from: 'ROKOL', to: 'CLA', magTrack: 154, revMagTrack: 334, distance: 50, widthNM: 20, remarks: 'Chiclayo TWR 118.3 MHz' },
+   444→      { from: 'CLA', to: 'PALOP', magTrack: 154, revMagTrack: 334, distance: 50, classification: 'A', widthNM: 20, upperLimit: 'FL240', lowerLimit: 'FL210', minFL: 210, maxFL: 240 },
+   445→      { from: 'PALOP', to: 'TRU', magTrack: 153, revMagTrack: 333, distance: 42, classification: 'D', widthNM: 20, upperLimit: 'FL200', lowerLimit: 'FL080', minFL: 80, maxFL: 200, remarks: 'Trujillo TWR 118.7 MHz' },
+   446→      { from: 'TRU', to: 'ESMIL', magTrack: 153, revMagTrack: 333, distance: 50 },
+   447→      { from: 'ESMIL', to: 'BTE', magTrack: 153, revMagTrack: 333, distance: 22, classification: 'A', widthNM: 20, upperLimit: 'FL240', lowerLimit: 'FL210', minFL: 210, maxFL: 240, remarks: 'Nor-uno 119.5 MHz, Nor-dos 128.1 MHz' },
+   448→      { from: 'BTE', to: 'SLS', magTrack: 158, revMagTrack: 338, distance: 140, classification: 'D', widthNM: 20, upperLimit: 'FL200', lowerLimit: 'FL080', minFL: 80, maxFL: 200 },
+   449→    ],
+   450→  },
+   451→  {
+   452→    designator: 'V2',
+   453→    type: 'CONVENTIONAL',
+   454→    level: 'LOWER',
+   455→    segments: [
+   456→      { from: 'BES', to: 'EGASI', magTrack: 190, revMagTrack: 9, distance: 40, classification: 'A', widthNM: 20, upperLimit: 'FL240', lowerLimit: 'FL210', minFL: 210, maxFL: 240, minEnrouteAltitude: 'FL210/D FL200', remarks: 'Tumbes TWR 126.8 MHz, Piura TWR 118.4 MHz' },
+   457→      { from: 'EGASI', to: 'URA', magTrack: 190, revMagTrack: 9, distance: 60 },
+   458→    ],
+   459→  },
+   460→  {
+   461→    designator: 'V3',
+   462→    type: 'CONVENTIONAL',
+   463→    level: 'LOWER',
+   464→    segments: [
+   465→      { from: 'IQT', to: 'DORAN', magTrack: 249, revMagTrack: 68, distance: 50, classification: 'A', widthNM: 20, upperLimit: 'FL240', lowerLimit: 'FL210', minFL: 210, maxFL: 240, minEnrouteAltitude: 'FL200 D FL080', remarks: 'Iquitos APP 124.1 MHz' },
+   466→      { from: 'DORAN', to: 'VUKOK', magTrack: 248, revMagTrack: 67, distance: 148, classification: 'G', widthNM: 20, upperLimit: 'FL240', lowerLimit: 'FL080', minFL: 80, maxFL: 240 },
+   467→      { from: 'VUKOK', to: 'POY', magTrack: 247, revMagTrack: 65, distance: 110, classification: 'G', widthNM: 20, upperLimit: 'FL240', lowerLimit: 'FL170', minFL: 170, maxFL: 240, remarks: 'Nor-dos 128.1 MHz, Oriente radar 128.5 MHz' },
+   468→    ],
+   469→  },
+   470→
+   471→  // ═══════════════════════════════════════════════════════════════════
+   472→  // ENR 3.2 — Upper Airspace (CONVENTIONAL)
+   473→  // ═══════════════════════════════════════════════════════════════════
+   474→  {
+   475→    designator: 'UV1',
+   476→    type: 'CONVENTIONAL',
+   477→    level: 'UPPER',
+   478→    segments: [
+   479→      { from: 'BES', to: 'DOMVO', magTrack: 235, revMagTrack: 54, distance: 71 },
+   480→      { from: 'DOMVO', to: 'TAL', magTrack: 167, revMagTrack: 347, distance: 20 },
+   481→      { from: 'TAL', to: 'URA', magTrack: 136, revMagTrack: 316, distance: 54 },
+   482→      { from: 'URA', to: 'CLA', magTrack: 153, revMagTrack: 334, distance: 102, classification: 'A', widthNM: 20, upperLimit: 'UNL', lowerLimit: 'FL250', minFL: 250, maxFL: 600, remarks: 'Nor-uno 119.5 MHz, Nor-dos 128.1 MHz' },
+   483→      { from: 'CLA', to: 'TRU', magTrack: 153, revMagTrack: 333, distance: 92 },
+   484→      { from: 'TRU', to: 'BTE', magTrack: 153, revMagTrack: 333, distance: 72 },
+   485→      { from: 'BTE', to: 'ATATU', magTrack: 156, revMagTrack: 336, distance: 70 },
+   486→      { from: 'ATATU', to: 'KALAR', magTrack: 156, revMagTrack: 336, distance: 70 },
+   487→      { from: 'KALAR', to: 'JCL', magTrack: 156, revMagTrack: 336, distance: 53 },
+   488→    ],
+   489→  },
+   490→  {
+   491→    designator: 'UV3',
+   492→    type: 'CONVENTIONAL',
+   493→    level: 'UPPER',
+   494→    segments: [
+   495→      { from: 'IQT', to: 'DORAN', magTrack: 249, revMagTrack: 68, distance: 50 },
+   496→      { from: 'DORAN', to: 'VUKOK', magTrack: 248, revMagTrack: 67, distance: 148 },
+   497→      { from: 'VUKOK', to: 'KUSKU', magTrack: 247, revMagTrack: 66, distance: 87, classification: 'A', widthNM: 20, upperLimit: 'UNL', lowerLimit: 'FL250', minFL: 250, maxFL: 600, remarks: 'Nor-dos 128.1 MHz, Oriente radar 128.5 MHz' },
+   498→      { from: 'KUSKU', to: 'POY', magTrack: 246, revMagTrack: 65, distance: 23 },
+   499→      { from: 'POY', to: 'CLA', magTrack: 258, revMagTrack: 77, distance: 121 },
+   500→    ],
+   501→  },
+   502→  {
+   503→    designator: 'UV4',
+   504→    type: 'CONVENTIONAL',
+   505→    level: 'UPPER',
+   506→    segments: [
+   507→      { from: 'CLA', to: 'ROBIG', magTrack: 91, revMagTrack: 272, distance: 98 },
+   508→      { from: 'ROBIG', to: 'PUPMI', magTrack: 92, revMagTrack: 272, distance: 42 },
+   509→      { from: 'PUPMI', to: 'TAP', magTrack: 92, revMagTrack: 273, distance: 68, classification: 'A', widthNM: 20, upperLimit: 'UNL', lowerLimit: 'FL250', minFL: 250, maxFL: 600, remarks: 'Nor-dos 128.1 MHz, Oriente radar 128.5 MHz' },
+   510→      { from: 'TAP', to: 'LODIN', magTrack: 138, revMagTrack: 319, distance: 64 },
+   511→      { from: 'LODIN', to: 'BORLA', magTrack: 139, revMagTrack: 319, distance: 28 },
+   512→      { from: 'BORLA', to: 'PUL', magTrack: 139, revMagTrack: 319, distance: 55 },
+   513→    ],
+   514→  },
+   515→  {
+   516→    designator: 'UV5',
+   517→    type: 'CONVENTIONAL',
+   518→    level: 'UPPER',
+   519→    segments: [
+   520→      { from: 'IQT', to: 'RONSO', magTrack: 234, revMagTrack: 53, distance: 50 },
+   521→      { from: 'RONSO', to: 'IKARO', magTrack: 233, revMagTrack: 51, distance: 164 },
+   522→      { from: 'IKARO', to: 'TAP', magTrack: 231, revMagTrack: 51, distance: 35, widthNM: 20, remarks: 'Nor-dos 128.1 MHz, Oriente radar 128.5 MHz' },
+   523→      { from: 'TAP', to: 'UTKIK', magTrack: 247, revMagTrack: 66, distance: 50 },
+   524→      { from: 'UTKIK', to: 'RELOR', magTrack: 246, revMagTrack: 66, distance: 24, classification: 'A', widthNM: 20, upperLimit: 'UNL', lowerLimit: 'FL250', minFL: 250, maxFL: 600 },
+   525→      { from: 'RELOR', to: 'MANPA', magTrack: 246, revMagTrack: 65, distance: 46 },
+   526→      { from: 'MANPA', to: 'VATES', magTrack: 245, revMagTrack: 65, distance: 15 },
+   527→      { from: 'VATES', to: 'TRU', magTrack: 245, revMagTrack: 65, distance: 50 },
+   528→    ],
+   529→  },
+   530→  {
+   531→    designator: 'UV9',
+   532→    type: 'CONVENTIONAL',
+   533→    level: 'UPPER',
+   534→    segments: [
+   535→      { from: 'IQT', to: 'TAPIR', magTrack: 202, revMagTrack: 22, distance: 50 },
+   536→      { from: 'TAPIR', to: 'FANES', magTrack: 202, revMagTrack: 21, distance: 179, classification: 'A', widthNM: 20, upperLimit: 'UNL', lowerLimit: 'FL250', minFL: 250, maxFL: 600, remarks: 'Oriente radar 128.5 MHz' },
+   537→      { from: 'FANES', to: 'PUL', magTrack: 201, revMagTrack: 21, distance: 55 },
+   538→    ],
+   539→  },
+   540→  {
+   541→    designator: 'UV10',
+   542→    type: 'CONVENTIONAL',
+   543→    level: 'UPPER',
+   544→    segments: [
+   545→      { from: 'ZCO', to: 'URC', magTrack: 113, revMagTrack: 294, distance: 26, remarks: 'Cusco APP 120.6 MHz' },
+   546→      { from: 'URC', to: 'CEMIL', magTrack: 72, revMagTrack: 253, distance: 60, classification: 'A', widthNM: 20, upperLimit: 'UNL', lowerLimit: 'FL250', minFL: 250, maxFL: 600, remarks: 'Sur-dos radar 128.8 MHz' },
+   547→      { from: 'CEMIL', to: 'PDO', magTrack: 73, revMagTrack: 254, distance: 91 },
+   548→    ],
+   549→  },
+   550→  {
+   551→    designator: 'UV11',
+   552→    type: 'CONVENTIONAL',
+   553→    level: 'UPPER',
+   554→    segments: [
+   555→      { from: 'AND', to: 'TILPA', magTrack: 93, revMagTrack: 273, distance: 29, remarks: 'Sur-dos radar 128.8 MHz' },
+   556→      { from: 'TILPA', to: 'URC', magTrack: 93, revMagTrack: 274, distance: 76, classification: 'A', widthNM: 20, upperLimit: 'UNL', lowerLimit: 'FL250', minFL: 250, maxFL: 600, remarks: 'Cusco APP 120.6 MHz' },
+   557→      { from: 'URC', to: 'ILMOX', magTrack: 149, revMagTrack: 329, distance: 71, remarks: 'Sur-dos radar 128.8 MHz' },
+   558→      { from: 'ILMOX', to: 'JUL', magTrack: 149, revMagTrack: 329, distance: 66 },
+   559→    ],
+   560→  },
+   561→
+   562→  // ═══════════════════════════════════════════════════════════════════
+   563→  // ENR 3.3 — RNAV Routes (LOWER)
+   564→  // ═══════════════════════════════════════════════════════════════════
+   565→  {
+   566→    designator: 'L302',
+   567→    type: 'RNAV',
+   568→    level: 'LOWER',
+   569→    segments: [
+   570→      { from: 'JCL', to: 'ILMAR', magTrack: 168, revMagTrack: 347, distance: 138, classification: 'A', widthNM: 10, upperLimit: 'FL240', lowerLimit: 'FL210', minFL: 210, maxFL: 240, minEnrouteAltitude: 'FL200 D FL080', remarks: 'Sur-uno 135.0 MHz, Sur-dos 128.8 MHz, Lima radar 119.7 MHz' },
+   571→      { from: 'ILMAR', to: 'IREMI', magTrack: 167, revMagTrack: 346, distance: 252 },
+   572→    ],
+   573→  },
+   574→  {
+   575→    designator: 'L525',
+   576→    type: 'RNAV',
+   577→    level: 'LOWER',
+   578→    segments: [
+   579→      { from: 'JCL', to: 'ASOXI', magTrack: 148, revMagTrack: 328, distance: 52, classification: 'A', widthNM: 5, upperLimit: 'FL240', lowerLimit: 'FL210', minFL: 210, maxFL: 240, minEnrouteAltitude: 'FL200 D FL080', remarks: 'Lima radar 119.7 MHz, Pisco TWR 118.3 MHz, Sur-uno 135.0 MHz, Sur-dos 128.8 MHz' },
+   580→      { from: 'ASOXI', to: 'SCO', magTrack: 161, revMagTrack: 341, distance: 63, classification: 'A', widthNM: 5, upperLimit: 'FL240', lowerLimit: 'FL210', minFL: 210, maxFL: 240, minEnrouteAltitude: 'FL200 D FL080' },
+   581→      { from: 'SCO', to: 'ESIRA', magTrack: 137, revMagTrack: 317, distance: 100, classification: 'A', widthNM: 5, upperLimit: 'FL240', lowerLimit: 'FL130', minFL: 130, maxFL: 240, minEnrouteAltitude: 'FL210/D FL200', remarks: 'Sur-uno 135.0 MHz, Sur-dos 128.8 MHz' },
+   582→      { from: 'ESIRA', to: 'ISOKI', magTrack: 138, revMagTrack: 318, distance: 114, classification: 'A', widthNM: 5, upperLimit: 'FL240', lowerLimit: 'FL210', minFL: 210, maxFL: 240 },
+   583→      { from: 'ISOKI', to: 'MIGEB', magTrack: 128, revMagTrack: 309, distance: 105, classification: 'A', widthNM: 5, upperLimit: 'FL240', lowerLimit: 'FL210', minFL: 210, maxFL: 240 },
+   584→      { from: 'MIGEB', to: 'ILO', magTrack: 129, revMagTrack: 311, distance: 50, classification: 'D', widthNM: 5, upperLimit: 'FL200', lowerLimit: 'FL090', minFL: 90, maxFL: 200, remarks: 'Tacna TWR 118.4 MHz' },
+   585→      { from: 'ILO', to: 'ARI', magTrack: 131, revMagTrack: 311, distance: 70, widthNM: 5 },
+   586→    ],
+   587→  },
+   588→  {
+   589→    designator: 'T216',
+   590→    type: 'RNAV',
+   591→    level: 'LOWER',
+   592→    segments: [
+   593→      { from: 'IQT', to: 'MAJAZ', magTrack: 213, revMagTrack: 32, distance: 50, classification: 'A', widthNM: 5, upperLimit: 'FL240', lowerLimit: 'FL170', minFL: 170, maxFL: 240, minEnrouteAltitude: 'FL210/D FL200', remarks: 'Iquitos APP 124.1 MHz' },
+   594→      { from: 'MAJAZ', to: 'BORLA', magTrack: 212, revMagTrack: 31, distance: 212, classification: 'G', widthNM: 5, upperLimit: 'FL240', lowerLimit: 'FL170', minFL: 170, maxFL: 240, remarks: 'Oriente radar 128.5 MHz' },
+   595→      { from: 'BORLA', to: 'IBARE', magTrack: 211, revMagTrack: 30, distance: 104, remarks: 'Unidireccional tramo Lima-IBARE AWY T325' },
+   596→    ],
+   597→  },
+   598→  {
+   599→    designator: 'T218',
+   600→    type: 'RNAV',
+   601→    level: 'LOWER',
+   602→    segments: [
+   603→      { from: 'JCL', to: 'KONTA', magTrack: 96, revMagTrack: 277, distance: 54, remarks: 'Lima radar 119.7 MHz' },
+   604→      { from: 'KONTA', to: 'ILPIP', magTrack: 97, revMagTrack: 277, distance: 10 },
+   605→      { from: 'ILPIP', to: 'LOKEB', magTrack: 97, revMagTrack: 278, distance: 20, classification: 'A', widthNM: 5, upperLimit: 'FL240', lowerLimit: 'FL210', minFL: 210, maxFL: 240, remarks: 'Oriente radar 128.5 MHz' },
+   606→      { from: 'LOKEB', to: 'BODET', magTrack: 100, revMagTrack: 281, distance: 105 },
+   607→      { from: 'BODET', to: 'ANKUG', magTrack: 101, revMagTrack: 281, distance: 103, remarks: 'Sur-dos radar 128.8 MHz' },
+   608→      { from: 'ANKUG', to: 'ETEBA', magTrack: 101, revMagTrack: 282, distance: 33 },
+   609→      { from: 'ETEBA', to: 'ANBON', magTrack: 102, revMagTrack: 283, distance: 89, remarks: 'Puerto Maldonado TWR 118.5 MHz' },
+   610→      { from: 'ANBON', to: 'PDO', magTrack: 102, revMagTrack: 283, distance: 50 },
+   611→    ],
+   612→  },
+   613→  {
+   614→    designator: 'T226',
+   615→    type: 'RNAV',
+   616→    level: 'LOWER',
+   617→    segments: [
+   618→      { from: 'MLV', to: 'ASEMO', magTrack: 295, revMagTrack: 115, distance: 30, classification: 'G', widthNM: 5, upperLimit: 'FL240', lowerLimit: 'FL130', minFL: 130, maxFL: 240, minEnrouteAltitude: 'FL180/F FL170', remarks: 'Malvinas ADVS 123.5 MHz' },
+   619→      { from: 'ASEMO', to: 'OGNUM', magTrack: 277, revMagTrack: 97, distance: 32, classification: 'F', widthNM: 5, upperLimit: 'FL240', lowerLimit: 'FL130', minFL: 130, maxFL: 240, minEnrouteAltitude: 'FL170', remarks: 'Oriente radar 128.5 MHz' },
+   620→      { from: 'OGNUM', to: 'MONKU', magTrack: 272, revMagTrack: 91, distance: 115, classification: 'A', widthNM: 5, upperLimit: 'FL240', lowerLimit: 'FL200', minFL: 200, maxFL: 240, minEnrouteAltitude: 'FL210/G FL200', remarks: 'Oriente radar 128.5 MHz' },
+   621→      { from: 'MONKU', to: 'ALDAL', magTrack: 271, revMagTrack: 91, distance: 20, classification: 'A', widthNM: 5, upperLimit: 'FL240', lowerLimit: 'FL210', minFL: 210, maxFL: 240, minEnrouteAltitude: 'FL210/D FL200' },
+   622→      { from: 'ALDAL', to: 'JCL', magTrack: 256, revMagTrack: 75, distance: 53, classification: 'A', widthNM: 5, upperLimit: 'FL240', lowerLimit: 'FL200', minFL: 200, maxFL: 240, minEnrouteAltitude: 'FL210/D FL200', remarks: 'Lima radar 119.7 MHz' },
+   623→    ],
+   624→  },
+   625→];
+   626→
+   627→// ═══════════════════════════════════════════════════════════════════════
+   628→// ENR 5.1 — Airspace Restrictions (REAL data)
+   629→// ═══════════════════════════════════════════════════════════════════════
+   630→
+   631→interface RestrictionDef {
+   632→  designator: string;
+   633→  name: string;
+   634→  type: string;
+   635→  centerLat: number;
+   636→  centerLon: number;
+   637→  lowerLimit: string;
+   638→  upperLimit: string;
+   639→  lowerLimitFt?: number;
+   640→  upperLimitFt?: number;
+   641→  radius?: number;
+   642→  polygon?: string;
+   643→  restrictions?: string;
+   644→  operatingHours?: string;
+   645→  authority?: string;
+   646→  remarks?: string;
+   647→  color?: string;
+   648→}
+   649→
+   650→const restrictions: RestrictionDef[] = [
+   651→  {
+   652→    designator: 'SPP01',
+   653→    name: 'EL SALTO-TUMBES',
+   654→    type: 'PROHIBITED',
+   655→    centerLat: parseCoord(`03°30'00"S`),
+   656→    centerLon: parseCoord(`080°15'00"W`),
+   657→    lowerLimit: 'GND',
+   658→    upperLimit: '1500FT AGL',
+   659→    upperLimitFt: 1500,
+   660→    polygon: 'CIRCLE',
+   661→    restrictions: 'Prohibido el vuelo de aeronaves',
+   662→    operatingHours: 'H24',
+   663→    authority: 'DIRCORA',
+   664→    remarks: 'Permanent',
+   665→    color: '#FF0000',
+   666→  },
+   667→  {
+   668→    designator: 'SPP02',
+   669→    name: 'ESTERO SANTA TERESA-IQUITOS',
+   670→    type: 'PROHIBITED',
+   671→    centerLat: parseCoord(`03°45'00"S`),
+   672→    centerLon: parseCoord(`073°15'00"W`),
+   673→    lowerLimit: 'GND',
+   674→    upperLimit: '1500FT AGL',
+   675→    upperLimitFt: 1500,
+   676→    polygon: 'RECTANGLE',
+   677→    restrictions: 'Prohibido el vuelo de aeronaves',
+   678→    operatingHours: 'H24',
+   679→    authority: 'DIRCORA',
+   680→    remarks: 'Permanent',
+   681→    color: '#FF0000',
+   682→  },
+   683→  {
+   684→    designator: 'SPP03',
+   685→    name: 'PAMPAS DE HUARANGAL',
+   686→    type: 'PROHIBITED',
+   687→    centerLat: parseCoord(`12°15'44"S`),
+   688→    centerLon: parseCoord(`076°51'14"W`),
+   689→    lowerLimit: 'GND',
+   690→    upperLimit: '3000FT AGL',
+   691→    upperLimitFt: 3000,
+   692→    radius: 1,
+   693→    restrictions: 'Prohibido el vuelo de aeronaves',
+   694→    operatingHours: 'H24',
+   695→    authority: 'DIRCORA',
+   696→    remarks: 'Permanent, 20NM SE of JCL',
+   697→    color: '#FF0000',
+   698→  },
+   699→  {
+   700→    designator: 'SPP04',
+   701→    name: 'PLANTA MELCHORITA',
+   702→    type: 'PROHIBITED',
+   703→    centerLat: parseCoord(`13°14'47"S`),
+   704→    centerLon: parseCoord(`076°17'56"W`),
+   705→    lowerLimit: 'GND',
+   706→    upperLimit: '1500FT AGL',
+   707→    upperLimitFt: 1500,
+   708→    radius: 1.08, // 2KM in NM
+   709→    restrictions: 'Prohibido el vuelo de aeronaves',
+   710→    operatingHours: 'H24',
+   711→    authority: 'DIRCORA',
+   712→    remarks: 'Permanent, 55km N of PISCO',
+   713→    color: '#FF0000',
+   714→  },
+   715→  {
+   716→    designator: 'SPP05',
+   717→    name: 'PLANTA LA LOBERA',
+   718→    type: 'PROHIBITED',
+   719→    centerLat: parseCoord(`13°46'27"S`),
+   720→    centerLon: parseCoord(`076°13'35"W`),
+   721→    lowerLimit: 'GND',
+   722→    upperLimit: '1500FT AGL',
+   723→    upperLimitFt: 1500,
+   724→    radius: 0.54, // 1KM in NM
+   725→    restrictions: 'Prohibido el vuelo de aeronaves',
+   726→    operatingHours: 'H24',
+   727→    authority: 'DIRCORA',
+   728→    remarks: 'Permanent, 5km S of PISCO',
+   729→    color: '#FF0000',
+   730→  },
+   731→  {
+   732→    designator: 'SPP28',
+   733→    name: 'LIMA',
+   734→    type: 'PROHIBITED',
+   735→    centerLat: parseCoord(`12°00'55"S`),
+   736→    centerLon: parseCoord(`076°57'18"W`),
+   737→    lowerLimit: 'GND',
+   738→    upperLimit: '3000FT AMSL',
+   739→    upperLimitFt: 3000,
+   740→    radius: 2,
+   741→    restrictions: 'Prohibido el vuelo de aeronaves',
+   742→    operatingHours: 'H24',
+   743→    authority: 'DIRCORA',
+   744→    remarks: 'Permanent',
+   745→    color: '#FF0000',
+   746→  },
+   747→  {
+   748→    designator: 'SPP29',
+   749→    name: 'ISLA SAN LORENZO',
+   750→    type: 'PROHIBITED',
+   751→    centerLat: parseCoord(`12°03'00"S`),
+   752→    centerLon: parseCoord(`077°12'00"W`),
+   753→    lowerLimit: 'GND',
+   754→    upperLimit: '2000FT AGL',
+   755→    upperLimitFt: 2000,
+   756→    polygon: 'POLYGON',
+   757→    restrictions: 'Prohibido el vuelo de aeronaves',
+   758→    operatingHours: 'H24',
+   759→    authority: 'DIRCORA',
+   760→    remarks: 'Permanent',
+   761→    color: '#FF0000',
+   762→  },
+   763→  {
+   764→    designator: 'SPP69',
+   765→    name: 'PISCO',
+   766→    type: 'RESTRICTED',
+   767→    centerLat: parseCoord(`13°50'00"S`),
+   768→    centerLon: parseCoord(`076°15'00"W`),
+   769→    lowerLimit: 'GND',
+   770→    upperLimit: '2500FT AMSL',
+   771→    upperLimitFt: 2500,
+   772→    polygon: 'POLYGON',
+   773→    restrictions: 'Reserva Natural de Paracas',
+   774→    operatingHours: 'H24',
+   775→    authority: 'DIRCORA',
+   776→    remarks: 'Permanent, Reserva Natural de Paracas',
+   777→    color: '#FF8C00',
+   778→  },
+   779→  {
+   780→    designator: 'SPP72',
+   781→    name: 'PAMPAS DE LA JOYA',
+   782→    type: 'DANGER',
+   783→    centerLat: parseCoord(`16°30'00"S`),
+   784→    centerLon: parseCoord(`072°00'00"W`),
+   785→    lowerLimit: 'GND',
+   786→    upperLimit: 'UNL',
+   787→    upperLimitFt: 99999,
+   788→    polygon: 'TRIANGLE',
+   789→    restrictions: 'Área de peligro',
+   790→    operatingHours: 'H24',
+   791→    authority: 'FAP',
+   792→    remarks: 'Permanent',
+   793→    color: '#FFD700',
+   794→  },
+   795→  {
+   796→    designator: 'SPP74',
+   797→    name: 'MAZO CRUZ',
+   798→    type: 'RESTRICTED',
+   799→    centerLat: parseCoord(`16°45'00"S`),
+   800→    centerLon: parseCoord(`069°30'00"W`),
+   801→    lowerLimit: 'GND',
+   802→    upperLimit: 'FL150',
+   803→    upperLimitFt: 15000,
+   804→    polygon: 'TRIANGLE',
+   805→    restrictions: 'Área restringida',
+   806→    operatingHours: 'H24',
+   807→    authority: 'FAP',
+   808→    remarks: 'Permanent',
+   809→    color: '#FF8C00',
+   810→  },
+   811→  {
+   812→    designator: 'SPP75',
+   813→    name: 'ILAVE',
+   814→    type: 'RESTRICTED',
+   815→    centerLat: parseCoord(`16°10'00"S`),
+   816→    centerLon: parseCoord(`069°40'00"W`),
+   817→    lowerLimit: 'GND',
+   818→    upperLimit: 'FL150',
+   819→    upperLimitFt: 15000,
+   820→    polygon: 'POLYGON',
+   821→    restrictions: 'Área restringida',
+   822→    operatingHours: 'H24',
+   823→    authority: 'FAP',
+   824→    remarks: 'Permanent',
+   825→    color: '#FF8C00',
+   826→  },
+   827→  {
+   828→    designator: 'SPP78',
+   829→    name: 'LA BREA',
+   830→    type: 'DANGER',
+   831→    centerLat: parseCoord(`04°30'00"S`),
+   832→    centerLon: parseCoord(`081°00'00"W`),
+   833→    lowerLimit: 'GND',
+   834→    upperLimit: 'UNL',
+   835→    upperLimitFt: 99999,
+   836→    polygon: 'POLYGON',
+   837→    restrictions: 'Área de peligro',
+   838→    operatingHours: 'H24',
+   839→    authority: 'PETROPERU',
+   840→    remarks: 'Permanent',
+   841→    color: '#FFD700',
+   842→  },
+   843→  {
+   844→    designator: 'SPP81',
+   845→    name: 'QUERECOTILLO',
+   846→    type: 'RESTRICTED',
+   847→    centerLat: parseCoord(`05°00'00"S`),
+   848→    centerLon: parseCoord(`080°30'00"W`),
+   849→    lowerLimit: 'GND',
+   850→    upperLimit: 'FL070',
+   851→    upperLimitFt: 7000,
+   852→    polygon: 'POLYGON',
+   853→    restrictions: 'Área restringida',
+   854→    operatingHours: 'H24',
+   855→    authority: 'FAP',
+   856→    remarks: 'Permanent',
+   857→    color: '#FF8C00',
+   858→  },
+   859→  {
+   860→    designator: 'SPP82',
+   861→    name: 'PAITA',
+   862→    type: 'RESTRICTED',
+   863→    centerLat: parseCoord(`05°05'00"S`),
+   864→    centerLon: parseCoord(`081°05'00"W`),
+   865→    lowerLimit: 'GND',
+   866→    upperLimit: 'FL080',
+   867→    upperLimitFt: 8000,
+   868→    polygon: 'POLYGON',
+   869→    restrictions: 'Polígono FAP',
+   870→    operatingHours: 'H24',
+   871→    authority: 'FAP',
+   872→    remarks: 'Permanent, Polígono FAP',
+   873→    color: '#FF8C00',
+   874→  },
+   875→  {
+   876→    designator: 'SPP83',
+   877→    name: 'BAYOVAR',
+   878→    type: 'DANGER',
+   879→    centerLat: parseCoord(`05°45'00"S`),
+   880→    centerLon: parseCoord(`081°15'00"W`),
+   881→    lowerLimit: 'GND',
+   882→    upperLimit: '2000FT AGL',
+   883→    upperLimitFt: 2000,
+   884→    polygon: 'POLYGON',
+   885→    restrictions: 'Área de peligro',
+   886→    operatingHours: 'H24',
+   887→    authority: 'PETROPERU',
+   888→    remarks: 'Permanent',
+   889→    color: '#FFD700',
+   890→  },
+   891→  {
+   892→    designator: 'SPP88',
+   893→    name: 'LIMA',
+   894→    type: 'RESTRICTED',
+   895→    centerLat: parseCoord(`12°02'00"S`),
+   896→    centerLon: parseCoord(`077°00'00"W`),
+   897→    lowerLimit: 'GND',
+   898→    upperLimit: '4000FT AMSL',
+   899→    upperLimitFt: 4000,
+   900→    polygon: 'ARC',
+   901→    restrictions: 'Área restringida',
+   902→    operatingHours: 'H24',
+   903→    authority: 'DIRCORA',
+   904→    remarks: 'Permanent',
+   905→    color: '#FF8C00',
+   906→  },
+   907→  {
+   908→    designator: 'SPP89',
+   909→    name: 'LIMA',
+   910→    type: 'RESTRICTED',
+   911→    centerLat: parseCoord(`12°03'00"S`),
+   912→    centerLon: parseCoord(`077°01'00"W`),
+   913→    lowerLimit: 'GND',
+   914→    upperLimit: '4000FT AMSL',
+   915→    upperLimitFt: 4000,
+   916→    polygon: 'ARC',
+   917→    restrictions: 'Cuartel General Ejército Peruano, Embajada EE.UU.',
+   918→    operatingHours: 'H24',
+   919→    authority: 'MINDEF',
+   920→    remarks: 'Permanent, Cuartel General Ejército Peruano, Embajada EE.UU.',
+   921→    color: '#FF8C00',
+   922→  },
+   923→];
+   924→
+   925→// ═══════════════════════════════════════════════════════════════════════
+   926→// Main seed function
+   927→// ═══════════════════════════════════════════════════════════════════════
+   928→
+   929→async function main() {
+   930→  console.log('═══════════════════════════════════════════════════════════════');
+   931→  console.log('  AIP PERÚ Seed Script — Real Data from Official Publications');
+   932→  console.log('═══════════════════════════════════════════════════════════════\n');
+   933→
+   934→  // ─── 1. Delete ALL existing airways and segments ──────────────────
+   935→  console.log('--- Step 1: Deleting ALL existing airways and segments ---');
+   936→  const delSegs = await db.airwaySegment.deleteMany({});
+   937→  console.log(`  Deleted ${delSegs.count} airway segments`);
+   938→  const delAWs = await db.airway.deleteMany({});
+   939→  console.log(`  Deleted ${delAWs.count} airways`);
+   940→
+   941→  // ─── 2. Upsert Navaids ───────────────────────────────────────────
+   942→  console.log('\n--- Step 2: Upserting navaids from ENR 4.1 ---');
+   943→  for (const n of uniqueNavaids) {
+   944→    await db.navaid.upsert({
+   945→      where: { id: n.id },
+   946→      update: {
+   947→        name: n.name,
+   948→        type: n.type,
+   949→        frequency: n.frequency + (n.channel ? ` ${n.channel}` : ''),
+   950→        lat: n.lat,
+   951→        lon: n.lon,
+   952→        elevation: n.elevation,
+   953→      },
+   954→      create: {
+   955→        id: n.id,
+   956→        name: n.name,
+   957→        type: n.type,
+   958→        frequency: n.frequency + (n.channel ? ` ${n.channel}` : ''),
+   959→        lat: n.lat,
+   960→        lon: n.lon,
+   961→        elevation: n.elevation,
+   962→      },
+   963→    });
+   964→    console.log(`  Upserted navaid: ${n.id} (${n.name}) ${n.frequency}`);
+   965→  }
+   966→
+   967→  // ─── 3. Upsert Waypoints ─────────────────────────────────────────
+   968→  console.log('\n--- Step 3: Upserting waypoints from ENR 4.4 ---');
+   969→  for (const w of uniqueWaypoints) {
+   970→    await db.waypoint.upsert({
+   971→      where: { id: w.id },
+   972→      update: {
+   973→        name: w.name,
+   974→        type: w.type,
+   975→        lat: w.lat,
+   976→        lon: w.lon,
+   977→        description: w.description,
+   978→      },
+   979→      create: {
+   980→        id: w.id,
+   981→        name: w.name,
+   982→        type: w.type,
+   983→        lat: w.lat,
+   984→        lon: w.lon,
+   985→        description: w.description,
+   986→      },
+   987→    });
+   988→  }
+   989→  console.log(`  Upserted ${uniqueWaypoints.length} waypoints`);
+   990→
+   991→  // ─── 4. Create Airways with Segments ─────────────────────────────
+   992→  console.log('\n--- Step 4: Creating airways from ENR 3.1/3.2/3.3 ---');
+   993→  for (const aw of airways) {
+   994→    const segmentData = [];
+   995→
+   996→    for (let i = 0; i < aw.segments.length; i++) {
+   997→      const seg = aw.segments[i];
+   998→      const fromCoord = allCoords[seg.from];
+   999→      const toCoord = allCoords[seg.to];
+  1000→
+  1001→      if (!fromCoord) {
+  1002→        console.error(`  ERROR: Unknown waypoint/navaid: ${seg.from} in ${aw.designator}`);
+  1003→        continue;
+  1004→      }
+  1005→      if (!toCoord) {
+  1006→        console.error(`  ERROR: Unknown waypoint/navaid: ${seg.to} in ${aw.designator}`);
+  1007→        continue;
+  1008→      }
+  1009→
+  1010→      const computedDist = haversine(fromCoord.lat, fromCoord.lon, toCoord.lat, toCoord.lon);
+  1011→      const computedBearing = bearing(fromCoord.lat, fromCoord.lon, toCoord.lat, toCoord.lon);
+  1012→      const computedRevBearing = (computedBearing + 180) % 360;
+  1013→
+  1014→      // Use AIP-provided distance if available, otherwise computed
+  1015→      const dist = seg.distance ?? Math.round(computedDist * 10) / 10;
+  1016→      const brg = Math.round(computedBearing * 10) / 10;
+  1017→
+  1018→      segmentData.push({
+  1019→        orderIndex: i,
+  1020→        fromPoint: seg.from,
+  1021→        toPoint: seg.to,
+  1022→        distance: dist,
+  1023→        bearing: brg,
+  1024→        trackTrue: brg,
+  1025→        reverseTrack: Math.round(computedRevBearing * 10) / 10,
+  1026→        minFL: seg.minFL,
+  1027→        maxFL: seg.maxFL,
+  1028→        // New AIP fields
+  1029→        magneticTrack: seg.magTrack,
+  1030→        reverseMagneticTrack: seg.revMagTrack,
+  1031→        classification: seg.classification,
+  1032→        widthNM: seg.widthNM,
+  1033→        upperLimit: seg.upperLimit,
+  1034→        lowerLimit: seg.lowerLimit,
+  1035→        minEnrouteAltitude: seg.minEnrouteAltitude,
+  1036→        remarks: seg.remarks,
+  1037→      });
+  1038→    }
+  1039→
+  1040→    const created = await db.airway.create({
+  1041→      data: {
+  1042→        designator: aw.designator,
+  1043→        type: aw.type,
+  1044→        level: aw.level,
+  1045→        segments: { create: segmentData },
+  1046→      },
+  1047→      include: { segments: true },
+  1048→    });
+  1049→
+  1050→    console.log(`  Created airway: ${aw.designator} (${aw.type}, ${aw.level}) with ${created.segments.length} segments`);
+  1051→    for (const seg of created.segments) {
+  1052→      const cls = seg.classification ? ` [${seg.classification}]` : '';
+  1053→      const mt = seg.magneticTrack ? ` MAG${seg.magneticTrack}°` : '';
+  1054→      const w = seg.widthNM ? ` WID${seg.widthNM}NM` : '';
+  1055→      const ul = seg.upperLimit ? ` ↑${seg.upperLimit}` : '';
+  1056→      const ll = seg.lowerLimit ? ` ↓${seg.lowerLimit}` : '';
+  1057→      console.log(`    ${seg.orderIndex}: ${seg.fromPoint} → ${seg.toPoint} ${seg.distance}NM brg=${seg.bearing}°${mt}${cls}${w}${ul}${ll}`);
+  1058→    }
+  1059→  }
+  1060→
+  1061→  // ─── 5. Upsert Airspace Restrictions ─────────────────────────────
+  1062→  console.log('\n--- Step 5: Upserting airspace restrictions from ENR 5.1 ---');
+  1063→  for (const r of restrictions) {
+  1064→    await db.airspaceRestriction.upsert({
+  1065→      where: { designator: r.designator },
+  1066→      update: {
+  1067→        name: r.name,
+  1068→        type: r.type,
+  1069→        centerLat: r.centerLat,
+  1070→        centerLon: r.centerLon,
+  1071→        lowerLimit: r.lowerLimit,
+  1072→        upperLimit: r.upperLimit,
+  1073→        lowerLimitFt: r.lowerLimitFt,
+  1074→        upperLimitFt: r.upperLimitFt,
+  1075→        radius: r.radius,
+  1076→        polygon: r.polygon,
+  1077→        restrictions: r.restrictions,
+  1078→        operatingHours: r.operatingHours,
+  1079→        authority: r.authority,
+  1080→        remarks: r.remarks,
+  1081→        color: r.color,
+  1082→      },
+  1083→      create: {
+  1084→        designator: r.designator,
+  1085→        name: r.name,
+  1086→        type: r.type,
+  1087→        centerLat: r.centerLat,
+  1088→        centerLon: r.centerLon,
+  1089→        lowerLimit: r.lowerLimit,
+  1090→        upperLimit: r.upperLimit,
+  1091→        lowerLimitFt: r.lowerLimitFt,
+  1092→        upperLimitFt: r.upperLimitFt,
+  1093→        radius: r.radius,
+  1094→        polygon: r.polygon,
+  1095→        restrictions: r.restrictions,
+  1096→        operatingHours: r.operatingHours,
+  1097→        authority: r.authority,
+  1098→        remarks: r.remarks,
+  1099→        color: r.color,
+  1100→      },
+  1101→    });
+  1102→    console.log(`  Upserted restriction: ${r.designator} (${r.name}) [${r.type}]`);
+  1103→  }
+  1104→
+  1105→  // ─── 6. Summary ──────────────────────────────────────────────────
+  1106→  console.log('\n═══════════════════════════════════════════════════════════════');
+  1107→  console.log('  Seed Complete — Summary');
+  1108→  console.log('═══════════════════════════════════════════════════════════════\n');
+  1109→
+  1110→  const totalWaypoints = await db.waypoint.count();
+  1111→  const totalNavaids = await db.navaid.count();
+  1112→  const totalAirways = await db.airway.count();
+  1113→  const totalSegments = await db.airwaySegment.count();
+  1114→  const totalRestrictions = await db.airspaceRestriction.count();
+  1115→  const convCount = await db.airway.count({ where: { type: 'CONVENTIONAL' } });
+  1116→  const rnavCount = await db.airway.count({ where: { type: 'RNAV' } });
+  1117→  const lowerCount = await db.airway.count({ where: { level: 'LOWER' } });
+  1118→  const upperCount = await db.airway.count({ where: { level: 'UPPER' } });
+  1119→
+  1120→  console.log(`  Navaids:           ${totalNavaids}`);
+  1121→  console.log(`  Waypoints:         ${totalWaypoints}`);
+  1122→  console.log(`  Airways:           ${totalAirways} (${convCount} conventional + ${rnavCount} RNAV)`);
+  1123→  console.log(`  Airway Levels:     ${lowerCount} LOWER + ${upperCount} UPPER`);
+  1124→  console.log(`  Airway Segments:   ${totalSegments}`);
+  1125→  console.log(`  Restrictions:      ${totalRestrictions}`);
+  1126→
+  1127→  // List all airways
+  1128→  const allAirways = await db.airway.findMany({
+  1129→    select: {
+  1130→      designator: true,
+  1131→      type: true,
+  1132→      level: true,
+  1133→      segments: { select: { fromPoint: true, toPoint: true, magneticTrack: true, distance: true } },
+  1134→    },
+  1135→    orderBy: [{ type: 'asc' }, { designator: 'asc' }],
+  1136→  });
+  1137→  console.log('\nAll airways:');
+  1138→  for (const aw of allAirways) {
+  1139→    const route = aw.segments.map(s => s.fromPoint).concat(aw.segments.length > 0 ? [aw.segments[aw.segments.length - 1].toPoint] : []).join(' → ');
+  1140→    console.log(`  ${aw.designator} (${aw.type}/${aw.level}): ${route}`);
+  1141→  }
+  1142→}
+  1143→
+  1144→main()
+  1145→  .catch((e) => {
+  1146→    console.error('Seed error:', e);
+  1147→    process.exit(1);
+  1148→  })
+  1149→  .finally(async () => {
+  1150→    await db.$disconnect();
+  1151→  });
+  1152→

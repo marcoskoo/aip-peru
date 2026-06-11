@@ -1,0 +1,2002 @@
+     1→{
+     2→  "firBoundaries": {
+     3→    "SPIM": {
+     4→      "name": "Lima FIR",
+     5→      "type": "FIR",
+     6→      "center": {
+     7→        "lat": -9.19,
+     8→        "lon": -79.34
+     9→      },
+    10→      "polygon": [
+    11→        {
+    12→          "lat": 0.0,
+    13→          "lon": -80.0
+    14→        },
+    15→        {
+    16→          "lat": 0.0,
+    17→          "lon": -75.0
+    18→        },
+    19→        {
+    20→          "lat": -0.5,
+    21→          "lon": -75.0
+    22→        },
+    23→        {
+    24→          "lat": -2.0,
+    25→          "lon": -73.0
+    26→        },
+    27→        {
+    28→          "lat": -3.0,
+    29→          "lon": -70.0
+    30→        },
+    31→        {
+    32→          "lat": -5.0,
+    33→          "lon": -70.0
+    34→        },
+    35→        {
+    36→          "lat": -7.0,
+    37→          "lon": -70.0
+    38→        },
+    39→        {
+    40→          "lat": -10.0,
+    41→          "lon": -70.0
+    42→        },
+    43→        {
+    44→          "lat": -14.0,
+    45→          "lon": -70.0
+    46→        },
+    47→        {
+    48→          "lat": -16.0,
+    49→          "lon": -69.0
+    50→        },
+    51→        {
+    52→          "lat": -18.35,
+    53→          "lon": -69.5
+    54→        },
+    55→        {
+    56→          "lat": -18.35,
+    57→          "lon": -70.0
+    58→        },
+    59→        {
+    60→          "lat": -18.35,
+    61→          "lon": -71.5
+    62→        },
+    63→        {
+    64→          "lat": -18.0,
+    65→          "lon": -72.5
+    66→        },
+    67→        {
+    68→          "lat": -18.0,
+    69→          "lon": -73.5
+    70→        },
+    71→        {
+    72→          "lat": -17.5,
+    73→          "lon": -74.5
+    74→        },
+    75→        {
+    76→          "lat": -17.0,
+    77→          "lon": -75.5
+    78→        },
+    79→        {
+    80→          "lat": -17.0,
+    81→          "lon": -77.0
+    82→        },
+    83→        {
+    84→          "lat": -15.5,
+    85→          "lon": -77.5
+    86→        },
+    87→        {
+    88→          "lat": -14.0,
+    89→          "lon": -77.5
+    90→        },
+    91→        {
+    92→          "lat": -12.0,
+    93→          "lon": -78.0
+    94→        },
+    95→        {
+    96→          "lat": -10.0,
+    97→          "lon": -79.0
+    98→        },
+    99→        {
+   100→          "lat": -8.0,
+   101→          "lon": -80.0
+   102→        },
+   103→        {
+   104→          "lat": -6.0,
+   105→          "lon": -81.0
+   106→        },
+   107→        {
+   108→          "lat": -5.0,
+   109→          "lon": -81.5
+   110→        },
+   111→        {
+   112→          "lat": -4.0,
+   113→          "lon": -82.0
+   114→        },
+   115→        {
+   116→          "lat": -3.0,
+   117→          "lon": -82.5
+   118→        },
+   119→        {
+   120→          "lat": -1.0,
+   121→          "lon": -83.5
+   122→        },
+   123→        {
+   124→          "lat": 0.0,
+   125→          "lon": -83.5
+   126→        },
+   127→        {
+   128→          "lat": 0.0,
+   129→          "lon": -80.0
+   130→        }
+   131→      ]
+   132→    }
+   133→  },
+   134→  "adjacentFirs": [
+   135→    {
+   136→      "icao": "SEGU",
+   137→      "name": "Guayaquil FIR",
+   138→      "country": "Ecuador",
+   139→      "borderPoints": [
+   140→        {
+   141→          "lat": 0.0,
+   142→          "lon": -80.0
+   143→        },
+   144→        {
+   145→          "lat": -2.0,
+   146→          "lon": -80.0
+   147→        },
+   148→        {
+   149→          "lat": -3.5,
+   150→          "lon": -80.5
+   151→        },
+   152→        {
+   153→          "lat": -5.0,
+   154→          "lon": -80.5
+   155→        }
+   156→      ]
+   157→    },
+   158→    {
+   159→      "icao": "SKED",
+   160→      "name": "Bogota FIR",
+   161→      "country": "Colombia",
+   162→      "borderPoints": [
+   163→        {
+   164→          "lat": 0.0,
+   165→          "lon": -75.0
+   166→        },
+   167→        {
+   168→          "lat": -2.0,
+   169→          "lon": -73.0
+   170→        },
+   171→        {
+   172→          "lat": -3.0,
+   173→          "lon": -70.0
+   174→        },
+   175→        {
+   176→          "lat": -1.0,
+   177→          "lon": -70.0
+   178→        },
+   179→        {
+   180→          "lat": 0.0,
+   181→          "lon": -72.0
+   182→        }
+   183→      ]
+   184→    },
+   185→    {
+   186→      "icao": "SBAM",
+   187→      "name": "Amazonica FIR",
+   188→      "country": "Brazil",
+   189→      "borderPoints": [
+   190→        {
+   191→          "lat": -3.0,
+   192→          "lon": -70.0
+   193→        },
+   194→        {
+   195→          "lat": -5.0,
+   196→          "lon": -70.0
+   197→        },
+   198→        {
+   199→          "lat": -7.0,
+   200→          "lon": -70.0
+   201→        },
+   202→        {
+   203→          "lat": -10.0,
+   204→          "lon": -69.5
+   205→        },
+   206→        {
+   207→          "lat": -10.0,
+   208→          "lon": -67.0
+   209→        },
+   210→        {
+   211→          "lat": -7.0,
+   212→          "lon": -67.0
+   213→        },
+   214→        {
+   215→          "lat": -5.0,
+   216→          "lon": -67.0
+   217→        },
+   218→        {
+   219→          "lat": -3.0,
+   220→          "lon": -68.0
+   221→        }
+   222→      ]
+   223→    },
+   224→    {
+   225→      "icao": "SLLP",
+   226→      "name": "La Paz FIR",
+   227→      "country": "Bolivia",
+   228→      "borderPoints": [
+   229→        {
+   230→          "lat": -10.0,
+   231→          "lon": -69.5
+   232→        },
+   233→        {
+   234→          "lat": -14.0,
+   235→          "lon": -69.0
+   236→        },
+   237→        {
+   238→          "lat": -16.0,
+   239→          "lon": -69.0
+   240→        },
+   241→        {
+   242→          "lat": -17.0,
+   243→          "lon": -69.0
+   244→        },
+   245→        {
+   246→          "lat": -17.0,
+   247→          "lon": -68.0
+   248→        },
+   249→        {
+   250→          "lat": -14.0,
+   251→          "lon": -68.0
+   252→        },
+   253→        {
+   254→          "lat": -10.0,
+   255→          "lon": -68.0
+   256→        }
+   257→      ]
+   258→    },
+   259→    {
+   260→      "icao": "SCEZ",
+   261→      "name": "Santiago FIR",
+   262→      "country": "Chile",
+   263→      "borderPoints": [
+   264→        {
+   265→          "lat": -17.0,
+   266→          "lon": -69.0
+   267→        },
+   268→        {
+   269→          "lat": -18.35,
+   270→          "lon": -69.5
+   271→        },
+   272→        {
+   273→          "lat": -18.35,
+   274→          "lon": -70.0
+   275→        },
+   276→        {
+   277→          "lat": -18.35,
+   278→          "lon": -71.5
+   279→        },
+   280→        {
+   281→          "lat": -17.5,
+   282→          "lon": -69.0
+   283→        }
+   284→      ]
+   285→    }
+   286→  ],
+   287→  "navaids": [
+   288→    {
+   289→      "id": "LIM",
+   290→      "name": "LIMA",
+   291→      "type": "DVOR/DME",
+   292→      "frequency": "116.1 MHz",
+   293→      "lat": -12.0086,
+   294→      "lon": -77.1228,
+   295→      "elevation": 33
+   296→    },
+   297→    {
+   298→      "id": "PSO",
+   299→      "name": "PISCO",
+   300→      "type": "DVOR/DME",
+   301→      "frequency": "114.3 MHz",
+   302→      "lat": -13.7333,
+   303→      "lon": -76.2167,
+   304→      "elevation": 12
+   305→    },
+   306→    {
+   307→      "id": "AQP",
+   308→      "name": "AREQUIPA",
+   309→      "type": "DVOR/DME",
+   310→      "frequency": "113.7 MHz",
+   311→      "lat": -16.3419,
+   312→      "lon": -71.5833,
+   313→      "elevation": 2552
+   314→    },
+   315→    {
+   316→      "id": "URA",
+   317→      "name": "PIURA",
+   318→      "type": "DVOR/DME",
+   319→      "frequency": "117.1 MHz",
+   320→      "lat": -5.2067,
+   321→      "lon": -80.6167,
+   322→      "elevation": 29
+   323→    },
+   324→    {
+   325→      "id": "TBP",
+   326→      "name": "TUMBES",
+   327→      "type": "DVOR/DME",
+   328→      "frequency": "112.9 MHz",
+   329→      "lat": -3.55,
+   330→      "lon": -80.3833,
+   331→      "elevation": 27
+   332→    },
+   333→    {
+   334→      "id": "CIX",
+   335→      "name": "CHICLAYO",
+   336→      "type": "DVOR/DME",
+   337→      "frequency": "114.5 MHz",
+   338→      "lat": -6.7858,
+   339→      "lon": -79.8225,
+   340→      "elevation": 28
+   341→    },
+   342→    {
+   343→      "id": "IQT",
+   344→      "name": "IQUITOS",
+   345→      "type": "DVOR/DME",
+   346→      "frequency": "112.5 MHz",
+   347→      "lat": -3.7858,
+   348→      "lon": -73.3058,
+   349→      "elevation": 93
+   350→    },
+   351→    {
+   352→      "id": "CUZ",
+   353→      "name": "CUSCO",
+   354→      "type": "DVOR/DME",
+   355→      "frequency": "116.3 MHz",
+   356→      "lat": -13.5358,
+   357→      "lon": -71.9425,
+   358→      "elevation": 3318
+   359→    },
+   360→    {
+   361→      "id": "PCL",
+   362→      "name": "PUCALLPA",
+   363→      "type": "DVOR/DME",
+   364→      "frequency": "112.7 MHz",
+   365→      "lat": -8.3781,
+   366→      "lon": -74.5725,
+   367→      "elevation": 149
+   368→    },
+   369→    {
+   370→      "id": "TCQ",
+   371→      "name": "TACNA",
+   372→      "type": "DVOR/DME",
+   373→      "frequency": "117.5 MHz",
+   374→      "lat": -18.0647,
+   375→      "lon": -70.2997,
+   376→      "elevation": 458
+   377→    },
+   378→    {
+   379→      "id": "JUL",
+   380→      "name": "JULIACA",
+   381→      "type": "DVOR/DME",
+   382→      "frequency": "115.5 MHz",
+   383→      "lat": -16.5092,
+   384→      "lon": -70.1542,
+   385→      "elevation": 3826
+   386→    },
+   387→    {
+   388→      "id": "PEM",
+   389→      "name": "PTO MALDONADO",
+   390→      "type": "DVOR/DME",
+   391→      "frequency": "113.3 MHz",
+   392→      "lat": -12.5983,
+   393→      "lon": -69.1967,
+   394→      "elevation": 207
+   395→    }
+   396→  ],
+   397→  "waypoints": [
+   398→    {
+   399→      "id": "AGUA",
+   400→      "name": "AGUA",
+   401→      "type": "WAYPOINT",
+   402→      "lat": -13.15,
+   403→      "lon": -76.2333,
+   404→      "description": "ENR intersection, south of Lima"
+   405→    },
+   406→    {
+   407→      "id": "AKREL",
+   408→      "name": "AKREL",
+   409→      "type": "WAYPOINT",
+   410→      "lat": -13.2994,
+   411→      "lon": -72.835,
+   412→      "description": "ENR waypoint in Peru airspace"
+   413→    },
+   414→    {
+   415→      "id": "AMVEX",
+   416→      "name": "AMVEX",
+   417→      "type": "WAYPOINT",
+   418→      "lat": -10.8006,
+   419→      "lon": -76.8033,
+   420→      "description": "ENR intersection, central highlands"
+   421→    },
+   422→    {
+   423→      "id": "ANKOR",
+   424→      "name": "ANKOR",
+   425→      "type": "WAYPOINT",
+   426→      "lat": -8.5044,
+   427→      "lon": -79.7858,
+   428→      "description": "ENR intersection, northern coast"
+   429→    },
+   430→    {
+   431→      "id": "ANPAL",
+   432→      "name": "ANPAL",
+   433→      "type": "WAYPOINT",
+   434→      "lat": -3.4,
+   435→      "lon": -83.0033,
+   436→      "description": "ENR waypoint in Peru airspace"
+   437→    },
+   438→    {
+   439→      "id": "AQP",
+   440→      "name": "AQP",
+   441→      "type": "NAVAID",
+   442→      "lat": -16.3419,
+   443→      "lon": -71.5833,
+   444→      "description": "AREQUIPA DVOR/DME facility"
+   445→    },
+   446→    {
+   447→      "id": "ARGON",
+   448→      "name": "ARGON",
+   449→      "type": "WAYPOINT",
+   450→      "lat": -7.4617,
+   451→      "lon": -79.4356,
+   452→      "description": "ENR intersection, northern coast"
+   453→    },
+   454→    {
+   455→      "id": "ARPON",
+   456→      "name": "ARPON",
+   457→      "type": "WAYPOINT",
+   458→      "lat": -12.8992,
+   459→      "lon": -76.8847,
+   460→      "description": "ENR intersection, near Lima"
+   461→    },
+   462→    {
+   463→      "id": "ARTUX",
+   464→      "name": "ARTUX",
+   465→      "type": "WAYPOINT",
+   466→      "lat": -11.6267,
+   467→      "lon": -75.4386,
+   468→      "description": "ENR intersection, central highlands"
+   469→    },
+   470→    {
+   471→      "id": "ASEMO",
+   472→      "name": "ASEMO",
+   473→      "type": "WAYPOINT",
+   474→      "lat": -11.6889,
+   475→      "lon": -73.4175,
+   476→      "description": "ENR intersection, central highlands"
+   477→    },
+   478→    {
+   479→      "id": "BODET",
+   480→      "name": "BODET",
+   481→      "type": "WAYPOINT",
+   482→      "lat": -12.2353,
+   483→      "lon": -73.9008,
+   484→      "description": "ENR intersection, central highlands"
+   485→    },
+   486→    {
+   487→      "id": "BOLEP",
+   488→      "name": "BOLEP",
+   489→      "type": "WAYPOINT",
+   490→      "lat": -13.3806,
+   491→      "lon": -72.8533,
+   492→      "description": "ENR waypoint in Peru airspace"
+   493→    },
+   494→    {
+   495→      "id": "BORAS",
+   496→      "name": "BORAS",
+   497→      "type": "WAYPOINT",
+   498→      "lat": -3.8455,
+   499→      "lon": -73.4023,
+   500→      "description": "ENR intersection, northeastern Peru"
+   501→    },
+   502→    {
+   503→      "id": "BORLA",
+   504→      "name": "BORLA",
+   505→      "type": "WAYPOINT",
+   506→      "lat": -7.7372,
+   507→      "lon": -75.2364,
+   508→      "description": "ENR intersection, highlands"
+   509→    },
+   510→    {
+   511→      "id": "BUTEK",
+   512→      "name": "BUTEK",
+   513→      "type": "WAYPOINT",
+   514→      "lat": -10.6347,
+   515→      "lon": -75.6372,
+   516→      "description": "ENR intersection, central highlands"
+   517→    },
+   518→    {
+   519→      "id": "CEMIL",
+   520→      "name": "CEMIL",
+   521→      "type": "WAYPOINT",
+   522→      "lat": -13.2397,
+   523→      "lon": -70.6497,
+   524→      "description": "ENR waypoint in Peru airspace"
+   525→    },
+   526→    {
+   527→      "id": "CHIRA",
+   528→      "name": "CHIRA",
+   529→      "type": "WAYPOINT",
+   530→      "lat": -4.9353,
+   531→      "lon": -80.8939,
+   532→      "description": "ENR intersection, northern coast"
+   533→    },
+   534→    {
+   535→      "id": "CIX",
+   536→      "name": "CIX",
+   537→      "type": "NAVAID",
+   538→      "lat": -6.7858,
+   539→      "lon": -79.8225,
+   540→      "description": "CHICLAYO DVOR/DME facility"
+   541→    },
+   542→    {
+   543→      "id": "COCOS",
+   544→      "name": "COCOS",
+   545→      "type": "WAYPOINT",
+   546→      "lat": -8.8764,
+   547→      "lon": -75.3492,
+   548→      "description": "ENR intersection, central highlands"
+   549→    },
+   550→    {
+   551→      "id": "CUZ",
+   552→      "name": "CUZ",
+   553→      "type": "NAVAID",
+   554→      "lat": -13.5358,
+   555→      "lon": -71.9425,
+   556→      "description": "CUSCO DVOR/DME facility"
+   557→    },
+   558→    {
+   559→      "id": "DABUL",
+   560→      "name": "DABUL",
+   561→      "type": "WAYPOINT",
+   562→      "lat": -13.6978,
+   563→      "lon": -72.8867,
+   564→      "description": "ENR waypoint in Peru airspace"
+   565→    },
+   566→    {
+   567→      "id": "DALNA",
+   568→      "name": "DALNA",
+   569→      "type": "WAYPOINT",
+   570→      "lat": -11.9183,
+   571→      "lon": -77.1653,
+   572→      "description": "ENR intersection, near LIMA VOR"
+   573→    },
+   574→    {
+   575→      "id": "DANKI",
+   576→      "name": "DANKI",
+   577→      "type": "WAYPOINT",
+   578→      "lat": -18.3067,
+   579→      "lon": -70.275,
+   580→      "description": "ENR intersection, far southern Peru"
+   581→    },
+   582→    {
+   583→      "id": "DEMOR",
+   584→      "name": "DEMOR",
+   585→      "type": "WAYPOINT",
+   586→      "lat": -10.65,
+   587→      "lon": -77.0833,
+   588→      "description": "ENR intersection, central coast"
+   589→    },
+   590→    {
+   591→      "id": "DIKAB",
+   592→      "name": "DIKAB",
+   593→      "type": "WAYPOINT",
+   594→      "lat": -11.6644,
+   595→      "lon": -74.2664,
+   596→      "description": "ENR intersection, central highlands"
+   597→    },
+   598→    {
+   599→      "id": "DOBNI",
+   600→      "name": "DOBNI",
+   601→      "type": "WAYPOINT",
+   602→      "lat": -15.7186,
+   603→      "lon": -69.3817,
+   604→      "description": "ENR intersection, southern Peru"
+   605→    },
+   606→    {
+   607→      "id": "DORKA",
+   608→      "name": "DORKA",
+   609→      "type": "WAYPOINT",
+   610→      "lat": -18.35,
+   611→      "lon": -72.7725,
+   612→      "description": "ENR intersection, far southern Peru"
+   613→    },
+   614→    {
+   615→      "id": "EGASI",
+   616→      "name": "EGASI",
+   617→      "type": "WAYPOINT",
+   618→      "lat": -4.2081,
+   619→      "lon": -80.4794,
+   620→      "description": "ENR intersection, northern coast"
+   621→    },
+   622→    {
+   623→      "id": "EGELI",
+   624→      "name": "EGELI",
+   625→      "type": "WAYPOINT",
+   626→      "lat": -12.115,
+   627→      "lon": -73.3761,
+   628→      "description": "ENR intersection, southern highlands"
+   629→    },
+   630→    {
+   631→      "id": "ELAKO",
+   632→      "name": "ELAKO",
+   633→      "type": "WAYPOINT",
+   634→      "lat": -15.9267,
+   635→      "lon": -69.305,
+   636→      "description": "ENR waypoint in Peru airspace"
+   637→    },
+   638→    {
+   639→      "id": "ESEDI",
+   640→      "name": "ESEDI",
+   641→      "type": "WAYPOINT",
+   642→      "lat": -11.38,
+   643→      "lon": -76.4403,
+   644→      "description": "ENR waypoint in Peru airspace"
+   645→    },
+   646→    {
+   647→      "id": "ESGOL",
+   648→      "name": "ESGOL",
+   649→      "type": "WAYPOINT",
+   650→      "lat": -15.1911,
+   651→      "lon": -75.3586,
+   652→      "description": "ENR intersection, southern highlands"
+   653→    },
+   654→    {
+   655→      "id": "ESIRA",
+   656→      "name": "ESIRA",
+   657→      "type": "WAYPOINT",
+   658→      "lat": -14.9006,
+   659→      "lon": -74.9772,
+   660→      "description": "ENR intersection, southern highlands"
+   661→    },
+   662→    {
+   663→      "id": "ESKAL",
+   664→      "name": "ESKAL",
+   665→      "type": "WAYPOINT",
+   666→      "lat": -9.85,
+   667→      "lon": -77.1167,
+   668→      "description": "ENR intersection, north of Lima"
+   669→    },
+   670→    {
+   671→      "id": "ESKOT",
+   672→      "name": "ESKOT",
+   673→      "type": "WAYPOINT",
+   674→      "lat": -12.0539,
+   675→      "lon": -75.3378,
+   676→      "description": "ENR intersection, central highlands"
+   677→    },
+   678→    {
+   679→      "id": "ESMIL",
+   680→      "name": "ESMIL",
+   681→      "type": "WAYPOINT",
+   682→      "lat": -8.8197,
+   683→      "lon": -78.7047,
+   684→      "description": "ENR intersection, northern highlands"
+   685→    },
+   686→    {
+   687→      "id": "ETEBA",
+   688→      "name": "ETEBA",
+   689→      "type": "WAYPOINT",
+   690→      "lat": -12.4294,
+   691→      "lon": -71.5956,
+   692→      "description": "ENR intersection, central highlands"
+   693→    },
+   694→    {
+   695→      "id": "GATUK",
+   696→      "name": "GATUK",
+   697→      "type": "WAYPOINT",
+   698→      "lat": -12.3531,
+   699→      "lon": -76.255,
+   700→      "description": "ENR intersection, near Lima"
+   701→    },
+   702→    {
+   703→      "id": "GAVAR",
+   704→      "name": "GAVAR",
+   705→      "type": "WAYPOINT",
+   706→      "lat": -16.9725,
+   707→      "lon": -71.1142,
+   708→      "description": "ENR intersection, southern Peru"
+   709→    },
+   710→    {
+   711→      "id": "GAVIL",
+   712→      "name": "GAVIL",
+   713→      "type": "WAYPOINT",
+   714→      "lat": -11.2542,
+   715→      "lon": -76.5872,
+   716→      "description": "ENR intersection, central coast"
+   717→    },
+   718→    {
+   719→      "id": "IBISA",
+   720→      "name": "IBISA",
+   721→      "type": "WAYPOINT",
+   722→      "lat": -13.0333,
+   723→      "lon": -76.5333,
+   724→      "description": "ENR intersection, near Pisco"
+   725→    },
+   726→    {
+   727→      "id": "ILMAR",
+   728→      "name": "ILMAR",
+   729→      "type": "WAYPOINT",
+   730→      "lat": -14.2747,
+   731→      "lon": -76.5133,
+   732→      "description": "ENR intersection, southern coast"
+   733→    },
+   734→    {
+   735→      "id": "ILMOX",
+   736→      "name": "ILMOX",
+   737→      "type": "WAYPOINT",
+   738→      "lat": -14.5944,
+   739→      "lon": -70.8444,
+   740→      "description": "ENR waypoint in Peru airspace"
+   741→    },
+   742→    {
+   743→      "id": "ILMUX",
+   744→      "name": "ILMUX",
+   745→      "type": "WAYPOINT",
+   746→      "lat": -2.4619,
+   747→      "lon": -72.8489,
+   748→      "description": "ENR intersection, northeastern Peru"
+   749→    },
+   750→    {
+   751→      "id": "ILVOS",
+   752→      "name": "ILVOS",
+   753→      "type": "WAYPOINT",
+   754→      "lat": -10.0,
+   755→      "lon": -84.4203,
+   756→      "description": "ENR intersection, far western Peru"
+   757→    },
+   758→    {
+   759→      "id": "IQT",
+   760→      "name": "IQT",
+   761→      "type": "NAVAID",
+   762→      "lat": -3.7858,
+   763→      "lon": -73.3058,
+   764→      "description": "IQUITOS DVOR/DME facility"
+   765→    },
+   766→    {
+   767→      "id": "IQT15",
+   768→      "name": "IQT15",
+   769→      "type": "WAYPOINT",
+   770→      "lat": -4.0163,
+   771→      "lon": -73.4314,
+   772→      "description": "ENR waypoint in Peru airspace"
+   773→    },
+   774→    {
+   775→      "id": "IQT19",
+   776→      "name": "IQT19",
+   777→      "type": "WAYPOINT",
+   778→      "lat": -4.0018,
+   779→      "lon": -73.3775,
+   780→      "description": "ENR waypoint in Peru airspace"
+   781→    },
+   782→    {
+   783→      "id": "IQT21",
+   784→      "name": "IQT21",
+   785→      "type": "WAYPOINT",
+   786→      "lat": -3.9865,
+   787→      "lon": -73.4162,
+   788→      "description": "ENR waypoint in Peru airspace"
+   789→    },
+   790→    {
+   791→      "id": "IQT23",
+   792→      "name": "IQT23",
+   793→      "type": "WAYPOINT",
+   794→      "lat": -3.9382,
+   795→      "lon": -73.4789,
+   796→      "description": "ENR waypoint in Peru airspace"
+   797→    },
+   798→    {
+   799→      "id": "IQT99",
+   800→      "name": "IQT99",
+   801→      "type": "WAYPOINT",
+   802→      "lat": -4.034,
+   803→      "lon": -73.3867,
+   804→      "description": "ENR waypoint in Peru airspace"
+   805→    },
+   806→    {
+   807→      "id": "IREMI",
+   808→      "name": "IREMI",
+   809→      "type": "WAYPOINT",
+   810→      "lat": -18.35,
+   811→      "lon": -75.3833,
+   812→      "description": "ENR intersection, far southern Peru"
+   813→    },
+   814→    {
+   815→      "id": "ISKAR",
+   816→      "name": "ISKAR",
+   817→      "type": "WAYPOINT",
+   818→      "lat": -10.2167,
+   819→      "lon": -77.0833,
+   820→      "description": "ENR intersection, Lima TMA northern boundary"
+   821→    },
+   822→    {
+   823→      "id": "ITALU",
+   824→      "name": "ITALU",
+   825→      "type": "WAYPOINT",
+   826→      "lat": -5.4989,
+   827→      "lon": -81.5767,
+   828→      "description": "ENR intersection, northern coast"
+   829→    },
+   830→    {
+   831→      "id": "JUL",
+   832→      "name": "JUL",
+   833→      "type": "NAVAID",
+   834→      "lat": -16.5092,
+   835→      "lon": -70.1542,
+   836→      "description": "JULIACA DVOR/DME facility"
+   837→    },
+   838→    {
+   839→      "id": "KADEL",
+   840→      "name": "KADEL",
+   841→      "type": "WAYPOINT",
+   842→      "lat": -11.5964,
+   843→      "lon": -76.2872,
+   844→      "description": "ENR waypoint in Peru airspace"
+   845→    },
+   846→    {
+   847→      "id": "KALOR",
+   848→      "name": "KALOR",
+   849→      "type": "WAYPOINT",
+   850→      "lat": -4.0958,
+   851→      "lon": -70.7669,
+   852→      "description": "ENR intersection, northeastern Peru"
+   853→    },
+   854→    {
+   855→      "id": "KAMPA",
+   856→      "name": "KAMPA",
+   857→      "type": "WAYPOINT",
+   858→      "lat": -3.725,
+   859→      "lon": -73.2217,
+   860→      "description": "ENR intersection, northeastern Peru"
+   861→    },
+   862→    {
+   863→      "id": "KAVAK",
+   864→      "name": "KAVAK",
+   865→      "type": "WAYPOINT",
+   866→      "lat": -5.0167,
+   867→      "lon": -80.65,
+   868→      "description": "ENR intersection, northern coast"
+   869→    },
+   870→    {
+   871→      "id": "KEBOM",
+   872→      "name": "KEBOM",
+   873→      "type": "WAYPOINT",
+   874→      "lat": -8.0,
+   875→      "lon": -73.6778,
+   876→      "description": "ENR intersection, central jungle"
+   877→    },
+   878→    {
+   879→      "id": "KIBAN",
+   880→      "name": "KIBAN",
+   881→      "type": "WAYPOINT",
+   882→      "lat": -6.8939,
+   883→      "lon": -80.0894,
+   884→      "description": "ENR intersection, northern coast"
+   885→    },
+   886→    {
+   887→      "id": "KIDES",
+   888→      "name": "KIDES",
+   889→      "type": "WAYPOINT",
+   890→      "lat": -12.2144,
+   891→      "lon": -77.0084,
+   892→      "description": "ENR intersection, southeast of Lima"
+   893→    },
+   894→    {
+   895→      "id": "KOLKA",
+   896→      "name": "KOLKA",
+   897→      "type": "WAYPOINT",
+   898→      "lat": -15.6814,
+   899→      "lon": -71.9936,
+   900→      "description": "ENR intersection, southern Peru"
+   901→    },
+   902→    {
+   903→      "id": "KOLPA",
+   904→      "name": "KOLPA",
+   905→      "type": "WAYPOINT",
+   906→      "lat": -12.5333,
+   907→      "lon": -76.7167,
+   908→      "description": "ENR intersection, Lima approach"
+   909→    },
+   910→    {
+   911→      "id": "KOLSI",
+   912→      "name": "KOLSI",
+   913→      "type": "WAYPOINT",
+   914→      "lat": -8.9319,
+   915→      "lon": -77.1428,
+   916→      "description": "ENR intersection, near Lima"
+   917→    },
+   918→    {
+   919→      "id": "KOMPA",
+   920→      "name": "KOMPA",
+   921→      "type": "WAYPOINT",
+   922→      "lat": -16.475,
+   923→      "lon": -69.0,
+   924→      "description": "ENR intersection, southern Peru"
+   925→    },
+   926→    {
+   927→      "id": "KOPLA",
+   928→      "name": "KOPLA",
+   929→      "type": "WAYPOINT",
+   930→      "lat": -3.3103,
+   931→      "lon": -76.16,
+   932→      "description": "ENR intersection, northern Peru"
+   933→    },
+   934→    {
+   935→      "id": "KORBO",
+   936→      "name": "KORBO",
+   937→      "type": "WAYPOINT",
+   938→      "lat": -3.0167,
+   939→      "lon": -77.8667,
+   940→      "description": "ENR intersection, northern Peru"
+   941→    },
+   942→    {
+   943→      "id": "LAKUN",
+   944→      "name": "LAKUN",
+   945→      "type": "WAYPOINT",
+   946→      "lat": -14.6553,
+   947→      "lon": -73.9933,
+   948→      "description": "ENR intersection, southern Peru"
+   949→    },
+   950→    {
+   951→      "id": "LIM",
+   952→      "name": "LIM",
+   953→      "type": "NAVAID",
+   954→      "lat": -12.0086,
+   955→      "lon": -77.1228,
+   956→      "description": "LIMA DVOR/DME facility"
+   957→    },
+   958→    {
+   959→      "id": "LIM01",
+   960→      "name": "LIM01",
+   961→      "type": "WAYPOINT",
+   962→      "lat": -11.9956,
+   963→      "lon": -77.1284,
+   964→      "description": "ENR waypoint in Peru airspace"
+   965→    },
+   966→    {
+   967→      "id": "LIM11",
+   968→      "name": "LIM11",
+   969→      "type": "WAYPOINT",
+   970→      "lat": -12.0689,
+   971→      "lon": -76.964,
+   972→      "description": "ENR waypoint in Peru airspace"
+   973→    },
+   974→    {
+   975→      "id": "LIM30",
+   976→      "name": "LIM30",
+   977→      "type": "WAYPOINT",
+   978→      "lat": -12.1891,
+   979→      "lon": -76.6461,
+   980→      "description": "ENR waypoint in Peru airspace"
+   981→    },
+   982→    {
+   983→      "id": "LIM55",
+   984→      "name": "LIM55",
+   985→      "type": "WAYPOINT",
+   986→      "lat": -11.1148,
+   987→      "lon": -76.8955,
+   988→      "description": "ENR waypoint in Peru airspace"
+   989→    },
+   990→    {
+   991→      "id": "LIM67",
+   992→      "name": "LIM67",
+   993→      "type": "WAYPOINT",
+   994→      "lat": -12.009,
+   995→      "lon": -76.4421,
+   996→      "description": "ENR waypoint in Peru airspace"
+   997→    },
+   998→    {
+   999→      "id": "LIM68",
+  1000→      "name": "LIM68",
+  1001→      "type": "WAYPOINT",
+  1002→      "lat": -12.009,
+  1003→      "lon": -76.6122,
+  1004→      "description": "ENR waypoint in Peru airspace"
+  1005→    },
+  1006→    {
+  1007→      "id": "LIM69",
+  1008→      "name": "LIM69",
+  1009→      "type": "WAYPOINT",
+  1010→      "lat": -12.0089,
+  1011→      "lon": -76.9526,
+  1012→      "description": "ENR waypoint in Peru airspace"
+  1013→    },
+  1014→    {
+  1015→      "id": "LIM77",
+  1016→      "name": "LIM77",
+  1017→      "type": "WAYPOINT",
+  1018→      "lat": -11.7428,
+  1019→      "lon": -76.5921,
+  1020→      "description": "ENR waypoint in Peru airspace"
+  1021→    },
+  1022→    {
+  1023→      "id": "LIM78",
+  1024→      "name": "LIM78",
+  1025→      "type": "WAYPOINT",
+  1026→      "lat": -11.8113,
+  1027→      "lon": -76.7285,
+  1028→      "description": "ENR waypoint in Peru airspace"
+  1029→    },
+  1030→    {
+  1031→      "id": "LIM79",
+  1032→      "name": "LIM79",
+  1033→      "type": "WAYPOINT",
+  1034→      "lat": -11.9328,
+  1035→      "lon": -76.9711,
+  1036→      "description": "ENR waypoint in Peru airspace"
+  1037→    },
+  1038→    {
+  1039→      "id": "LIM81",
+  1040→      "name": "LIM81",
+  1041→      "type": "WAYPOINT",
+  1042→      "lat": -11.8896,
+  1043→      "lon": -77.1831,
+  1044→      "description": "ENR waypoint in Peru airspace"
+  1045→    },
+  1046→    {
+  1047→      "id": "LIM88",
+  1048→      "name": "LIM88",
+  1049→      "type": "WAYPOINT",
+  1050→      "lat": -11.5923,
+  1051→      "lon": -76.837,
+  1052→      "description": "ENR waypoint in Peru airspace"
+  1053→    },
+  1054→    {
+  1055→      "id": "LIM89",
+  1056→      "name": "LIM89",
+  1057→      "type": "WAYPOINT",
+  1058→      "lat": -11.8699,
+  1059→      "lon": -77.0274,
+  1060→      "description": "ENR waypoint in Peru airspace"
+  1061→    },
+  1062→    {
+  1063→      "id": "LIM97",
+  1064→      "name": "LIM97",
+  1065→      "type": "WAYPOINT",
+  1066→      "lat": -11.4399,
+  1067→      "lon": -76.978,
+  1068→      "description": "ENR waypoint in Peru airspace"
+  1069→    },
+  1070→    {
+  1071→      "id": "LIM98",
+  1072→      "name": "LIM98",
+  1073→      "type": "WAYPOINT",
+  1074→      "lat": -11.8461,
+  1075→      "lon": -77.0813,
+  1076→      "description": "ENR waypoint in Peru airspace"
+  1077→    },
+  1078→    {
+  1079→      "id": "LITOT",
+  1080→      "name": "LITOT",
+  1081→      "type": "WAYPOINT",
+  1082→      "lat": -14.7933,
+  1083→      "lon": -71.8147,
+  1084→      "description": "ENR intersection, southern Peru"
+  1085→    },
+  1086→    {
+  1087→      "id": "LIVUS",
+  1088→      "name": "LIVUS",
+  1089→      "type": "WAYPOINT",
+  1090→      "lat": -7.4061,
+  1091→      "lon": -77.79,
+  1092→      "description": "ENR intersection, northern coast"
+  1093→    },
+  1094→    {
+  1095→      "id": "LODOX",
+  1096→      "name": "LODOX",
+  1097→      "type": "WAYPOINT",
+  1098→      "lat": -12.4169,
+  1099→      "lon": -76.09,
+  1100→      "description": "ENR intersection, near Lima"
+  1101→    },
+  1102→    {
+  1103→      "id": "LOLES",
+  1104→      "name": "LOLES",
+  1105→      "type": "WAYPOINT",
+  1106→      "lat": -17.9,
+  1107→      "lon": -69.7833,
+  1108→      "description": "ENR intersection, far southern Peru"
+  1109→    },
+  1110→    {
+  1111→      "id": "LORNI",
+  1112→      "name": "LORNI",
+  1113→      "type": "WAYPOINT",
+  1114→      "lat": -11.75,
+  1115→      "lon": -77.0833,
+  1116→      "description": "ENR intersection, Lima TMA southern entry"
+  1117→    },
+  1118→    {
+  1119→      "id": "LUVSO",
+  1120→      "name": "LUVSO",
+  1121→      "type": "WAYPOINT",
+  1122→      "lat": -12.0967,
+  1123→      "lon": -74.0161,
+  1124→      "description": "ENR intersection, central highlands"
+  1125→    },
+  1126→    {
+  1127→      "id": "MALAR",
+  1128→      "name": "MALAR",
+  1129→      "type": "WAYPOINT",
+  1130→      "lat": -12.0667,
+  1131→      "lon": -76.95,
+  1132→      "description": "ENR intersection, near Lima"
+  1133→    },
+  1134→    {
+  1135→      "id": "MELIX",
+  1136→      "name": "MELIX",
+  1137→      "type": "WAYPOINT",
+  1138→      "lat": -6.5044,
+  1139→      "lon": -79.0092,
+  1140→      "description": "ENR intersection, northern coast"
+  1141→    },
+  1142→    {
+  1143→      "id": "MEXUR",
+  1144→      "name": "MEXUR",
+  1145→      "type": "WAYPOINT",
+  1146→      "lat": -13.1678,
+  1147→      "lon": -75.6703,
+  1148→      "description": "ENR intersection, southern coast"
+  1149→    },
+  1150→    {
+  1151→      "id": "MILAX",
+  1152→      "name": "MILAX",
+  1153→      "type": "WAYPOINT",
+  1154→      "lat": -8.9731,
+  1155→      "lon": -76.9531,
+  1156→      "description": "ENR intersection, central coast"
+  1157→    },
+  1158→    {
+  1159→      "id": "MITOS",
+  1160→      "name": "MITOS",
+  1161→      "type": "WAYPOINT",
+  1162→      "lat": -3.6769,
+  1163→      "lon": -73.1534,
+  1164→      "description": "ENR intersection, northeastern Peru"
+  1165→    },
+  1166→    {
+  1167→      "id": "MODON",
+  1168→      "name": "MODON",
+  1169→      "type": "WAYPOINT",
+  1170→      "lat": -8.9167,
+  1171→      "lon": -77.0333,
+  1172→      "description": "ENR intersection, central coast"
+  1173→    },
+  1174→    {
+  1175→      "id": "MOXES",
+  1176→      "name": "MOXES",
+  1177→      "type": "WAYPOINT",
+  1178→      "lat": -14.2747,
+  1179→      "lon": -77.4178,
+  1180→      "description": "ENR intersection, southern coast"
+  1181→    },
+  1182→    {
+  1183→      "id": "MUGOM",
+  1184→      "name": "MUGOM",
+  1185→      "type": "WAYPOINT",
+  1186→      "lat": -16.2961,
+  1187→      "lon": -72.9967,
+  1188→      "description": "ENR intersection, southern Peru"
+  1189→    },
+  1190→    {
+  1191→      "id": "MUPIN",
+  1192→      "name": "MUPIN",
+  1193→      "type": "WAYPOINT",
+  1194→      "lat": -2.4219,
+  1195→      "lon": -75.3189,
+  1196→      "description": "ENR intersection, northeastern Peru"
+  1197→    },
+  1198→    {
+  1199→      "id": "NERVI",
+  1200→      "name": "NERVI",
+  1201→      "type": "WAYPOINT",
+  1202→      "lat": -11.3333,
+  1203→      "lon": -77.0,
+  1204→      "description": "ENR intersection, north of Lima"
+  1205→    },
+  1206→    {
+  1207→      "id": "OKASO",
+  1208→      "name": "OKASO",
+  1209→      "type": "WAYPOINT",
+  1210→      "lat": -5.1444,
+  1211→      "lon": -80.97,
+  1212→      "description": "ENR intersection, northern coast"
+  1213→    },
+  1214→    {
+  1215→      "id": "OLGAS",
+  1216→      "name": "OLGAS",
+  1217→      "type": "WAYPOINT",
+  1218→      "lat": -16.3856,
+  1219→      "lon": -70.7711,
+  1220→      "description": "ENR intersection, southern Peru"
+  1221→    },
+  1222→    {
+  1223→      "id": "OLMOS",
+  1224→      "name": "OLMOS",
+  1225→      "type": "WAYPOINT",
+  1226→      "lat": -5.9667,
+  1227→      "lon": -79.7333,
+  1228→      "description": "ENR intersection, northern Peru"
+  1229→    },
+  1230→    {
+  1231→      "id": "ORION",
+  1232→      "name": "ORION",
+  1233→      "type": "WAYPOINT",
+  1234→      "lat": -6.0525,
+  1235→      "lon": -80.3528,
+  1236→      "description": "ENR intersection, northern coast"
+  1237→    },
+  1238→    {
+  1239→      "id": "PABAM",
+  1240→      "name": "PABAM",
+  1241→      "type": "WAYPOINT",
+  1242→      "lat": -3.4128,
+  1243→      "lon": -75.5594,
+  1244→      "description": "ENR intersection, northeastern Peru"
+  1245→    },
+  1246→    {
+  1247→      "id": "PABUL",
+  1248→      "name": "PABUL",
+  1249→      "type": "WAYPOINT",
+  1250→      "lat": -12.1144,
+  1251→      "lon": -77.0639,
+  1252→      "description": "ENR intersection, Lima TMA"
+  1253→    },
+  1254→    {
+  1255→      "id": "PAGUR",
+  1256→      "name": "PAGUR",
+  1257→      "type": "WAYPOINT",
+  1258→      "lat": -4.4794,
+  1259→      "lon": -80.3594,
+  1260→      "description": "ENR intersection, northern coast"
+  1261→    },
+  1262→    {
+  1263→      "id": "PANTA",
+  1264→      "name": "PANTA",
+  1265→      "type": "WAYPOINT",
+  1266→      "lat": -3.8899,
+  1267→      "lon": -73.4731,
+  1268→      "description": "ENR intersection, northeastern Peru"
+  1269→    },
+  1270→    {
+  1271→      "id": "PAPEM",
+  1272→      "name": "PAPEM",
+  1273→      "type": "WAYPOINT",
+  1274→      "lat": -3.1781,
+  1275→      "lon": -70.3047,
+  1276→      "description": "ENR intersection, northeastern Peru"
+  1277→    },
+  1278→    {
+  1279→      "id": "PCL",
+  1280→      "name": "PCL",
+  1281→      "type": "NAVAID",
+  1282→      "lat": -8.3781,
+  1283→      "lon": -74.5725,
+  1284→      "description": "PUCALLPA DVOR/DME facility"
+  1285→    },
+  1286→    {
+  1287→      "id": "PEM",
+  1288→      "name": "PEM",
+  1289→      "type": "NAVAID",
+  1290→      "lat": -12.5983,
+  1291→      "lon": -69.1967,
+  1292→      "description": "PTO MALDONADO DVOR/DME facility"
+  1293→    },
+  1294→    {
+  1295→      "id": "PIRAT",
+  1296→      "name": "PIRAT",
+  1297→      "type": "WAYPOINT",
+  1298→      "lat": -10.5833,
+  1299→      "lon": -77.15,
+  1300→      "description": "ENR intersection, coastal route"
+  1301→    },
+  1302→    {
+  1303→      "id": "PISCO",
+  1304→      "name": "PISCO",
+  1305→      "type": "WAYPOINT",
+  1306→      "lat": -13.7333,
+  1307→      "lon": -76.2167,
+  1308→      "description": "Reporting point near Pisco"
+  1309→    },
+  1310→    {
+  1311→      "id": "PSO",
+  1312→      "name": "PSO",
+  1313→      "type": "NAVAID",
+  1314→      "lat": -13.7333,
+  1315→      "lon": -76.2167,
+  1316→      "description": "PISCO DVOR/DME facility"
+  1317→    },
+  1318→    {
+  1319→      "id": "PUDUL",
+  1320→      "name": "PUDUL",
+  1321→      "type": "WAYPOINT",
+  1322→      "lat": -12.4469,
+  1323→      "lon": -75.9231,
+  1324→      "description": "ENR intersection, central highlands"
+  1325→    },
+  1326→    {
+  1327→      "id": "PUMAX",
+  1328→      "name": "PUMAX",
+  1329→      "type": "WAYPOINT",
+  1330→      "lat": -5.22,
+  1331→      "lon": -75.9992,
+  1332→      "description": "ENR intersection, northern Peru"
+  1333→    },
+  1334→    {
+  1335→      "id": "PUNTA",
+  1336→      "name": "PUNTA",
+  1337→      "type": "WAYPOINT",
+  1338→      "lat": -4.25,
+  1339→      "lon": -81.3333,
+  1340→      "description": "ENR intersection, northern coast"
+  1341→    },
+  1342→    {
+  1343→      "id": "R1533",
+  1344→      "name": "R1533",
+  1345→      "type": "WAYPOINT",
+  1346→      "lat": -12.0076,
+  1347→      "lon": -77.1214,
+  1348→      "description": "ENR waypoint in Peru airspace"
+  1349→    },
+  1350→    {
+  1351→      "id": "RACAN",
+  1352→      "name": "RACAN",
+  1353→      "type": "WAYPOINT",
+  1354→      "lat": -14.9964,
+  1355→      "lon": -74.2911,
+  1356→      "description": "ENR intersection, southern highlands"
+  1357→    },
+  1358→    {
+  1359→      "id": "RAXUN",
+  1360→      "name": "RAXUN",
+  1361→      "type": "WAYPOINT",
+  1362→      "lat": -14.4483,
+  1363→      "lon": -69.0903,
+  1364→      "description": "ENR waypoint in Peru airspace"
+  1365→    },
+  1366→    {
+  1367→      "id": "RAYA",
+  1368→      "name": "RAYA",
+  1369→      "type": "WAYPOINT",
+  1370→      "lat": -7.5333,
+  1371→      "lon": -79.5667,
+  1372→      "description": "ENR intersection, northern coast"
+  1373→    },
+  1374→    {
+  1375→      "id": "ROKOL",
+  1376→      "name": "ROKOL",
+  1377→      "type": "WAYPOINT",
+  1378→      "lat": -5.9772,
+  1379→      "lon": -80.2108,
+  1380→      "description": "ENR intersection, northern coast"
+  1381→    },
+  1382→    {
+  1383→      "id": "SANTI",
+  1384→      "name": "SANTI",
+  1385→      "type": "WAYPOINT",
+  1386→      "lat": -17.5833,
+  1387→      "lon": -70.7333,
+  1388→      "description": "ENR intersection, southern Peru"
+  1389→    },
+  1390→    {
+  1391→      "id": "SAPUK",
+  1392→      "name": "SAPUK",
+  1393→      "type": "WAYPOINT",
+  1394→      "lat": -11.35,
+  1395→      "lon": -77.0,
+  1396→      "description": "ENR intersection, north of Lima"
+  1397→    },
+  1398→    {
+  1399→      "id": "SELVA",
+  1400→      "name": "SELVA",
+  1401→      "type": "WAYPOINT",
+  1402→      "lat": -9.5217,
+  1403→      "lon": -72.1856,
+  1404→      "description": "ENR intersection, central jungle"
+  1405→    },
+  1406→    {
+  1407→      "id": "SIGAS",
+  1408→      "name": "SIGAS",
+  1409→      "type": "WAYPOINT",
+  1410→      "lat": -11.8003,
+  1411→      "lon": -77.2325,
+  1412→      "description": "ENR intersection, Lima TMA"
+  1413→    },
+  1414→    {
+  1415→      "id": "SIGOB",
+  1416→      "name": "SIGOB",
+  1417→      "type": "WAYPOINT",
+  1418→      "lat": -8.4711,
+  1419→      "lon": -73.3383,
+  1420→      "description": "ENR intersection, central jungle"
+  1421→    },
+  1422→    {
+  1423→      "id": "TALARA",
+  1424→      "name": "TALARA",
+  1425→      "type": "WAYPOINT",
+  1426→      "lat": -4.5667,
+  1427→      "lon": -81.25,
+  1428→      "description": "ENR intersection, northern Peru"
+  1429→    },
+  1430→    {
+  1431→      "id": "TBP",
+  1432→      "name": "TBP",
+  1433→      "type": "NAVAID",
+  1434→      "lat": -3.55,
+  1435→      "lon": -80.3833,
+  1436→      "description": "TUMBES DVOR/DME facility"
+  1437→    },
+  1438→    {
+  1439→      "id": "TCQ",
+  1440→      "name": "TCQ",
+  1441→      "type": "NAVAID",
+  1442→      "lat": -18.0647,
+  1443→      "lon": -70.2997,
+  1444→      "description": "TACNA DVOR/DME facility"
+  1445→    },
+  1446→    {
+  1447→      "id": "TEMOS",
+  1448→      "name": "TEMOS",
+  1449→      "type": "WAYPOINT",
+  1450→      "lat": -6.7039,
+  1451→      "lon": -78.8981,
+  1452→      "description": "ENR intersection, northern highlands"
+  1453→    },
+  1454→    {
+  1455→      "id": "TOMIX",
+  1456→      "name": "TOMIX",
+  1457→      "type": "WAYPOINT",
+  1458→      "lat": -13.5525,
+  1459→      "lon": -71.3642,
+  1460→      "description": "ENR intersection, southern Peru"
+  1461→    },
+  1462→    {
+  1463→      "id": "TONOS",
+  1464→      "name": "TONOS",
+  1465→      "type": "WAYPOINT",
+  1466→      "lat": -15.9244,
+  1467→      "lon": -70.9058,
+  1468→      "description": "ENR waypoint in Peru airspace"
+  1469→    },
+  1470→    {
+  1471→      "id": "TORDO",
+  1472→      "name": "TORDO",
+  1473→      "type": "WAYPOINT",
+  1474→      "lat": -12.0231,
+  1475→      "lon": -76.1875,
+  1476→      "description": "ENR intersection, near Lima"
+  1477→    },
+  1478→    {
+  1479→      "id": "UDOVA",
+  1480→      "name": "UDOVA",
+  1481→      "type": "WAYPOINT",
+  1482→      "lat": -6.6661,
+  1483→      "lon": -76.7439,
+  1484→      "description": "ENR intersection, central jungle"
+  1485→    },
+  1486→    {
+  1487→      "id": "UGEMA",
+  1488→      "name": "UGEMA",
+  1489→      "type": "WAYPOINT",
+  1490→      "lat": -8.3706,
+  1491→      "lon": -79.6036,
+  1492→      "description": "ENR intersection, northern highlands"
+  1493→    },
+  1494→    {
+  1495→      "id": "URA",
+  1496→      "name": "URA",
+  1497→      "type": "NAVAID",
+  1498→      "lat": -5.2067,
+  1499→      "lon": -80.6167,
+  1500→      "description": "PIURA DVOR/DME facility"
+  1501→    },
+  1502→    {
+  1503→      "id": "VAKUD",
+  1504→      "name": "VAKUD",
+  1505→      "type": "WAYPOINT",
+  1506→      "lat": -4.5033,
+  1507→      "lon": -79.5667,
+  1508→      "description": "ENR intersection, northern coast"
+  1509→    },
+  1510→    {
+  1511→      "id": "VALEM",
+  1512→      "name": "VALEM",
+  1513→      "type": "WAYPOINT",
+  1514→      "lat": -6.3958,
+  1515→      "lon": -81.4422,
+  1516→      "description": "ENR intersection, northern coast"
+  1517→    },
+  1518→    {
+  1519→      "id": "VATES",
+  1520→      "name": "VATES",
+  1521→      "type": "WAYPOINT",
+  1522→      "lat": -7.7033,
+  1523→      "lon": -78.3656,
+  1524→      "description": "ENR intersection, northern coast"
+  1525→    },
+  1526→    {
+  1527→      "id": "VIBAS",
+  1528→      "name": "VIBAS",
+  1529→      "type": "WAYPOINT",
+  1530→      "lat": -12.0914,
+  1531→      "lon": -77.0514,
+  1532→      "description": "ENR intersection, Lima TMA"
+  1533→    }
+  1534→  ],
+  1535→  "airways": {
+  1536→    "conventional": [
+  1537→      {
+  1538→        "designator": "G679",
+  1539→        "type": "CONVENTIONAL",
+  1540→        "level": "LOWER",
+  1541→        "segments": [
+  1542→          {
+  1543→            "from": "TBP",
+  1544→            "to": "KAVAK",
+  1545→            "distance": 89,
+  1546→            "bearing": 190,
+  1547→            "minFL": 95,
+  1548→            "maxFL": 285,
+  1549→            "trackTrue": 190,
+  1550→            "reverseTrack": 10
+  1551→          },
+  1552→          {
+  1553→            "from": "KAVAK",
+  1554→            "to": "EGASI",
+  1555→            "distance": 50,
+  1556→            "bearing": 12,
+  1557→            "minFL": 95,
+  1558→            "maxFL": 285,
+  1559→            "trackTrue": 12,
+  1560→            "reverseTrack": 192
+  1561→          },
+  1562→          {
+  1563→            "from": "EGASI",
+  1564→            "to": "CIX",
+  1565→            "distance": 160,
+  1566→            "bearing": 166,
+  1567→            "minFL": 95,
+  1568→            "maxFL": 285,
+  1569→            "trackTrue": 166,
+  1570→            "reverseTrack": 346
+  1571→          },
+  1572→          {
+  1573→            "from": "CIX",
+  1574→            "to": "MELIX",
+  1575→            "distance": 51,
+  1576→            "bearing": 71,
+  1577→            "minFL": 95,
+  1578→            "maxFL": 285,
+  1579→            "trackTrue": 71,
+  1580→            "reverseTrack": 251
+  1581→          },
+  1582→          {
+  1583→            "from": "MELIX",
+  1584→            "to": "VATES",
+  1585→            "distance": 82,
+  1586→            "bearing": 152,
+  1587→            "minFL": 95,
+  1588→            "maxFL": 285,
+  1589→            "trackTrue": 152,
+  1590→            "reverseTrack": 332
+  1591→          },
+  1592→          {
+  1593→            "from": "VATES",
+  1594→            "to": "LIVUS",
+  1595→            "distance": 39,
+  1596→            "bearing": 63,
+  1597→            "minFL": 95,
+  1598→            "maxFL": 285,
+  1599→            "trackTrue": 63,
+  1600→            "reverseTrack": 243
+  1601→          },
+  1602→          {
+  1603→            "from": "LIVUS",
+  1604→            "to": "KOLSI",
+  1605→            "distance": 99,
+  1606→            "bearing": 157,
+  1607→            "minFL": 95,
+  1608→            "maxFL": 285,
+  1609→            "trackTrue": 157,
+  1610→            "reverseTrack": 337
+  1611→          },
+  1612→          {
+  1613→            "from": "KOLSI",
+  1614→            "to": "ISKAR",
+  1615→            "distance": 77,
+  1616→            "bearing": 177,
+  1617→            "minFL": 95,
+  1618→            "maxFL": 285,
+  1619→            "trackTrue": 177,
+  1620→            "reverseTrack": 357
+  1621→          },
+  1622→          {
+  1623→            "from": "ISKAR",
+  1624→            "to": "LIM",
+  1625→            "distance": 108,
+  1626→            "bearing": 181,
+  1627→            "minFL": 95,
+  1628→            "maxFL": 285,
+  1629→            "trackTrue": 181,
+  1630→            "reverseTrack": 1
+  1631→          }
+  1632→        ]
+  1633→      },
+  1634→      {
+  1635→        "designator": "G424",
+  1636→        "type": "CONVENTIONAL",
+  1637→        "level": "LOWER",
+  1638→        "segments": [
+  1639→          {
+  1640→            "from": "LIM",
+  1641→            "to": "GAVIL",
+  1642→            "distance": 55,
+  1643→            "bearing": 35,
+  1644→            "minFL": 95,
+  1645→            "maxFL": 285,
+  1646→            "trackTrue": 35,
+  1647→            "reverseTrack": 215
+  1648→          },
+  1649→          {
+  1650→            "from": "GAVIL",
+  1651→            "to": "ESEDI",
+  1652→            "distance": 11,
+  1653→            "bearing": 131,
+  1654→            "minFL": 95,
+  1655→            "maxFL": 285,
+  1656→            "trackTrue": 131,
+  1657→            "reverseTrack": 311
+  1658→          },
+  1659→          {
+  1660→            "from": "ESEDI",
+  1661→            "to": "MILAX",
+  1662→            "distance": 148,
+  1663→            "bearing": 348,
+  1664→            "minFL": 95,
+  1665→            "maxFL": 285,
+  1666→            "trackTrue": 348,
+  1667→            "reverseTrack": 168
+  1668→          },
+  1669→          {
+  1670→            "from": "MILAX",
+  1671→            "to": "VATES",
+  1672→            "distance": 113,
+  1673→            "bearing": 312,
+  1674→            "minFL": 95,
+  1675→            "maxFL": 285,
+  1676→            "trackTrue": 312,
+  1677→            "reverseTrack": 132
+  1678→          }
+  1679→        ]
+  1680→      },
+  1681→      {
+  1682→        "designator": "W4",
+  1683→        "type": "CONVENTIONAL",
+  1684→        "level": "LOWER",
+  1685→        "segments": [
+  1686→          {
+  1687→            "from": "LIM",
+  1688→            "to": "TORDO",
+  1689→            "distance": 55,
+  1690→            "bearing": 91,
+  1691→            "minFL": 95,
+  1692→            "maxFL": 285,
+  1693→            "trackTrue": 91,
+  1694→            "reverseTrack": 271
+  1695→          },
+  1696→          {
+  1697→            "from": "TORDO",
+  1698→            "to": "AMVEX",
+  1699→            "distance": 82,
+  1700→            "bearing": 334,
+  1701→            "minFL": 95,
+  1702→            "maxFL": 285,
+  1703→            "trackTrue": 334,
+  1704→            "reverseTrack": 154
+  1705→          },
+  1706→          {
+  1707→            "from": "AMVEX",
+  1708→            "to": "BUTEK",
+  1709→            "distance": 70,
+  1710→            "bearing": 82,
+  1711→            "minFL": 95,
+  1712→            "maxFL": 285,
+  1713→            "trackTrue": 82,
+  1714→            "reverseTrack": 262
+  1715→          },
+  1716→          {
+  1717→            "from": "BUTEK",
+  1718→            "to": "COCOS",
+  1719→            "distance": 107,
+  1720→            "bearing": 9,
+  1721→            "minFL": 95,
+  1722→            "maxFL": 285,
+  1723→            "trackTrue": 9,
+  1724→            "reverseTrack": 189
+  1725→          },
+  1726→          {
+  1727→            "from": "COCOS",
+  1728→            "to": "BORLA",
+  1729→            "distance": 69,
+  1730→            "bearing": 6,
+  1731→            "minFL": 95,
+  1732→            "maxFL": 285,
+  1733→            "trackTrue": 6,
+  1734→            "reverseTrack": 186
+  1735→          }
+  1736→        ]
+  1737→      },
+  1738→      {
+  1739→        "designator": "A301",
+  1740→        "type": "CONVENTIONAL",
+  1741→        "level": "LOWER",
+  1742→        "segments": [
+  1743→          {
+  1744→            "from": "LIM",
+  1745→            "to": "GATUK",
+  1746→            "distance": 55,
+  1747→            "bearing": 112,
+  1748→            "minFL": 95,
+  1749→            "maxFL": 285,
+  1750→            "trackTrue": 112,
+  1751→            "reverseTrack": 292
+  1752→          },
+  1753→          {
+  1754→            "from": "GATUK",
+  1755→            "to": "LODOX",
+  1756→            "distance": 10,
+  1757→            "bearing": 112,
+  1758→            "minFL": 95,
+  1759→            "maxFL": 285,
+  1760→            "trackTrue": 112,
+  1761→            "reverseTrack": 292
+  1762→          },
+  1763→          {
+  1764→            "from": "LODOX",
+  1765→            "to": "PSO",
+  1766→            "distance": 79,
+  1767→            "bearing": 185,
+  1768→            "minFL": 95,
+  1769→            "maxFL": 285,
+  1770→            "trackTrue": 185,
+  1771→            "reverseTrack": 5
+  1772→          },
+  1773→          {
+  1774→            "from": "PSO",
+  1775→            "to": "IBISA",
+  1776→            "distance": 46,
+  1777→            "bearing": 336,
+  1778→            "minFL": 95,
+  1779→            "maxFL": 285,
+  1780→            "trackTrue": 336,
+  1781→            "reverseTrack": 156
+  1782→          },
+  1783→          {
+  1784→            "from": "IBISA",
+  1785→            "to": "ILMAR",
+  1786→            "distance": 75,
+  1787→            "bearing": 179,
+  1788→            "minFL": 95,
+  1789→            "maxFL": 285,
+  1790→            "trackTrue": 179,
+  1791→            "reverseTrack": 359
+  1792→          },
+  1793→          {
+  1794→            "from": "ILMAR",
+  1795→            "to": "AQP",
+  1796→            "distance": 311,
+  1797→            "bearing": 114,
+  1798→            "minFL": 95,
+  1799→            "maxFL": 285,
+  1800→            "trackTrue": 114,
+  1801→            "reverseTrack": 294
+  1802→          }
+  1803→        ]
+  1804→      },
+  1805→      {
+  1806→        "designator": "G6",
+  1807→        "type": "CONVENTIONAL",
+  1808→        "level": "LOWER",
+  1809→        "segments": [
+  1810→          {
+  1811→            "from": "AQP",
+  1812→            "to": "MEXUR",
+  1813→            "distance": 304,
+  1814→            "bearing": 308,
+  1815→            "minFL": 145,
+  1816→            "maxFL": 285,
+  1817→            "trackTrue": 308,
+  1818→            "reverseTrack": 128
+  1819→          },
+  1820→          {
+  1821→            "from": "MEXUR",
+  1822→            "to": "ESKOT",
+  1823→            "distance": 70,
+  1824→            "bearing": 16,
+  1825→            "minFL": 145,
+  1826→            "maxFL": 285,
+  1827→            "trackTrue": 16,
+  1828→            "reverseTrack": 196
+  1829→          },
+  1830→          {
+  1831→            "from": "ESKOT",
+  1832→            "to": "PUDUL",
+  1833→            "distance": 42,
+  1834→            "bearing": 235,
+  1835→            "minFL": 145,
+  1836→            "maxFL": 285,
+  1837→            "trackTrue": 235,
+  1838→            "reverseTrack": 55
+  1839→          },
+  1840→          {
+  1841→            "from": "PUDUL",
+  1842→            "to": "CUZ",
+  1843→            "distance": 242,
+  1844→            "bearing": 106,
+  1845→            "minFL": 145,
+  1846→            "maxFL": 285,
+  1847→            "trackTrue": 106,
+  1848→            "reverseTrack": 286
+  1849→          }
+  1850→        ]
+  1851→      },
+  1852→      {
+  1853→        "designator": "W14",
+  1854→        "type": "CONVENTIONAL",
+  1855→        "level": "LOWER",
+  1856→        "segments": [
+  1857→          {
+  1858→            "from": "PCL",
+  1859→            "to": "COCOS",
+  1860→            "distance": 55,
+  1861→            "bearing": 237,
+  1862→            "minFL": 145,
+  1863→            "maxFL": 285,
+  1864→            "trackTrue": 237,
+  1865→            "reverseTrack": 57
+  1866→          },
+  1867→          {
+  1868→            "from": "COCOS",
+  1869→            "to": "SELVA",
+  1870→            "distance": 191,
+  1871→            "bearing": 102,
+  1872→            "minFL": 145,
+  1873→            "maxFL": 285,
+  1874→            "trackTrue": 102,
+  1875→            "reverseTrack": 282
+  1876→          },
+  1877→          {
+  1878→            "from": "SELVA",
+  1879→            "to": "SIGOB",
+  1880→            "distance": 93,
+  1881→            "bearing": 313,
+  1882→            "minFL": 145,
+  1883→            "maxFL": 285,
+  1884→            "trackTrue": 313,
+  1885→            "reverseTrack": 133
+  1886→          },
+  1887→          {
+  1888→            "from": "SIGOB",
+  1889→            "to": "KEBOM",
+  1890→            "distance": 35,
+  1891→            "bearing": 324,
+  1892→            "minFL": 145,
+  1893→            "maxFL": 285,
+  1894→            "trackTrue": 324,
+  1895→            "reverseTrack": 144
+  1896→          },
+  1897→          {
+  1898→            "from": "KEBOM",
+  1899→            "to": "PANTA",
+  1900→            "distance": 247,
+  1901→            "bearing": 3,
+  1902→            "minFL": 145,
+  1903→            "maxFL": 285,
+  1904→            "trackTrue": 3,
+  1905→            "reverseTrack": 183
+  1906→          },
+  1907→          {
+  1908→            "from": "PANTA",
+  1909→            "to": "IQT",
+  1910→            "distance": 12,
+  1911→            "bearing": 58,
+  1912→            "minFL": 145,
+  1913→            "maxFL": 285,
+  1914→            "trackTrue": 58,
+  1915→            "reverseTrack": 238
+  1916→          }
+  1917→        ]
+  1918→      },
+  1919→      {
+  1920→        "designator": "A205",
+  1921→        "type": "CONVENTIONAL",
+  1922→        "level": "LOWER",
+  1923→        "segments": [
+  1924→          {
+  1925→            "from": "TBP",
+  1926→            "to": "PAGUR",
+  1927→            "distance": 56,
+  1928→            "bearing": 179,
+  1929→            "minFL": 95,
+  1930→            "maxFL": 285,
+  1931→            "trackTrue": 179,
+  1932→            "reverseTrack": 359
+  1933→          },
+  1934→          {
+  1935→            "from": "PAGUR",
+  1936→            "to": "EGASI",
+  1937→            "distance": 18,
+  1938→            "bearing": 336,
+  1939→            "minFL": 95,
+  1940→            "maxFL": 285,
+  1941→            "trackTrue": 336,
+  1942→            "reverseTrack": 156
+  1943→          },
+  1944→          {
+  1945→            "from": "EGASI",
+  1946→            "to": "OKASO",
+  1947→            "distance": 63,
+  1948→            "bearing": 208,
+  1949→            "minFL": 95,
+  1950→            "maxFL": 285,
+  1951→            "trackTrue": 208,
+  1952→            "reverseTrack": 28
+  1953→          },
+  1954→          {
+  1955→            "from": "OKASO",
+  1956→            "to": "ROKOL",
+  1957→            "distance": 68,
+  1958→            "bearing": 138,
+  1959→            "minFL": 95,
+  1960→            "maxFL": 285,
+  1961→            "trackTrue": 138,
+  1962→            "reverseTrack": 318
+  1963→          },
+  1964→          {
+  1965→            "from": "ROKOL",
+  1966→            "to": "CIX",
+  1967→            "distance": 54,
+  1968→            "bearing": 155,
+  1969→            "minFL": 95,
+  1970→            "maxFL": 285,
+  1971→            "trackTrue": 155,
+  1972→            "reverseTrack": 335
+  1973→          }
+  1974→        ]
+  1975→      },
+  1976→      {
+  1977→        "designator": "G745",
+  1978→        "type": "CONVENTIONAL",
+  1979→        "level": "LOWER",
+  1980→        "segments": [
+  1981→          {
+  1982→            "from": "IQT",
+  1983→            "to": "KAMPA",
+  1984→            "distance": 6,
+  1985→            "bearing": 54,
+  1986→            "minFL": 145,
+  1987→            "maxFL": 285,
+  1988→            "trackTrue": 54,
+  1989→            "reverseTrack": 234
+  1990→          },
+  1991→          {
+  1992→            "from": "KAMPA",
+  1993→            "to": "BORAS",
+  1994→            "distance": 13,
+  1995→            "bearing": 236,
+  1996→            "minFL": 145,
+  1997→            "maxFL": 285,
+  1998→            "trackTrue": 236,
+  1999→            "reverseTrack": 56
+  2000→          },
+
+[showing lines 1-2000 of 3045; use offset=2001 with limit to continue reading]

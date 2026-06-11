@@ -1,0 +1,844 @@
+     1→"use client"
+     2→
+     3→import { useState, useEffect, useMemo, useCallback, useSyncExternalStore } from "react"
+     4→import "leaflet/dist/leaflet.css"
+     5→import {
+     6→  MapContainer,
+     7→  TileLayer,
+     8→  Polyline,
+     9→  Polygon,
+    10→  Marker,
+    11→  Popup,
+    12→  Tooltip,
+    13→  useMap,
+    14→} from "react-leaflet"
+    15→import L from "leaflet"
+    16→import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+    17→import { Checkbox } from "@/components/ui/checkbox"
+    18→import { Label } from "@/components/ui/label"
+    19→import { Skeleton } from "@/components/ui/skeleton"
+    20→import { Badge } from "@/components/ui/badge"
+    21→import { Separator } from "@/components/ui/separator"
+    22→import type {
+    23→  AirwaysData,
+    24→  Airway,
+    25→  AirwaySegment,
+    26→  Navaid,
+    27→  Waypoint,
+    28→  FIRBoundary,
+    29→  AdjacentFIR,
+    30→  Coord,
+    31→  RestrictedArea,
+    32→} from "@/lib/types"
+    33→
+    34→// ─── Constants ───────────────────────────────────────────────────
+    35→const MAP_CENTER: [number, number] = [-9.19, -79.34]
+    36→const MAP_ZOOM = 6
+    37→const GRID_STEP = 1
+    38→
+    39→// ─── Adjacent FIR Colors ─────────────────────────────────────────
+    40→const ADJ_FIR_COLORS: Record<string, string> = {
+    41→  SEGU: "#f97316", // orange
+    42→  SKED: "#eab308", // yellow
+    43→  SBAM: "#22c55e", // green
+    44→  SLLP: "#a855f7", // purple
+    45→  SCEZ: "#ef4444", // red
+    46→}
+    47→
+    48→// ─── Restricted Area Colors ──────────────────────────────────────────
+    49→const RESTRICTED_AREA_COLORS: Record<string, { fill: string; border: string }> = {
+    50→  PROHIBITED: { fill: "rgba(239, 68, 68, 0.15)", border: "#ef4444" },
+    51→  RESTRICTED: { fill: "rgba(234, 179, 8, 0.12)", border: "#eab308" },
+    52→  DANGER: { fill: "rgba(249, 115, 22, 0.12)", border: "#f97316" },
+    53→}
+    54→
+    55→// ─── Custom DivIcon: Waypoint (cyan diamond) ─────────────────────
+    56→function createWaypointIcon(name: string) {
+    57→  return L.divIcon({
+    58→    className: "",
+    59→    html: `
+    60→      <div style="position:relative;display:flex;flex-direction:column;align-items:center;">
+    61→        <div style="
+    62→          width:10px;height:10px;
+    63→          background:#06b6d4;
+    64→          border:1.5px solid #0e7490;
+    65→          transform:rotate(45deg);
+    66→          margin-top:-5px;
+    67→          box-shadow:0 0 3px rgba(6,182,212,0.6);
+    68→        "></div>
+    69→        <span style="
+    70→          position:absolute;top:8px;
+    71→          font-size:9px;font-weight:600;
+    72→          color:#0e7490;white-space:nowrap;
+    73→          text-shadow:1px 1px 1px #fff,-1px -1px 1px #fff,1px -1px 1px #fff,-1px 1px 1px #fff;
+    74→          letter-spacing:0.5px;
+    75→          pointer-events:none;
+    76→        ">${name}</span>
+    77→      </div>
+    78→    `,
+    79→    iconSize: [10, 24],
+    80→    iconAnchor: [5, 5],
+    81→  })
+    82→}
+    83→
+    84→// ─── Custom DivIcon: Mandatory Reporting Point (solid orange triangle) ──
+    85→function createReportingPointIcon(name: string) {
+    86→  return L.divIcon({
+    87→    className: "",
+    88→    html: `
+    89→      <div style="position:relative;display:flex;flex-direction:column;align-items:center;">
+    90→        <div style="
+    91→          width:0;height:0;
+    92→          border-left:6px solid transparent;
+    93→          border-right:6px solid transparent;
+    94→          border-bottom:11px solid #f97316;
+    95→          margin-top:-5px;
+    96→          filter:drop-shadow(0 0 2px rgba(249,115,22,0.6));
+    97→        "></div>
+    98→        <span style="
+    99→          position:absolute;top:8px;
+   100→          font-size:8.5px;font-weight:700;
+   101→          color:#c2410c;white-space:nowrap;
+   102→          text-shadow:1px 1px 1px #fff,-1px -1px 1px #fff,1px -1px 1px #fff,-1px 1px 1px #fff;
+   103→          letter-spacing:0.5px;
+   104→          pointer-events:none;
+   105→        ">${name}</span>
+   106→      </div>
+   107→    `,
+   108→    iconSize: [12, 24],
+   109→    iconAnchor: [6, 6],
+   110→  })
+   111→}
+   112→
+   113→// ─── Custom DivIcon: Navaid (blue circle with frequency) ─────────
+   114→function createNavaidIcon(navaid: Navaid) {
+   115→  return L.divIcon({
+   116→    className: "",
+   117→    html: `
+   118→      <div style="position:relative;display:flex;flex-direction:column;align-items:center;">
+   119→        <div style="
+   120→          width:12px;height:12px;
+   121→          background:transparent;
+   122→          border:2.5px solid #3b82f6;
+   123→          border-radius:50%;
+   124→          box-shadow:0 0 4px rgba(59,130,246,0.5);
+   125→        "></div>
+   126→        <div style="
+   127→          position:absolute;top:2px;left:14px;
+   128→          display:flex;flex-direction:column;align-items:flex-start;gap:0;
+   129→          pointer-events:none;
+   130→        ">
+   131→          <span style="
+   132→            font-size:9px;font-weight:700;
+   133→            color:#1d4ed8;white-space:nowrap;
+   134→            text-shadow:1px 1px 1px #fff,-1px -1px 1px #fff,1px -1px 1px #fff,-1px 1px 1px #fff;
+   135→            line-height:1;
+   136→          ">${navaid.id}</span>
+   137→          <span style="
+   138→            font-size:7.5px;font-weight:500;
+   139→            color:#3b82f6;white-space:nowrap;
+   140→            text-shadow:1px 1px 1px #fff,-1px -1px 1px #fff,1px -1px 1px #fff,-1px 1px 1px #fff;
+   141→            line-height:1;
+   142→          ">${navaid.frequency.replace(" MHz", "")}</span>
+   143→        </div>
+   144→      </div>
+   145→    `,
+   146→    iconSize: [12, 12],
+   147→    iconAnchor: [6, 6],
+   148→  })
+   149→}
+   150→
+   151→// ─── Custom DivIcon: FIR center label ────────────────────────────
+   152→function createFIRLabelIcon(text: string) {
+   153→  return L.divIcon({
+   154→    className: "",
+   155→    html: `
+   156→      <div style="
+   157→        font-size:14px;font-weight:800;
+   158→        color:#1d4ed8;white-space:nowrap;
+   159→        text-shadow:1px 1px 2px #fff,-1px -1px 2px #fff,1px -1px 2px #fff,-1px 1px 2px #fff;
+   160→        letter-spacing:2px;
+   161→        pointer-events:none;
+   162→        opacity:0.7;
+   163→      ">${text}</div>
+   164→    `,
+   165→    iconSize: [120, 20],
+   166→    iconAnchor: [60, 10],
+   167→  })
+   168→}
+   169→
+   170→// ─── Custom DivIcon: Adjacent FIR label ──────────────────────────
+   171→function createAdjFIRLabelIcon(icao: string, name: string, color: string) {
+   172→  return L.divIcon({
+   173→    className: "",
+   174→    html: `
+   175→      <div style="
+   176→        display:flex;flex-direction:column;align-items:center;gap:1px;
+   177→        pointer-events:none;opacity:0.8;
+   178→      ">
+   179→        <span style="
+   180→          font-size:10px;font-weight:700;
+   181→          color:${color};white-space:nowrap;
+   182→          text-shadow:1px 1px 1px #fff,-1px -1px 1px #fff,1px -1px 1px #fff,-1px 1px 1px #fff;
+   183→          letter-spacing:1px;
+   184→        ">${icao}</span>
+   185→        <span style="
+   186→          font-size:7.5px;font-weight:500;
+   187→          color:${color};white-space:nowrap;
+   188→          text-shadow:1px 1px 1px #fff,-1px -1px 1px #fff,1px -1px 1px #fff,-1px 1px 1px #fff;
+   189→        ">${name}</span>
+   190→      </div>
+   191→    `,
+   192→    iconSize: [100, 30],
+   193→    iconAnchor: [50, 15],
+   194→  })
+   195→}
+   196→
+   197→// ─── Grid Component ──────────────────────────────────────────────
+   198→function GPSGrid({ visible }: { visible: boolean }) {
+   199→  const map = useMap()
+   200→
+   201→  useEffect(() => {
+   202→    if (!visible) return
+   203→
+   204→    const bounds = map.getBounds()
+   205→    const south = Math.floor(bounds.getSouth())
+   206→    const north = Math.ceil(bounds.getNorth())
+   207→    const west = Math.floor(bounds.getWest())
+   208→    const east = Math.ceil(bounds.getEast())
+   209→
+   210→    const lines: L.Polyline[] = []
+   211→    const labels: L.Marker[] = []
+   212→
+   213→    // Latitude lines
+   214→    for (let lat = south; lat <= north; lat += GRID_STEP) {
+   215→      const line = L.polyline(
+   216→        [
+   217→          [lat, west - 5],
+   218→          [lat, east + 5],
+   219→        ],
+   220→        {
+   221→          color: "#9ca3af",
+   222→          weight: 0.5,
+   223→          dashArray: "4,4",
+   224→          opacity: 0.5,
+   225→          interactive: false,
+   226→        }
+   227→      ).addTo(map)
+   228→      lines.push(line)
+   229→
+   230→      // Label on the left edge
+   231→      const label = L.marker([lat, bounds.getWest() + 0.3], {
+   232→        icon: L.divIcon({
+   233→          className: "",
+   234→          html: `<span style="font-size:8px;color:#6b7280;background:rgba(255,255,255,0.7);padding:0 2px;border-radius:2px;">${lat}°</span>`,
+   235→          iconSize: [30, 12],
+   236→          iconAnchor: [0, 6],
+   237→        }),
+   238→        interactive: false,
+   239→      }).addTo(map)
+   240→      labels.push(label)
+   241→    }
+   242→
+   243→    // Longitude lines
+   244→    for (let lon = west; lon <= east; lon += GRID_STEP) {
+   245→      const line = L.polyline(
+   246→        [
+   247→          [south - 5, lon],
+   248→          [north + 5, lon],
+   249→        ],
+   250→        {
+   251→          color: "#9ca3af",
+   252→          weight: 0.5,
+   253→          dashArray: "4,4",
+   254→          opacity: 0.5,
+   255→          interactive: false,
+   256→        }
+   257→      ).addTo(map)
+   258→      lines.push(line)
+   259→
+   260→      // Label on the top edge
+   261→      const label = L.marker([bounds.getNorth() - 0.3, lon], {
+   262→        icon: L.divIcon({
+   263→          className: "",
+   264→          html: `<span style="font-size:8px;color:#6b7280;background:rgba(255,255,255,0.7);padding:0 2px;border-radius:2px;">${lon}°</span>`,
+   265→          iconSize: [30, 12],
+   266→          iconAnchor: [15, 12],
+   267→        }),
+   268→        interactive: false,
+   269→      }).addTo(map)
+   270→      labels.push(label)
+   271→    }
+   272→
+   273→    return () => {
+   274→      lines.forEach((l) => map.removeLayer(l))
+   275→      labels.forEach((l) => map.removeLayer(l))
+   276→    }
+   277→  }, [map, visible])
+   278→
+   279→  return null
+   280→}
+   281→
+   282→// ─── Legend Component ────────────────────────────────────────────
+   283→function LegendControl() {
+   284→  const map = useMap()
+   285→
+   286→  useEffect(() => {
+   287→    const legend = L.control({ position: "bottomright" })
+   288→    legend.onAdd = () => {
+   289→      const div = L.DomUtil.create("div", "")
+   290→      div.style.cssText = `
+   291→        background:rgba(255,255,255,0.92);
+   292→        padding:10px 14px;
+   293→        border-radius:8px;
+   294→        box-shadow:0 2px 8px rgba(0,0,0,0.15);
+   295→        font-size:11px;
+   296→        line-height:1.8;
+   297→        border:1px solid #e5e7eb;
+   298→      `
+   299→      div.innerHTML = `
+   300→        <div style="font-weight:700;margin-bottom:4px;font-size:12px;color:#1f2937;">Leyenda</div>
+   301→        <div style="display:flex;align-items:center;gap:6px;">
+   302→          <div style="width:24px;height:3px;background:#22c55e;border-radius:1px;"></div>
+   303→          <span>Aerovía Convencional</span>
+   304→        </div>
+   305→        <div style="display:flex;align-items:center;gap:6px;">
+   306→          <div style="width:24px;height:3px;background:#d946ef;border-radius:1px;"></div>
+   307→          <span>Aerovía RNAV</span>
+   308→        </div>
+   309→        <div style="display:flex;align-items:center;gap:6px;">
+   310→          <div style="width:24px;height:2px;background:#3b82f6;border:1px dashed #3b82f6;"></div>
+   311→          <span>FIR Lima</span>
+   312→        </div>
+   313→        <div style="display:flex;align-items:center;gap:6px;">
+   314→          <div style="width:10px;height:10px;background:#06b6d4;transform:rotate(45deg);margin:0 7px;"></div>
+   315→          <span>Waypoint</span>
+   316→        </div>
+   317→        <div style="display:flex;align-items:center;gap:6px;">
+   318→          <div style="width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:9px solid #f97316;margin:0 7px;"></div>
+   319→          <span>Pto. Notificación</span>
+   320→        </div>
+   321→        <div style="display:flex;align-items:center;gap:6px;">
+   322→          <div style="width:10px;height:10px;border:2px solid #3b82f6;border-radius:50%;"></div>
+   323→          <span>Radioayuda</span>
+   324→        </div>
+   325→        <div style="display:flex;align-items:center;gap:6px;">
+   326→          <div style="width:12px;height:8px;background:rgba(239,68,68,0.2);border:1.5px solid #ef4444;border-radius:1px;"></div>
+   327→          <span>Prohibida</span>
+   328→        </div>
+   329→        <div style="display:flex;align-items:center;gap:6px;">
+   330→          <div style="width:12px;height:8px;background:rgba(234,179,8,0.15);border:1.5px dashed #eab308;border-radius:1px;"></div>
+   331→          <span>Restringida</span>
+   332→        </div>
+   333→        <div style="display:flex;align-items:center;gap:6px;">
+   334→          <div style="width:12px;height:8px;background:rgba(249,115,22,0.15);border:1.5px dashed #f97316;border-radius:1px;"></div>
+   335→          <span>Peligrosa</span>
+   336→        </div>
+   337→      `
+   338→      return div
+   339→    }
+   340→    legend.addTo(map)
+   341→
+   342→    return () => {
+   343→      map.removeControl(legend)
+   344→    }
+   345→  }, [map])
+   346→
+   347→  return null
+   348→}
+   349→
+   350→// ─── Helper: Build lookup map for waypoints/navaids ──────────────
+   351→function buildCoordLookup(
+   352→  waypoints: Waypoint[],
+   353→  navaids: Navaid[]
+   354→): Map<string, Coord> {
+   355→  const map = new Map<string, Coord>()
+   356→  for (const wp of waypoints) {
+   357→    map.set(wp.id, { lat: wp.lat, lon: wp.lon })
+   358→  }
+   359→  for (const nv of navaids) {
+   360→    map.set(nv.id, { lat: nv.lat, lon: nv.lon })
+   361→  }
+   362→  return map
+   363→}
+   364→
+   365→// ─── Helper: Get center of polygon ──────────────────────────────
+   366→function getPolygonCenter(points: Coord[]): [number, number] {
+   367→  const sumLat = points.reduce((s, p) => s + p.lat, 0)
+   368→  const sumLon = points.reduce((s, p) => s + p.lon, 0)
+   369→  return [sumLat / points.length, sumLon / points.length]
+   370→}
+   371→
+   372→// ─── Helper: Convert Coord[] to [lat,lon][] for Leaflet ─────────
+   373→function coordsToLatLng(coords: Coord[]): [number, number][] {
+   374→  return coords.map((c) => [c.lat, c.lon])
+   375→}
+   376→
+   377→// ─── Helper: Resolve airway segment to polyline coordinates ──────
+   378→function resolveAirwaySegments(
+   379→  airway: Airway,
+   380→  coordLookup: Map<string, Coord>
+   381→): { positions: [number, number][]; resolvedSegments: (AirwaySegment & { fromCoord: Coord; toCoord: Coord })[] } {
+   382→  const positions: [number, number][] = []
+   383→  const resolvedSegments: (AirwaySegment & { fromCoord: Coord; toCoord: Coord })[] = []
+   384→
+   385→  for (let i = 0; i < airway.segments.length; i++) {
+   386→    const seg = airway.segments[i]
+   387→    const fromCoord = coordLookup.get(seg.from)
+   388→    const toCoord = coordLookup.get(seg.to)
+   389→
+   390→    if (!fromCoord || !toCoord) continue
+   391→
+   392→    resolvedSegments.push({ ...seg, fromCoord, toCoord })
+   393→
+   394→    if (i === 0 || positions.length === 0) {
+   395→      positions.push([fromCoord.lat, fromCoord.lon])
+   396→    }
+   397→    positions.push([toCoord.lat, toCoord.lon])
+   398→  }
+   399→
+   400→  return { positions, resolvedSegments }
+   401→}
+   402→
+   403→// ─── Layer state type ────────────────────────────────────────────
+   404→interface LayerState {
+   405→  conventional: boolean
+   406→  rnav: boolean
+   407→  waypoints: boolean
+   408→  reportingPoints: boolean
+   409→  navaids: boolean
+   410→  firBoundary: boolean
+   411→  adjacentFirs: boolean
+   412→  restrictedAreas: boolean
+   413→  grid: boolean
+   414→}
+   415→
+   416→// ─── Airway Detail Popup Content ─────────────────────────────────
+   417→function AirwayDetail({ airway, resolvedSegments }: {
+   418→  airway: Airway
+   419→  resolvedSegments: (AirwaySegment & { fromCoord: Coord; toCoord: Coord })[]
+   420→}) {
+   421→  return (
+   422→    <div className="text-xs space-y-1.5 min-w-[180px]">
+   423→      <div className="font-bold text-sm">{airway.designator}</div>
+   424→      <div className="flex gap-2">
+   425→        <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+   426→          {airway.type === "CONVENTIONAL" ? "Convencional" : "RNAV"}
+   427→        </Badge>
+   428→        <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+   429→          {airway.level === "LOWER" ? "Inferior" : airway.level === "UPPER" ? "Superior" : "Ambos"}
+   430→        </Badge>
+   431→      </div>
+   432→      <Separator />
+   433→      <div className="space-y-1">
+   434→        {resolvedSegments.map((seg, i) => (
+   435→          <div key={i} className="flex justify-between items-center">
+   436→            <span className="font-mono">{seg.from} → {seg.to}</span>
+   437→            <span className="text-muted-foreground">{seg.distance} NM</span>
+   438→          </div>
+   439→        ))}
+   440→      </div>
+   441→      {resolvedSegments.length > 0 && (
+   442→        <>
+   443→          <Separator />
+   444→          <div className="flex justify-between text-muted-foreground">
+   445→            <span>FL: {resolvedSegments[0].minFL ?? "—"} - {resolvedSegments[0].maxFL ?? "—"}</span>
+   446→          </div>
+   447→        </>
+   448→      )}
+   449→    </div>
+   450→  )
+   451→}
+   452→
+   453→// ─── Main Component ──────────────────────────────────────────────
+   454→export function AeronauticalChart() {
+   455→  const mounted = useSyncExternalStore(
+   456→    () => () => {},
+   457→    () => true,
+   458→    () => false
+   459→  )
+   460→  const [data, setData] = useState<AirwaysData | null>(null)
+   461→  const [loading, setLoading] = useState(true)
+   462→  const [layers, setLayers] = useState<LayerState>({
+   463→    conventional: true,
+   464→    rnav: true,
+   465→    waypoints: true,
+   466→    reportingPoints: true,
+   467→    navaids: true,
+   468→    firBoundary: true,
+   469→    adjacentFirs: true,
+   470→    restrictedAreas: true,
+   471→    grid: true,
+   472→  })
+   473→
+   474→  useEffect(() => {
+   475→    fetch("/api/airdata/all")
+   476→      .then((res) => res.json())
+   477→      .then((json: AirwaysData) => {
+   478→        setData(json)
+   479→        setLoading(false)
+   480→      })
+   481→      .catch((err) => {
+   482→        console.error("Failed to load airways data:", err)
+   483→        setLoading(false)
+   484→      })
+   485→  }, [])
+   486→
+   487→  const toggleLayer = useCallback((key: keyof LayerState) => {
+   488→    setLayers((prev) => ({ ...prev, [key]: !prev[key] }))
+   489→  }, [])
+   490→
+   491→  const coordLookup = useMemo(() => {
+   492→    if (!data) return new Map<string, Coord>()
+   493→    return buildCoordLookup(data.waypoints, data.navaids)
+   494→  }, [data])
+   495→
+   496→  // Resolve conventional airways
+   497→  const conventionalResolved = useMemo(() => {
+   498→    if (!data) return []
+   499→    return data.airways.conventional.map((aw) => ({
+   500→      airway: aw,
+   501→      ...resolveAirwaySegments(aw, coordLookup),
+   502→    }))
+   503→  }, [data, coordLookup])
+   504→
+   505→  // Resolve RNAV airways
+   506→  const rnavResolved = useMemo(() => {
+   507→    if (!data) return []
+   508→    return data.airways.rnav.map((aw) => ({
+   509→      airway: aw,
+   510→      ...resolveAirwaySegments(aw, coordLookup),
+   511→    }))
+   512→  }, [data, coordLookup])
+   513→
+   514→  if (!mounted) {
+   515→    return <Skeleton className="h-[600px] w-full" />
+   516→  }
+   517→
+   518→  if (loading) {
+   519→    return (
+   520→      <div className="relative h-[600px] w-full rounded-lg overflow-hidden border">
+   521→        <Skeleton className="h-full w-full" />
+   522→        <div className="absolute inset-0 flex items-center justify-center">
+   523→          <div className="flex items-center gap-2 text-muted-foreground text-sm">
+   524→            <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+   525→              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+   526→              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+   527→            </svg>
+   528→            Cargando carta aeronáutica...
+   529→          </div>
+   530→        </div>
+   531→      </div>
+   532→    )
+   533→  }
+   534→
+   535→  if (!data) {
+   536→    return (
+   537→      <div className="h-[600px] w-full rounded-lg overflow-hidden border flex items-center justify-center text-muted-foreground">
+   538→        Error al cargar datos de aerovías
+   539→      </div>
+   540→    )
+   541→  }
+   542→
+   543→  const firBoundary = data.firBoundaries.SPIM
+   544→
+   545→  return (
+   546→    <div className="relative h-[600px] w-full rounded-lg overflow-hidden border">
+   547→      {/* Layer Toggle Panel */}
+   548→      <Card className="absolute top-3 right-3 z-[1000] w-56 shadow-lg bg-white/95 backdrop-blur-sm">
+   549→        <CardHeader className="py-2 px-3">
+   550→          <CardTitle className="text-xs font-semibold text-foreground">
+   551→            Capas
+   552→          </CardTitle>
+   553→        </CardHeader>
+   554→        <CardContent className="px-3 pb-3 pt-0 space-y-1.5">
+   555→          {(
+   556→            [
+   557→              ["conventional", "Aerovías Convencionales"],
+   558→              ["rnav", "Aerovías RNAV"],
+   559→              ["waypoints", "Waypoints"],
+   560→              ["reportingPoints", "Ptos. Notificación"],
+   561→              ["navaids", "Radioayudas"],
+   562→              ["firBoundary", "Límite FIR Lima"],
+   563→              ["adjacentFirs", "FIRs Adyacentes"],
+   564→              ["restrictedAreas", "Zonas Restringidas"],
+   565→              ["grid", "Grilla GPS"],
+   566→            ] as [keyof LayerState, string][]
+   567→          ).map(([key, label]) => (
+   568→            <div key={key} className="flex items-center gap-2">
+   569→              <Checkbox
+   570→                id={`layer-${key}`}
+   571→                checked={layers[key]}
+   572→                onCheckedChange={() => toggleLayer(key)}
+   573→                className="size-3.5"
+   574→              />
+   575→              <Label
+   576→                htmlFor={`layer-${key}`}
+   577→                className="text-[11px] cursor-pointer leading-tight"
+   578→              >
+   579→                {label}
+   580→              </Label>
+   581→            </div>
+   582→          ))}
+   583→        </CardContent>
+   584→      </Card>
+   585→
+   586→      <MapContainer
+   587→        center={MAP_CENTER}
+   588→        zoom={MAP_ZOOM}
+   589→        className="h-full w-full z-0"
+   590→        zoomControl={true}
+   591→        attributionControl={true}
+   592→      >
+   593→        <TileLayer
+   594→          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
+   595→          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+   596→        />
+   597→
+   598→        <GPSGrid visible={layers.grid} />
+   599→        <LegendControl />
+   600→
+   601→        {/* ─── FIR Boundary (SPIM Lima) ─── */}
+   602→        {layers.firBoundary && firBoundary && (
+   603→          <>
+   604→            <Polygon
+   605→              positions={coordsToLatLng(firBoundary.polygon)}
+   606→              pathOptions={{
+   607→                color: "#3b82f6",
+   608→                weight: 2.5,
+   609→                fillColor: "#3b82f6",
+   610→                fillOpacity: 0.05,
+   611→                dashArray: "8,4",
+   612→              }}
+   613→            >
+   614→              <Tooltip sticky>SPIM – {firBoundary.name}</Tooltip>
+   615→            </Polygon>
+   616→            <Marker
+   617→              position={[firBoundary.center.lat, firBoundary.center.lon]}
+   618→              icon={createFIRLabelIcon("LIMA FIR")}
+   619→              interactive={false}
+   620→            />
+   621→          </>
+   622→        )}
+   623→
+   624→        {/* ─── Adjacent FIRs ─── */}
+   625→        {layers.adjacentFirs &&
+   626→          data.adjacentFirs.map((fir: AdjacentFIR) => {
+   627→            if (!fir.borderPoints || fir.borderPoints.length < 2) return null
+   628→            const color = ADJ_FIR_COLORS[fir.icao] || "#94a3b8"
+   629→            const center = getPolygonCenter(fir.borderPoints)
+   630→            return (
+   631→              <div key={fir.icao}>
+   632→                <Polygon
+   633→                  positions={coordsToLatLng(fir.borderPoints)}
+   634→                  pathOptions={{
+   635→                    color,
+   636→                    weight: 1.5,
+   637→                    fillColor: color,
+   638→                    fillOpacity: 0.04,
+   639→                    dashArray: "6,4",
+   640→                  }}
+   641→                >
+   642→                  <Tooltip sticky>
+   643→                    {fir.icao} – {fir.name} ({fir.country})
+   644→                  </Tooltip>
+   645→                </Polygon>
+   646→                <Marker
+   647→                  position={center}
+   648→                  icon={createAdjFIRLabelIcon(fir.icao, fir.name, color)}
+   649→                  interactive={false}
+   650→                />
+   651→              </div>
+   652→            )
+   653→          })}
+   654→
+   655→        {/* ─── Conventional Airways ─── */}
+   656→        {layers.conventional &&
+   657→          conventionalResolved.map(({ airway, positions, resolvedSegments }) => {
+   658→            if (positions.length < 2) return null
+   659→            return (
+   660→              <Polyline
+   661→                key={`conv-${airway.designator}`}
+   662→                positions={positions}
+   663→                pathOptions={{
+   664→                  color: "#22c55e",
+   665→                  weight: 2,
+   666→                  opacity: 0.85,
+   667→                }}
+   668→              >
+   669→                <Tooltip sticky>
+   670→                  <AirwayDetail airway={airway} resolvedSegments={resolvedSegments} />
+   671→                </Tooltip>
+   672→              </Polyline>
+   673→            )
+   674→          })}
+   675→
+   676→        {/* ─── RNAV Airways ─── */}
+   677→        {layers.rnav &&
+   678→          rnavResolved.map(({ airway, positions, resolvedSegments }) => {
+   679→            if (positions.length < 2) return null
+   680→            return (
+   681→              <Polyline
+   682→                key={`rnav-${airway.designator}`}
+   683→                positions={positions}
+   684→                pathOptions={{
+   685→                  color: "#d946ef",
+   686→                  weight: 2,
+   687→                  opacity: 0.85,
+   688→                }}
+   689→              >
+   690→                <Tooltip sticky>
+   691→                  <AirwayDetail airway={airway} resolvedSegments={resolvedSegments} />
+   692→                </Tooltip>
+   693→              </Polyline>
+   694→            )
+   695→          })}
+   696→
+   697→        {/* ─── Waypoints ─── */}
+   698→        {layers.waypoints &&
+   699→          data.waypoints
+   700→            .filter((wp) => wp.type === "WAYPOINT")
+   701→            .map((wp) => (
+   702→              <Marker
+   703→                key={`wp-${wp.id}-${wp.lat}-${wp.lon}`}
+   704→                position={[wp.lat, wp.lon]}
+   705→                icon={createWaypointIcon(wp.name)}
+   706→              >
+   707→                <Popup>
+   708→                  <div className="text-xs space-y-1">
+   709→                    <div className="font-bold">{wp.name}</div>
+   710→                    <div>Lat: {wp.lat.toFixed(4)}° Lon: {wp.lon.toFixed(4)}°</div>
+   711→                    {wp.description && (
+   712→                      <div className="text-muted-foreground">{wp.description}</div>
+   713→                    )}
+   714→                  </div>
+   715→                </Popup>
+   716→              </Marker>
+   717→            ))}
+   718→
+   719→        {/* ─── Mandatory Reporting Points ─── */}
+   720→        {layers.reportingPoints &&
+   721→          data.waypoints
+   722→            .filter((wp) => wp.type === "REPORTING_POINT")
+   723→            .map((wp) => (
+   724→              <Marker
+   725→                key={`rp-${wp.id}-${wp.lat}-${wp.lon}`}
+   726→                position={[wp.lat, wp.lon]}
+   727→                icon={createReportingPointIcon(wp.name)}
+   728→              >
+   729→                <Popup>
+   730→                  <div className="text-xs space-y-1">
+   731→                    <div className="font-bold flex items-center gap-1.5">
+   732→                      {wp.name}
+   733→                      <span className="text-[9px] bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded font-semibold">OBLIGATORIO</span>
+   734→                    </div>
+   735→                    <div>Lat: {wp.lat.toFixed(4)}° Lon: {wp.lon.toFixed(4)}°</div>
+   736→                    {wp.description && (
+   737→                      <div className="text-muted-foreground">{wp.description}</div>
+   738→                    )}
+   739→                  </div>
+   740→                </Popup>
+   741→              </Marker>
+   742→            ))}
+   743→
+   744→        {/* ─── Restricted Areas ─── */}
+   745→        {layers.restrictedAreas &&
+   746→          data.restrictedAreas &&
+   747→          data.restrictedAreas.map((area: RestrictedArea) => {
+   748→            const colors = RESTRICTED_AREA_COLORS[area.type] || RESTRICTED_AREA_COLORS.RESTRICTED
+   749→            if (area.shape === "POLYGON" && Array.isArray(area.coordinates) && area.coordinates.length >= 3) {
+   750→              return (
+   751→                <Polygon
+   752→                  key={`ra-${area.identifier}`}
+   753→                  positions={coordsToLatLng(area.coordinates as Coord[])}
+   754→                  pathOptions={{
+   755→                    color: colors.border,
+   756→                    weight: 1.5,
+   757→                    fillColor: colors.border,
+   758→                    fillOpacity: 0.12,
+   759→                    dashArray: area.type === "PROHIBITED" ? undefined : "6,3",
+   760→                  }}
+   761→                >
+   762→                  <Tooltip sticky>
+   763→                    <div className="text-xs space-y-1">
+   764→                      <div className="font-bold">{area.identifier}</div>
+   765→                      <div>{area.name}</div>
+   766→                      <div className="flex gap-1">
+   767→                        <Badge variant="outline" className="text-[9px] px-1 py-0" style={{ color: colors.border, borderColor: colors.border }}>
+   768→                          {area.type}
+   769→                        </Badge>
+   770→                        {area.upperLimit && <span className="text-[10px]">{area.lowerLimit || "GND"} - {area.upperLimit}</span>}
+   771→                      </div>
+   772→                    </div>
+   773→                  </Tooltip>
+   774→                </Polygon>
+   775→              )
+   776→            } else if (area.shape === "CIRCLE" && area.coordinates && !Array.isArray(area.coordinates)) {
+   777→              const circleData = area.coordinates as { center: Coord; radius: number }
+   778→              // Approximate circle with polygon (32 points)
+   779→              const circlePoints: Coord[] = []
+   780→              for (let i = 0; i < 32; i++) {
+   781→                const angle = (2 * Math.PI * i) / 32
+   782→                const dLat = (circleData.radius * Math.cos(angle)) / 60 // 1 NM ≈ 1/60 degree
+   783→                const dLon = (circleData.radius * Math.sin(angle)) / (60 * Math.cos((circleData.center.lat * Math.PI) / 180))
+   784→                circlePoints.push({
+   785→                  lat: circleData.center.lat + dLat,
+   786→                  lon: circleData.center.lon + dLon,
+   787→                })
+   788→              }
+   789→              return (
+   790→                <Polygon
+   791→                  key={`ra-${area.identifier}`}
+   792→                  positions={coordsToLatLng(circlePoints)}
+   793→                  pathOptions={{
+   794→                    color: colors.border,
+   795→                    weight: 1.5,
+   796→                    fillColor: colors.border,
+   797→                    fillOpacity: 0.12,
+   798→                    dashArray: area.type === "PROHIBITED" ? undefined : "6,3",
+   799→                  }}
+   800→                >
+   801→                  <Tooltip sticky>
+   802→                    <div className="text-xs space-y-1">
+   803→                      <div className="font-bold">{area.identifier}</div>
+   804→                      <div>{area.name}</div>
+   805→                      <div className="flex gap-1">
+   806→                        <Badge variant="outline" className="text-[9px] px-1 py-0" style={{ color: colors.border, borderColor: colors.border }}>
+   807→                          {area.type}
+   808→                        </Badge>
+   809→                        {area.upperLimit && <span className="text-[10px]">{area.lowerLimit || "GND"} - {area.upperLimit}</span>}
+   810→                      </div>
+   811→                    </div>
+   812→                  </Tooltip>
+   813→                </Polygon>
+   814→              )
+   815→            }
+   816→            return null
+   817→          })}
+   818→
+   819→        {/* ─── Navaids ─── */}
+   820→        {layers.navaids &&
+   821→          data.navaids.map((nv) => (
+   822→            <Marker
+   823→              key={`nv-${nv.id}`}
+   824→              position={[nv.lat, nv.lon]}
+   825→              icon={createNavaidIcon(nv)}
+   826→            >
+   827→              <Popup>
+   828→                <div className="text-xs space-y-1">
+   829→                  <div className="font-bold">{nv.id} – {nv.name}</div>
+   830→                  <div>Tipo: {nv.type}</div>
+   831→                  <div>Frecuencia: {nv.frequency}</div>
+   832→                  <div>Lat: {nv.lat.toFixed(4)}° Lon: {nv.lon.toFixed(4)}°</div>
+   833→                  {nv.elevation !== undefined && (
+   834→                    <div>Elevación: {nv.elevation} ft</div>
+   835→                  )}
+   836→                </div>
+   837→              </Popup>
+   838→            </Marker>
+   839→          ))}
+   840→      </MapContainer>
+   841→    </div>
+   842→  )
+   843→}
+   844→

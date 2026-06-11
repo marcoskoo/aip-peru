@@ -1,0 +1,92 @@
+[
+  {
+    "url": "https://www.faa.gov/air_traffic/publications/atpubs/aip_html/part2_enr_section_7.13.html",
+    "name": "ENR 7.13: Gulf of America RNAV Routes Q100, Q102, and Q105 - FAA",
+    "snippet": "ENR 3.2: Upper ATS Routes. The route filed in the flight plan governs the navigation equipment and performance requirements.",
+    "host_name": "www.faa.gov",
+    "rank": 0,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://eaip-peru.corpac.gob.pe/eSUP/06-2024_2024_07_15/SP-SUP-en-GB.html",
+    "name": "06/24 implementation of strategic direct routing (sdr) in the upper",
+    "snippet": "1.1 The purpose of this AIP Supplement is to inform users of the upper airspace of the Lima FIR about the implementation of the ASBU element ...",
+    "host_name": "eaip-peru.corpac.gob.pe",
+    "rank": 1,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.dhmi.gov.tr/AIPDocuments/LT_ENR_3_2_en.pdf",
+    "name": "[PDF] ENR 3.2 AREA NAVIGATION (RNAV) ROUTES - DHMİ",
+    "snippet": "ARTAT (FIR BDRY). - Unidirectional eastbound. - ARTAT-BAG segment will only be available BTN 01 APR/01 NOV from. 1730 UTC to 0230 UTC and BTN 02.",
+    "host_name": "www.dhmi.gov.tr",
+    "rank": 2,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://aisweb.decea.mil.br/eaip/A%2010-2026_2026_06_11/eAIP/ENR%203.2-en-GB.html",
+    "name": "1 rnav-5 procedures - AISWEB",
+    "snippet": "ENR 3.2 AREA NAVIGATION ROUTES (RNAV) RNAV Route is a route established for the use of aircraft that can use the area navigation. RNAV-5 is the navigation ...",
+    "host_name": "aisweb.decea.mil.br",
+    "rank": 3,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.atc-network.com/atc-organisations/peru-corpac-sa",
+    "name": "CORPAC S.A.- Peru - ATC Network",
+    "snippet": "CORPAC offers all the necessary services for the effective transit of commercial aircraft that use Peruvian airspace, as well as related services for ...",
+    "host_name": "www.atc-network.com",
+    "rank": 4,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.faa.gov/air_traffic/publications/atpubs/aip_html/part2_enr_section_3.3.html",
+    "name": "ENR 3.3: Area Navigation (RNAV) Routes - FAA",
+    "snippet": "RNAV routes are normally depicted in blue on aeronautical charts and are identified by the letter “Q,” “T,” or “Y” followed by the airway number.",
+    "host_name": "www.faa.gov",
+    "rank": 5,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://ais.nav.pt/wp-content/uploads/AIS_Files/eAIP_Current/eAIP_Online/eAIP/html/eAIP/LP-ENR-3.5-en-PT.html",
+    "name": "ENR 3.5 Other Routes - NAV Portugal AIS",
+    "snippet": "Outside Santa Maria FIR airspace, Shanwick OAC is the ATC responsible for the route segments of T13 (GONAN OMOKO) and T16 (NILAV OMOKO) within Shanwick FIR.",
+    "host_name": "ais.nav.pt",
+    "rank": 6,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.icao.int/sites/default/files/sp-files/SAM/Documents/2010/SAMIG6/SAMIG6_FINAL%20REPORT%20rev1.pdf",
+    "name": "[PDF] FINAL REPORT - ICAO",
+    "snippet": "FINAL REPORT Lima, Peru, ICAO South American Regional Office in Lima, Peru, Impact of RNAV routes implementation. Aircraft fleet c) Air traffic services, ...",
+    "host_name": "www.icao.int",
+    "rank": 7,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://aip.caam.gov.my/aip%20pdf/ENR/ENR%203/ENR%203.3/Area%20Navigaton%20Routes%20(RNAV).pdf",
+    "name": "[PDF] ENR 3 ATS ROUTES",
+    "snippet": "Flights departing from aerodromes within Kota Kinabalu FIR via RNAV route M759/M758 will be cleared to. FL 310. Succeeding acft may be.",
+    "host_name": "aip.caam.gov.my",
+    "rank": 8,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://aim-sg.caas.gov.sg/aim-content/uploads/aip/09-OCT-2025/AIP/2025-10-02-000000/html/eAIP/SG-ENR-3.2-en-GB.html?s=14562A1FB051A6915E5B9E34522EBE902538C4FE",
+    "name": "AIP for Singapore (section ENR-3.2) valid from 02 OCT 2025 - AIM-SG",
+    "snippet": "All other aircraft operating at FL290 to FL460 (inclusive) and entering Singapore FIR via ESPOB should flight plan using the direct route ESPOB ...",
+    "host_name": "aim-sg.caas.gov.sg",
+    "rank": 9,
+    "date": "",
+    "favicon": ""
+  }
+]

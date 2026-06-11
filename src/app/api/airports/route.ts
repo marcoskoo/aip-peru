@@ -33,6 +33,8 @@ export async function GET(request: NextRequest) {
         authorizedTraffic: true,
         fireCategory: true,
         category: true,
+        arpLatitude: true,
+        arpLongitude: true,
       },
       orderBy: [
         { category: 'desc' },  // INTERNACIONAL first, then NACIONAL

@@ -113,6 +113,8 @@ model Airport {
   obstacles   Obstacle[]
   radioNavAids RadioNavAid[]
   communications Communication[]
+  notams      Notam[]
+  supplements Supplement[]
 }
     
 model Obstacle {
@@ -151,4 +153,328 @@ model Communication {
   remarks     String?
 
   airport     Airport  @relation(fields: [airportId], references: [id], onDelete: Cascade)
+}
+
+// ─── Aeronautical Navigation Data ─────────────────────────────────
+
+model Waypoint {
+  id          String   @id       // e.g. ISKAR, ESKAL
+  name        String              // Display name
+  type        String   @default("WAYPOINT")  // WAYPOINT, NAVAID, AIRPORT
+  lat         Float               // Decimal degrees
+  lon         Float               // Decimal degrees
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([id])
+}
+
+model Navaid {
+  id          String   @id       // e.g. LIM, PSO
+  name        String              // Full name, e.g. LIMA
+  type        String              // VOR/DME, NDB, VOR, DME, TACAN
+  frequency   String              // e.g. 116.1 MHz
+  lat         Float
+  lon         Float
+  elevation   Float?              // feet
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([id])
+}
+
+model Airway {
+  id          String   @id @default(cuid())
+  designator  String              // e.g. G679, UB673
+  type        String              // CONVENTIONAL or RNAV
+  level       String              // LOWER, UPPER, BOTH
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  segments    AirwaySegment[]
+
+  @@unique([designator, type])
+}
+
+model AirwaySegment {
+  id          String   @id @default(cuid())
+  airwayId    String
+  orderIndex  Int                 // Segment order within the airway
+  fromPoint   String              // Waypoint/Navaid ID
+  toPoint     String              // Waypoint/Navaid ID
+  distance    Float               // NM
+  bearing     Float               // degrees true
+  minFL       Int?
+  maxFL       Int?
+  trackTrue   Float?
+  reverseTrack Float?
+
+  // AIP PERÚ ENR 3 data - magnetic tracks and airspace classification
+  magneticTrack       Float?      // Derrota MAG (magnetic course)
+  reverseMagneticTrack Float?     // Reverse magnetic course
+  classification      String?     // Clasificación del espacio aéreo (A, D, G)
+  widthNM             Float?      // WID in NM (route width)
+  upperLimit          String?     // Límite superior (e.g. "FL 240", "UNL")
+  lowerLimit          String?     // Límite inferior (e.g. "FL 080", "FL 200")
+  minEnrouteAltitude  String?     // Altitud mínima de vuelo
+  remarks             String?     // Observaciones (frequencies, control dependencies)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  airway      Airway   @relation(fields: [airwayId], references: [id], onDelete: Cascade)
+
+  @@index([airwayId])
+  @@index([fromPoint])
+  @@index([toPoint])
+}
+
+model FIRBoundary {
+  id          String   @id       // e.g. SPIM
+  name        String              // e.g. Lima FIR
+  type        String   @default("FIR")
+  centerLat   Float
+  centerLon   Float
+  polygon     String              // JSON array of {lat, lon}
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([id])
+}
+
+model AdjacentFIR {
+  id          String   @id @default(cuid())
+  icao        String              // e.g. SEGU
+  name        String              // e.g. Guayaquil FIR
+  country     String              // e.g. Colombia
+  borderPoints String?            // JSON array of {lat, lon}
+  color       String?             // Hex color for display
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([icao])
+}
+
+// ─── Heliports ────────────────────────────────────────────────────
+
+model Heliport {
+  id          String   @id @default(cuid())
+  icaoCode    String   @unique   // e.g. SPLH, SPHH
+  name        String              // e.g. HELIPUERTO HOSPITAL REYNA
+  city        String
+  department  String?
+  province    String?
+  district    String?
+  country     String   @default("PERÚ")
+
+  // Geographic data
+  latitude    String?             // e.g. 12°02'30.00"S
+  longitude   String?             // e.g. 77°01'15.00"W
+  elevation   String?             // e.g. 154 m / 505 ft
+  lat         Float?              // Decimal degrees for map
+  lon         Float?              // Decimal degrees for map
+
+  // Heliport details
+  type        String?             // e.g. HOSPITAL, OIL RIG, MILITARY, COMMERCIAL, PRIVATE
+  surface     String?             // e.g. Concreto, Helipad
+  dimensions  String?             // e.g. 20m x 20m
+  markings    String?             // e.g. H, Cross
+  lighting    String?             // e.g. NIL, LGTD
+  status      String   @default("OPERATIVO") // OPERATIVO, INACTIVO, RESTRINGIDO
+
+  // Operations
+  operatingHours String?
+  authorizedTraffic String?        // e.g. VFR
+  restrictions   String?          // e.g. Solo emergencias
+
+  // Communications
+  communications String?          // JSON array of {service, frequency, callsign, hours}
+
+  // Administration
+  operator    String?             // e.g. MINSA, PETROPERÚ, FAP
+  phone       String?
+  remarks     String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ─── NOTAMs ──────────────────────────────────────────────────────
+
+model Notam {
+  id          String   @id @default(cuid())
+  notamId     String   @unique   // e.g. A0234/25
+  type        String   @default("NOTAM")  // NOTAM, NOTAMN (new), NOTAMR (replace), NOTAMC (cancel)
+  replacesId  String?             // Reference to replaced NOTAM
+  fir         String              // e.g. SPIM
+  effectiveFrom  DateTime         // Start date/time (UTC)
+  effectiveTo    DateTime?        // End date/time (UTC), null = PERM
+  isPermanent    Boolean  @default(false)
+  scope       String?             // A (aerodrome), E (en-route), W (navigation warning)
+  subject     String              // e.g. RWY, NAV, COM, AD, airspace
+  condition   String              // e.g. CLSD, U/S, WIP, ACT
+  text        String              // Full NOTAM text
+  coordinates String?             // e.g. 12°00'00"S / 077°00'00"W
+  lat         Float?              // Decimal degrees for map
+  lon         Float?              // Decimal degrees for map
+  radius      Float?              // NM radius for map display
+  lowerLimit  String?             // e.g. GND, FL050
+  upperLimit  String?             // e.g. FL250, UNL
+  airportId   String?             // Related airport (if scope A)
+  priority    String   @default("MEDIUM")  // LOW, MEDIUM, HIGH, URGENT
+  source      String?             // e.g. CORPAC, DIGESA, DIRCORA
+  verified    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  airport     Airport?  @relation(fields: [airportId], references: [id], onDelete: SetNull)
+
+  @@index([fir])
+  @@index([effectiveFrom])
+  @@index([scope])
+  @@index([airportId])
+}
+
+// ─── Airspace Restrictions ───────────────────────────────────────
+
+model AirspaceRestriction {
+  id          String   @id @default(cuid())
+  designator  String   @unique   // e.g. RSP-01, PSP-03, DSP-05
+  name        String              // e.g. ZONA RESTRINGIDA LIMA, ZONA PROHIBIDA GOBIERNO
+  type        String              // RESTRICTED, PROHIBITED, DANGER, TMA, CTA, CTR
+  status      String   @default("ACTIVO")  // ACTIVO, INACTIVO
+  centerLat   Float               // Decimal degrees
+  centerLon   Float               // Decimal degrees
+  lowerLimit  String              // e.g. GND, SFC, FL050
+  upperLimit  String              // e.g. FL250, UNL
+  lowerLimitFt Int?               // Numeric feet for calculations
+  upperLimitFt Int?               // Numeric feet for calculations
+  polygon     String?             // JSON array of {lat, lon} for complex shapes
+  radius      Float?              // NM radius (for circular areas)
+  restrictions String?            // Description of restrictions
+  operatingHours String?          // e.g. H24, Sunrise-Sunset, NOTAM
+  authority   String?             // e.g. DIRCORA, MINDEF, MININTER
+  remarks     String?
+  color       String?             // Hex color for map display
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([type])
+}
+
+// ─── AIP Supplements ─────────────────────────────────────────────
+
+model Supplement {
+  id          String   @id @default(cuid())
+  supNumber   String              // e.g. SUP 001/2025
+  title       String              // e.g. NUEVA FRECUENCIA TWR SPJC
+  category    String              // AD (aerodrome), ENR (en-route), GEN (general)
+  effectiveFrom  DateTime
+  effectiveTo    DateTime?
+  isPermanent    Boolean  @default(false)
+  description String?             // Full description
+  airportId   String?             // Related airport
+  fileUrl     String?             // PDF file path
+  status      String   @default("VIGENTE")  // VIGENTE, CANCELADO, EXPIRADO
+  publishedBy String?             // e.g. CORPAC AIS
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  airport     Airport?  @relation(fields: [airportId], references: [id], onDelete: SetNull)
+
+  @@index([category])
+  @@index([effectiveFrom])
+}
+
+// ─── AIP Document Structure ─────────────────────────────────────
+
+model AipSection {
+  id          String   @id @default(cuid())
+  sectionCode String   @unique   // e.g. GEN_1.1, GEN_1.2, ENR_3.1, AD_1.3
+  title       String              // e.g. "Autoridades Designadas"
+  titleEn     String?             // English title
+  part        String              // GEN, ENR, AD
+  subPart     String              // 1, 2, 3, etc.
+  orderIndex  Int                 // Display order within part
+  content     String              // Full content (HTML or markdown)
+  contentEn   String?             // English content
+  lastAmendment String?           // e.g. AMDT 33/2025
+  effectiveDate String?           // e.g. 30 JUL 2025
+  sourceFile  String?             // Original PDF filename
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([part])
+  @@index([part, subPart])
+}
+
+// ─── Designated Authorities ──────────────────────────────────────
+
+model DesignatedAuthority {
+  id          String   @id @default(cuid())
+  category    String              // e.g. "Aviación Civil", "Meteorología", "Aduanas"
+  categoryEn  String?             // English category
+  name        String              // Organization name
+  nameEn      String?             // English name
+  address     String?             // Full address
+  phone       String?
+  fax         String?
+  email       String?
+  aftn        String?             // AFTN address
+  website     String?
+  hours       String?             // Operating hours
+  remarks     String?
+  orderIndex  Int                 // Display order
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ─── Aviation Abbreviations ──────────────────────────────────────
+
+model Abbreviation {
+  id          String   @id @default(cuid())
+  code        String              // e.g. AIP, VOR, NOTAM
+  meaning     String              // Spanish meaning
+  meaningEn   String?             // English meaning
+  radioUsage  String?             // † spoken, ‡ individual letters
+  remarks     String?             // ** different from ICAO Doc 8400
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([code])
+}
+
+// ─── Public Holidays ─────────────────────────────────────────────
+
+model PublicHoliday {
+  id          String   @id @default(cuid())
+  name        String              // e.g. "Año Nuevo"
+  nameEn      String?             // English name
+  date        String              // e.g. "01 de enero"
+  dateEn      String?             // English date
+  month       Int                 // 1-12
+  day         Int                 // 1-31
+  isVariable  Boolean  @default(false)  // Easter-based etc.
+  remarks     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([month])
+}
+
+// ─── National Regulations ────────────────────────────────────────
+
+model NationalRegulation {
+  id          String   @id @default(cuid())
+  code        String              // e.g. RAP 91, RAP 121
+  title       String              // Spanish title
+  titleEn     String?             // English title
+  category    String?             // e.g. "Regulaciones Aeronáuticas del Perú"
+  type        String?             // LEY, REGLAMENTO, RAP, CONVENIO
+  orderIndex  Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([code])
 }

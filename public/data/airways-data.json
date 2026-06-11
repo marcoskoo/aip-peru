@@ -1,0 +1,3045 @@
+{
+  "firBoundaries": {
+    "SPIM": {
+      "name": "Lima FIR",
+      "type": "FIR",
+      "center": {
+        "lat": -9.19,
+        "lon": -79.34
+      },
+      "polygon": [
+        {
+          "lat": 0.0,
+          "lon": -80.0
+        },
+        {
+          "lat": 0.0,
+          "lon": -75.0
+        },
+        {
+          "lat": -0.5,
+          "lon": -75.0
+        },
+        {
+          "lat": -2.0,
+          "lon": -73.0
+        },
+        {
+          "lat": -3.0,
+          "lon": -70.0
+        },
+        {
+          "lat": -5.0,
+          "lon": -70.0
+        },
+        {
+          "lat": -7.0,
+          "lon": -70.0
+        },
+        {
+          "lat": -10.0,
+          "lon": -70.0
+        },
+        {
+          "lat": -14.0,
+          "lon": -70.0
+        },
+        {
+          "lat": -16.0,
+          "lon": -69.0
+        },
+        {
+          "lat": -18.35,
+          "lon": -69.5
+        },
+        {
+          "lat": -18.35,
+          "lon": -70.0
+        },
+        {
+          "lat": -18.35,
+          "lon": -71.5
+        },
+        {
+          "lat": -18.0,
+          "lon": -72.5
+        },
+        {
+          "lat": -18.0,
+          "lon": -73.5
+        },
+        {
+          "lat": -17.5,
+          "lon": -74.5
+        },
+        {
+          "lat": -17.0,
+          "lon": -75.5
+        },
+        {
+          "lat": -17.0,
+          "lon": -77.0
+        },
+        {
+          "lat": -15.5,
+          "lon": -77.5
+        },
+        {
+          "lat": -14.0,
+          "lon": -77.5
+        },
+        {
+          "lat": -12.0,
+          "lon": -78.0
+        },
+        {
+          "lat": -10.0,
+          "lon": -79.0
+        },
+        {
+          "lat": -8.0,
+          "lon": -80.0
+        },
+        {
+          "lat": -6.0,
+          "lon": -81.0
+        },
+        {
+          "lat": -5.0,
+          "lon": -81.5
+        },
+        {
+          "lat": -4.0,
+          "lon": -82.0
+        },
+        {
+          "lat": -3.0,
+          "lon": -82.5
+        },
+        {
+          "lat": -1.0,
+          "lon": -83.5
+        },
+        {
+          "lat": 0.0,
+          "lon": -83.5
+        },
+        {
+          "lat": 0.0,
+          "lon": -80.0
+        }
+      ]
+    }
+  },
+  "adjacentFirs": [
+    {
+      "icao": "SEGU",
+      "name": "Guayaquil FIR",
+      "country": "Ecuador",
+      "borderPoints": [
+        {
+          "lat": 0.0,
+          "lon": -80.0
+        },
+        {
+          "lat": -2.0,
+          "lon": -80.0
+        },
+        {
+          "lat": -3.5,
+          "lon": -80.5
+        },
+        {
+          "lat": -5.0,
+          "lon": -80.5
+        }
+      ]
+    },
+    {
+      "icao": "SKED",
+      "name": "Bogota FIR",
+      "country": "Colombia",
+      "borderPoints": [
+        {
+          "lat": 0.0,
+          "lon": -75.0
+        },
+        {
+          "lat": -2.0,
+          "lon": -73.0
+        },
+        {
+          "lat": -3.0,
+          "lon": -70.0
+        },
+        {
+          "lat": -1.0,
+          "lon": -70.0
+        },
+        {
+          "lat": 0.0,
+          "lon": -72.0
+        }
+      ]
+    },
+    {
+      "icao": "SBAM",
+      "name": "Amazonica FIR",
+      "country": "Brazil",
+      "borderPoints": [
+        {
+          "lat": -3.0,
+          "lon": -70.0
+        },
+        {
+          "lat": -5.0,
+          "lon": -70.0
+        },
+        {
+          "lat": -7.0,
+          "lon": -70.0
+        },
+        {
+          "lat": -10.0,
+          "lon": -69.5
+        },
+        {
+          "lat": -10.0,
+          "lon": -67.0
+        },
+        {
+          "lat": -7.0,
+          "lon": -67.0
+        },
+        {
+          "lat": -5.0,
+          "lon": -67.0
+        },
+        {
+          "lat": -3.0,
+          "lon": -68.0
+        }
+      ]
+    },
+    {
+      "icao": "SLLP",
+      "name": "La Paz FIR",
+      "country": "Bolivia",
+      "borderPoints": [
+        {
+          "lat": -10.0,
+          "lon": -69.5
+        },
+        {
+          "lat": -14.0,
+          "lon": -69.0
+        },
+        {
+          "lat": -16.0,
+          "lon": -69.0
+        },
+        {
+          "lat": -17.0,
+          "lon": -69.0
+        },
+        {
+          "lat": -17.0,
+          "lon": -68.0
+        },
+        {
+          "lat": -14.0,
+          "lon": -68.0
+        },
+        {
+          "lat": -10.0,
+          "lon": -68.0
+        }
+      ]
+    },
+    {
+      "icao": "SCEZ",
+      "name": "Santiago FIR",
+      "country": "Chile",
+      "borderPoints": [
+        {
+          "lat": -17.0,
+          "lon": -69.0
+        },
+        {
+          "lat": -18.35,
+          "lon": -69.5
+        },
+        {
+          "lat": -18.35,
+          "lon": -70.0
+        },
+        {
+          "lat": -18.35,
+          "lon": -71.5
+        },
+        {
+          "lat": -17.5,
+          "lon": -69.0
+        }
+      ]
+    }
+  ],
+  "navaids": [
+    {
+      "id": "LIM",
+      "name": "LIMA",
+      "type": "DVOR/DME",
+      "frequency": "116.1 MHz",
+      "lat": -12.0086,
+      "lon": -77.1228,
+      "elevation": 33
+    },
+    {
+      "id": "PSO",
+      "name": "PISCO",
+      "type": "DVOR/DME",
+      "frequency": "114.3 MHz",
+      "lat": -13.7333,
+      "lon": -76.2167,
+      "elevation": 12
+    },
+    {
+      "id": "AQP",
+      "name": "AREQUIPA",
+      "type": "DVOR/DME",
+      "frequency": "113.7 MHz",
+      "lat": -16.3419,
+      "lon": -71.5833,
+      "elevation": 2552
+    },
+    {
+      "id": "URA",
+      "name": "PIURA",
+      "type": "DVOR/DME",
+      "frequency": "117.1 MHz",
+      "lat": -5.2067,
+      "lon": -80.6167,
+      "elevation": 29
+    },
+    {
+      "id": "TBP",
+      "name": "TUMBES",
+      "type": "DVOR/DME",
+      "frequency": "112.9 MHz",
+      "lat": -3.55,
+      "lon": -80.3833,
+      "elevation": 27
+    },
+    {
+      "id": "CIX",
+      "name": "CHICLAYO",
+      "type": "DVOR/DME",
+      "frequency": "114.5 MHz",
+      "lat": -6.7858,
+      "lon": -79.8225,
+      "elevation": 28
+    },
+    {
+      "id": "IQT",
+      "name": "IQUITOS",
+      "type": "DVOR/DME",
+      "frequency": "112.5 MHz",
+      "lat": -3.7858,
+      "lon": -73.3058,
+      "elevation": 93
+    },
+    {
+      "id": "CUZ",
+      "name": "CUSCO",
+      "type": "DVOR/DME",
+      "frequency": "116.3 MHz",
+      "lat": -13.5358,
+      "lon": -71.9425,
+      "elevation": 3318
+    },
+    {
+      "id": "PCL",
+      "name": "PUCALLPA",
+      "type": "DVOR/DME",
+      "frequency": "112.7 MHz",
+      "lat": -8.3781,
+      "lon": -74.5725,
+      "elevation": 149
+    },
+    {
+      "id": "TCQ",
+      "name": "TACNA",
+      "type": "DVOR/DME",
+      "frequency": "117.5 MHz",
+      "lat": -18.0647,
+      "lon": -70.2997,
+      "elevation": 458
+    },
+    {
+      "id": "JUL",
+      "name": "JULIACA",
+      "type": "DVOR/DME",
+      "frequency": "115.5 MHz",
+      "lat": -16.5092,
+      "lon": -70.1542,
+      "elevation": 3826
+    },
+    {
+      "id": "PEM",
+      "name": "PTO MALDONADO",
+      "type": "DVOR/DME",
+      "frequency": "113.3 MHz",
+      "lat": -12.5983,
+      "lon": -69.1967,
+      "elevation": 207
+    }
+  ],
+  "waypoints": [
+    {
+      "id": "AGUA",
+      "name": "AGUA",
+      "type": "WAYPOINT",
+      "lat": -13.15,
+      "lon": -76.2333,
+      "description": "ENR intersection, south of Lima"
+    },
+    {
+      "id": "AKREL",
+      "name": "AKREL",
+      "type": "WAYPOINT",
+      "lat": -13.2994,
+      "lon": -72.835,
+      "description": "ENR waypoint in Peru airspace"
+    },
+    {
+      "id": "AMVEX",
+      "name": "AMVEX",
+      "type": "WAYPOINT",
+      "lat": -10.8006,
+      "lon": -76.8033,
+      "description": "ENR intersection, central highlands"
+    },
+    {
+      "id": "ANKOR",
+      "name": "ANKOR",
+      "type": "WAYPOINT",
+      "lat": -8.5044,
+      "lon": -79.7858,
+      "description": "ENR intersection, northern coast"
+    },
+    {
+      "id": "ANPAL",
+      "name": "ANPAL",
+      "type": "WAYPOINT",
+      "lat": -3.4,
+      "lon": -83.0033,
+      "description": "ENR waypoint in Peru airspace"
+    },
+    {
+      "id": "AQP",
+      "name": "AQP",
+      "type": "NAVAID",
+      "lat": -16.3419,
+      "lon": -71.5833,
+      "description": "AREQUIPA DVOR/DME facility"
+    },
+    {
+      "id": "ARGON",
+      "name": "ARGON",
+      "type": "WAYPOINT",
+      "lat": -7.4617,
+      "lon": -79.4356,
+      "description": "ENR intersection, northern coast"
+    },
+    {
+      "id": "ARPON",
+      "name": "ARPON",
+      "type": "WAYPOINT",
+      "lat": -12.8992,
+      "lon": -76.8847,
+      "description": "ENR intersection, near Lima"
+    },
+    {
+      "id": "ARTUX",
+      "name": "ARTUX",
+      "type": "WAYPOINT",
+      "lat": -11.6267,
+      "lon": -75.4386,
+      "description": "ENR intersection, central highlands"
+    },
+    {
+      "id": "ASEMO",
+      "name": "ASEMO",
+      "type": "WAYPOINT",
+      "lat": -11.6889,
+      "lon": -73.4175,
+      "description": "ENR intersection, central highlands"
+    },
+    {
+      "id": "BODET",
+      "name": "BODET",
+      "type": "WAYPOINT",
+      "lat": -12.2353,
+      "lon": -73.9008,
+      "description": "ENR intersection, central highlands"
+    },
+    {
+      "id": "BOLEP",
+      "name": "BOLEP",
+      "type": "WAYPOINT",
+      "lat": -13.3806,
+      "lon": -72.8533,
+      "description": "ENR waypoint in Peru airspace"
+    },
+    {
+      "id": "BORAS",
+      "name": "BORAS",
+      "type": "WAYPOINT",
+      "lat": -3.8455,
+      "lon": -73.4023,
+      "description": "ENR intersection, northeastern Peru"
+    },
+    {
+      "id": "BORLA",
+      "name": "BORLA",
+      "type": "WAYPOINT",
+      "lat": -7.7372,
+      "lon": -75.2364,
+      "description": "ENR intersection, highlands"
+    },
+    {
+      "id": "BUTEK",
+      "name": "BUTEK",
+      "type": "WAYPOINT",
+      "lat": -10.6347,
+      "lon": -75.6372,
+      "description": "ENR intersection, central highlands"
+    },
+    {
+      "id": "CEMIL",
+      "name": "CEMIL",
+      "type": "WAYPOINT",
+      "lat": -13.2397,
+      "lon": -70.6497,
+      "description": "ENR waypoint in Peru airspace"
+    },
+    {
+      "id": "CHIRA",
+      "name": "CHIRA",
+      "type": "WAYPOINT",
+      "lat": -4.9353,
+      "lon": -80.8939,
+      "description": "ENR intersection, northern coast"
+    },
+    {
+      "id": "CIX",
+      "name": "CIX",
+      "type": "NAVAID",
+      "lat": -6.7858,
+      "lon": -79.8225,
+      "description": "CHICLAYO DVOR/DME facility"
+    },
+    {
+      "id": "COCOS",
+      "name": "COCOS",
+      "type": "WAYPOINT",
+      "lat": -8.8764,
+      "lon": -75.3492,
+      "description": "ENR intersection, central highlands"
+    },
+    {
+      "id": "CUZ",
+      "name": "CUZ",
+      "type": "NAVAID",
+      "lat": -13.5358,
+      "lon": -71.9425,
+      "description": "CUSCO DVOR/DME facility"
+    },
+    {
+      "id": "DABUL",
+      "name": "DABUL",
+      "type": "WAYPOINT",
+      "lat": -13.6978,
+      "lon": -72.8867,
+      "description": "ENR waypoint in Peru airspace"
+    },
+    {
+      "id": "DALNA",
+      "name": "DALNA",
+      "type": "WAYPOINT",
+      "lat": -11.9183,
+      "lon": -77.1653,
+      "description": "ENR intersection, near LIMA VOR"
+    },
+    {
+      "id": "DANKI",
+      "name": "DANKI",
+      "type": "WAYPOINT",
+      "lat": -18.3067,
+      "lon": -70.275,
+      "description": "ENR intersection, far southern Peru"
+    },
+    {
+      "id": "DEMOR",
+      "name": "DEMOR",
+      "type": "WAYPOINT",
+      "lat": -10.65,
+      "lon": -77.0833,
+      "description": "ENR intersection, central coast"
+    },
+    {
+      "id": "DIKAB",
+      "name": "DIKAB",
+      "type": "WAYPOINT",
+      "lat": -11.6644,
+      "lon": -74.2664,
+      "description": "ENR intersection, central highlands"
+    },
+    {
+      "id": "DOBNI",
+      "name": "DOBNI",
+      "type": "WAYPOINT",
+      "lat": -15.7186,
+      "lon": -69.3817,
+      "description": "ENR intersection, southern Peru"
+    },
+    {
+      "id": "DORKA",
+      "name": "DORKA",
+      "type": "WAYPOINT",
+      "lat": -18.35,
+      "lon": -72.7725,
+      "description": "ENR intersection, far southern Peru"
+    },
+    {
+      "id": "EGASI",
+      "name": "EGASI",
+      "type": "WAYPOINT",
+      "lat": -4.2081,
+      "lon": -80.4794,
+      "description": "ENR intersection, northern coast"
+    },
+    {
+      "id": "EGELI",
+      "name": "EGELI",
+      "type": "WAYPOINT",
+      "lat": -12.115,
+      "lon": -73.3761,
+      "description": "ENR intersection, southern highlands"
+    },
+    {
+      "id": "ELAKO",
+      "name": "ELAKO",
+      "type": "WAYPOINT",
+      "lat": -15.9267,
+      "lon": -69.305,
+      "description": "ENR waypoint in Peru airspace"
+    },
+    {
+      "id": "ESEDI",
+      "name": "ESEDI",
+      "type": "WAYPOINT",
+      "lat": -11.38,
+      "lon": -76.4403,
+      "description": "ENR waypoint in Peru airspace"
+    },
+    {
+      "id": "ESGOL",
+      "name": "ESGOL",
+      "type": "WAYPOINT",
+      "lat": -15.1911,
+      "lon": -75.3586,
+      "description": "ENR intersection, southern highlands"
+    },
+    {
+      "id": "ESIRA",
+      "name": "ESIRA",
+      "type": "WAYPOINT",
+      "lat": -14.9006,
+      "lon": -74.9772,
+      "description": "ENR intersection, southern highlands"
+    },
+    {
+      "id": "ESKAL",
+      "name": "ESKAL",
+      "type": "WAYPOINT",
+      "lat": -9.85,
+      "lon": -77.1167,
+      "description": "ENR intersection, north of Lima"
+    },
+    {
+      "id": "ESKOT",
+      "name": "ESKOT",
+      "type": "WAYPOINT",
+      "lat": -12.0539,
+      "lon": -75.3378,
+      "description": "ENR intersection, central highlands"
+    },
+    {
+      "id": "ESMIL",
+      "name": "ESMIL",
+      "type": "WAYPOINT",
+      "lat": -8.8197,
+      "lon": -78.7047,
+      "description": "ENR intersection, northern highlands"
+    },
+    {
+      "id": "ETEBA",
+      "name": "ETEBA",
+      "type": "WAYPOINT",
+      "lat": -12.4294,
+      "lon": -71.5956,
+      "description": "ENR intersection, central highlands"
+    },
+    {
+      "id": "GATUK",
+      "name": "GATUK",
+      "type": "WAYPOINT",
+      "lat": -12.3531,
+      "lon": -76.255,
+      "description": "ENR intersection, near Lima"
+    },
+    {
+      "id": "GAVAR",
+      "name": "GAVAR",
+      "type": "WAYPOINT",
+      "lat": -16.9725,
+      "lon": -71.1142,
+      "description": "ENR intersection, southern Peru"
+    },
+    {
+      "id": "GAVIL",
+      "name": "GAVIL",
+      "type": "WAYPOINT",
+      "lat": -11.2542,
+      "lon": -76.5872,
+      "description": "ENR intersection, central coast"
+    },
+    {
+      "id": "IBISA",
+      "name": "IBISA",
+      "type": "WAYPOINT",
+      "lat": -13.0333,
+      "lon": -76.5333,
+      "description": "ENR intersection, near Pisco"
+    },
+    {
+      "id": "ILMAR",
+      "name": "ILMAR",
+      "type": "WAYPOINT",
+      "lat": -14.2747,
+      "lon": -76.5133,
+      "description": "ENR intersection, southern coast"
+    },
+    {
+      "id": "ILMOX",
+      "name": "ILMOX",
+      "type": "WAYPOINT",
+      "lat": -14.5944,
+      "lon": -70.8444,
+      "description": "ENR waypoint in Peru airspace"
+    },
+    {
+      "id": "ILMUX",
+      "name": "ILMUX",
+      "type": "WAYPOINT",
+      "lat": -2.4619,
+      "lon": -72.8489,
+      "description": "ENR intersection, northeastern Peru"
+    },
+    {
+      "id": "ILVOS",
+      "name": "ILVOS",
+      "type": "WAYPOINT",
+      "lat": -10.0,
+      "lon": -84.4203,
+      "description": "ENR intersection, far western Peru"
+    },
+    {
+      "id": "IQT",
+      "name": "IQT",
+      "type": "NAVAID",
+      "lat": -3.7858,
+      "lon": -73.3058,
+      "description": "IQUITOS DVOR/DME facility"
+    },
+    {
+      "id": "IQT15",
+      "name": "IQT15",
+      "type": "WAYPOINT",
+      "lat": -4.0163,
+      "lon": -73.4314,
+      "description": "ENR waypoint in Peru airspace"
+    },
+    {
+      "id": "IQT19",
+      "name": "IQT19",
+      "type": "WAYPOINT",
+      "lat": -4.0018,
+      "lon": -73.3775,
+      "description": "ENR waypoint in Peru airspace"
+    },
+    {
+      "id": "IQT21",
+      "name": "IQT21",
+      "type": "WAYPOINT",
+      "lat": -3.9865,
+      "lon": -73.4162,
+      "description": "ENR waypoint in Peru airspace"
+    },
+    {
+      "id": "IQT23",
+      "name": "IQT23",
+      "type": "WAYPOINT",
+      "lat": -3.9382,
+      "lon": -73.4789,
+      "description": "ENR waypoint in Peru airspace"
+    },
+    {
+      "id": "IQT99",
+      "name": "IQT99",
+      "type": "WAYPOINT",
+      "lat": -4.034,
+      "lon": -73.3867,
+      "description": "ENR waypoint in Peru airspace"
+    },
+    {
+      "id": "IREMI",
+      "name": "IREMI",
+      "type": "WAYPOINT",
+      "lat": -18.35,
+      "lon": -75.3833,
+      "description": "ENR intersection, far southern Peru"
+    },
+    {
+      "id": "ISKAR",
+      "name": "ISKAR",
+      "type": "WAYPOINT",
+      "lat": -10.2167,
+      "lon": -77.0833,
+      "description": "ENR intersection, Lima TMA northern boundary"
+    },
+    {
+      "id": "ITALU",
+      "name": "ITALU",
+      "type": "WAYPOINT",
+      "lat": -5.4989,
+      "lon": -81.5767,
+      "description": "ENR intersection, northern coast"
+    },
+    {
+      "id": "JUL",
+      "name": "JUL",
+      "type": "NAVAID",
+      "lat": -16.5092,
+      "lon": -70.1542,
+      "description": "JULIACA DVOR/DME facility"
+    },
+    {
+      "id": "KADEL",
+      "name": "KADEL",
+      "type": "WAYPOINT",
+      "lat": -11.5964,
+      "lon": -76.2872,
+      "description": "ENR waypoint in Peru airspace"
+    },
+    {
+      "id": "KALOR",
+      "name": "KALOR",
+      "type": "WAYPOINT",
+      "lat": -4.0958,
+      "lon": -70.7669,
+      "description": "ENR intersection, northeastern Peru"
+    },
+    {
+      "id": "KAMPA",
+      "name": "KAMPA",
+      "type": "WAYPOINT",
+      "lat": -3.725,
+      "lon": -73.2217,
+      "description": "ENR intersection, northeastern Peru"
+    },
+    {
+      "id": "KAVAK",
+      "name": "KAVAK",
+      "type": "WAYPOINT",
+      "lat": -5.0167,
+      "lon": -80.65,
+      "description": "ENR intersection, northern coast"
+    },
+    {
+      "id": "KEBOM",
+      "name": "KEBOM",
+      "type": "WAYPOINT",
+      "lat": -8.0,
+      "lon": -73.6778,
+      "description": "ENR intersection, central jungle"
+    },
+    {
+      "id": "KIBAN",
+      "name": "KIBAN",
+      "type": "WAYPOINT",
+      "lat": -6.8939,
+      "lon": -80.0894,
+      "description": "ENR intersection, northern coast"
+    },
+    {
+      "id": "KIDES",
+      "name": "KIDES",
+      "type": "WAYPOINT",
+      "lat": -12.2144,
+      "lon": -77.0084,
+      "description": "ENR intersection, southeast of Lima"
+    },
+    {
+      "id": "KOLKA",
+      "name": "KOLKA",
+      "type": "WAYPOINT",
+      "lat": -15.6814,
+      "lon": -71.9936,
+      "description": "ENR intersection, southern Peru"
+    },
+    {
+      "id": "KOLPA",
+      "name": "KOLPA",
+      "type": "WAYPOINT",
+      "lat": -12.5333,
+      "lon": -76.7167,
+      "description": "ENR intersection, Lima approach"
+    },
+    {
+      "id": "KOLSI",
+      "name": "KOLSI",
+      "type": "WAYPOINT",
+      "lat": -8.9319,
+      "lon": -77.1428,
+      "description": "ENR intersection, near Lima"
+    },
+    {
+      "id": "KOMPA",
+      "name": "KOMPA",
+      "type": "WAYPOINT",
+      "lat": -16.475,
+      "lon": -69.0,
+      "description": "ENR intersection, southern Peru"
+    },
+    {
+      "id": "KOPLA",
+      "name": "KOPLA",
+      "type": "WAYPOINT",
+      "lat": -3.3103,
+      "lon": -76.16,
+      "description": "ENR intersection, northern Peru"
+    },
+    {
+      "id": "KORBO",
+      "name": "KORBO",
+      "type": "WAYPOINT",
+      "lat": -3.0167,
+      "lon": -77.8667,
+      "description": "ENR intersection, northern Peru"
+    },
+    {
+      "id": "LAKUN",
+      "name": "LAKUN",
+      "type": "WAYPOINT",
+      "lat": -14.6553,
+      "lon": -73.9933,
+      "description": "ENR intersection, southern Peru"
+    },
+    {
+      "id": "LIM",
+      "name": "LIM",
+      "type": "NAVAID",
+      "lat": -12.0086,
+      "lon": -77.1228,
+      "description": "LIMA DVOR/DME facility"
+    },
+    {
+      "id": "LIM01",
+      "name": "LIM01",
+      "type": "WAYPOINT",
+      "lat": -11.9956,
+      "lon": -77.1284,
+      "description": "ENR waypoint in Peru airspace"
+    },
+    {
+      "id": "LIM11",
+      "name": "LIM11",
+      "type": "WAYPOINT",
+      "lat": -12.0689,
+      "lon": -76.964,
+      "description": "ENR waypoint in Peru airspace"
+    },
+    {
+      "id": "LIM30",
+      "name": "LIM30",
+      "type": "WAYPOINT",
+      "lat": -12.1891,
+      "lon": -76.6461,
+      "description": "ENR waypoint in Peru airspace"
+    },
+    {
+      "id": "LIM55",
+      "name": "LIM55",
+      "type": "WAYPOINT",
+      "lat": -11.1148,
+      "lon": -76.8955,
+      "description": "ENR waypoint in Peru airspace"
+    },
+    {
+      "id": "LIM67",
+      "name": "LIM67",
+      "type": "WAYPOINT",
+      "lat": -12.009,
+      "lon": -76.4421,
+      "description": "ENR waypoint in Peru airspace"
+    },
+    {
+      "id": "LIM68",
+      "name": "LIM68",
+      "type": "WAYPOINT",
+      "lat": -12.009,
+      "lon": -76.6122,
+      "description": "ENR waypoint in Peru airspace"
+    },
+    {
+      "id": "LIM69",
+      "name": "LIM69",
+      "type": "WAYPOINT",
+      "lat": -12.0089,
+      "lon": -76.9526,
+      "description": "ENR waypoint in Peru airspace"
+    },
+    {
+      "id": "LIM77",
+      "name": "LIM77",
+      "type": "WAYPOINT",
+      "lat": -11.7428,
+      "lon": -76.5921,
+      "description": "ENR waypoint in Peru airspace"
+    },
+    {
+      "id": "LIM78",
+      "name": "LIM78",
+      "type": "WAYPOINT",
+      "lat": -11.8113,
+      "lon": -76.7285,
+      "description": "ENR waypoint in Peru airspace"
+    },
+    {
+      "id": "LIM79",
+      "name": "LIM79",
+      "type": "WAYPOINT",
+      "lat": -11.9328,
+      "lon": -76.9711,
+      "description": "ENR waypoint in Peru airspace"
+    },
+    {
+      "id": "LIM81",
+      "name": "LIM81",
+      "type": "WAYPOINT",
+      "lat": -11.8896,
+      "lon": -77.1831,
+      "description": "ENR waypoint in Peru airspace"
+    },
+    {
+      "id": "LIM88",
+      "name": "LIM88",
+      "type": "WAYPOINT",
+      "lat": -11.5923,
+      "lon": -76.837,
+      "description": "ENR waypoint in Peru airspace"
+    },
+    {
+      "id": "LIM89",
+      "name": "LIM89",
+      "type": "WAYPOINT",
+      "lat": -11.8699,
+      "lon": -77.0274,
+      "description": "ENR waypoint in Peru airspace"
+    },
+    {
+      "id": "LIM97",
+      "name": "LIM97",
+      "type": "WAYPOINT",
+      "lat": -11.4399,
+      "lon": -76.978,
+      "description": "ENR waypoint in Peru airspace"
+    },
+    {
+      "id": "LIM98",
+      "name": "LIM98",
+      "type": "WAYPOINT",
+      "lat": -11.8461,
+      "lon": -77.0813,
+      "description": "ENR waypoint in Peru airspace"
+    },
+    {
+      "id": "LITOT",
+      "name": "LITOT",
+      "type": "WAYPOINT",
+      "lat": -14.7933,
+      "lon": -71.8147,
+      "description": "ENR intersection, southern Peru"
+    },
+    {
+      "id": "LIVUS",
+      "name": "LIVUS",
+      "type": "WAYPOINT",
+      "lat": -7.4061,
+      "lon": -77.79,
+      "description": "ENR intersection, northern coast"
+    },
+    {
+      "id": "LODOX",
+      "name": "LODOX",
+      "type": "WAYPOINT",
+      "lat": -12.4169,
+      "lon": -76.09,
+      "description": "ENR intersection, near Lima"
+    },
+    {
+      "id": "LOLES",
+      "name": "LOLES",
+      "type": "WAYPOINT",
+      "lat": -17.9,
+      "lon": -69.7833,
+      "description": "ENR intersection, far southern Peru"
+    },
+    {
+      "id": "LORNI",
+      "name": "LORNI",
+      "type": "WAYPOINT",
+      "lat": -11.75,
+      "lon": -77.0833,
+      "description": "ENR intersection, Lima TMA southern entry"
+    },
+    {
+      "id": "LUVSO",
+      "name": "LUVSO",
+      "type": "WAYPOINT",
+      "lat": -12.0967,
+      "lon": -74.0161,
+      "description": "ENR intersection, central highlands"
+    },
+    {
+      "id": "MALAR",
+      "name": "MALAR",
+      "type": "WAYPOINT",
+      "lat": -12.0667,
+      "lon": -76.95,
+      "description": "ENR intersection, near Lima"
+    },
+    {
+      "id": "MELIX",
+      "name": "MELIX",
+      "type": "WAYPOINT",
+      "lat": -6.5044,
+      "lon": -79.0092,
+      "description": "ENR intersection, northern coast"
+    },
+    {
+      "id": "MEXUR",
+      "name": "MEXUR",
+      "type": "WAYPOINT",
+      "lat": -13.1678,
+      "lon": -75.6703,
+      "description": "ENR intersection, southern coast"
+    },
+    {
+      "id": "MILAX",
+      "name": "MILAX",
+      "type": "WAYPOINT",
+      "lat": -8.9731,
+      "lon": -76.9531,
+      "description": "ENR intersection, central coast"
+    },
+    {
+      "id": "MITOS",
+      "name": "MITOS",
+      "type": "WAYPOINT",
+      "lat": -3.6769,
+      "lon": -73.1534,
+      "description": "ENR intersection, northeastern Peru"
+    },
+    {
+      "id": "MODON",
+      "name": "MODON",
+      "type": "WAYPOINT",
+      "lat": -8.9167,
+      "lon": -77.0333,
+      "description": "ENR intersection, central coast"
+    },
+    {
+      "id": "MOXES",
+      "name": "MOXES",
+      "type": "WAYPOINT",
+      "lat": -14.2747,
+      "lon": -77.4178,
+      "description": "ENR intersection, southern coast"
+    },
+    {
+      "id": "MUGOM",
+      "name": "MUGOM",
+      "type": "WAYPOINT",
+      "lat": -16.2961,
+      "lon": -72.9967,
+      "description": "ENR intersection, southern Peru"
+    },
+    {
+      "id": "MUPIN",
+      "name": "MUPIN",
+      "type": "WAYPOINT",
+      "lat": -2.4219,
+      "lon": -75.3189,
+      "description": "ENR intersection, northeastern Peru"
+    },
+    {
+      "id": "NERVI",
+      "name": "NERVI",
+      "type": "WAYPOINT",
+      "lat": -11.3333,
+      "lon": -77.0,
+      "description": "ENR intersection, north of Lima"
+    },
+    {
+      "id": "OKASO",
+      "name": "OKASO",
+      "type": "WAYPOINT",
+      "lat": -5.1444,
+      "lon": -80.97,
+      "description": "ENR intersection, northern coast"
+    },
+    {
+      "id": "OLGAS",
+      "name": "OLGAS",
+      "type": "WAYPOINT",
+      "lat": -16.3856,
+      "lon": -70.7711,
+      "description": "ENR intersection, southern Peru"
+    },
+    {
+      "id": "OLMOS",
+      "name": "OLMOS",
+      "type": "WAYPOINT",
+      "lat": -5.9667,
+      "lon": -79.7333,
+      "description": "ENR intersection, northern Peru"
+    },
+    {
+      "id": "ORION",
+      "name": "ORION",
+      "type": "WAYPOINT",
+      "lat": -6.0525,
+      "lon": -80.3528,
+      "description": "ENR intersection, northern coast"
+    },
+    {
+      "id": "PABAM",
+      "name": "PABAM",
+      "type": "WAYPOINT",
+      "lat": -3.4128,
+      "lon": -75.5594,
+      "description": "ENR intersection, northeastern Peru"
+    },
+    {
+      "id": "PABUL",
+      "name": "PABUL",
+      "type": "WAYPOINT",
+      "lat": -12.1144,
+      "lon": -77.0639,
+      "description": "ENR intersection, Lima TMA"
+    },
+    {
+      "id": "PAGUR",
+      "name": "PAGUR",
+      "type": "WAYPOINT",
+      "lat": -4.4794,
+      "lon": -80.3594,
+      "description": "ENR intersection, northern coast"
+    },
+    {
+      "id": "PANTA",
+      "name": "PANTA",
+      "type": "WAYPOINT",
+      "lat": -3.8899,
+      "lon": -73.4731,
+      "description": "ENR intersection, northeastern Peru"
+    },
+    {
+      "id": "PAPEM",
+      "name": "PAPEM",
+      "type": "WAYPOINT",
+      "lat": -3.1781,
+      "lon": -70.3047,
+      "description": "ENR intersection, northeastern Peru"
+    },
+    {
+      "id": "PCL",
+      "name": "PCL",
+      "type": "NAVAID",
+      "lat": -8.3781,
+      "lon": -74.5725,
+      "description": "PUCALLPA DVOR/DME facility"
+    },
+    {
+      "id": "PEM",
+      "name": "PEM",
+      "type": "NAVAID",
+      "lat": -12.5983,
+      "lon": -69.1967,
+      "description": "PTO MALDONADO DVOR/DME facility"
+    },
+    {
+      "id": "PIRAT",
+      "name": "PIRAT",
+      "type": "WAYPOINT",
+      "lat": -10.5833,
+      "lon": -77.15,
+      "description": "ENR intersection, coastal route"
+    },
+    {
+      "id": "PISCO",
+      "name": "PISCO",
+      "type": "WAYPOINT",
+      "lat": -13.7333,
+      "lon": -76.2167,
+      "description": "Reporting point near Pisco"
+    },
+    {
+      "id": "PSO",
+      "name": "PSO",
+      "type": "NAVAID",
+      "lat": -13.7333,
+      "lon": -76.2167,
+      "description": "PISCO DVOR/DME facility"
+    },
+    {
+      "id": "PUDUL",
+      "name": "PUDUL",
+      "type": "WAYPOINT",
+      "lat": -12.4469,
+      "lon": -75.9231,
+      "description": "ENR intersection, central highlands"
+    },
+    {
+      "id": "PUMAX",
+      "name": "PUMAX",
+      "type": "WAYPOINT",
+      "lat": -5.22,
+      "lon": -75.9992,
+      "description": "ENR intersection, northern Peru"
+    },
+    {
+      "id": "PUNTA",
+      "name": "PUNTA",
+      "type": "WAYPOINT",
+      "lat": -4.25,
+      "lon": -81.3333,
+      "description": "ENR intersection, northern coast"
+    },
+    {
+      "id": "R1533",
+      "name": "R1533",
+      "type": "WAYPOINT",
+      "lat": -12.0076,
+      "lon": -77.1214,
+      "description": "ENR waypoint in Peru airspace"
+    },
+    {
+      "id": "RACAN",
+      "name": "RACAN",
+      "type": "WAYPOINT",
+      "lat": -14.9964,
+      "lon": -74.2911,
+      "description": "ENR intersection, southern highlands"
+    },
+    {
+      "id": "RAXUN",
+      "name": "RAXUN",
+      "type": "WAYPOINT",
+      "lat": -14.4483,
+      "lon": -69.0903,
+      "description": "ENR waypoint in Peru airspace"
+    },
+    {
+      "id": "RAYA",
+      "name": "RAYA",
+      "type": "WAYPOINT",
+      "lat": -7.5333,
+      "lon": -79.5667,
+      "description": "ENR intersection, northern coast"
+    },
+    {
+      "id": "ROKOL",
+      "name": "ROKOL",
+      "type": "WAYPOINT",
+      "lat": -5.9772,
+      "lon": -80.2108,
+      "description": "ENR intersection, northern coast"
+    },
+    {
+      "id": "SANTI",
+      "name": "SANTI",
+      "type": "WAYPOINT",
+      "lat": -17.5833,
+      "lon": -70.7333,
+      "description": "ENR intersection, southern Peru"
+    },
+    {
+      "id": "SAPUK",
+      "name": "SAPUK",
+      "type": "WAYPOINT",
+      "lat": -11.35,
+      "lon": -77.0,
+      "description": "ENR intersection, north of Lima"
+    },
+    {
+      "id": "SELVA",
+      "name": "SELVA",
+      "type": "WAYPOINT",
+      "lat": -9.5217,
+      "lon": -72.1856,
+      "description": "ENR intersection, central jungle"
+    },
+    {
+      "id": "SIGAS",
+      "name": "SIGAS",
+      "type": "WAYPOINT",
+      "lat": -11.8003,
+      "lon": -77.2325,
+      "description": "ENR intersection, Lima TMA"
+    },
+    {
+      "id": "SIGOB",
+      "name": "SIGOB",
+      "type": "WAYPOINT",
+      "lat": -8.4711,
+      "lon": -73.3383,
+      "description": "ENR intersection, central jungle"
+    },
+    {
+      "id": "TALARA",
+      "name": "TALARA",
+      "type": "WAYPOINT",
+      "lat": -4.5667,
+      "lon": -81.25,
+      "description": "ENR intersection, northern Peru"
+    },
+    {
+      "id": "TBP",
+      "name": "TBP",
+      "type": "NAVAID",
+      "lat": -3.55,
+      "lon": -80.3833,
+      "description": "TUMBES DVOR/DME facility"
+    },
+    {
+      "id": "TCQ",
+      "name": "TCQ",
+      "type": "NAVAID",
+      "lat": -18.0647,
+      "lon": -70.2997,
+      "description": "TACNA DVOR/DME facility"
+    },
+    {
+      "id": "TEMOS",
+      "name": "TEMOS",
+      "type": "WAYPOINT",
+      "lat": -6.7039,
+      "lon": -78.8981,
+      "description": "ENR intersection, northern highlands"
+    },
+    {
+      "id": "TOMIX",
+      "name": "TOMIX",
+      "type": "WAYPOINT",
+      "lat": -13.5525,
+      "lon": -71.3642,
+      "description": "ENR intersection, southern Peru"
+    },
+    {
+      "id": "TONOS",
+      "name": "TONOS",
+      "type": "WAYPOINT",
+      "lat": -15.9244,
+      "lon": -70.9058,
+      "description": "ENR waypoint in Peru airspace"
+    },
+    {
+      "id": "TORDO",
+      "name": "TORDO",
+      "type": "WAYPOINT",
+      "lat": -12.0231,
+      "lon": -76.1875,
+      "description": "ENR intersection, near Lima"
+    },
+    {
+      "id": "UDOVA",
+      "name": "UDOVA",
+      "type": "WAYPOINT",
+      "lat": -6.6661,
+      "lon": -76.7439,
+      "description": "ENR intersection, central jungle"
+    },
+    {
+      "id": "UGEMA",
+      "name": "UGEMA",
+      "type": "WAYPOINT",
+      "lat": -8.3706,
+      "lon": -79.6036,
+      "description": "ENR intersection, northern highlands"
+    },
+    {
+      "id": "URA",
+      "name": "URA",
+      "type": "NAVAID",
+      "lat": -5.2067,
+      "lon": -80.6167,
+      "description": "PIURA DVOR/DME facility"
+    },
+    {
+      "id": "VAKUD",
+      "name": "VAKUD",
+      "type": "WAYPOINT",
+      "lat": -4.5033,
+      "lon": -79.5667,
+      "description": "ENR intersection, northern coast"
+    },
+    {
+      "id": "VALEM",
+      "name": "VALEM",
+      "type": "WAYPOINT",
+      "lat": -6.3958,
+      "lon": -81.4422,
+      "description": "ENR intersection, northern coast"
+    },
+    {
+      "id": "VATES",
+      "name": "VATES",
+      "type": "WAYPOINT",
+      "lat": -7.7033,
+      "lon": -78.3656,
+      "description": "ENR intersection, northern coast"
+    },
+    {
+      "id": "VIBAS",
+      "name": "VIBAS",
+      "type": "WAYPOINT",
+      "lat": -12.0914,
+      "lon": -77.0514,
+      "description": "ENR intersection, Lima TMA"
+    }
+  ],
+  "airways": {
+    "conventional": [
+      {
+        "designator": "G679",
+        "type": "CONVENTIONAL",
+        "level": "LOWER",
+        "segments": [
+          {
+            "from": "TBP",
+            "to": "KAVAK",
+            "distance": 89,
+            "bearing": 190,
+            "minFL": 95,
+            "maxFL": 285,
+            "trackTrue": 190,
+            "reverseTrack": 10
+          },
+          {
+            "from": "KAVAK",
+            "to": "EGASI",
+            "distance": 50,
+            "bearing": 12,
+            "minFL": 95,
+            "maxFL": 285,
+            "trackTrue": 12,
+            "reverseTrack": 192
+          },
+          {
+            "from": "EGASI",
+            "to": "CIX",
+            "distance": 160,
+            "bearing": 166,
+            "minFL": 95,
+            "maxFL": 285,
+            "trackTrue": 166,
+            "reverseTrack": 346
+          },
+          {
+            "from": "CIX",
+            "to": "MELIX",
+            "distance": 51,
+            "bearing": 71,
+            "minFL": 95,
+            "maxFL": 285,
+            "trackTrue": 71,
+            "reverseTrack": 251
+          },
+          {
+            "from": "MELIX",
+            "to": "VATES",
+            "distance": 82,
+            "bearing": 152,
+            "minFL": 95,
+            "maxFL": 285,
+            "trackTrue": 152,
+            "reverseTrack": 332
+          },
+          {
+            "from": "VATES",
+            "to": "LIVUS",
+            "distance": 39,
+            "bearing": 63,
+            "minFL": 95,
+            "maxFL": 285,
+            "trackTrue": 63,
+            "reverseTrack": 243
+          },
+          {
+            "from": "LIVUS",
+            "to": "KOLSI",
+            "distance": 99,
+            "bearing": 157,
+            "minFL": 95,
+            "maxFL": 285,
+            "trackTrue": 157,
+            "reverseTrack": 337
+          },
+          {
+            "from": "KOLSI",
+            "to": "ISKAR",
+            "distance": 77,
+            "bearing": 177,
+            "minFL": 95,
+            "maxFL": 285,
+            "trackTrue": 177,
+            "reverseTrack": 357
+          },
+          {
+            "from": "ISKAR",
+            "to": "LIM",
+            "distance": 108,
+            "bearing": 181,
+            "minFL": 95,
+            "maxFL": 285,
+            "trackTrue": 181,
+            "reverseTrack": 1
+          }
+        ]
+      },
+      {
+        "designator": "G424",
+        "type": "CONVENTIONAL",
+        "level": "LOWER",
+        "segments": [
+          {
+            "from": "LIM",
+            "to": "GAVIL",
+            "distance": 55,
+            "bearing": 35,
+            "minFL": 95,
+            "maxFL": 285,
+            "trackTrue": 35,
+            "reverseTrack": 215
+          },
+          {
+            "from": "GAVIL",
+            "to": "ESEDI",
+            "distance": 11,
+            "bearing": 131,
+            "minFL": 95,
+            "maxFL": 285,
+            "trackTrue": 131,
+            "reverseTrack": 311
+          },
+          {
+            "from": "ESEDI",
+            "to": "MILAX",
+            "distance": 148,
+            "bearing": 348,
+            "minFL": 95,
+            "maxFL": 285,
+            "trackTrue": 348,
+            "reverseTrack": 168
+          },
+          {
+            "from": "MILAX",
+            "to": "VATES",
+            "distance": 113,
+            "bearing": 312,
+            "minFL": 95,
+            "maxFL": 285,
+            "trackTrue": 312,
+            "reverseTrack": 132
+          }
+        ]
+      },
+      {
+        "designator": "W4",
+        "type": "CONVENTIONAL",
+        "level": "LOWER",
+        "segments": [
+          {
+            "from": "LIM",
+            "to": "TORDO",
+            "distance": 55,
+            "bearing": 91,
+            "minFL": 95,
+            "maxFL": 285,
+            "trackTrue": 91,
+            "reverseTrack": 271
+          },
+          {
+            "from": "TORDO",
+            "to": "AMVEX",
+            "distance": 82,
+            "bearing": 334,
+            "minFL": 95,
+            "maxFL": 285,
+            "trackTrue": 334,
+            "reverseTrack": 154
+          },
+          {
+            "from": "AMVEX",
+            "to": "BUTEK",
+            "distance": 70,
+            "bearing": 82,
+            "minFL": 95,
+            "maxFL": 285,
+            "trackTrue": 82,
+            "reverseTrack": 262
+          },
+          {
+            "from": "BUTEK",
+            "to": "COCOS",
+            "distance": 107,
+            "bearing": 9,
+            "minFL": 95,
+            "maxFL": 285,
+            "trackTrue": 9,
+            "reverseTrack": 189
+          },
+          {
+            "from": "COCOS",
+            "to": "BORLA",
+            "distance": 69,
+            "bearing": 6,
+            "minFL": 95,
+            "maxFL": 285,
+            "trackTrue": 6,
+            "reverseTrack": 186
+          }
+        ]
+      },
+      {
+        "designator": "A301",
+        "type": "CONVENTIONAL",
+        "level": "LOWER",
+        "segments": [
+          {
+            "from": "LIM",
+            "to": "GATUK",
+            "distance": 55,
+            "bearing": 112,
+            "minFL": 95,
+            "maxFL": 285,
+            "trackTrue": 112,
+            "reverseTrack": 292
+          },
+          {
+            "from": "GATUK",
+            "to": "LODOX",
+            "distance": 10,
+            "bearing": 112,
+            "minFL": 95,
+            "maxFL": 285,
+            "trackTrue": 112,
+            "reverseTrack": 292
+          },
+          {
+            "from": "LODOX",
+            "to": "PSO",
+            "distance": 79,
+            "bearing": 185,
+            "minFL": 95,
+            "maxFL": 285,
+            "trackTrue": 185,
+            "reverseTrack": 5
+          },
+          {
+            "from": "PSO",
+            "to": "IBISA",
+            "distance": 46,
+            "bearing": 336,
+            "minFL": 95,
+            "maxFL": 285,
+            "trackTrue": 336,
+            "reverseTrack": 156
+          },
+          {
+            "from": "IBISA",
+            "to": "ILMAR",
+            "distance": 75,
+            "bearing": 179,
+            "minFL": 95,
+            "maxFL": 285,
+            "trackTrue": 179,
+            "reverseTrack": 359
+          },
+          {
+            "from": "ILMAR",
+            "to": "AQP",
+            "distance": 311,
+            "bearing": 114,
+            "minFL": 95,
+            "maxFL": 285,
+            "trackTrue": 114,
+            "reverseTrack": 294
+          }
+        ]
+      },
+      {
+        "designator": "G6",
+        "type": "CONVENTIONAL",
+        "level": "LOWER",
+        "segments": [
+          {
+            "from": "AQP",
+            "to": "MEXUR",
+            "distance": 304,
+            "bearing": 308,
+            "minFL": 145,
+            "maxFL": 285,
+            "trackTrue": 308,
+            "reverseTrack": 128
+          },
+          {
+            "from": "MEXUR",
+            "to": "ESKOT",
+            "distance": 70,
+            "bearing": 16,
+            "minFL": 145,
+            "maxFL": 285,
+            "trackTrue": 16,
+            "reverseTrack": 196
+          },
+          {
+            "from": "ESKOT",
+            "to": "PUDUL",
+            "distance": 42,
+            "bearing": 235,
+            "minFL": 145,
+            "maxFL": 285,
+            "trackTrue": 235,
+            "reverseTrack": 55
+          },
+          {
+            "from": "PUDUL",
+            "to": "CUZ",
+            "distance": 242,
+            "bearing": 106,
+            "minFL": 145,
+            "maxFL": 285,
+            "trackTrue": 106,
+            "reverseTrack": 286
+          }
+        ]
+      },
+      {
+        "designator": "W14",
+        "type": "CONVENTIONAL",
+        "level": "LOWER",
+        "segments": [
+          {
+            "from": "PCL",
+            "to": "COCOS",
+            "distance": 55,
+            "bearing": 237,
+            "minFL": 145,
+            "maxFL": 285,
+            "trackTrue": 237,
+            "reverseTrack": 57
+          },
+          {
+            "from": "COCOS",
+            "to": "SELVA",
+            "distance": 191,
+            "bearing": 102,
+            "minFL": 145,
+            "maxFL": 285,
+            "trackTrue": 102,
+            "reverseTrack": 282
+          },
+          {
+            "from": "SELVA",
+            "to": "SIGOB",
+            "distance": 93,
+            "bearing": 313,
+            "minFL": 145,
+            "maxFL": 285,
+            "trackTrue": 313,
+            "reverseTrack": 133
+          },
+          {
+            "from": "SIGOB",
+            "to": "KEBOM",
+            "distance": 35,
+            "bearing": 324,
+            "minFL": 145,
+            "maxFL": 285,
+            "trackTrue": 324,
+            "reverseTrack": 144
+          },
+          {
+            "from": "KEBOM",
+            "to": "PANTA",
+            "distance": 247,
+            "bearing": 3,
+            "minFL": 145,
+            "maxFL": 285,
+            "trackTrue": 3,
+            "reverseTrack": 183
+          },
+          {
+            "from": "PANTA",
+            "to": "IQT",
+            "distance": 12,
+            "bearing": 58,
+            "minFL": 145,
+            "maxFL": 285,
+            "trackTrue": 58,
+            "reverseTrack": 238
+          }
+        ]
+      },
+      {
+        "designator": "A205",
+        "type": "CONVENTIONAL",
+        "level": "LOWER",
+        "segments": [
+          {
+            "from": "TBP",
+            "to": "PAGUR",
+            "distance": 56,
+            "bearing": 179,
+            "minFL": 95,
+            "maxFL": 285,
+            "trackTrue": 179,
+            "reverseTrack": 359
+          },
+          {
+            "from": "PAGUR",
+            "to": "EGASI",
+            "distance": 18,
+            "bearing": 336,
+            "minFL": 95,
+            "maxFL": 285,
+            "trackTrue": 336,
+            "reverseTrack": 156
+          },
+          {
+            "from": "EGASI",
+            "to": "OKASO",
+            "distance": 63,
+            "bearing": 208,
+            "minFL": 95,
+            "maxFL": 285,
+            "trackTrue": 208,
+            "reverseTrack": 28
+          },
+          {
+            "from": "OKASO",
+            "to": "ROKOL",
+            "distance": 68,
+            "bearing": 138,
+            "minFL": 95,
+            "maxFL": 285,
+            "trackTrue": 138,
+            "reverseTrack": 318
+          },
+          {
+            "from": "ROKOL",
+            "to": "CIX",
+            "distance": 54,
+            "bearing": 155,
+            "minFL": 95,
+            "maxFL": 285,
+            "trackTrue": 155,
+            "reverseTrack": 335
+          }
+        ]
+      },
+      {
+        "designator": "G745",
+        "type": "CONVENTIONAL",
+        "level": "LOWER",
+        "segments": [
+          {
+            "from": "IQT",
+            "to": "KAMPA",
+            "distance": 6,
+            "bearing": 54,
+            "minFL": 145,
+            "maxFL": 285,
+            "trackTrue": 54,
+            "reverseTrack": 234
+          },
+          {
+            "from": "KAMPA",
+            "to": "BORAS",
+            "distance": 13,
+            "bearing": 236,
+            "minFL": 145,
+            "maxFL": 285,
+            "trackTrue": 236,
+            "reverseTrack": 56
+          },
+          {
+            "from": "BORAS",
+            "to": "MITOS",
+            "distance": 18,
+            "bearing": 56,
+            "minFL": 145,
+            "maxFL": 285,
+            "trackTrue": 56,
+            "reverseTrack": 236
+          },
+          {
+            "from": "MITOS",
+            "to": "PABAM",
+            "distance": 145,
+            "bearing": 276,
+            "minFL": 145,
+            "maxFL": 285,
+            "trackTrue": 276,
+            "reverseTrack": 96
+          }
+        ]
+      },
+      {
+        "designator": "W22",
+        "type": "CONVENTIONAL",
+        "level": "LOWER",
+        "segments": [
+          {
+            "from": "PUDUL",
+            "to": "DIKAB",
+            "distance": 108,
+            "bearing": 64,
+            "minFL": 145,
+            "maxFL": 285,
+            "trackTrue": 64,
+            "reverseTrack": 244
+          },
+          {
+            "from": "DIKAB",
+            "to": "EGELI",
+            "distance": 59,
+            "bearing": 117,
+            "minFL": 145,
+            "maxFL": 285,
+            "trackTrue": 117,
+            "reverseTrack": 297
+          },
+          {
+            "from": "EGELI",
+            "to": "LUVSO",
+            "distance": 38,
+            "bearing": 272,
+            "minFL": 145,
+            "maxFL": 285,
+            "trackTrue": 272,
+            "reverseTrack": 92
+          },
+          {
+            "from": "LUVSO",
+            "to": "ETEBA",
+            "distance": 143,
+            "bearing": 98,
+            "minFL": 145,
+            "maxFL": 285,
+            "trackTrue": 98,
+            "reverseTrack": 278
+          }
+        ]
+      },
+      {
+        "designator": "G826",
+        "type": "CONVENTIONAL",
+        "level": "LOWER",
+        "segments": [
+          {
+            "from": "AQP",
+            "to": "KOLKA",
+            "distance": 46,
+            "bearing": 329,
+            "minFL": 145,
+            "maxFL": 285,
+            "trackTrue": 329,
+            "reverseTrack": 149
+          },
+          {
+            "from": "KOLKA",
+            "to": "LITOT",
+            "distance": 54,
+            "bearing": 11,
+            "minFL": 145,
+            "maxFL": 285,
+            "trackTrue": 11,
+            "reverseTrack": 191
+          },
+          {
+            "from": "LITOT",
+            "to": "DOBNI",
+            "distance": 151,
+            "bearing": 112,
+            "minFL": 145,
+            "maxFL": 285,
+            "trackTrue": 112,
+            "reverseTrack": 292
+          },
+          {
+            "from": "DOBNI",
+            "to": "TCQ",
+            "distance": 150,
+            "bearing": 200,
+            "minFL": 145,
+            "maxFL": 285,
+            "trackTrue": 200,
+            "reverseTrack": 20
+          }
+        ]
+      },
+      {
+        "designator": "A501",
+        "type": "CONVENTIONAL",
+        "level": "LOWER",
+        "segments": [
+          {
+            "from": "CIX",
+            "to": "ESMIL",
+            "distance": 139,
+            "bearing": 152,
+            "minFL": 95,
+            "maxFL": 285,
+            "trackTrue": 152,
+            "reverseTrack": 332
+          },
+          {
+            "from": "ESMIL",
+            "to": "UGEMA",
+            "distance": 60,
+            "bearing": 297,
+            "minFL": 95,
+            "maxFL": 285,
+            "trackTrue": 297,
+            "reverseTrack": 117
+          },
+          {
+            "from": "UGEMA",
+            "to": "ANKOR",
+            "distance": 13,
+            "bearing": 233,
+            "minFL": 95,
+            "maxFL": 285,
+            "trackTrue": 233,
+            "reverseTrack": 53
+          }
+        ]
+      },
+      {
+        "designator": "G431",
+        "type": "CONVENTIONAL",
+        "level": "LOWER",
+        "segments": [
+          {
+            "from": "LIM",
+            "to": "TORDO",
+            "distance": 55,
+            "bearing": 91,
+            "minFL": 145,
+            "maxFL": 285,
+            "trackTrue": 91,
+            "reverseTrack": 271
+          },
+          {
+            "from": "TORDO",
+            "to": "KADEL",
+            "distance": 26,
+            "bearing": 347,
+            "minFL": 145,
+            "maxFL": 285,
+            "trackTrue": 347,
+            "reverseTrack": 167
+          },
+          {
+            "from": "KADEL",
+            "to": "AMVEX",
+            "distance": 57,
+            "bearing": 327,
+            "minFL": 145,
+            "maxFL": 285,
+            "trackTrue": 327,
+            "reverseTrack": 147
+          },
+          {
+            "from": "AMVEX",
+            "to": "PCL",
+            "distance": 196,
+            "bearing": 42,
+            "minFL": 145,
+            "maxFL": 285,
+            "trackTrue": 42,
+            "reverseTrack": 222
+          }
+        ]
+      },
+      {
+        "designator": "W30",
+        "type": "CONVENTIONAL",
+        "level": "LOWER",
+        "segments": [
+          {
+            "from": "PCL",
+            "to": "UDOVA",
+            "distance": 165,
+            "bearing": 308,
+            "minFL": 145,
+            "maxFL": 285,
+            "trackTrue": 308,
+            "reverseTrack": 128
+          },
+          {
+            "from": "UDOVA",
+            "to": "TEMOS",
+            "distance": 128,
+            "bearing": 269,
+            "minFL": 145,
+            "maxFL": 285,
+            "trackTrue": 269,
+            "reverseTrack": 89
+          },
+          {
+            "from": "TEMOS",
+            "to": "KIBAN",
+            "distance": 72,
+            "bearing": 261,
+            "minFL": 145,
+            "maxFL": 285,
+            "trackTrue": 261,
+            "reverseTrack": 81
+          },
+          {
+            "from": "KIBAN",
+            "to": "CIX",
+            "distance": 17,
+            "bearing": 68,
+            "minFL": 145,
+            "maxFL": 285,
+            "trackTrue": 68,
+            "reverseTrack": 248
+          }
+        ]
+      },
+      {
+        "designator": "G580",
+        "type": "CONVENTIONAL",
+        "level": "LOWER",
+        "segments": [
+          {
+            "from": "AQP",
+            "to": "GAVAR",
+            "distance": 46,
+            "bearing": 145,
+            "minFL": 145,
+            "maxFL": 285,
+            "trackTrue": 145,
+            "reverseTrack": 325
+          },
+          {
+            "from": "GAVAR",
+            "to": "MUGOM",
+            "distance": 116,
+            "bearing": 290,
+            "minFL": 145,
+            "maxFL": 285,
+            "trackTrue": 290,
+            "reverseTrack": 110
+          },
+          {
+            "from": "MUGOM",
+            "to": "OLGAS",
+            "distance": 128,
+            "bearing": 93,
+            "minFL": 145,
+            "maxFL": 285,
+            "trackTrue": 93,
+            "reverseTrack": 273
+          },
+          {
+            "from": "OLGAS",
+            "to": "JUL",
+            "distance": 36,
+            "bearing": 102,
+            "minFL": 145,
+            "maxFL": 285,
+            "trackTrue": 102,
+            "reverseTrack": 282
+          }
+        ]
+      },
+      {
+        "designator": "A412",
+        "type": "CONVENTIONAL",
+        "level": "LOWER",
+        "segments": [
+          {
+            "from": "URA",
+            "to": "CHIRA",
+            "distance": 23,
+            "bearing": 314,
+            "minFL": 145,
+            "maxFL": 285,
+            "trackTrue": 314,
+            "reverseTrack": 134
+          },
+          {
+            "from": "CHIRA",
+            "to": "VAKUD",
+            "distance": 84,
+            "bearing": 72,
+            "minFL": 145,
+            "maxFL": 285,
+            "trackTrue": 72,
+            "reverseTrack": 252
+          },
+          {
+            "from": "VAKUD",
+            "to": "ITALU",
+            "distance": 134,
+            "bearing": 243,
+            "minFL": 145,
+            "maxFL": 285,
+            "trackTrue": 243,
+            "reverseTrack": 63
+          },
+          {
+            "from": "ITALU",
+            "to": "VALEM",
+            "distance": 54,
+            "bearing": 172,
+            "minFL": 145,
+            "maxFL": 285,
+            "trackTrue": 172,
+            "reverseTrack": 352
+          }
+        ]
+      },
+      {
+        "designator": "W58",
+        "type": "CONVENTIONAL",
+        "level": "LOWER",
+        "segments": [
+          {
+            "from": "CUZ",
+            "to": "ETEBA",
+            "distance": 69,
+            "bearing": 17,
+            "minFL": 145,
+            "maxFL": 285,
+            "trackTrue": 17,
+            "reverseTrack": 197
+          },
+          {
+            "from": "ETEBA",
+            "to": "PEM",
+            "distance": 141,
+            "bearing": 94,
+            "minFL": 145,
+            "maxFL": 285,
+            "trackTrue": 94,
+            "reverseTrack": 274
+          }
+        ]
+      },
+      {
+        "designator": "G923",
+        "type": "CONVENTIONAL",
+        "level": "LOWER",
+        "segments": [
+          {
+            "from": "AQP",
+            "to": "ESGOL",
+            "distance": 229,
+            "bearing": 287,
+            "minFL": 145,
+            "maxFL": 285,
+            "trackTrue": 287,
+            "reverseTrack": 107
+          },
+          {
+            "from": "ESGOL",
+            "to": "ESIRA",
+            "distance": 28,
+            "bearing": 52,
+            "minFL": 145,
+            "maxFL": 285,
+            "trackTrue": 52,
+            "reverseTrack": 232
+          },
+          {
+            "from": "ESIRA",
+            "to": "RACAN",
+            "distance": 40,
+            "bearing": 98,
+            "minFL": 145,
+            "maxFL": 285,
+            "trackTrue": 98,
+            "reverseTrack": 278
+          },
+          {
+            "from": "RACAN",
+            "to": "LAKUN",
+            "distance": 27,
+            "bearing": 40,
+            "minFL": 145,
+            "maxFL": 285,
+            "trackTrue": 40,
+            "reverseTrack": 220
+          }
+        ]
+      },
+      {
+        "designator": "G420",
+        "type": "CONVENTIONAL",
+        "level": "LOWER",
+        "segments": [
+          {
+            "from": "TBP",
+            "to": "URA",
+            "distance": 100,
+            "bearing": 188,
+            "minFL": 95,
+            "maxFL": 285,
+            "trackTrue": 188,
+            "reverseTrack": 8
+          },
+          {
+            "from": "URA",
+            "to": "CHIRA",
+            "distance": 23,
+            "bearing": 314,
+            "minFL": 95,
+            "maxFL": 285,
+            "trackTrue": 314,
+            "reverseTrack": 134
+          },
+          {
+            "from": "CHIRA",
+            "to": "CIX",
+            "distance": 128,
+            "bearing": 150,
+            "minFL": 95,
+            "maxFL": 285,
+            "trackTrue": 150,
+            "reverseTrack": 330
+          }
+        ]
+      }
+    ],
+    "rnav": [
+      {
+        "designator": "UB673",
+        "type": "RNAV",
+        "level": "UPPER",
+        "segments": [
+          {
+            "from": "TBP",
+            "to": "ANKOR",
+            "distance": 300,
+            "bearing": 173,
+            "minFL": 285,
+            "maxFL": 450,
+            "trackTrue": 173,
+            "reverseTrack": 353
+          },
+          {
+            "from": "ANKOR",
+            "to": "MODON",
+            "distance": 165,
+            "bearing": 99,
+            "minFL": 285,
+            "maxFL": 450,
+            "trackTrue": 99,
+            "reverseTrack": 279
+          },
+          {
+            "from": "MODON",
+            "to": "LIM",
+            "distance": 186,
+            "bearing": 182,
+            "minFL": 285,
+            "maxFL": 450,
+            "trackTrue": 182,
+            "reverseTrack": 2
+          },
+          {
+            "from": "LIM",
+            "to": "AGUA",
+            "distance": 86,
+            "bearing": 143,
+            "minFL": 285,
+            "maxFL": 450,
+            "trackTrue": 143,
+            "reverseTrack": 323
+          },
+          {
+            "from": "AGUA",
+            "to": "PSO",
+            "distance": 35,
+            "bearing": 178,
+            "minFL": 285,
+            "maxFL": 450,
+            "trackTrue": 178,
+            "reverseTrack": 358
+          },
+          {
+            "from": "PSO",
+            "to": "AQP",
+            "distance": 311,
+            "bearing": 121,
+            "minFL": 285,
+            "maxFL": 450,
+            "trackTrue": 121,
+            "reverseTrack": 301
+          }
+        ]
+      },
+      {
+        "designator": "UW6",
+        "type": "RNAV",
+        "level": "UPPER",
+        "segments": [
+          {
+            "from": "LIM",
+            "to": "LORNI",
+            "distance": 16,
+            "bearing": 9,
+            "minFL": 285,
+            "maxFL": 450,
+            "trackTrue": 9,
+            "reverseTrack": 189
+          },
+          {
+            "from": "LORNI",
+            "to": "AMVEX",
+            "distance": 59,
+            "bearing": 16,
+            "minFL": 285,
+            "maxFL": 450,
+            "trackTrue": 16,
+            "reverseTrack": 196
+          },
+          {
+            "from": "AMVEX",
+            "to": "BUTEK",
+            "distance": 70,
+            "bearing": 82,
+            "minFL": 285,
+            "maxFL": 450,
+            "trackTrue": 82,
+            "reverseTrack": 262
+          },
+          {
+            "from": "BUTEK",
+            "to": "PCL",
+            "distance": 149,
+            "bearing": 25,
+            "minFL": 285,
+            "maxFL": 450,
+            "trackTrue": 25,
+            "reverseTrack": 205
+          }
+        ]
+      },
+      {
+        "designator": "UB793",
+        "type": "RNAV",
+        "level": "UPPER",
+        "segments": [
+          {
+            "from": "AQP",
+            "to": "SANTI",
+            "distance": 89,
+            "bearing": 147,
+            "minFL": 285,
+            "maxFL": 450,
+            "trackTrue": 147,
+            "reverseTrack": 327
+          },
+          {
+            "from": "SANTI",
+            "to": "DANKI",
+            "distance": 51,
+            "bearing": 149,
+            "minFL": 285,
+            "maxFL": 450,
+            "trackTrue": 149,
+            "reverseTrack": 329
+          },
+          {
+            "from": "DANKI",
+            "to": "TCQ",
+            "distance": 15,
+            "bearing": 354,
+            "minFL": 285,
+            "maxFL": 450,
+            "trackTrue": 354,
+            "reverseTrack": 174
+          }
+        ]
+      },
+      {
+        "designator": "UW18",
+        "type": "RNAV",
+        "level": "UPPER",
+        "segments": [
+          {
+            "from": "CIX",
+            "to": "ESMIL",
+            "distance": 139,
+            "bearing": 152,
+            "minFL": 285,
+            "maxFL": 450,
+            "trackTrue": 152,
+            "reverseTrack": 332
+          },
+          {
+            "from": "ESMIL",
+            "to": "MODON",
+            "distance": 99,
+            "bearing": 93,
+            "minFL": 285,
+            "maxFL": 450,
+            "trackTrue": 93,
+            "reverseTrack": 273
+          },
+          {
+            "from": "MODON",
+            "to": "ISKAR",
+            "distance": 78,
+            "bearing": 182,
+            "minFL": 285,
+            "maxFL": 450,
+            "trackTrue": 182,
+            "reverseTrack": 2
+          },
+          {
+            "from": "ISKAR",
+            "to": "ESKAL",
+            "distance": 22,
+            "bearing": 355,
+            "minFL": 285,
+            "maxFL": 450,
+            "trackTrue": 355,
+            "reverseTrack": 175
+          }
+        ]
+      },
+      {
+        "designator": "UB441",
+        "type": "RNAV",
+        "level": "UPPER",
+        "segments": [
+          {
+            "from": "PCL",
+            "to": "SELVA",
+            "distance": 157,
+            "bearing": 116,
+            "minFL": 285,
+            "maxFL": 450,
+            "trackTrue": 116,
+            "reverseTrack": 296
+          },
+          {
+            "from": "SELVA",
+            "to": "PANTA",
+            "distance": 347,
+            "bearing": 347,
+            "minFL": 285,
+            "maxFL": 450,
+            "trackTrue": 347,
+            "reverseTrack": 167
+          },
+          {
+            "from": "PANTA",
+            "to": "IQT",
+            "distance": 12,
+            "bearing": 58,
+            "minFL": 285,
+            "maxFL": 450,
+            "trackTrue": 58,
+            "reverseTrack": 238
+          },
+          {
+            "from": "IQT",
+            "to": "KALOR",
+            "distance": 153,
+            "bearing": 97,
+            "minFL": 285,
+            "maxFL": 450,
+            "trackTrue": 97,
+            "reverseTrack": 277
+          }
+        ]
+      },
+      {
+        "designator": "UW42",
+        "type": "RNAV",
+        "level": "UPPER",
+        "segments": [
+          {
+            "from": "LIM",
+            "to": "PUDUL",
+            "distance": 75,
+            "bearing": 111,
+            "minFL": 285,
+            "maxFL": 450,
+            "trackTrue": 111,
+            "reverseTrack": 291
+          },
+          {
+            "from": "PUDUL",
+            "to": "ESKOT",
+            "distance": 42,
+            "bearing": 56,
+            "minFL": 285,
+            "maxFL": 450,
+            "trackTrue": 56,
+            "reverseTrack": 236
+          },
+          {
+            "from": "ESKOT",
+            "to": "CUZ",
+            "distance": 218,
+            "bearing": 114,
+            "minFL": 285,
+            "maxFL": 450,
+            "trackTrue": 114,
+            "reverseTrack": 294
+          }
+        ]
+      },
+      {
+        "designator": "UB301",
+        "type": "RNAV",
+        "level": "UPPER",
+        "segments": [
+          {
+            "from": "CUZ",
+            "to": "JUL",
+            "distance": 206,
+            "bearing": 150,
+            "minFL": 285,
+            "maxFL": 450,
+            "trackTrue": 150,
+            "reverseTrack": 330
+          },
+          {
+            "from": "JUL",
+            "to": "GAVAR",
+            "distance": 62,
+            "bearing": 243,
+            "minFL": 285,
+            "maxFL": 450,
+            "trackTrue": 243,
+            "reverseTrack": 63
+          },
+          {
+            "from": "GAVAR",
+            "to": "DORKA",
+            "distance": 126,
+            "bearing": 229,
+            "minFL": 285,
+            "maxFL": 450,
+            "trackTrue": 229,
+            "reverseTrack": 49
+          }
+        ]
+      },
+      {
+        "designator": "UW56",
+        "type": "RNAV",
+        "level": "UPPER",
+        "segments": [
+          {
+            "from": "PSO",
+            "to": "ILMAR",
+            "distance": 37,
+            "bearing": 208,
+            "minFL": 285,
+            "maxFL": 450,
+            "trackTrue": 208,
+            "reverseTrack": 28
+          },
+          {
+            "from": "ILMAR",
+            "to": "MEXUR",
+            "distance": 83,
+            "bearing": 37,
+            "minFL": 285,
+            "maxFL": 450,
+            "trackTrue": 37,
+            "reverseTrack": 217
+          },
+          {
+            "from": "MEXUR",
+            "to": "AQP",
+            "distance": 304,
+            "bearing": 129,
+            "minFL": 285,
+            "maxFL": 450,
+            "trackTrue": 129,
+            "reverseTrack": 309
+          }
+        ]
+      },
+      {
+        "designator": "UB862",
+        "type": "RNAV",
+        "level": "UPPER",
+        "segments": [
+          {
+            "from": "TBP",
+            "to": "EGASI",
+            "distance": 40,
+            "bearing": 188,
+            "minFL": 285,
+            "maxFL": 450,
+            "trackTrue": 188,
+            "reverseTrack": 8
+          },
+          {
+            "from": "EGASI",
+            "to": "CIX",
+            "distance": 160,
+            "bearing": 166,
+            "minFL": 285,
+            "maxFL": 450,
+            "trackTrue": 166,
+            "reverseTrack": 346
+          },
+          {
+            "from": "CIX",
+            "to": "MELIX",
+            "distance": 51,
+            "bearing": 71,
+            "minFL": 285,
+            "maxFL": 450,
+            "trackTrue": 71,
+            "reverseTrack": 251
+          },
+          {
+            "from": "MELIX",
+            "to": "MODON",
+            "distance": 187,
+            "bearing": 141,
+            "minFL": 285,
+            "maxFL": 450,
+            "trackTrue": 141,
+            "reverseTrack": 321
+          }
+        ]
+      },
+      {
+        "designator": "UW77",
+        "type": "RNAV",
+        "level": "UPPER",
+        "segments": [
+          {
+            "from": "AMVEX",
+            "to": "BORLA",
+            "distance": 206,
+            "bearing": 27,
+            "minFL": 285,
+            "maxFL": 450,
+            "trackTrue": 27,
+            "reverseTrack": 207
+          },
+          {
+            "from": "BORLA",
+            "to": "KEBOM",
+            "distance": 94,
+            "bearing": 100,
+            "minFL": 285,
+            "maxFL": 450,
+            "trackTrue": 100,
+            "reverseTrack": 280
+          },
+          {
+            "from": "KEBOM",
+            "to": "SIGOB",
+            "distance": 35,
+            "bearing": 145,
+            "minFL": 285,
+            "maxFL": 450,
+            "trackTrue": 145,
+            "reverseTrack": 325
+          }
+        ]
+      },
+      {
+        "designator": "UB554",
+        "type": "RNAV",
+        "level": "UPPER",
+        "segments": [
+          {
+            "from": "TCQ",
+            "to": "DANKI",
+            "distance": 15,
+            "bearing": 174,
+            "minFL": 285,
+            "maxFL": 450,
+            "trackTrue": 174,
+            "reverseTrack": 354
+          },
+          {
+            "from": "DANKI",
+            "to": "IREMI",
+            "distance": 291,
+            "bearing": 269,
+            "minFL": 285,
+            "maxFL": 450,
+            "trackTrue": 269,
+            "reverseTrack": 89
+          },
+          {
+            "from": "IREMI",
+            "to": "LOLES",
+            "distance": 321,
+            "bearing": 86,
+            "minFL": 285,
+            "maxFL": 450,
+            "trackTrue": 86,
+            "reverseTrack": 266
+          }
+        ]
+      },
+      {
+        "designator": "UW29",
+        "type": "RNAV",
+        "level": "UPPER",
+        "segments": [
+          {
+            "from": "PCL",
+            "to": "UDOVA",
+            "distance": 165,
+            "bearing": 308,
+            "minFL": 285,
+            "maxFL": 450,
+            "trackTrue": 308,
+            "reverseTrack": 128
+          },
+          {
+            "from": "UDOVA",
+            "to": "TEMOS",
+            "distance": 128,
+            "bearing": 269,
+            "minFL": 285,
+            "maxFL": 450,
+            "trackTrue": 269,
+            "reverseTrack": 89
+          },
+          {
+            "from": "TEMOS",
+            "to": "KIBAN",
+            "distance": 72,
+            "bearing": 261,
+            "minFL": 285,
+            "maxFL": 450,
+            "trackTrue": 261,
+            "reverseTrack": 81
+          }
+        ]
+      },
+      {
+        "designator": "UB720",
+        "type": "RNAV",
+        "level": "UPPER",
+        "segments": [
+          {
+            "from": "JUL",
+            "to": "KOLKA",
+            "distance": 117,
+            "bearing": 295,
+            "minFL": 285,
+            "maxFL": 450,
+            "trackTrue": 295,
+            "reverseTrack": 115
+          },
+          {
+            "from": "KOLKA",
+            "to": "MUGOM",
+            "distance": 69,
+            "bearing": 237,
+            "minFL": 285,
+            "maxFL": 450,
+            "trackTrue": 237,
+            "reverseTrack": 57
+          },
+          {
+            "from": "MUGOM",
+            "to": "OLGAS",
+            "distance": 128,
+            "bearing": 93,
+            "minFL": 285,
+            "maxFL": 450,
+            "trackTrue": 93,
+            "reverseTrack": 273
+          }
+        ]
+      },
+      {
+        "designator": "UW15",
+        "type": "RNAV",
+        "level": "UPPER",
+        "segments": [
+          {
+            "from": "URA",
+            "to": "OKASO",
+            "distance": 21,
+            "bearing": 280,
+            "minFL": 285,
+            "maxFL": 450,
+            "trackTrue": 280,
+            "reverseTrack": 100
+          },
+          {
+            "from": "OKASO",
+            "to": "VAKUD",
+            "distance": 92,
+            "bearing": 65,
+            "minFL": 285,
+            "maxFL": 450,
+            "trackTrue": 65,
+            "reverseTrack": 245
+          },
+          {
+            "from": "VAKUD",
+            "to": "CIX",
+            "distance": 138,
+            "bearing": 186,
+            "minFL": 285,
+            "maxFL": 450,
+            "trackTrue": 186,
+            "reverseTrack": 6
+          }
+        ]
+      }
+    ]
+  }
+}

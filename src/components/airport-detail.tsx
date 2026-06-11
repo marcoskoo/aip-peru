@@ -53,6 +53,12 @@ import { Separator } from "@/components/ui/separator"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Skeleton } from "@/components/ui/skeleton"
 import type { Airport, AirportDetail, Obstacle } from "@/lib/types"
+import dynamic from "next/dynamic"
+
+const WeatherPanel = dynamic(
+  () => import("@/components/weather-panel").then((mod) => mod.WeatherPanel),
+  { ssr: false, loading: () => <Skeleton className="h-[300px] w-full" /> }
+)
 
 interface AirportDetailProps {
   airport: Airport
@@ -337,6 +343,10 @@ export function AirportDetailView({ airport, onBack }: AirportDetailProps) {
             <TabsTrigger value="cartas" className="flex-1 min-w-0">
               <Map className="size-4" />
               <span className="hidden sm:inline ml-1.5">Cartas</span>
+            </TabsTrigger>
+            <TabsTrigger value="clima" className="flex-1 min-w-0">
+              <CloudSun className="size-4" />
+              <span className="hidden sm:inline ml-1.5">Clima</span>
             </TabsTrigger>
           </TabsList>
         </ScrollArea>
@@ -913,6 +923,11 @@ export function AirportDetailView({ airport, onBack }: AirportDetailProps) {
               </CardContent>
             </Card>
           )}
+        </TabsContent>
+
+        {/* Clima Tab */}
+        <TabsContent value="clima" className="mt-4">
+          <WeatherPanel icaoCode={airport.icaoCode} />
         </TabsContent>
       </Tabs>
 

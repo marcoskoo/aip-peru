@@ -1,0 +1,1015 @@
+=== Banco de la Nacion - Boulevard Asia.pdf ===
+ AIP - PERÚ                                                                                       AD 2B 31
+                            LISTA DE OTROS AERÓDROMOS - HELIPUERTOS                              30 SEP 20
+
+
+                             SPBN - BANCO DE LA NACIÓN
+             Coordenadas HRP                    Distancia desde la ciudad      Elevación    Temperatura
+     12º05’13.87” S - 077º00’02.43” W                    NIL                    987.53 ft      23.9°C
+             FATO               Orientación        Dimensiones (m)               Tipo        Pendiente
+                                  112°/262°       Cuadrado de 15 x 15          Elevado          2%
+          Superficie            Concreto
+             TLOF                                 Cuadrado de 15 x 15                          NIL
+          Superficie            Concreto
+         Resistencia            Helicópteros tipo Eurocopter EC-155 B1 y/o similares
+ Iluminación y señalización                     Servicios Terrestres                        Horario
+  Señal de identificación “H”                   SEI CAT H3 / WDI                             HJ
+     Comunicaciones ATS                 Distintivo de llamada                  Frecuencia   Horario
+             NIL                                  NIL                              NIL       NIL
+       Radioayudas               ID              Coordenadas                   Frecuencia   Horario
+             NIL                NIL                   NIL                          NIL       NIL
+     Explotador del AD          BANCO DE LA NACIÓN                                          Uso: Privado
+       Observaciones            No se proporcionan servicios ATS/COM/MET/AIS/FIS
+     Sólo operaciones diurnas en condiciones visuales
+
+
+
+                                 SPBA - BOULEVARD ASIA
+             Coordenadas HRP                      Distancia desde la ciudad Elevación       Temperatura
+     12º45’36.38” S - 076º36’11.95” W                        NIL               NIL            8.0°C
+             FATO                Orientación         Dimensiones (m)         Tipo            Pendiente
+                                     250º          Cuadrado de 56 x 56        NIL              NIL
+          Superficie             Terreno nivelado de césped
+             TLOF                                    Cuadrado 20 x 20                          NIL
+          Superficie             Losa de concreto
+         Resistencia             Helicópteros ligeros hasta 5700 kg
+ Iluminación y señalización                       Servicios Terrestres                      Horario
+  Bordes TLOF LGTD para                    SEI* (Ver Observaciones) / WDI                    HJ
+  operaciones VFR - noche
+     Comunicaciones ATS                  Distintivo de llamada              Frecuencia      Horario
+             NIL                                   NIL                         NIL           NIL
+       Radioayudas                ID              Coordenadas               Frecuencia      Horario
+             NIL                 NIL                   NIL                     NIL           NIL
+     Explotador del AD           HELI ABAD S.A.C.                                           Uso: Privado
+      Observaciones              No se proporcionan servicios ATS/COM/MET/AIS/FIS
+     Sólo operaciones diurnas y nocturnas en condiciones visuales
+     SEI: Extintor de polvo químico seco (PQS) de 50 kg (*) NTC 002/2017
+
+
+
+CORPAC S.A.                                    AIS - PERÚ                                       AMDT 27/20
+
+=== Bretaña Puesto 1 - Bretaña Puesto 2.pdf ===
+AD 2B 32                                                                                        AIP - PERÚ
+30 SEP 20
+
+
+                                       SPBR - BRETAÑA -
+                                  Puesto de Estacionamiento N° 01
+
+             Coordenadas HRP                   Distancia desde la ciudad     Elevación      Temperatura
+     05°14’42.73” S - 074°19’45.17” W                       NIL              360.89 ft         30°C
+             FATO              Orientación         Dimensiones (m)            Tipo           Pendiente
+                                 275°/082°       Rectángulo de 25 x 21       Superficie        0.5 %
+          Superficie           Loza de concreto
+             TLOF                                Circular con radio 21 m                       NIL
+          Superficie           Loza de concreto
+          Resistencia          Helicópteros tipo MI-8AMT y/o similares
+ Iluminación y señalización                    Servicios Terrestres                         Horario
+  Señal de identificación “H”                  SEI CAT H3* / WDI                             HJ
+     Comunicaciones ATS                Distintivo de llamada                 Frecuencia     Horario
+             AFIS                                NIL                             NIL         NIL
+        Radioayudas             ID              Coordenadas                  Frecuencia     Horario
+             NIL               NIL                   NIL                         NIL         NIL
+     Explotador del AD         PETROTAL PERU S.R.L.                                         Uso: Privado
+       Observaciones           Sólo operaciones diurnas en condiciones visuales.
+     (*) Cuenta con agente complementario: 01 extintor rodante de 50 kg.
+
+
+
+
+                                       SPBR - BRETAÑA
+                                  Puesto de Estacionamiento N° 02
+
+             Coordenadas HRP                    Distancia desde la ciudad      Elevación    Temperatura
+       05°14’42.29” S - 074°19’43.81” W                     NIL                360.89 ft       30°C
+             FATO               Orientación         Dimensiones (m)             Tipo         Pendiente
+                                   275°/082°      Rectángulo de 30 x 21        Superficie      0.5 %
+          Superficie            Loza de concreto
+             TLOF                                 Circular con radio 21 m                      NIL
+          Superficie            Loza de concreto
+          Resistencia           Helicópteros tipo MI-8AMT y/o similares
+ Iluminación y señalización                     Servicios Terrestres                        Horario
+  Señal de identificación “H”                   SEI CAT H3* / WDI                            HJ
+     Comunicaciones ATS                 Distintivo de llamada                  Frecuencia   Horario
+             AFIS                                 NIL                             NIL        NIL
+        Radioayudas              ID              Coordenadas                   Frecuencia   Horario
+             NIL                NIL                   NIL                         NIL        NIL
+     Explotador del AD          PETROTAL PERU S.R.L.                                        Uso: Privado
+        Observaciones           Sólo operaciones diurnas en condiciones visuales.
+     (*) Cuenta con agente complementario: 01 extintor rodante de 50 kg.
+
+
+
+AMDT 27/20                                     AIS - PERÚ                                      CORPAC S.A.
+
+=== Bretaña.pdf ===
+AIP PERÚ                                                                                               AD 3 SPBR - 1
+CORPAC S.A.                                                                                             30 JUL 2025
+
+
+           SPBR AD 3.1 INDICADOR DE UBICACIÓN Y NOMBRE DEL HELIPUERTO
+                SPBR AD 3.1 HELIPORT LOCATION INDICATOR AND NAME
+
+                     SPBR - HELIPUERTO PRIVADO BRETAÑA
+       SPBR AD 3.2 DATOS GEOGRÁFICOS Y ADMINISTRATIVOS DEL HELIPUERTO
+         SPBR AD 3.2 HELIPORT GEOGRAPHICAL AND ADMINISTRATIVE DATA
+
+  1   Coordenadas del helipuerto y sitio en
+      el helipuerto                             051443S 0741946W
+                                                NIL
+      Heliport coordinates and site at heliport
+  2   Dirección y distancia de la ciudad
+                                                NIL
+      Direction and distance from (city)
+  3   Elevación/Temperatura de referencia
+      (Temperatura baja media)
+                                                Elev: 360.89 FT (110 M) / T: 30° C (Mean Low T: NIL)
+      Elevation / Reference temperature
+      (Mean Low temperature)
+  4   Ondulación geoidal en el helipuerto
+      ELEV PSN                                  NIL
+      Geoid undulation at heliport ELEV PSN
+  5   Variación magnética / Cambio anual
+                                                NIL
+      MAG VAR / Annual change
+  6   Administración de helipuerto, dirección,
+      teléfono, telefax, télex, AFS             PETROTAL PERÚ S.R.L.
+      Heliport Administration, address,         Puinahua, Requena, Loreto
+      telephone, telefax, telex, AFS
+  7   Tipos de tráfico permitidos (IFR/VFR)
+                                                VFR
+      Types of traffic permitted (IFR/VFR)
+  8   Observaciones                             Uso: Privado
+      Remarks                                   Use: Private
+
+
+                             SPBR AD 3.3 HORAS DE FUNCIONAMIENTO
+                                SPBR AD 3.3 OPERATIONAL HOURS
+
+  1   Administración de helipuerto
+                                              HJ
+      Heliport Administration
+  2   Aduanas e inmigración
+                                              NIL
+      Customs and immigration
+  3   Servicios sanitarios
+                                              NIL
+      Health and sanitation
+  4   Oficina de información AIS
+                                              NIL
+      AIS Briefing Office
+  5   Oficina de notificación ATS (ARO)
+                                              NIL
+      ATS Reporting Office (ARO)
+  6   Oficina de información MET
+                                              HJ
+      MET Briefing Office
+  7   ATS
+                                              HJ
+      ATS
+  8   Abastecimiento de combustible           NIL
+
+
+
+CORPAC S.A.                                                                                            AMDT 33/2025
+AD 3 SPBR - 2                                                                                            AIP PERÚ
+30 JUL 2025                                                                                            CORPAC S.A.
+
+
+    Fuelling
+  9 Servicios de despacho
+                                                   NIL
+    Handling
+ 10 Seguridad
+                                                   NIL
+    Security
+ 11 Descongelamiento
+                                                   NIL
+    De-icing
+ 12 Observaciones                                  Estación AFIS y de información meteorológica electrónica / AFIS
+    Remarks                                        and electronic meteorological information station
+
+
+                      SPBR AD 3.4 SERVICIOS E INSTALACIONES DE ESCALA
+                        SPBR AD 3.4 HANDLING SERVICES AND FACILITIES
+
+  1   Instalaciones de manipulación de
+      carga                                        NIL
+      Cargo-handling facilities
+  2   Tipos de combustible / lubricantes           To be translated: NIL
+      Fuel / oil types                             To be translated: NIL
+                                                   Fuel: NIL
+                                                   Oil: NIL
+  3   Instalaciones / capacidad de
+      abastecimiento de combustible                NIL
+      Fuelling facilities/capacity
+  4   Instalaciones de deshielo
+                                                   NIL
+      De-icing facilities
+  5   Espacio en hangar para helicópteros
+      de visita                                    NIL
+      Hangar space for visiting helicopters
+  6   Instalaciones para reparación de
+      helicópteros de visita                       NIL
+      Repair facilities for visiting helicopters
+  7   Observaciones
+                                                   NIL
+      Remarks
+
+                           SPBR AD 3.5 INSTALACIONES PARA PASAJEROS
+                               SPBR AD 3.5 PASSENGER FACILITIES
+
+  1   Hoteles
+                                                   NIL
+      Hotels
+  2   Restaurantes
+                                                   NIL
+      Restaurants
+  3   Transporte
+                                                   NIL
+      Transportation
+  4   Instalaciones y servicios médicos
+                                                   NIL
+      Medical facilities
+  5   Oficina bancaria y correo                    To be translated: NIL
+      Bank and Post Office                         To be translated: NIL
+                                                   Bank: NIL
+                                                   Post: NIL
+  6   Oficina de turismo                           NIL
+
+
+
+AMDT 33/2025                                                                                           CORPAC S.A.
+AIP PERÚ                     AD 3 SPBR - 3
+CORPAC S.A.                   30 JUL 2025
+
+
+      Tourist Office
+  7   Observaciones
+                       NIL
+      Remarks
+
+
+
+
+CORPAC S.A.                  AMDT 33/2025
+AD 3 SPBR - 4                                                                                     AIP PERÚ
+30 JUL 2025                                                                                     CORPAC S.A.
+
+
+          SPBR AD 3.6 SERVICIOS DE SALVAMENTO Y EXTINCIÓN DE INCENDIOS
+                 SPBR AD 3.6 RESCUE AND FIRE FIGHTING SERVICES
+
+  1   Categoría del helipuerto para extinción
+      de incendios                              CAT H3
+      Heliport category for fire fighting
+  2   Equipo de salvamento
+                                                NIL
+      Rescue equipment
+  3   Capacidad para retirar helicópteros
+      inutilizados
+                                                NIL
+      Capability for removal of disabled
+      helicopters
+  4   Observaciones
+                                                NIL
+      Remarks
+
+                         SPBR AD 3.7 DISPONIBILIDAD POR TEMPORADA
+                        REMOCIÓN DE OBSTÁCULOS EN LA SUPERFICIE
+                        SPBR AD 3.7 SEASONAL AVAILABILITY CLEARING
+
+  1   Tipos de equipos de remoción de
+      obstáculos                             NIL
+      Types of clearing equipment
+  2   Prioridades de remoción de obstáculos
+                                             NIL
+      Clearance priorities
+  3   Uso de material para el tratamiento de
+      superficies del área de movimiento
+                                             NIL
+      Use of material for movement area
+      surface treatment
+  4   Pistas de invierno especialmente
+      preparadas                             NIL
+      Specially prepared winter runways
+  5   Observaciones
+                                             NIL
+      Remarks
+
+                      SPBR AD 3.8 DATOS DE PLATAFORMAS, CALLES
+                       DE RODAJE Y POSICIONES DE VERIFICACIÓN
+                SPBR AD 3.8 APRONS, TAXIWAYS AND CHECK LOCATIONS DATA
+
+  1   Superficie y resistencia de las                 Designador           Superficie        Resistencia
+      plataformas de helicópteros                     Designator            Surface           Strength
+      Apron/Helicopter stands surface and                NIL                  NIL                NIL
+      strength
+  2   Ancho, superficie y resistencia de la      Designador        Ancho        Superficie    Resistencia
+      calle de rodaje en tierra                   de TWY
+      Ground taxiway width, surface and          Designator        Width         Surface        Strength
+      strength                                    of TWY
+                                                    NIL             NIL            NIL            NIL
+
+
+
+
+AMDT 33/2025                                                                                    CORPAC S.A.
+AIP PERÚ                                                                                       AD 3 SPBR - 5
+CORPAC S.A.                                                                                     30 JUL 2025
+
+
+  3   Ancho y designación de calles de           Designador                     Ancho
+      rodaje aéreo                                de TWY
+      Air taxiway width and designation          Designator                     Width
+                                                  of TWY
+                                                    NIL                             NIL
+  4   Ubicación y elevación de los puntos de
+      control del altímetro
+                                             NIL
+      Altimeter checkpoint location and
+      elevation
+  5   Puntos de verificación de VOR
+                                             NIL
+      VOR checkpoints
+  6   Puntos de verificación de INS
+                                             NIL
+      INS checkpoints
+  7   Observaciones
+                                             NIL
+      Remarks
+
+                                SPBR AD 3.9 SEÑALES Y BALIZAS
+                              SPBR AD 3.9 MARKINGS AND MARKERS
+
+  1   Señales FATO
+                                              NIL
+      FATO markings
+  2   TWY, aérea TWY, balizas de ruta de
+      tránsito aéreo                          NIL
+      TWY, air TWY, air transit route markers
+  3   Observaciones
+                                              NIL
+      Remarks
+
+                          SPBR AD 3.10 OBSTÁCULOS DEL HELIPUERTO
+                             SPBR AD 3.10 HELIPORT OBSTACLES
+
+      OBST ID / Designación                                                               Señales/
+                                                                              ELEV/
+                                          Tipo OBST           Posición OBST                Tipo, Observaciones
+                                                                               HGT
+                                                                                           color
+      OBST ID / Designation                                                               Markings/
+                                                                              ELEV/
+                                          OBST type           OBST position                Type,    Remarks
+                                                                               HGT
+                                                                                           colour
+                1                            2                     3            4            5         6
+NIL
+
+             SPBR AD 3.11 INFORMACIÓN METEOROLÓGICA PROPORCIONADA
+               SPBR AD 3.11 METEOROLOGICAL INFORMATION PROVIDED
+
+  1   Oficina MET asociada
+                                              EMA
+      Associated MET Office
+  2   Horario de servicio
+      Oficina MET fuera del horario de
+      atención                                HJ
+      Hours of service
+      MET Office outside hours
+
+
+
+
+CORPAC S.A.                                                                                    AMDT 33/2025
+AD 3 SPBR - 6                                                                            AIP PERÚ
+30 JUL 2025                                                                            CORPAC S.A.
+
+
+  3 Oficina responsable de la preparación
+    de TAF
+    Período de validez                     NIL
+    Office responsible for TAF preparation
+    Period of validity
+  4 Disponibilidad, pronóstico de
+    tendencias e
+    Intervalo de emisión                   NIL
+    Trend forecast
+    Interval of issuance
+  5 Información/consulta proporcionada
+                                           NIL
+    Briefing/consultation provided
+  6 Documentación de vuelo e
+    Idioma(s) utilizado(s)
+                                           NIL
+    Flight documentation
+    Language(s) used
+  7 Cartas y otra información disponible
+    para información o consulta
+                                           NIL
+    Charts and other information available
+    for briefing or consultation
+  8 Equipo suplementario disponible para
+    proporcionar información
+                                           NIL
+    Supplementary equipment available for
+    providing information
+  9 Dependencia ATS a las que se
+    proporcionó información                AFIS SPBR
+    ATS units provided with information
+ 10 Otra Información adicional (limitación
+    del servicio, etc.)
+                                           NIL
+    Additional information (limitation of
+    service, etc.)
+
+                            SPBR AD 3.12 DATOS DEL HELIPUERTO
+                               SPBR AD 3.12 HELIPORT DATA
+
+  1   Tipo de helipuerto
+                                           NIL
+      Heliport type
+  2   Dimensiones de la TLOF
+                                           NIL
+      TLOF dimensions
+  3   Rumbos FATO y GEO                    FATO 013/193 - 013 13.00°
+      FATO, GEO bearings                   FATO 013/193 - 193 193.00°
+  4   Dimensiones de la FATO y tipo de SFC
+                                           FATO 013/193 25.4 x 25.4 M. Surface: CONC
+      FATO dimensions and SFC type
+  5   Resistencia de la TLOF, SFC y BRG
+                                           TLOF Surface: CONC. Strength: NIL
+      TLOF, SFC and BRG strength
+  6   Coordenadas del centro geométrico
+      TLOF o THR de la FATO y ondulación
+      del geoide                           TLOF 051443S 0741946W / GUND: NIL
+      Coordinates of geometric centre TLOF
+      or THR of FATO and geoid undulation
+
+
+
+
+AMDT 33/2025                                                                           CORPAC S.A.
+AIP PERÚ                                                                                       AD 3 SPBR - 7
+CORPAC S.A.                                                                                     30 JUL 2025
+
+
+  7   TLOF/FATO, elevación y pendiente    TLOF: NIL
+      TLOF/FATO, elevation and slope      FATO 013/193 - 013 Slope: 0.5%
+                                          FATO 013/193 - 193 Slope: 0.5%
+  8   Dimensiones del área de seguridad
+                                          NIL
+      Safety area dimensions
+  9 Dimensiones de la CWY de la HEL
+                                          NIL
+    HEL CWY dimensions
+ 10 Sector libre de obstáculos
+                                          NIL
+    Obstacle-free sector
+ 11 Observaciones                         Área de seguridad: Se extiende hacia fuera de los bordes laterales
+    Remarks                               de la FATO de manera irregular. / Safety area: It extends out
+                                          irregularly from the lateral edges of the FATO.
+                                          Superficie: Adyacente a la FATO / Surface: Adjacent to FATO
+                                          Compuesto por terreno natural / Composed of natural terrain
+                                          TLOF Circular. Radio: 21.0 m. / TLOF Circle. Radio: 21.0 m.
+                                          Pendiente Transversal: 0.5% / Transversal Slope: 0.5%
+
+
+
+
+CORPAC S.A.                                                                                    AMDT 33/2025
+AD 3 SPBR - 8                                                                     AIP PERÚ
+30 JUL 2025                                                                     CORPAC S.A.
+
+
+                             SPBR AD 3.13 DISTANCIAS DECLARADAS
+                              SPBR AD 3.13 DECLARED DISTANCES
+
+          TODAH                      RTODAH                        LDAH   Observaciones
+            (M)                        (M)                          (M)     Remarks
+             1                           2                          3          4
+                                                    FATO 013/193
+            NIL                         NIL                        NIL        NIL
+                                                    FATO 013/193
+            NIL                         NIL                        NIL        NIL
+
+                        SPBR AD 3.14 LUCES DE APROXIMACIÓN Y FATO
+                         SPBR AD 3.14 APPROACH AND FATO LIGHTING
+
+  1   tipo de sistema APP LGT, LEN, INTST
+                                              NIL
+      APP LGT system type, LEN, INTST
+  2   Tipo de sistema visual indicador de
+      pendiente de aproximación
+                                              NIL
+      Type of visual approach slope indicator
+      system
+  3   Características y emplazamiento del
+      LGT del área FATO
+                                              NIL
+      FATO area LGT characteristics and
+      location
+  4   Características y emplazamiento del
+      punto de mira LGT
+                                              NIL
+      Aiming point LGT characteristics and
+      location
+  5   Características y emplazamiento del
+      sistema TLOF LGT
+                                              NIL
+      TLOF LGT system characteristics and
+      location
+  6   Observaciones
+                                              NIL
+      Remarks
+
+             SPBR AD 3.15 OTRAS LUCES, FUENTE SECUNDARIA DE ENERGÍA
+              SPBR AD 3.15 OTHER LIGHTING, SECONDARY POWER SUPPLY
+
+  1   Emplazamiento, características y
+      horario de operación del helipuerto
+      BCN                                    NIL
+      Heliport BCN location, characteristics
+      and hours of operation
+  2   Emplazamiento del LDI y LGT,
+      ubicación del anemómetro y LGT
+                                             WDI
+      LDI location and LGT Anemometer
+      location and LGT
+  3   Iluminación de borde y eje de rodadura
+                                             NIL
+      TWY edge and centre line lighting
+  4   Alimentación secundaria/tiempo de
+                                             NIL
+      conmutación
+
+
+
+AMDT 33/2025                                                                    CORPAC S.A.
+AIP PERÚ                                                                                                            AD 3 SPBR - 9
+CORPAC S.A.                                                                                                          30 JUL 2025
+
+
+      Secondary power supply/switch-over
+      time
+  5   Observaciones                                      Señal de Área de aproximación final y despegue / Final approach
+      Remarks                                            and take-off area markings
+                                                         Señal de Área de toma de contacto y elevación inicial / Touchdown
+                                                         zone and initial elevation area markings
+                                                         Señal de punto de toma de contacto y posicionamiento /
+                                                         Touchdown zone and positioning markings
+                                                         Señal de identificación de helipuerto "H" / Heliport identification
+                                                         marking "H"
+
+                                        SPBR AD 3.16 ESPACIO AÉREO ATS
+                                          SPBR AD 3.16 ATS AIRSPACE
+
+    Designación y             Límites         Clasificación          Idioma(s)      Altitud de     Horas de         Observaciones
+   límites laterales         verticales       del espacio           distintivo de   transición     aplicación
+                                                 aéreo            llamada de la
+                                                                  dependencia
+                                                                         ATS
+    Designation          Vertical limits        Airspace              ATS unit      Transition      Hours of          Remarks
+  and lateral limits                          classification          call sign      altitude      applicability
+                                                                   Language(s)
+             1                   2                  3                     4             5               6                7
+            NIL                 NIL                NIL                   NIL           NIL             NIL              NIL
+
+                       SPBR AD 3.17 INSTALACIONES DE COMUNICACIÓN ATS
+                          SPBR AD 3.17 ATS COMMUNICATION FACILITIES
+
+   Servicio                     ID                       Frecuencia      SATVOICE Dirección        Horas de        Observaciones
+ designación                                                                         de            operación
+                                                                                  conexión
+   Service                   Callsign                    Frequency       SATVOICE Logon            Hours of          Remarks
+ designation                                                                      address          operation
+       1                        2                            3                 4         5             6                7
+      NIL                      NIL                          NIL               NIL       NIL           NIL              NIL
+
+             SPBR AD 3.18 RADIOAYUDAS PARA LA NAVEGACIÓN Y EL ATERRIZAJE
+                    SPBR AD 3.18 RADIO NAVIGATION AND LANDING AIDS
+
+ Tipo de ayuda         ID            Frecuencia       Horas de         Coordenadas     Elevación        Servicio Observaciones
+   VAR MAG                                            operación       de la ubicación de la antena      volumen
+    Catálogo                                                           de la antena transmisora           radio
+  de ILS/MLS                                                            transmisora       DME            desde
+     DECL                                                                                                GBAS
+                                                                                                       referencia
+                                                                                                         Punto
+                                                                                                         Service
+  Type of aid
+                                                                           Site of       Elevation        volume
+  MAG VAR
+                                                      Hours of          transmitting      of DME           radius
+    CAT of             ID            Frequency                                                                         Remarks
+                                                      operation           antenna      transmitting    from GBAS
+   ILS/MLS
+                                                                        coordinates      antenna        reference
+     DECL
+                                                                                                            Point
+       1                2                3                  4                 5               6              7            8
+      NIL              NIL              NIL                NIL               NIL             NIL            NIL          NIL
+
+
+
+CORPAC S.A.                                                                                                         AMDT 33/2025
+AD 3 SPBR - 10                                                                                   AIP PERÚ
+30 JUL 2025                                                                                    CORPAC S.A.
+
+
+
+                  SPBR AD 3.19 REGLAMENTO LOCAL PARA HELIPUERTOS
+                      SPBR AD 3.19 LOCAL HELIPORT REGULATIONS
+
+Se Autorizan operaciones diurnas bajo reglas de vuelo   Daylight operations are authorized under Visual Flight
+visual (VFR)                                            Rules (VFR)
+Helicóptero MI-17 y/o similares                         Helicopter MI-17 and/or similar
+
+
+                 SPBR AD 3.20 PROCEDIMIENTOS DE REDUCCIÓN DE RUIDO
+                     SPBR AD 3.20 NOISE ABATEMENT PROCEDURES
+
+NIL                                                     NIL
+
+
+                           SPBR AD 3.21 PROCEDIMIENTOS DE VUELO
+                              SPBR AD 3.21 FLIGHT PROCEDURES
+
+NIL                                                     NIL
+
+
+                             SPBR AD 3.22 INFORMACIÓN ADICIONAL
+                             SPBR AD 3.22 ADDITIONAL INFORMATION
+
+NIL                                                     NIL
+
+
+                      SPBR AD 3.23 CARTAS RELATIVAS AL HELIPUERTO
+                       SPBR AD 3.23 CHARTS RELATED TO A HELIPORT
+
+
+
+
+AMDT 33/2025                                                                                   CORPAC S.A.
+
+=== Canto Grande - Cashiriari 1.pdf ===
+ AIP - PERÚ                                                                                         AD 2B 33
+                                                                                                   30 SEP 20
+
+
+                                   SPCG - CANTO GRANDE
+             Coordenadas HRP                    Distancia desde la ciudad        Elevación    Temperatura
+     11°57’32.30” S - 076°59’57.01” W                    NIL                      925 ft          NIL
+             FATO               Orientación        Dimensiones (m)                 Tipo        Pendiente
+                                 035°/215°       Círculo de 5 m de radio           NIL           1.0 %
+          Superficie            Concreto en un radio de 3.20 m, el resto a nivel de césped
+             TLOF                               Círculo de 4.20 m de radio                      NIL
+          Superficie            Concreto en un radio de 3.20 m, el resto a nivel de césped
+         Resistencia            Helicópteros con un peso menor a 5700 kg
+ Iluminación y señalización                     Servicios Terrestres                          Horario
+  Señal de identificación “H”                   SEI CAT H1 / WDI                               HJ
+          Señal TLOF
+     Comunicaciones ATS                 Distintivo de llamada                    Frecuencia   Horario
+             NIL                                  NIL                                NIL       NIL
+       Radioayudas              ID               Coordenadas                     Frecuencia   Horario
+             NIL                NIL                   NIL                            NIL       NIL
+     Explotador del AD          HELI ABAD S.A.C.                                              Uso: Privado
+       Observaciones            No se proporcionan servicios ATS/COM/MET/AIS/FIS.
+     Sólo operaciones diurnas en condiciones visuales.
+
+
+
+
+                                     SPCA - CASHIRIARI 1
+             Coordenadas HRP                     Distancia desde la ciudad    Elevación     Temperatura
+     11º44’03.09” S - 072º52’28.02” W                       NIL               2089.43 ft        30°C
+             FATO               Orientación         Dimensiones (m)            Tipo          Pendiente
+                                  114º/294º       Cuadrado de 25 x 25           NIL              NIL
+          Superficie            A nivel de terreno mejorado compactado y planchas de duroplástico
+             TLOF                                 Cuadrado de 21 x 21                           NIL
+          Superficie            Compuesta por planchas de duroplástico
+         Resistencia            Helicópteros del tipo MI-17 y/o similares
+ Iluminación y señalización                      Servicios Terrestres                        Horario
+             NIL                                 SEI CAT H3 / WDI                               HJ
+     Comunicaciones ATS                  Distintivo de llamada                Frecuencia     Horario
+             NIL                                   NIL                           NIL            NIL
+       Radioayudas               ID               Coordenadas                 Frecuencia     Horario
+             NIL                NIL                    NIL                       NIL            NIL
+     Explotador del AD          PLUSPETROL PERÚ                                              Uso: Privado
+       Observaciones            No se proporcionan servicios ATS/COM/MET/AIS/FIS.
+     Sólo operaciones diurnas y en condiciones visuales.
+
+
+
+
+CORPAC S.A.                                     AIS - PERÚ                                        AMDT 27/20
+
+=== Cashiriari 3 - Clinica Delgado.pdf ===
+AD 2B 34                                                                                         AIP - PERÚ
+30 SEP 20
+
+
+                                     SPCS - CASHIRIARI 3
+             Coordenadas HRP                     Distancia desde la ciudad     Elevación    Temperatura
+     11º52’49.09” S - 072º38’57.16” W                     NIL                    2267 ft        32.5°C
+             FATO               Orientación         Dimensiones (m)             Tipo         Pendiente
+                                  070º/250º       Cuadrado de 25 x 25            NIL             NIL
+          Superficie            A nivel de terreno mejorado compactado y planchas de duroplástico
+             TLOF                                 Cuadrado de 21 x 21                           NIL
+          Superficie            Compuesta por planchas de duroplástico
+         Resistencia            Helicópteros del tipo MI-17 y/o similares
+ Iluminación y señalización                      Servicios Terrestres                        Horario
+             NIL                                  SEI CAT H3 / WDI                              HJ
+     Comunicaciones ATS                  Distintivo de llamada                 Frecuencia    Horario
+             NIL                                   NIL                            NIL           NIL
+       Radioayudas               ID               Coordenadas                  Frecuencia    Horario
+             NIL                NIL                    NIL                        NIL           NIL
+     Explotador del AD                                    Observaciones
+     PLUSPETROL PERU            No se proporcionan servicios ATS/COM/MET/AIS/FIS.
+     CORPORATION S.A.           Sólo operaciones diurnas y en condiciones visuales.
+         Uso: Privado
+
+
+
+                                SPCD - CLÍNICA DELGADO
+             Coordenadas HRP                    Distancia desde la ciudad      Elevación      Temperatura
+     12°06’48.75” S - 077°01’59.49” W                    NIL                     469 ft           NIL
+             FATO               Orientación        Dimensiones (m)               Tipo          Pendiente
+                                 034°/214°      Círculo de 6.5 m de radio      Elevado           0.0 %
+         Superficie             Losas de concreto
+             TLOF                               Círculo de 6.5 m de radio                        NIL
+         Superficie             Losas de concreto
+         Resistencia            Aeronaves de clase de performance 1, longitud total hasta 13 m y máximo
+     .                          peso bruto 3350 kg. Helicópteros del modelo BK-117
+ Iluminación y señalización                     Servicios Terrestres                           Horario
+  Señal de identificación “H”                    SEI CAT H1 / WDI                                HJ
+         Señal TLOF
+     Comunicaciones ATS                 Distintivo de llamada                  Frecuencia      Horario
+             NIL                                  NIL                              NIL           NIL
+       Radioayudas               ID              Coordenadas                   Frecuencia      Horario
+             NIL                NIL                   NIL                          NIL           NIL
+     Explotador del AD                                   Observaciones
+     MEDIC SER S.A.C.           No se proporcionan servicios ATS/COM/MET/AIS/FIS.
+        Uso: Privado            Sólo operaciones diurnas bajo reglas de vuelo visual (VFR).
+
+
+AMDT 27/20                                     AIS - PERÚ                                       CORPAC S.A.
+
+=== Diospi Suyana - El Valor Estacion 7.pdf ===
+ AIP - PERÚ                                                                                     AD 2B 35
+                                                                                               30 SEP 20
+
+
+                                   SPDY - DIOSPI SUYANA
+              Coordenadas HRP                     Distancia desde la ciudad Elevación     Temperatura
+          13º32’54” S - 072º42’35” W                       NIL               8566.27 ft       NIL
+              FATO               Orientación         Dimensiones (m)          Tipo         Pendiente
+                                      340º        Cuadrado de 19.90 x 19.90   NIL            0.1 %
+          Superficie             Concreto
+              TLOF                                  Cuadrado de 9 x 9                        NIL
+          Superficie             Concreto
+          Resistencia            Aeronaves menores a 5700 kg
+ Iluminación y señalización                       Servicios Terrestres                    Horario
+  Señal de identificación “H”                          SEI* / WDI                          HJ
+     Comunicaciones ATS                   Distintivo de llamada             Frecuencia    Horario
+              NIL                                   NIL                         NIL        NIL
+        Radioayudas               ID               Coordenadas              Frecuencia    Horario
+              NIL                NIL                    NIL                     NIL        NIL
+     Explotador del AD           ASOCIACIÓN CIVIL RELIGIOSA DIOSPI SUYANA                 Uso: Privado
+        Observaciones            No se proporcionan servicios ATS/COM/MET/AIS/FIS.
+     Sólo operaciones diurnas bajo reglas de vuelo visual (VFR).
+     Sentido de aterrizajes: 020° - Sentido de despegues: 290°
+     (*) SEI: Extintor de 50 kg
+
+
+
+                             SPEV - EL VALOR ESTACIÓN 7
+             Coordenadas HRP                    Distancia desde la ciudad   Elevación     Temperatura
+       05º40’15.4” S - 078º38’25.0” W                    NIL                1444 ft         33.9°C
+             FATO               Orientación         Dimensiones (m)          Tipo          Pendiente
+                                  051º/231º        Cuadrado de 26 x 26        NIL            NIL
+          Superficie            Losa de concreto
+             TLOF                                  Cuadrado de 21 x 21                       NIL
+          Superficie            Losa de concreto
+         Resistencia            Helicópteros del tipo MI-17 y/o similares
+ Iluminación y señalización                     Servicios Terrestres                      Horario
+             NIL                                   SEI CAT H3 / WDI                        HJ
+     Comunicaciones ATS                 Distintivo de llamada               Frecuencia    Horario
+             AFIS                                 NIL                          NIL         NIL
+       Radioayudas               ID              Coordenadas                Frecuencia    Horario
+             NIL                NIL                   NIL                      NIL         NIL
+     Explotador del AD          PETROPERÚ S.A.                                            Uso: Privado
+     Observaciones              Se brnda Información de Vuelo (AFIS).
+     No se proporcionan servicios COM/MET/AIS.
+     Sólo operaciones diurnas y en condiciones visuales.
+
+
+
+CORPAC S.A.                                    AIS - PERÚ                                     AMDT 27/20
+
+=== Fernando Rosas - Helinka.pdf ===
+AD 2B 36                                                                                          AIP - PERÚ
+30 SEP 20
+
+
+             SPMO - FERNANDO ROSAS - ESTACIÓN MORONA
+            Coordenadas HRP                    Distancia desde la ciudad     Elevación       Temperatura
+      03º59’03.30” S - 077º13’38.00” W                  NIL                    543 ft          28.50°C
+            FATO               Orientación         Dimensiones (m)            Tipo            Pendiente
+                                 040º/220º     Rectángulo de 35.55 x 26        NIL               NIL
+         Superficie            Losa de concreto
+            TLOF                                  Cuadrado de 21 x 21                           NIL
+         Superficie            Losa de concreto
+        Resistencia            Helicópteros del tipo MI-17 y/o similares
+Iluminación y señalización                     Servicios Terrestres                          Horario
+            NIL                                   SEI CAT H3 / WDI                            HJ
+    Comunicaciones ATS                 Distintivo de llamada                 Frecuencia      Horario
+            NIL                                  NIL                            NIL           NIL
+      Radioayudas               ID              Coordenadas                  Frecuencia      Horario
+            NIL                NIL                   NIL                        NIL           NIL
+    Explotador del AD          PETROPERÚ S.A.                                                Uso: Privado
+     Observaciones             No se proporcionan servicios COM/MET/AIS.
+    Sólo operaciones diurnas y en condiciones visuales.
+
+
+
+
+                                         SPIK - HELINKA
+             Coordenadas HRP                     Distancia desde la ciudad      Elevación    Temperatura
+     06º30’55.50” S - 076º22’29.90” W               2.7 km de Tarapoto              800 ft       NIL
+             FATO               Orientación         Dimensiones (m)               Tipo        Pendiente
+                                 040º/220º       Rectángulo de 15 x 13          Superficie      3.0 %
+          Superficie            A nivel de losa de concreto
+             TLOF                                Cuadrado de 10.80 x 10.80                      0.0 %
+          Superficie            A nivel de losa de concreto
+         Resistencia            Helicópteros longitud total no exceder de 13 m tales como
+                                MBB BK 117 y similares
+ Iluminación y señalización                      Servicios Terrestres                         Horario
+    Bordes de FATO y TLOF                          SEI CAT H1 / WDI                            HJ
+     Comunicaciones ATS                  Distintivo de llamada                  Frecuencia    Horario
+             NIL                                   NIL                              NIL        NIL
+       Radioayudas               ID               Coordenadas                   Frecuencia    Horario
+             NIL                NIL                    NIL                          NIL        NIL
+     Explotador del AD          HELINKA S.A.C.                                                Uso: Privado
+       Observaciones            No se proporcionan servicios ATS/COM/MET/AIS/FIS/RCCI.
+     Sólo operaciones diurnas y en condiciones visuales.
+
+
+
+
+AMDT 27/20                                     AIS - PERÚ                                        CORPAC S.A.
+
+=== Interbank Lima - Jockey Plaza.pdf ===
+ AIP - PERÚ                                                                                      AD 2B 37
+                                                                                                09 SEP 21
+
+                                 SPKE - INTERBANK LIMA
+              Coordenadas HRP                     Distancia desde la ciudad   Elevación    Temperatura
+         12º05’22.1” S - 077º01’22” W                     NIL                  827 ft          NIL
+              FATO               Orientación         Dimensiones (m)           Tipo         Pendiente
+                                  022º/202º       Círculo de 10.10 m de radio Elevado          NIL
+           Superficie            Metálica
+              TLOF                                Círculo de 3.80 m de radio                 NIL
+           Superficie            Metálica
+          Resistencia            Helicópteros ligeros hasta 3000 kg
+ Iluminación y señalización                       Servicios Terrestres                     Horario
+      Bordes FATO LGTD                                    WDI                               HJ
+    Identificación WDI/TLOF
+     Comunicaciones ATS                  Distintivo de llamada                Frecuencia   Horario
+              NIL                                  NIL                           NIL        NIL
+       Radioayudas               ID               Coordenadas                 Frecuencia   Horario
+              NIL                NIL                    NIL                      NIL        NIL
+     Explotador del AD           PROMOTORA INTERCORP S.A.
+       Observaciones             No se proporcionan servicios ATS/COM/MET/AIS/FIS/RCCI.
+     Sólo operaciones diurnas y en condiciones visuales.
+
+
+
+                                   SPJP - JOCKEY PLAZA
+             Coordenadas HRP                     Distancia desde la ciudad     Elevación  Temperatura
+     12°05’14.01” S - 076°58’35.77” W                     NIL                  684 ft         27°C
+             FATO                Orientación        Dimensiones (m)             Tipo       Pendiente
+                                   328°/210°      Cuadrado de 20 x 20          Elevado       1.0 %
+          Superficie             Concreto
+             TLOF                                Círculo de 5.40 m de radio                  NIL
+          Superficie             Concreto
+         Resistencia             Helicópteros con un peso menor a 5700 kg (12,500 libras)
+ Iluminación y señalización                      Servicios Terrestres                      Horario
+  Señal de identificación “H”                     SEI CAT H1 / WDI                          HJ
+     Bordes FATO / TLOF
+     Comunicaciones ATS                  Distintivo de llamada                 Frecuencia  Horario
+             NIL                                   NIL                            NIL       NIL
+       Radioayudas                ID              Coordenadas                  Frecuencia  Horario
+             NIL                 NIL                   NIL                        NIL       NIL
+     Explotador del AD           ADMINISTRADORA JOCKEY PLAZA SHOPPING CENTER S.A. Uso: Privado
+       Observaciones             No se proporcionan servicios ATS/COM/MET/AIS/FIS.
+     Operaciones diurnas en condiciones meteorológicas de vuelo visual.
+     Sentido de aterrizajes: 148°/328° - Sentido de despegues: 210°/030°
+
+
+CORPAC S.A.                                   AIS - PERÚ                                       AMDT 29/21
+
+=== Kinteroni - La Calera.pdf ===
+AD 2B 38                                                                                           AIP - PERÚ
+09 SEP 21
+
+                                       SPKR - KINTERONI
+             Coordenadas HRP                    Distancia desde la ciudad        Elevación      Temperatura
+     11º30’34.80” S - 073º15’05.40” W                    NIL                     1317 ft            30°C
+             FATO               Orientación         Dimensiones (m)               Tipo           Pendiente
+                                  030º/210°       Cuadrado de 19 x 19              Superficie       NIL
+          Superficie            Planchas de material matting de 0.05 m de espesor colocado sobre
+                                geomembrana y terreno afirmado compactado.
+             TLOF                                 Cuadrado de 19 x 19                               NIL
+          Superficie            Planchas de material matting de 0.05 m de espesor colocado sobre
+                                geomembrana y terreno afirmado compactado.
+         Resistencia            Bell 214 y/o similares
+ Iluminación y señalización                     Servicios Terrestres                             Horario
+  Señal de identificación “H”                     SEI CAT H2 / WDI                                 HJ
+          Señal TLOF
+     Comunicaciones ATS                 Distintivo de llamada                    Frecuencia      Horario
+             NIL                                   NIL                              NIL            NIL
+       Radioayudas               ID               Coordenadas                    Frecuencia      Horario
+             NIL                NIL                    NIL                          NIL            NIL
+     Explotador del AD          REPSOL EXPLORACIÓN PERÚ S.A.                             Uso: Privado
+      Observaciones             No se proporcionan servicios ATS/COM/MET/AIS/FIS.
+     Operaciones diurnas en condiciones visuales (VFR).
+     Sentido de despegue: 210° (una sola dirección) / Sentido de aterrizaje: 030° (una sola dirección).
+
+                                       SPCE - LA CALERA
+             Coordenadas HRP                     Distancia desde la ciudad Elevación         Temperatura
+     13º27’14.76” S - 076º01’43.09” W                    NIL                702 ft              NIL
+             FATO               Orientación         Dimensiones (m)          Tipo             Pendiente
+                                  090º/270°       Cuadrado de 12 x 12        NIL                1.0 %
+          Superficie            Terreno nivelado de césped
+             TLOF                                 Cuadrado de 12 x 12                            NIL
+          Superficie            Terreno nivelado de césped
+          Resistencia           Helicópteros ligeros hasta 5700 kg
+ Iluminación y señalización                      Servicios Terrestres                         Horario
+        Indicador WDI                             SEI CAT H1 / WDI                             HJ
+          Señal TLOF
+     Comunicaciones ATS                 Distintivo de llamada              Frecuencia         Horario
+             NIL                                  NIL                          NIL             NIL
+       Radioayudas               ID              Coordenadas               Frecuencia         Horario
+             NIL                NIL                   NIL                      NIL             NIL
+     Explotador del AD          HELI ABAD S.A.C.                                              Uso: Privado
+      Observaciones             No se proporcionan servicios ATS/COM/MET/AIS/FIS.
+     Operaciones diurnas en condiciones visuales.
+
+
+AMDT 29/21                                      AIS - PERÚ                                        CORPAC S.A.
+
+=== La Portada - La Vista Estacion 5.pdf ===
+ AIP - PERÚ                                                                                        AD 2B 39
+                                                                                                  09 SEP 21
+
+
+                                        SPPP - LA PORTADA
+            Coordenadas HRP                     Distancia desde la ciudad    Elevación      Temperatura
+     14°08’39.04” S - 075°38’45.21” W             12.6 km SE de Plaza de      1457 ft          32°C
+                                                       Armas de Ica
+              FATO              Orientación         Dimensiones (m)           Tipo           Pendiente
+                                 220°/040°      Círculo de 5 m de radio        NIL             0%
+           Superficie           Material granular afirmado
+              TLOF                              Círculo de 4.5 m de radio                       NIL
+           Superficie           Material granular afirmado
+          Resistencia           Helicópteros con un peso menor a 5700 kg (12500 libras)
+  Iluminación y señalización                    Servicios Terrestres                         Horario
+   Señal de identificación “H”                    SEI CAT H1 / WDI                            HJ
+          Señal TLOF
+      Comunicaciones ATS                  Distintivo de llamada              Frecuencia      Horario
+              NIL                                   NIL                         NIL           NIL
+        Radioayudas                ID              Coordenadas               Frecuencia      Horario
+              NIL                 NIL                   NIL                     NIL           NIL
+      Explotador del AD           HELI ABAD S.A.C.                                           Uso: Privado
+       Observaciones              No se proporcionan servicios ATS/COM/MET/AIS/FIS.
+      Operaciones diurnas en condiciones visuales.
+      Sentido de aterrizajes: 040°/220° - Sentido de despegues: 220°/040°
+
+
+                              SPVS - LA VISTA - ESTACIÓN 5
+               Coordenadas HRP                   Distancia desde la ciudad       Elevación    Temperatura
+        04º39’14.31” S - 077º30’21.41” W                  NIL                      945 ft        28°C
+               FATO              Orientación         Dimensiones (m)              Tipo         Pendiente
+                                   093º/273º        Cuadrado de 26 x 26          Superficie       NIL
+           Superficie            Losa de concreto
+               TLOF                              Cuadrado de 21.5 x 21.5                          NIL
+           Superficie            Losa de concreto
+          Resistencia            Helicópteros del tipo MI-17 y/o similares
+  Iluminación y señalización                     Servicios Terrestres                          Horario
+    Señal de identificación “H”                     SEI CAT H3 / WDI                             HJ
+      Comunicaciones ATS                 Distintivo de llamada                   Frecuencia    Horario
+               NIL                                 NIL                              NIL          NIL
+        Radioayudas               ID              Coordenadas                    Frecuencia    Horario
+               NIL               NIL                   NIL                          NIL          NIL
+      Explotador del AD                                   Observaciones
+       PETROPERÚ S.A.            No se proporcionan servicios AFIS/COM/MET/AIS.
+        Uso: Privado             Sólo operaciones diurnas y en condiciones visuales.
+                                 Sentido de aterrizajes: 093°/273° - Sentido de despegues: 093°/273°
+
+
+CORPAC S.A.                                    AIS - PERÚ                                       AMDT 29/21
+

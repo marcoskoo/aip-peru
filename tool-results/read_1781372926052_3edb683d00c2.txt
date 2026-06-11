@@ -1,0 +1,919 @@
+     1→     1→"use client"
+     2→     2→
+     3→     3→import { useState, useMemo, useEffect, useCallback } from "react"
+     4→     4→import { motion, AnimatePresence } from "framer-motion"
+     5→     5→import {
+     6→     6→  Thermometer, Wind, Gauge, Sun, ArrowRightLeft, Calculator,
+     7→     7→  RotateCcw, Mountain, Compass, Cloud, Clock, Plane, Search, Check
+     8→     8→} from "lucide-react"
+     9→     9→import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+    10→    10→import { Badge } from "@/components/ui/badge"
+    11→    11→import { Button } from "@/components/ui/button"
+    12→    12→import { Input } from "@/components/ui/input"
+    13→    13→import { Label } from "@/components/ui/label"
+    14→    14→import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+    15→    15→import {
+    16→    16→  Select,
+    17→    17→  SelectContent,
+    18→    18→  SelectItem,
+    19→    19→  SelectTrigger,
+    20→    20→  SelectValue,
+    21→    21→} from "@/components/ui/select"
+    22→    22→import {
+    23→    23→  Command,
+    24→    24→  CommandEmpty,
+    25→    25→  CommandGroup,
+    26→    26→  CommandInput,
+    27→    27→  CommandItem,
+    28→    28→  CommandList,
+    29→    29→} from "@/components/ui/command"
+    30→    30→import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+    31→    31→
+    32→    32→// ─── Airport Data for Selector ──────────────────────────────────
+    33→    33→
+    34→    34→interface AirportOption {
+    35→    35→  icaoCode: string
+    36→    36→  name: string
+    37→    37→  city: string
+    38→    38→  elevation: string
+    39→    39→  arpLatitude: string | null
+    40→    40→  arpLongitude: string | null
+    41→    41→  category: string | null
+    42→    42→}
+    43→    43→
+    44→    44→// ─── Parse DMS to Decimal ───────────────────────────────────────
+    45→    45→
+    46→    46→function dmsToDecimal(dms: string | null | undefined): number | null {
+    47→    47→  if (!dms) return null
+    48→    48→  // Parse formats like: 12°00'23.00"S, 077°07'07.00"W
+    49→    49→  const match = dms.match(/(\d+)°(?:(\d+)['′])?(?:(\d+(?:\.\d+)?)['″"])?\s*([NSEW])/i)
+    50→    50→  if (!match) return null
+    51→    51→  const degrees = parseFloat(match[1])
+    52→    52→  const minutes = match[2] ? parseFloat(match[2]) : 0
+    53→    53→  const seconds = match[3] ? parseFloat(match[3]) : 0
+    54→    54→  const direction = match[4].toUpperCase()
+    55→    55→  let decimal = degrees + minutes / 60 + seconds / 3600
+    56→    56→  if (direction === 'S' || direction === 'W') decimal = -decimal
+    57→    57→  return decimal
+    58→    58→}
+    59→    59→
+    60→    60→// ─── Airport Selector Component ────────────────────────────────
+    61→    61→
+    62→    62→interface AirportSelectorProps {
+    63→    63→  onAirportSelect: (airport: {
+    64→    64→    icaoCode: string
+    65→    65→    latitude: number
+    66→    66→    longitude: number
+    67→    67→    elevationFt: number
+    68→    68→  }) => void
+    69→    69→  selectedIcao?: string
+    70→    70→}
+    71→    71→
+    72→    72→function AirportSelector({ onAirportSelect }: AirportSelectorProps) {
+    73→    73→  const [airports, setAirports] = useState<AirportOption[]>([])
+    74→    74→  const [loading, setLoading] = useState(true)
+    75→    75→  const [open, setOpen] = useState(false)
+    76→    76→  const [selected, setSelected] = useState<AirportOption | null>(null)
+    77→    77→
+    78→    78→  useEffect(() => {
+    79→    79→    async function fetchAirports() {
+    80→    80→      try {
+    81→    81→        const res = await fetch('/api/airports')
+    82→    82→        if (res.ok) {
+    83→    83→          const data = await res.json()
+    84→    84→          setAirports(Array.isArray(data) ? data : data.airports || [])
+    85→    85→        }
+    86→    86→      } catch {
+    87→    87→        // silently handle
+    88→    88→      } finally {
+    89→    89→        setLoading(false)
+    90→    90→      }
+    91→    91→    }
+    92→    92→    fetchAirports()
+    93→    93→  }, [])
+    94→    94→
+    95→    95→  const handleSelect = useCallback((airport: AirportOption) => {
+    96→    96→    setSelected(airport)
+    97→    97→    setOpen(false)
+    98→    98→
+    99→    99→    const lat = dmsToDecimal(airport.arpLatitude)
+   100→   100→    const lon = dmsToDecimal(airport.arpLongitude)
+   101→   101→
+   102→   102→    // Extract elevation in feet
+   103→   103→    let elevFt = 0
+   104→   104→    if (airport.elevation) {
+   105→   105→      const ftMatch = airport.elevation.match(/(\d+)\s*ft/)
+   106→   106→      const mMatch = airport.elevation.match(/(\d+)\s*m/)
+   107→   107→      if (ftMatch) elevFt = parseFloat(ftMatch[1])
+   108→   108→      else if (mMatch) elevFt = Math.round(parseFloat(mMatch[1]) * 3.28084)
+   109→   109→    }
+   110→   110→
+   111→   111→    if (lat !== null && lon !== null) {
+   112→   112→      onAirportSelect({
+   113→   113→        icaoCode: airport.icaoCode,
+   114→   114→        latitude: lat,
+   115→   115→        longitude: lon,
+   116→   116→        elevationFt: elevFt,
+   117→   117→      })
+   118→   118→    }
+   119→   119→  }, [onAirportSelect])
+   120→   120→
+   121→   121→  return (
+   122→   122→    <div className="space-y-2">
+   123→   123→      <Label className="flex items-center gap-1.5">
+   124→   124→        <Plane className="size-3.5 text-amber-500" />
+   125→   125→        Seleccionar Aeródromo
+   126→   126→      </Label>
+   127→   127→      <Popover open={open} onOpenChange={setOpen}>
+   128→   128→        <PopoverTrigger asChild>
+   129→   129→          <Button
+   130→   130→            variant="outline"
+   131→   131→            role="combobox"
+   132→   132→            aria-expanded={open}
+   133→   133→            className="w-full justify-start gap-2 font-normal"
+   134→   134→          >
+   135→   135→            {selected ? (
+   136→   136→              <>
+   137→   137→                <Badge className="bg-navy text-white font-bold text-xs px-2 py-0.5 tracking-wider">
+   138→   138→                  {selected.icaoCode}
+   139→   139→                </Badge>
+   140→   140→                <span className="truncate text-sm">{selected.name}</span>
+   141→   141→              </>
+   142→   142→            ) : (
+   143→   143→              <>
+   144→   144→                <Search className="size-4 text-muted-foreground" />
+   145→   145→                <span className="text-muted-foreground">Buscar aeródromo...</span>
+   146→   146→              </>
+   147→   147→            )}
+   148→   148→          </Button>
+   149→   149→        </PopoverTrigger>
+   150→   150→        <PopoverContent className="w-[400px] p-0" align="start">
+   151→   151→          <Command>
+   152→   152→            <CommandInput placeholder="Buscar por código ICAO, nombre o ciudad..." />
+   153→   153→            <CommandList className="max-h-64">
+   154→   154→              <CommandEmpty>No se encontró aeródromo</CommandEmpty>
+   155→   155→              <CommandGroup>
+   156→   156→                {airports.map((airport) => (
+   157→   157→                  <CommandItem
+   158→   158→                    key={airport.icaoCode}
+   159→   159→                    value={`${airport.icaoCode} ${airport.name} ${airport.city}`}
+   160→   160→                    onSelect={() => handleSelect(airport)}
+   161→   161→                    className="flex items-center gap-3"
+   162→   162→                  >
+   163→   163→                    <Badge className={`font-bold text-xs px-2 py-0.5 tracking-wider shrink-0 ${
+   164→   164→                      airport.category === 'INTERNACIONAL'
+   165→   165→                        ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-400'
+   166→   166→                        : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-400'
+   167→   167→                    }`}>
+   168→   168→                      {airport.icaoCode}
+   169→   169→                    </Badge>
+   170→   170→                    <div className="flex-1 min-w-0">
+   171→   171→                      <p className="text-sm truncate">{airport.name}</p>
+   172→   172→                      <p className="text-xs text-muted-foreground">{airport.city} · {airport.elevation}</p>
+   173→   173→                    </div>
+   174→   174→                    {selected?.icaoCode === airport.icaoCode && (
+   175→   175→                      <Check className="size-4 text-amber-500 shrink-0" />
+   176→   176→                    )}
+   177→   177→                  </CommandItem>
+   178→   178→                ))}
+   179→   179→              </CommandGroup>
+   180→   180→            </CommandList>
+   181→   181→          </Command>
+   182→   182→        </PopoverContent>
+   183→   183→      </Popover>
+   184→   184→    </div>
+   185→   185→  )
+   186→   186→}
+   187→   187→
+   188→   188→// ─── Tab 1: Density Altitude ─────────────────────────────────────
+   189→   189→
+   190→   190→function DensityAltitudeTab() {
+   191→   191→  const [pressureAltitude, setPressureAltitude] = useState("")
+   192→   192→  const [temperature, setTemperature] = useState("")
+   193→   193→
+   194→   194→  const handleAirportSelect = useCallback((airport: { icaoCode: string; elevationFt: number }) => {
+   195→   195→    setPressureAltitude(String(airport.elevationFt))
+   196→   196→  }, [])
+   197→   197→
+   198→   198→  const result = useMemo(() => {
+   199→   199→    const pa = parseFloat(pressureAltitude)
+   200→   200→    const temp = parseFloat(temperature)
+   201→   201→    if (isNaN(pa) || isNaN(temp)) return null
+   202→   202→
+   203→   203→    const isaTemp = 15 - (pa / 1000) * 2
+   204→   204→    const da = pa + 120 * (temp - isaTemp)
+   205→   205→    return {
+   206→   206→      densityAltitude: Math.round(da),
+   207→   207→      isaTemp: Math.round(isaTemp * 10) / 10,
+   208→   208→      deviation: Math.round((temp - isaTemp) * 10) / 10,
+   209→   209→    }
+   210→   210→  }, [pressureAltitude, temperature])
+   211→   211→
+   212→   212→  return (
+   213→   213→    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+   214→   214→      <Card>
+   215→   215→        <CardHeader>
+   216→   216→          <CardTitle className="text-base flex items-center gap-2">
+   217→   217→            <Mountain className="size-5 text-amber-500" />
+   218→   218→            Datos de Entrada
+   219→   219→          </CardTitle>
+   220→   220→        </CardHeader>
+   221→   221→        <CardContent className="space-y-4">
+   222→   222→          <AirportSelector onAirportSelect={handleAirportSelect} />
+   223→   223→          <div className="space-y-2">
+   224→   224→            <Label htmlFor="pa">Altitud de Presión (ft)</Label>
+   225→   225→            <Input
+   226→   226→              id="pa"
+   227→   227→              type="number"
+   228→   228→              placeholder="Ej: 5000"
+   229→   229→              value={pressureAltitude}
+   230→   230→              onChange={(e) => setPressureAltitude(e.target.value)}
+   231→   231→            />
+   232→   232→            <p className="text-xs text-muted-foreground">
+   233→   233→              29.92 inHg / 1013.25 hPa en el altímetro
+   234→   234→            </p>
+   235→   235→          </div>
+   236→   236→          <div className="space-y-2">
+   237→   237→            <Label htmlFor="oat">Temperatura Exterior (°C)</Label>
+   238→   238→            <Input
+   239→   239→              id="oat"
+   240→   240→              type="number"
+   241→   241→              placeholder="Ej: 25"
+   242→   242→              value={temperature}
+   243→   243→              onChange={(e) => setTemperature(e.target.value)}
+   244→   244→            />
+   245→   245→            <p className="text-xs text-muted-foreground">
+   246→   246→              OAT — Temperatura real del aire
+   247→   247→            </p>
+   248→   248→          </div>
+   249→   249→          <Button
+   250→   250→            variant="outline"
+   251→   251→            size="sm"
+   252→   252→            className="gap-1.5"
+   253→   253→            onClick={() => { setPressureAltitude(""); setTemperature("") }}
+   254→   254→          >
+   255→   255→            <RotateCcw className="size-3" />
+   256→   256→            Limpiar
+   257→   257→          </Button>
+   258→   258→        </CardContent>
+   259→   259→      </Card>
+   260→   260→
+   261→   261→      <Card className={result ? "border-amber-300 dark:border-amber-700" : ""}>
+   262→   262→        <CardHeader>
+   263→   263→          <CardTitle className="text-base flex items-center gap-2">
+   264→   264→            <Thermometer className="size-5 text-amber-500" />
+   265→   265→            Resultado
+   266→   266→          </CardTitle>
+   267→   267→        </CardHeader>
+   268→   268→        <CardContent>
+   269→   269→          {result ? (
+   270→   270→            <div className="space-y-4">
+   271→   271→              <div className="text-center">
+   272→   272→                <div className="text-xs text-muted-foreground mb-1">Altitud de Densidad</div>
+   273→   273→                <div className="text-4xl font-bold text-amber-600 dark:text-amber-400">
+   274→   274→                  {result.densityAltitude.toLocaleString()}
+   275→   275→                </div>
+   276→   276→                <div className="text-sm text-muted-foreground">pies</div>
+   277→   277→              </div>
+   278→   278→              <div className="grid grid-cols-2 gap-3">
+   279→   279→                <div className="bg-muted/30 rounded-lg p-3 text-center">
+   280→   280→                  <div className="text-xs text-muted-foreground">Temp. ISA</div>
+   281→   281→                  <div className="text-lg font-semibold">{result.isaTemp}°C</div>
+   282→   282→                </div>
+   283→   283→                <div className="bg-muted/30 rounded-lg p-3 text-center">
+   284→   284→                  <div className="text-xs text-muted-foreground">Desviación ISA</div>
+   285→   285→                  <div className={`text-lg font-semibold ${result.deviation > 0 ? "text-red-600 dark:text-red-400" : "text-blue-600 dark:text-blue-400"}`}>
+   286→   286→                    {result.deviation > 0 ? "+" : ""}{result.deviation}°C
+   287→   287→                  </div>
+   288→   288→                </div>
+   289→   289→              </div>
+   290→   290→              <div className="bg-muted/20 rounded-lg p-3 text-xs text-muted-foreground">
+   291→   291→                <strong>Fórmula:</strong> DA = PA + 120 × (OAT − ISA_temp)<br />
+   292→   292→                ISA_temp = 15 − (PA ÷ 1000 × 2)
+   293→   293→              </div>
+   294→   294→            </div>
+   295→   295→          ) : (
+   296→   296→            <div className="text-center py-8 text-muted-foreground">
+   297→   297→              <Thermometer className="size-8 mx-auto mb-2 opacity-30" />
+   298→   298→              <p className="text-sm">Ingrese los datos para calcular</p>
+   299→   299→            </div>
+   300→   300→          )}
+   301→   301→        </CardContent>
+   302→   302→      </Card>
+   303→   303→    </div>
+   304→   304→  )
+   305→   305→}
+   306→   306→
+   307→   307→// ─── Tab 2: Wind Calculator ──────────────────────────────────────
+   308→   308→
+   309→   309→function WindTab() {
+   310→   310→  const [windDir, setWindDir] = useState("")
+   311→   311→  const [windSpeed, setWindSpeed] = useState("")
+   312→   312→  const [course, setCourse] = useState("")
+   313→   313→  const [tas, setTas] = useState("")
+   314→   314→
+   315→   315→  const result = useMemo(() => {
+   316→   316→    const wd = parseFloat(windDir)
+   317→   317→    const ws = parseFloat(windSpeed)
+   318→   318→    const crs = parseFloat(course)
+   319→   319→    const trueAirspeed = parseFloat(tas)
+   320→   320→    if (isNaN(wd) || isNaN(ws) || isNaN(crs) || isNaN(trueAirspeed) || trueAirspeed === 0) return null
+   321→   321→
+   322→   322→    const windAngleRad = ((wd - crs) * Math.PI) / 180
+   323→   323→    const crosswind = ws * Math.sin(windAngleRad)
+   324→   324→    const headwind = ws * Math.cos(windAngleRad)
+   325→   325→    const wca = (Math.asin(crosswind / trueAirspeed) * 180) / Math.PI
+   326→   326→    const heading = (crs + wca + 360) % 360
+   327→   327→    const groundSpeed = trueAirspeed * Math.cos((wca * Math.PI) / 180) - headwind
+   328→   328→
+   329→   329→    return {
+   330→   330→      headwind: Math.round(headwind * 10) / 10,
+   331→   331→      crosswind: Math.round(Math.abs(crosswind) * 10) / 10,
+   332→   332→      groundSpeed: Math.round(groundSpeed * 10) / 10,
+   333→   333→      wca: Math.round(wca * 10) / 10,
+   334→   334→      heading: Math.round(heading),
+   335→   335→      crosswindDirection: crosswind > 0 ? "Derecha" : crosswind < 0 ? "Izquierda" : "Nula",
+   336→   336→      headwindType: headwind > 0 ? "Viento en cara" : headwind < 0 ? "Viento en cola" : "Nulo",
+   337→   337→    }
+   338→   338→  }, [windDir, windSpeed, course, tas])
+   339→   339→
+   340→   340→  return (
+   341→   341→    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+   342→   342→      <Card>
+   343→   343→        <CardHeader>
+   344→   344→          <CardTitle className="text-base flex items-center gap-2">
+   345→   345→            <Wind className="size-5 text-amber-500" />
+   346→   346→            Datos de Entrada
+   347→   347→          </CardTitle>
+   348→   348→        </CardHeader>
+   349→   349→        <CardContent className="space-y-4">
+   350→   350→          <div className="grid grid-cols-2 gap-3">
+   351→   351→            <div className="space-y-2">
+   352→   352→              <Label htmlFor="windDir">Dir. Viento (°)</Label>
+   353→   353→              <Input id="windDir" type="number" placeholder="270" value={windDir} onChange={(e) => setWindDir(e.target.value)} />
+   354→   354→            </div>
+   355→   355→            <div className="space-y-2">
+   356→   356→              <Label htmlFor="windSpeed">Velocidad (kt)</Label>
+   357→   357→              <Input id="windSpeed" type="number" placeholder="15" value={windSpeed} onChange={(e) => setWindSpeed(e.target.value)} />
+   358→   358→            </div>
+   359→   359→          </div>
+   360→   360→          <div className="grid grid-cols-2 gap-3">
+   361→   361→            <div className="space-y-2">
+   362→   362→              <Label htmlFor="course">Rumbo (°)</Label>
+   363→   363→              <Input id="course" type="number" placeholder="250" value={course} onChange={(e) => setCourse(e.target.value)} />
+   364→   364→            </div>
+   365→   365→            <div className="space-y-2">
+   366→   366→              <Label htmlFor="tas">TAS (kt)</Label>
+   367→   367→              <Input id="tas" type="number" placeholder="120" value={tas} onChange={(e) => setTas(e.target.value)} />
+   368→   368→            </div>
+   369→   369→          </div>
+   370→   370→          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => { setWindDir(""); setWindSpeed(""); setCourse(""); setTas("") }}>
+   371→   371→            <RotateCcw className="size-3" />
+   372→   372→            Limpiar
+   373→   373→          </Button>
+   374→   374→        </CardContent>
+   375→   375→      </Card>
+   376→   376→
+   377→   377→      <Card className={result ? "border-amber-300 dark:border-amber-700" : ""}>
+   378→   378→        <CardHeader>
+   379→   379→          <CardTitle className="text-base flex items-center gap-2">
+   380→   380→            <Compass className="size-5 text-amber-500" />
+   381→   381→            Resultado
+   382→   382→          </CardTitle>
+   383→   383→        </CardHeader>
+   384→   384→        <CardContent>
+   385→   385→          {result ? (
+   386→   386→            <div className="space-y-3">
+   387→   387→              <div className="grid grid-cols-2 gap-3">
+   388→   388→                <ResultBox label="Componente Cara/Cola" value={`${Math.abs(result.headwind)} kt`} sub={result.headwindType} accent={result.headwind > 0} />
+   389→   389→                <ResultBox label="Componente Cruzado" value={`${result.crosswind} kt`} sub={`Desde ${result.crosswindDirection}`} accent />
+   390→   390→                <ResultBox label="Velocidad en Tierra" value={`${result.groundSpeed} kt`} sub="Ground Speed" accent />
+   391→   391→                <ResultBox label="Corrección (WCA)" value={`${result.wca > 0 ? "+" : ""}${result.wca}°`} sub="Wind Correction Angle" accent />
+   392→   392→              </div>
+   393→   393→              <div className="bg-amber-50 dark:bg-amber-950/30 rounded-lg p-4 text-center border border-amber-200 dark:border-amber-800">
+   394→   394→                <div className="text-xs text-amber-700 dark:text-amber-300 mb-1">Heading a mantener</div>
+   395→   395→                <div className="text-3xl font-bold text-amber-600 dark:text-amber-400">{result.heading}°</div>
+   396→   396→              </div>
+   397→   397→            </div>
+   398→   398→          ) : (
+   399→   399→            <div className="text-center py-8 text-muted-foreground">
+   400→   400→              <Wind className="size-8 mx-auto mb-2 opacity-30" />
+   401→   401→              <p className="text-sm">Ingrese los datos para calcular</p>
+   402→   402→            </div>
+   403→   403→          )}
+   404→   404→        </CardContent>
+   405→   405→      </Card>
+   406→   406→    </div>
+   407→   407→  )
+   408→   408→}
+   409→   409→
+   410→   410→// ─── Tab 3: QNH / QFE ────────────────────────────────────────────
+   411→   411→
+   412→   412→function QnhQfeTab() {
+   413→   413→  const [qnh, setQnh] = useState("")
+   414→   414→  const [elevation, setElevation] = useState("")
+   415→   415→
+   416→   416→  const handleAirportSelect = useCallback((airport: { icaoCode: string; elevationFt: number }) => {
+   417→   417→    setElevation(String(airport.elevationFt))
+   418→   418→  }, [])
+   419→   419→
+   420→   420→  const result = useMemo(() => {
+   421→   421→    const q = parseFloat(qnh)
+   422→   422→    const elev = parseFloat(elevation)
+   423→   423→    if (isNaN(q) || isNaN(elev)) return null
+   424→   424→
+   425→   425→    const qfe = q - elev / 30
+   426→   426→    const pressureAltitude = (1013.25 - q) * 30
+   427→   427→    return {
+   428→   428→      qfe: Math.round(qfe * 10) / 10,
+   429→   429→      pressureAltitude: Math.round(pressureAltitude),
+   430→   430→      elevationHpa: Math.round((elev / 30) * 10) / 10,
+   431→   431→    }
+   432→   432→  }, [qnh, elevation])
+   433→   433→
+   434→   434→  return (
+   435→   435→    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+   436→   436→      <Card>
+   437→   437→        <CardHeader>
+   438→   438→          <CardTitle className="text-base flex items-center gap-2">
+   439→   439→            <Gauge className="size-5 text-amber-500" />
+   440→   440→            Datos de Entrada
+   441→   441→          </CardTitle>
+   442→   442→        </CardHeader>
+   443→   443→        <CardContent className="space-y-4">
+   444→   444→          <AirportSelector onAirportSelect={handleAirportSelect} />
+   445→   445→          <div className="space-y-2">
+   446→   446→            <Label htmlFor="qnh">QNH (hPa)</Label>
+   447→   447→            <Input id="qnh" type="number" step="0.1" placeholder="1013.25" value={qnh} onChange={(e) => setQnh(e.target.value)} />
+   448→   448→          </div>
+   449→   449→          <div className="space-y-2">
+   450→   450→            <Label htmlFor="elev">Elevación del aeródromo (ft)</Label>
+   451→   451→            <Input id="elev" type="number" placeholder="516" value={elevation} onChange={(e) => setElevation(e.target.value)} />
+   452→   452→          </div>
+   453→   453→          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => { setQnh(""); setElevation("") }}>
+   454→   454→            <RotateCcw className="size-3" />
+   455→   455→            Limpiar
+   456→   456→          </Button>
+   457→   457→        </CardContent>
+   458→   458→      </Card>
+   459→   459→
+   460→   460→      <Card className={result ? "border-amber-300 dark:border-amber-700" : ""}>
+   461→   461→        <CardHeader>
+   462→   462→          <CardTitle className="text-base flex items-center gap-2">
+   463→   463→            <Gauge className="size-5 text-amber-500" />
+   464→   464→            Resultado
+   465→   465→          </CardTitle>
+   466→   466→        </CardHeader>
+   467→   467→        <CardContent>
+   468→   468→          {result ? (
+   469→   469→            <div className="space-y-4">
+   470→   470→              <div className="bg-amber-50 dark:bg-amber-950/30 rounded-lg p-4 text-center border border-amber-200 dark:border-amber-800">
+   471→   471→                <div className="text-xs text-amber-700 dark:text-amber-300 mb-1">QFE</div>
+   472→   472→                <div className="text-4xl font-bold text-amber-600 dark:text-amber-400">{result.qfe}</div>
+   473→   473→                <div className="text-sm text-muted-foreground">hPa</div>
+   474→   474→              </div>
+   475→   475→              <div className="grid grid-cols-2 gap-3">
+   476→   476→                <ResultBox label="Altitud de Presión" value={`${result.pressureAltitude} ft`} sub="PA desde QNH" accent />
+   477→   477→                <ResultBox label="Corrección Elev." value={`${result.elevationHpa} hPa`} sub={`${elevation} ft ÷ 30`} accent />
+   478→   478→              </div>
+   479→   479→              <div className="bg-muted/20 rounded-lg p-3 text-xs text-muted-foreground">
+   480→   480→                <strong>Fórmula:</strong> QFE = QNH − (Elevación ÷ 30)
+   481→   481→              </div>
+   482→   482→            </div>
+   483→   483→          ) : (
+   484→   484→            <div className="text-center py-8 text-muted-foreground">
+   485→   485→              <Gauge className="size-8 mx-auto mb-2 opacity-30" />
+   486→   486→              <p className="text-sm">Ingrese los datos para calcular</p>
+   487→   487→            </div>
+   488→   488→          )}
+   489→   489→        </CardContent>
+   490→   490→      </Card>
+   491→   491→    </div>
+   492→   492→  )
+   493→   493→}
+   494→   494→
+   495→   495→// ─── Tab 4: Sunrise / Sunset ─────────────────────────────────────
+   496→   496→
+   497→   497→function SunriseSunsetTab() {
+   498→   498→  const [latitude, setLatitude] = useState("-12.0")
+   499→   499→  const [longitude, setLongitude] = useState("-77.0")
+   500→   500→  const [date, setDate] = useState(new Date().toISOString().split("T")[0])
+   501→   501→
+   502→   502→  const handleAirportSelect = useCallback((airport: { icaoCode: string; latitude: number; longitude: number }) => {
+   503→   503→    setLatitude(String(Math.round(airport.latitude * 100) / 100))
+   504→   504→    setLongitude(String(Math.round(airport.longitude * 100) / 100))
+   505→   505→  }, [])
+   506→   506→
+   507→   507→  const result = useMemo(() => {
+   508→   508→    const lat = parseFloat(latitude)
+   509→   509→    const lon = parseFloat(longitude)
+   510→   510→    const d = date ? new Date(date) : new Date()
+   511→   511→    if (isNaN(lat) || isNaN(lon)) return null
+   512→   512→
+   513→   513→    // Simplified NOAA Solar Calculator
+   514→   514→    const dayOfYear = Math.floor((d.getTime() - new Date(d.getFullYear(), 0, 0).getTime()) / 86400000)
+   515→   515→
+   516→   516→    // Solar declination (degrees)
+   517→   517→    const declination = -23.45 * Math.cos((2 * Math.PI / 365) * (dayOfYear + 10))
+   518→   518→    const decRad = (declination * Math.PI) / 180
+   519→   519→    const latRad = (lat * Math.PI) / 180
+   520→   520→
+   521→   521→    // Hour angle for sunrise/sunset (degrees)
+   522→   522→    const cosHourAngle = (Math.sin((-0.833 * Math.PI) / 180) - Math.sin(latRad) * Math.sin(decRad)) /
+   523→   523→      (Math.cos(latRad) * Math.cos(decRad))
+   524→   524→
+   525→   525→    // Civil twilight hour angle
+   526→   526→    const cosCivilTwilight = (Math.sin((-6 * Math.PI) / 180) - Math.sin(latRad) * Math.sin(decRad)) /
+   527→   527→      (Math.cos(latRad) * Math.cos(decRad))
+   528→   528→
+   529→   529→    if (cosHourAngle > 1 || cosHourAngle < -1) {
+   530→   530→      return {
+   531→   531→        isPolar: true,
+   532→   532→        message: cosHourAngle > 1 ? "Noche polar — sin amanecer" : "Día polar — sin atardecer",
+   533→   533→      }
+   534→   534→    }
+   535→   535→
+   536→   536→    const hourAngle = (Math.acos(cosHourAngle) * 180) / Math.PI
+   537→   537→    const civilTwilightAngle = (Math.acos(Math.min(1, Math.max(-1, cosCivilTwilight))) * 180) / Math.PI
+   538→   538→
+   539→   539→    // Equation of time (minutes) — simplified
+   540→   540→    const B = ((2 * Math.PI) / 365) * (dayOfYear - 81)
+   541→   541→    const eotMin = 9.87 * Math.sin(2 * B) - 7.53 * Math.cos(B) - 1.5 * Math.sin(B)
+   542→   542→
+   543→   543→    // Solar noon (minutes from midnight UTC)
+   544→   544→    const solarNoonUTC = 720 - 4 * lon - eotMin
+   545→   545→
+   546→   546→    // Sunrise/sunset UTC (minutes)
+   547→   547→    const sunriseUTC = solarNoonUTC - hourAngle * 4
+   548→   548→    const sunsetUTC = solarNoonUTC + hourAngle * 4
+   549→   549→    const civilDawnUTC = solarNoonUTC - civilTwilightAngle * 4
+   550→   550→    const civilDuskUTC = solarNoonUTC + civilTwilightAngle * 4
+   551→   551→
+   552→   552→    // Daylight duration
+   553→   553→    const daylightMin = sunsetUTC - sunriseUTC
+   554→   554→    const daylightH = Math.floor(daylightMin / 60)
+   555→   555→    const daylightM = Math.round(daylightMin % 60)
+   556→   556→
+   557→   557→    const formatUTC = (minutes: number) => {
+   558→   558→      const h = Math.floor(((minutes % 1440) + 1440) % 1440 / 60)
+   559→   559→      const m = Math.round(((minutes % 1440) + 1440) % 1440 % 60)
+   560→   560→      return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "3")} UTC`
+   561→   561→    }
+   562→   562→
+   563→   563→    return {
+   564→   564→      sunrise: formatUTC(sunriseUTC),
+   565→   565→      sunset: formatUTC(sunsetUTC),
+   566→   566→      civilDawn: formatUTC(civilDawnUTC),
+   567→   567→      civilDusk: formatUTC(civilDuskUTC),
+   568→   568→      daylight: `${daylightH}h ${daylightM}m`,
+   569→   569→      declination: Math.round(declination * 10) / 10,
+   570→   570→      isPolar: false,
+   571→   571→    }
+   572→   572→  }, [latitude, longitude, date])
+   573→   573→
+   574→   574→  return (
+   575→   575→    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+   576→   576→      <Card>
+   577→   577→        <CardHeader>
+   578→   578→          <CardTitle className="text-base flex items-center gap-2">
+   579→   579→            <Sun className="size-5 text-amber-500" />
+   580→   580→            Datos de Entrada
+   581→   581→          </CardTitle>
+   582→   582→        </CardHeader>
+   583→   583→        <CardContent className="space-y-4">
+   584→   584→          <AirportSelector onAirportSelect={handleAirportSelect} />
+   585→   585→          <div className="grid grid-cols-2 gap-3">
+   586→   586→            <div className="space-y-2">
+   587→   587→              <Label htmlFor="lat">Latitud (°)</Label>
+   588→   588→              <Input id="lat" type="number" step="0.01" placeholder="-12.00" value={latitude} onChange={(e) => setLatitude(e.target.value)} />
+   589→   589→              <p className="text-[10px] text-muted-foreground">Negativo = Sur</p>
+   590→   590→            </div>
+   591→   591→            <div className="space-y-2">
+   592→   592→              <Label htmlFor="lon">Longitud (°)</Label>
+   593→   593→              <Input id="lon" type="number" step="0.01" placeholder="-77.00" value={longitude} onChange={(e) => setLongitude(e.target.value)} />
+   594→   594→              <p className="text-[10px] text-muted-foreground">Negativo = Oeste</p>
+   595→   595→            </div>
+   596→   596→          </div>
+   597→   597→          <div className="space-y-2">
+   598→   598→            <Label htmlFor="date">Fecha</Label>
+   599→   599→            <Input id="date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+   600→   600→          </div>
+   601→   601→          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => { setLatitude("-12.0"); setLongitude("-77.0"); setDate(new Date().toISOString().split("T")[0]) }}>
+   602→   602→            <RotateCcw className="size-3" />
+   603→   603→            Reset (Lima)
+   604→   604→          </Button>
+   605→   605→        </CardContent>
+   606→   606→      </Card>
+   607→   607→
+   608→   608→      <Card className={result && !result.isPolar ? "border-amber-300 dark:border-amber-700" : ""}>
+   609→   609→        <CardHeader>
+   610→   610→          <CardTitle className="text-base flex items-center gap-2">
+   611→   611→            <Clock className="size-5 text-amber-500" />
+   612→   612→            Resultado
+   613→   613→          </CardTitle>
+   614→   614→        </CardHeader>
+   615→   615→        <CardContent>
+   616→   616→          {result ? (
+   617→   617→            result.isPolar ? (
+   618→   618→              <div className="text-center py-8">
+   619→   619→                <Sun className="size-8 mx-auto mb-2 text-amber-500" />
+   620→   620→                <p className="font-medium">{result.message}</p>
+   621→   621→              </div>
+   622→   622→            ) : (
+   623→   623→              <div className="space-y-4">
+   624→   624→                <div className="grid grid-cols-2 gap-3">
+   625→   625→                  <div className="bg-amber-50 dark:bg-amber-950/30 rounded-lg p-4 text-center border border-amber-200 dark:border-amber-800">
+   626→   626→                    <Sun className="size-5 mx-auto mb-1 text-amber-500" />
+   627→   627→                    <div className="text-xs text-muted-foreground">Amanecer</div>
+   628→   628→                    <div className="text-xl font-bold text-amber-600 dark:text-amber-400">{result.sunrise}</div>
+   629→   629→                  </div>
+   630→   630→                  <div className="bg-orange-50 dark:bg-orange-950/30 rounded-lg p-4 text-center border border-orange-200 dark:border-orange-800">
+   631→   631→                    <Cloud className="size-5 mx-auto mb-1 text-orange-500" />
+   632→   632→                    <div className="text-xs text-muted-foreground">Atardecer</div>
+   633→   633→                    <div className="text-xl font-bold text-orange-600 dark:text-orange-400">{result.sunset}</div>
+   634→   634→                  </div>
+   635→   635→                </div>
+   636→   636→
+   637→   637→                <div className="grid grid-cols-2 gap-3">
+   638→   638→                  <ResultBox label="Crepúsculo Matutino" value={result.civilDawn} sub="Civil" accent />
+   639→   639→                  <ResultBox label="Crepúsculo Vespertino" value={result.civilDusk} sub="Civil" accent />
+   640→   640→                </div>
+   641→   641→
+   642→   642→                <div className="bg-muted/30 rounded-lg p-3 text-center">
+   643→   643→                  <div className="text-xs text-muted-foreground">Horas de Luz</div>
+   644→   644→                  <div className="text-2xl font-bold">{result.daylight}</div>
+   645→   645→                </div>
+   646→   646→              </div>
+   647→   647→            )
+   648→   648→          ) : (
+   649→   649→            <div className="text-center py-8 text-muted-foreground">
+   650→   650→              <Sun className="size-8 mx-auto mb-2 opacity-30" />
+   651→   651→              <p className="text-sm">Ingrese coordenadas válidas</p>
+   652→   652→            </div>
+   653→   653→          )}
+   654→   654→        </CardContent>
+   655→   655→      </Card>
+   656→   656→    </div>
+   657→   657→  )
+   658→   658→}
+   659→   659→
+   660→   660→// ─── Tab 5: Unit Converter ────────────────────────────────────────
+   661→   661→
+   662→   662→type UnitCategory = "altitude" | "distance" | "speed" | "pressure" | "temperature" | "volume"
+   663→   663→
+   664→   664→interface ConversionPair {
+   665→   665→  from: string
+   666→   666→  to: string
+   667→   667→  fromLabel: string
+   668→   668→  toLabel: string
+   669→   669→  convert: (v: number) => number
+   670→   670→  reverse: (v: number) => number
+   671→   671→}
+   672→   672→
+   673→   673→const conversions: Record<UnitCategory, { label: string; icon: React.ComponentType<{ className?: string }>; pairs: ConversionPair[] }> = {
+   674→   674→  altitude: {
+   675→   675→    label: "Altitud",
+   676→   676→    icon: Mountain,
+   677→   677→    pairs: [
+   678→   678→      { from: "ft", to: "m", fromLabel: "Pies (ft)", toLabel: "Metros (m)", convert: (v) => v * 0.3048, reverse: (v) => v / 0.3048 },
+   679→   679→    ],
+   680→   680→  },
+   681→   681→  distance: {
+   682→   682→    label: "Distancia",
+   683→   683→    icon: ArrowRightLeft,
+   684→   684→    pairs: [
+   685→   685→      { from: "NM", to: "km", fromLabel: "Millas Náuticas", toLabel: "Kilómetros", convert: (v) => v * 1.852, reverse: (v) => v / 1.852 },
+   686→   686→      { from: "NM", to: "mi", fromLabel: "Millas Náuticas", toLabel: "Millas Estatutarias", convert: (v) => v * 1.15078, reverse: (v) => v / 1.15078 },
+   687→   687→    ],
+   688→   688→  },
+   689→   689→  speed: {
+   690→   690→    label: "Velocidad",
+   691→   691→    icon: Wind,
+   692→   692→    pairs: [
+   693→   693→      { from: "kt", to: "kmh", fromLabel: "Nudos (kt)", toLabel: "km/h", convert: (v) => v * 1.852, reverse: (v) => v / 1.852 },
+   694→   694→      { from: "kt", to: "mph", fromLabel: "Nudos (kt)", toLabel: "mph", convert: (v) => v * 1.15078, reverse: (v) => v / 1.15078 },
+   695→   695→    ],
+   696→   696→  },
+   697→   697→  pressure: {
+   698→   698→    label: "Presión",
+   699→   699→    icon: Gauge,
+   700→   700→    pairs: [
+   701→   701→      { from: "hPa", to: "inHg", fromLabel: "HectoPascals", toLabel: "Pulgadas Hg", convert: (v) => v * 0.02953, reverse: (v) => v / 0.02953 },
+   702→   702→    ],
+   703→   703→  },
+   704→   704→  temperature: {
+   705→   705→    label: "Temperatura",
+   706→   706→    icon: Thermometer,
+   707→   707→    pairs: [
+   708→   708→      { from: "°C", to: "°F", fromLabel: "Celsius", toLabel: "Fahrenheit", convert: (v) => (v * 9) / 5 + 32, reverse: (v) => ((v - 32) * 5) / 9 },
+   709→   709→    ],
+   710→   710→  },
+   711→   711→  volume: {
+   712→   712→    label: "Volumen",
+   713→   713→    icon: ArrowRightLeft,
+   714→   714→    pairs: [
+   715→   715→      { from: "gal", to: "L", fromLabel: "Galones (US)", toLabel: "Litros", convert: (v) => v * 3.78541, reverse: (v) => v / 3.78541 },
+   716→   716→    ],
+   717→   717→  },
+   718→   718→}
+   719→   719→
+   720→   720→function UnitConverterTab() {
+   721→   721→  const [category, setCategory] = useState<UnitCategory>("altitude")
+   722→   722→  const [inputValue, setInputValue] = useState("")
+   723→   723→  const [direction, setDirection] = useState<"forward" | "reverse">("forward")
+   724→   724→
+   725→   725→  const currentCategory = conversions[category]
+   726→   726→  const pair = currentCategory.pairs[0]
+   727→   727→
+   728→   728→  const result = useMemo(() => {
+   729→   729→    const v = parseFloat(inputValue)
+   730→   730→    if (isNaN(v)) return null
+   731→   731→    if (direction === "forward") {
+   732→   732→      return Math.round(pair.convert(v) * 10000) / 10000
+   733→   733→    }
+   734→   734→    return Math.round(pair.reverse(v) * 10000) / 10000
+   735→   735→  }, [inputValue, direction, pair])
+   736→   736→
+   737→   737→  const fromLabel = direction === "forward" ? pair.fromLabel : pair.toLabel
+   738→   738→  const toLabel = direction === "forward" ? pair.toLabel : pair.fromLabel
+   739→   739→  const fromUnit = direction === "forward" ? pair.from : pair.to
+   740→   740→  const toUnit = direction === "forward" ? pair.to : pair.from
+   741→   741→
+   742→   742→  return (
+   743→   743→    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+   744→   744→      <Card>
+   745→   745→        <CardHeader>
+   746→   746→          <CardTitle className="text-base flex items-center gap-2">
+   747→   747→            <ArrowRightLeft className="size-5 text-amber-500" />
+   748→   748→            Conversor
+   749→   749→          </CardTitle>
+   750→   750→          <CardDescription>Seleccione categoría y converse entre unidades</CardDescription>
+   751→   751→        </CardHeader>
+   752→   752→        <CardContent className="space-y-4">
+   753→   753→          <div className="space-y-2">
+   754→   754→            <Label>Categoría</Label>
+   755→   755→            <Select value={category} onValueChange={(v) => { setCategory(v as UnitCategory); setInputValue("") }}>
+   756→   756→              <SelectTrigger>
+   757→   757→                <SelectValue />
+   758→   758→              </SelectTrigger>
+   759→   759→              <SelectContent>
+   760→   760→                {Object.entries(conversions).map(([key, cat]) => {
+   761→   761→                  const CatIcon = cat.icon
+   762→   762→                  return (
+   763→   763→                    <SelectItem key={key} value={key}>
+   764→   764→                      <div className="flex items-center gap-2">
+   765→   765→                        <CatIcon className="size-3.5" />
+   766→   766→                        {cat.label}
+   767→   767→                      </div>
+   768→   768→                    </SelectItem>
+   769→   769→                  )
+   770→   770→                })}
+   771→   771→              </SelectContent>
+   772→   772→            </Select>
+   773→   773→          </div>
+   774→   774→
+   775→   775→          <div className="space-y-2">
+   776→   776→            <Label>{fromLabel}</Label>
+   777→   777→            <div className="flex gap-2">
+   778→   778→              <Input
+   779→   779→                type="number"
+   780→   780→                step="any"
+   781→   781→                placeholder="Ingrese valor"
+   782→   782→                value={inputValue}
+   783→   783→                onChange={(e) => setInputValue(e.target.value)}
+   784→   784→              />
+   785→   785→              <Badge variant="outline" className="h-10 flex items-center px-3 text-xs font-mono">{fromUnit}</Badge>
+   786→   786→            </div>
+   787→   787→          </div>
+   788→   788→
+   789→   789→          <div className="flex justify-center">
+   790→   790→            <Button
+   791→   791→              variant="ghost"
+   792→   792→              size="sm"
+   793→   793→              className="gap-1.5"
+   794→   794→              onClick={() => setDirection(direction === "forward" ? "reverse" : "forward")}
+   795→   795→            >
+   796→   796→              <ArrowRightLeft className="size-3.5" />
+   797→   797→              Invertir ({toLabel} → {fromLabel})
+   798→   798→            </Button>
+   799→   799→          </div>
+   800→   800→
+   801→   801→          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setInputValue("")}>
+   802→   802→            <RotateCcw className="size-3" />
+   803→   803→            Limpiar
+   804→   804→          </Button>
+   805→   805→        </CardContent>
+   806→   806→      </Card>
+   807→   807→
+   808→   808→      <Card className={result !== null ? "border-amber-300 dark:border-amber-700" : ""}>
+   809→   809→        <CardHeader>
+   810→   810→          <CardTitle className="text-base flex items-center gap-2">
+   811→   811→            <Calculator className="size-5 text-amber-500" />
+   812→   812→            Resultado
+   813→   813→          </CardTitle>
+   814→   814→        </CardHeader>
+   815→   815→        <CardContent>
+   816→   816→          {result !== null ? (
+   817→   817→            <div className="space-y-4">
+   818→   818→              <div className="bg-amber-50 dark:bg-amber-950/30 rounded-lg p-6 text-center border border-amber-200 dark:border-amber-800">
+   819→   819→                <div className="text-xs text-amber-700 dark:text-amber-300 mb-1">{toLabel}</div>
+   820→   820→                <div className="text-4xl font-bold text-amber-600 dark:text-amber-400">
+   821→   821→                  {result.toLocaleString(undefined, { maximumFractionDigits: 4 })}
+   822→   822→                </div>
+   823→   823→                <div className="text-sm text-muted-foreground mt-1 font-mono">{toUnit}</div>
+   824→   824→              </div>
+   825→   825→
+   826→   826→              <div className="bg-muted/20 rounded-lg p-3 text-xs text-muted-foreground text-center">
+   827→   827→                {parseFloat(inputValue).toLocaleString()} {fromUnit} = {result.toLocaleString(undefined, { maximumFractionDigits: 4 })} {toUnit}
+   828→   828→              </div>
+   829→   829→            </div>
+   830→   830→          ) : (
+   831→   831→            <div className="text-center py-8 text-muted-foreground">
+   832→   832→              <ArrowRightLeft className="size-8 mx-auto mb-2 opacity-30" />
+   833→   833→              <p className="text-sm">Ingrese un valor para convertir</p>
+   834→   834→            </div>
+   835→   835→          )}
+   836→   836→        </CardContent>
+   837→   837→      </Card>
+   838→   838→    </div>
+   839→   839→  )
+   840→   840→}
+   841→   841→
+   842→   842→// ─── Result Box Sub-component ─────────────────────────────────────
+   843→   843→
+   844→   844→function ResultBox({ label, value, sub, accent }: { label: string; value: string; sub?: string; accent?: boolean }) {
+   845→   845→  return (
+   846→   846→    <div className="bg-muted/30 rounded-lg p-3 text-center">
+   847→   847→      <div className="text-xs text-muted-foreground">{label}</div>
+   848→   848→      <div className={`text-lg font-semibold ${accent ? "text-amber-600 dark:text-amber-400" : ""}`}>{value}</div>
+   849→   849→      {sub && <div className="text-[10px] text-muted-foreground">{sub}</div>}
+   850→   850→    </div>
+   851→   851→  )
+   852→   852→}
+   853→   853→
+   854→   854→// ─── Main Component ───────────────────────────────────────────────
+   855→   855→
+   856→   856→export function AeronauticalCalculator() {
+   857→   857→  return (
+   858→   858→    <div className="space-y-6">
+   859→   859→      {/* Header */}
+   860→   860→      <div className="flex items-center gap-3">
+   861→   861→        <div className="flex items-center justify-center size-10 rounded-xl bg-amber-100 dark:bg-amber-950/50">
+   862→   862→          <Calculator className="size-5 text-amber-600 dark:text-amber-400" />
+   863→   863→        </div>
+   864→   864→        <div>
+   865→   865→          <h2 className="text-xl font-bold tracking-tight">Calculadora Aeronáutica</h2>
+   866→   866→          <p className="text-sm text-muted-foreground">Herramientas de cálculo para operaciones de vuelo</p>
+   867→   867→        </div>
+   868→   868→      </div>
+   869→   869→
+   870→   870→      {/* Tabs */}
+   871→   871→      <Tabs defaultValue="density" className="w-full">
+   872→   872→        <TabsList className="w-full sm:w-auto grid grid-cols-3 sm:inline-flex h-auto gap-1 p-1">
+   873→   873→          <TabsTrigger value="density" className="gap-1.5 text-xs sm:text-sm">
+   874→   874→            <Mountain className="size-3.5 sm:size-4" />
+   875→   875→            <span className="hidden sm:inline">Alt. Densidad</span>
+   876→   876→            <span className="sm:hidden">Densidad</span>
+   877→   877→          </TabsTrigger>
+   878→   878→          <TabsTrigger value="wind" className="gap-1.5 text-xs sm:text-sm">
+   879→   879→            <Wind className="size-3.5 sm:size-4" />
+   880→   880→            <span className="hidden sm:inline">Viento</span>
+   881→   881→            <span className="sm:hidden">Viento</span>
+   882→   882→          </TabsTrigger>
+   883→   883→          <TabsTrigger value="qnh" className="gap-1.5 text-xs sm:text-sm">
+   884→   884→            <Gauge className="size-3.5 sm:size-4" />
+   885→   885→            <span className="hidden sm:inline">QNH/QFE</span>
+   886→   886→            <span className="sm:hidden">QNH</span>
+   887→   887→          </TabsTrigger>
+   888→   888→          <TabsTrigger value="sunrise" className="gap-1.5 text-xs sm:text-sm">
+   889→   889→            <Sun className="size-3.5 sm:size-4" />
+   890→   890→            <span className="hidden sm:inline">Amanecer</span>
+   891→   891→            <span className="sm:hidden">Sol</span>
+   892→   892→          </TabsTrigger>
+   893→   893→          <TabsTrigger value="converter" className="gap-1.5 text-xs sm:text-sm col-span-2 sm:col-span-1">
+   894→   894→            <ArrowRightLeft className="size-3.5 sm:size-4" />
+   895→   895→            <span className="hidden sm:inline">Conversor</span>
+   896→   896→            <span className="sm:hidden">Convertir</span>
+   897→   897→          </TabsTrigger>
+   898→   898→        </TabsList>
+   899→   899→
+   900→   900→        <TabsContent value="density" className="mt-4">
+   901→   901→          <DensityAltitudeTab />
+   902→   902→        </TabsContent>
+   903→   903→        <TabsContent value="wind" className="mt-4">
+   904→   904→          <WindTab />
+   905→   905→        </TabsContent>
+   906→   906→        <TabsContent value="qnh" className="mt-4">
+   907→   907→          <QnhQfeTab />
+   908→   908→        </TabsContent>
+   909→   909→        <TabsContent value="sunrise" className="mt-4">
+   910→   910→          <SunriseSunsetTab />
+   911→   911→        </TabsContent>
+   912→   912→        <TabsContent value="converter" className="mt-4">
+   913→   913→          <UnitConverterTab />
+   914→   914→        </TabsContent>
+   915→   915→      </Tabs>
+   916→   916→    </div>
+   917→   917→  )
+   918→   918→}
+   919→   919→

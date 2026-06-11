@@ -1,0 +1,92 @@
+[
+  {
+    "url": "https://www.faa.gov/media/101831",
+    "name": "[PDF] ENR 3.1 REGIONAL (INTERNATIONAL) ATS ROUTES - FAA",
+    "snippet": "1 Regional (International) ATS routes are defined by reporting points or waypoints, and are depicted on appropriate Enroute charts. Routes have been assigned a ...\n1.1.2 Letters L, M, N and P indicate routes which are area navigation. (RNAV) routes, and letters A, B, G and R indicate routes which are not area.",
+    "host_name": "www.faa.gov",
+    "rank": 0,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.icao.int/sites/default/files/sp-files/SAM/Documents/2010/SAMIG5/SAMIG5_WP03.pdf",
+    "name": "[PDF] SAM/IG/5 WP/03 - ICAO",
+    "snippet": "This working paper proposes to the Meeting to proceed with the review of the results of the First SAM Workshop on ATS Routes Network ...",
+    "host_name": "www.icao.int",
+    "rank": 1,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://aviation.stackexchange.com/questions/9681/where-to-find-a-waypoints-fixed-points-navaids-and-airports-database",
+    "name": "Where to find a waypoints/fixed points, navaids and airports database?",
+    "snippet": "I wonder if it is possible to download a database with waypoints, navaids, airports and airways between them.",
+    "host_name": "aviation.stackexchange.com",
+    "rank": 2,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://eng.libretexts.org/Bookshelves/Aerospace_Engineering/Fundamentals_of_Aerospace_Engineering_(Arnedo)/10%3A_Air_navigation-_ATM/10.03%3A_Airspace_Management_(ASM)/10.3.01%3A_ATS_routes",
+    "name": "10.3.1: ATS routes - Engineering LibreTexts",
+    "snippet": "A waypoint is a predetermined geographical position that is defined in terms of latitude/longitude coordinates (altitude is ignored). Waypoints ...",
+    "host_name": "eng.libretexts.org",
+    "rank": 3,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.facebook.com/groups/189783768317059/posts/1713957669232987",
+    "name": "In aviation, different types of routes are used to guide aircraft from",
+    "snippet": "These routes are categorized based on specific navigation standards and technologies into three main types: Conventional Routes, RNAV Routes, ...",
+    "host_name": "www.facebook.com",
+    "rank": 4,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.instagram.com/p/DAu5UN6oP4U/?hl=en",
+    "name": "ATS Route Explained ! Have you ever wondered how pilots navigate",
+    "snippet": "ATS Routes are defined by waypoints, which can be ground-based navigation aids like VORs or GPS coordinates. Pilots program these waypoints into ...",
+    "host_name": "www.instagram.com",
+    "rank": 5,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://recursosdeaviacion.com/wp-content/uploads/2023/04/eawm_south_america-1.pdf",
+    "name": "[PDF] Jeppesen Airway Manual — South America - Recursos de Aviación",
+    "snippet": "This Manual has been developed to provide current information in the condensed form required for air navigation under instrument and/or visual flight conditions ...",
+    "host_name": "recursosdeaviacion.com",
+    "rank": 6,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.vnaic.vn/images/stories/vnaic.vn/TaiLieu/TaiLieuKhac/Asia_Pacific_Region_ATS_Route_Catalogue.pdf",
+    "name": "[PDF] asia/pacific region ats route catalogue - Vnaic",
+    "snippet": "Chapter A lists ATS routes which have been contained in the BANP. Chapter A will be amended by the. Regional Office subsequent to approval of an ...\nChapters 1 to 4 list ATS routes proposed by States and international organizations in accordance with their geographical disposition. These ...",
+    "host_name": "www.vnaic.vn",
+    "rank": 7,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.faa.gov/air_traffic/publications/atpubs/atc_html/chap2_section_5.html",
+    "name": "Section 5. Route and NAVAID Description - FAA",
+    "snippet": "Section 5. Route and NAVAID Description. 2-5-1. AIR TRAFFIC SERVICE (ATS) ROUTES. Describe ATS routes as follows: VOR/VORTAC/TACAN airways or jet routes.\nAIR TRAFFIC SERVICE (ATS) ROUTES. Describe ATS routes as follows: VOR/VORTAC/TACAN airways or jet routes. State the word “Victor” or the letter “ ...",
+    "host_name": "www.faa.gov",
+    "rank": 8,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://opennav.com/waypoint/PE",
+    "name": "Waypoints in Peru : OpenNav aviation database",
+    "snippet": "Directory of Waypoints in Peru. IDENT, LATITUDE, LONGITUDE. AKREL, 13° 17' 58.00\" S, 072° 50' 06.00\" W. AMVEX, 10° 48' 02.00\" S, 076° 48' 12.00\" W.",
+    "host_name": "opennav.com",
+    "rank": 9,
+    "date": "",
+    "favicon": ""
+  }
+]

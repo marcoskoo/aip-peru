@@ -1,0 +1,1513 @@
+     1→'use client'
+     2→
+     3→import { useState, useEffect, useCallback, useMemo } from 'react'
+     4→import { motion, AnimatePresence } from 'framer-motion'
+     5→import {
+     6→  BookOpen, FileText, Search, ChevronRight, ChevronDown, Globe, Plane,
+     7→  Building2, Shield, Clock, Phone, Mail, MapPin, Radio, Calendar,
+     8→  ArrowRight, ExternalLink, Languages, AlertCircle, CheckCircle2,
+     9→  BookMarked, Scale, FileCheck, ChevronLeft, Filter, X, Hash,
+    10→  Info, Loader2, StickyNote, Flag
+    11→} from 'lucide-react'
+    12→import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+    13→import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+    14→import { Button } from '@/components/ui/button'
+    15→import { Input } from '@/components/ui/input'
+    16→import { Badge } from '@/components/ui/badge'
+    17→import { ScrollArea } from '@/components/ui/scroll-area'
+    18→import {
+    19→  Accordion,
+    20→  AccordionContent,
+    21→  AccordionItem,
+    22→  AccordionTrigger,
+    23→} from '@/components/ui/accordion'
+    24→import {
+    25→  Tooltip,
+    26→  TooltipContent,
+    27→  TooltipProvider,
+    28→  TooltipTrigger,
+    29→} from '@/components/ui/tooltip'
+    30→
+    31→// ─── Types ────────────────────────────────────────────────────────────
+    32→
+    33→interface AipPublicationBrowserProps {
+    34→  onNavigateAirports?: () => void
+    35→  onNavigateHeliports?: () => void
+    36→  onNavigateAirways?: () => void
+    37→  onNavigateAirspace?: () => void
+    38→}
+    39→
+    40→interface AipSection {
+    41→  sectionCode: string
+    42→  title: string
+    43→  titleEn: string
+    44→  part: string
+    45→  subPart: string
+    46→  orderIndex: number
+    47→  content: string
+    48→  contentEn: string
+    49→  sourceFile: string
+    50→  lastAmendment: string
+    51→  effectiveDate: string
+    52→}
+    53→
+    54→interface DesignatedAuthority {
+    55→  category: string
+    56→  categoryEn: string
+    57→  name: string
+    58→  nameEn: string
+    59→  address?: string
+    60→  phone?: string
+    61→  email?: string
+    62→  aftn?: string
+    63→  orderIndex: number
+    64→}
+    65→
+    66→interface Abbreviation {
+    67→  code: string
+    68→  meaning: string
+    69→  meaningEn: string
+    70→  radioUsage?: string
+    71→  remarks?: string
+    72→}
+    73→
+    74→interface PublicHoliday {
+    75→  name: string
+    76→  nameEn: string
+    77→  date: string
+    78→  dateEn: string
+    79→  month: number
+    80→  day: number
+    81→  isVariable: boolean
+    82→}
+    83→
+    84→interface NationalRegulation {
+    85→  code: string
+    86→  title: string
+    87→  titleEn: string
+    88→  type: string
+    89→  category: string
+    90→  orderIndex: number
+    91→}
+    92→
+    93→// ─── Section Tree Definition ──────────────────────────────────────────
+    94→
+    95→interface TreeNode {
+    96→  code: string
+    97→  label: string
+    98→  labelEn: string
+    99→  icon: React.ReactNode
+   100→  children?: TreeNode[]
+   101→  isLeaf?: boolean
+   102→}
+   103→
+   104→const SECTION_TREE: TreeNode[] = [
+   105→  {
+   106→    code: 'GEN',
+   107→    label: 'GEN - General',
+   108→    labelEn: 'GEN - General',
+   109→    icon: <BookOpen className="size-4" />,
+   110→    children: [
+   111→      {
+   112→        code: 'GEN_1',
+   113→        label: 'GEN 1 - Reglamentos y Requisitos Nacionales',
+   114→        labelEn: 'GEN 1 - National Regulations and Requirements',
+   115→        icon: <FileCheck className="size-3.5" />,
+   116→        children: [
+   117→          { code: 'GEN_1.1', label: 'GEN 1.1 - Autoridades Designadas', labelEn: 'GEN 1.1 - Designated Authorities', icon: <Building2 className="size-3" />, isLeaf: true },
+   118→          { code: 'GEN_1.2', label: 'GEN 1.2 - Entrada, Tránsito y Salida de Aeronaves', labelEn: 'GEN 1.2 - Entry, Transit and Departure of Aircraft', icon: <Plane className="size-3" />, isLeaf: true },
+   119→          { code: 'GEN_1.4', label: 'GEN 1.4 - Entrada, Tránsito y Salida de Mercancías', labelEn: 'GEN 1.4 - Entry, Transit and Departure of Cargo', icon: <StickyNote className="size-3" />, isLeaf: true },
+   120→          { code: 'GEN_1.5', label: 'GEN 1.5 - Instrumentos, Equipos y Documentos de Vuelo', labelEn: 'GEN 1.5 - Aircraft Instruments, Equipment and Flight Documents', icon: <FileText className="size-3" />, isLeaf: true },
+   121→          { code: 'GEN_1.6', label: 'GEN 1.6 - Resumen de Reglamentos Nacionales', labelEn: 'GEN 1.6 - Summary of National Regulations', icon: <Scale className="size-3" />, isLeaf: true },
+   122→          { code: 'GEN_1.7', label: 'GEN 1.7 - Diferencias respecto de las Normas OACI', labelEn: 'GEN 1.7 - Differences from ICAO Standards', icon: <AlertCircle className="size-3" />, isLeaf: true },
+   123→        ],
+   124→      },
+   125→      {
+   126→        code: 'GEN_2',
+   127→        label: 'GEN 2 - Tablas y Códigos',
+   128→        labelEn: 'GEN 2 - Tables and Codes',
+   129→        icon: <Hash className="size-3.5" />,
+   130→        children: [
+   131→          { code: 'GEN_2.1', label: 'GEN 2.1 - Sistema de Medidas, Marcas, Días Feriados', labelEn: 'GEN 2.1 - Measuring System, Aircraft Marks, Holidays', icon: <Calendar className="size-3" />, isLeaf: true },
+   132→          { code: 'GEN_2.2', label: 'GEN 2.2 - Abreviaturas', labelEn: 'GEN 2.2 - Abbreviations', icon: <BookMarked className="size-3" />, isLeaf: true },
+   133→          { code: 'GEN_2.3', label: 'GEN 2.3 - Símbolos Cartográficos', labelEn: 'GEN 2.3 - Chart Symbols', icon: <Globe className="size-3" />, isLeaf: true },
+   134→        ],
+   135→      },
+   136→    ],
+   137→  },
+   138→  {
+   139→    code: 'ENR',
+   140→    label: 'ENR - En Ruta',
+   141→    labelEn: 'ENR - En Route',
+   142→    icon: <Plane className="size-4" />,
+   143→    children: [
+   144→      { code: 'ENR_1', label: 'ENR 1 - Reglas y Procedimientos Generales', labelEn: 'ENR 1 - General Rules and Procedures', icon: <FileText className="size-3.5" />, isLeaf: true },
+   145→      { code: 'ENR_3', label: 'ENR 3 - Rutas ATS', labelEn: 'ENR 3 - ATS Routes', icon: <ArrowRight className="size-3.5" />, isLeaf: true },
+   146→      { code: 'ENR_4', label: 'ENR 4 - Radioayudas y Sistemas para la Navegación', labelEn: 'ENR 4 - Radio Navigation Aids and Systems', icon: <Radio className="size-3.5" />, isLeaf: true },
+   147→      { code: 'ENR_5', label: 'ENR 5 - Zonas Prohibidas, Restringidas y Peligrosas', labelEn: 'ENR 5 - Prohibited, Restricted and Danger Areas', icon: <Shield className="size-3.5" />, isLeaf: true },
+   148→    ],
+   149→  },
+   150→  {
+   151→    code: 'AD',
+   152→    label: 'AD - Aeródromos',
+   153→    labelEn: 'AD - Aerodromes',
+   154→    icon: <Building2 className="size-4" />,
+   155→    children: [
+   156→      { code: 'AD_1', label: 'AD 1 - Información General', labelEn: 'AD 1 - General Information', icon: <Info className="size-3.5" />, isLeaf: true },
+   157→      { code: 'AD_2', label: 'AD 2 - Aeródromos', labelEn: 'AD 2 - Aerodromes', icon: <Building2 className="size-3.5" />, isLeaf: true },
+   158→      { code: 'AD_3', label: 'AD 3 - Heliportos', labelEn: 'AD 3 - Heliports', icon: <Flag className="size-3.5" />, isLeaf: true },
+   159→    ],
+   160→  },
+   161→]
+   162→
+   163→// ─── Category Color Maps ──────────────────────────────────────────────
+   164→
+   165→const CATEGORY_COLORS: Record<string, { bg: string; border: string; text: string; badge: string }> = {
+   166→  'Aviación Civil': { bg: 'bg-blue-50 dark:bg-blue-950/30', border: 'border-blue-200 dark:border-blue-800', text: 'text-blue-800 dark:text-blue-300', badge: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300' },
+   167→  'Meteorología Aeronáutica': { bg: 'bg-cyan-50 dark:bg-cyan-950/30', border: 'border-cyan-200 dark:border-cyan-800', text: 'text-cyan-800 dark:text-cyan-300', badge: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900 dark:text-cyan-300' },
+   168→  'Aduanas': { bg: 'bg-amber-50 dark:bg-amber-950/30', border: 'border-amber-200 dark:border-amber-800', text: 'text-amber-800 dark:text-amber-300', badge: 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300' },
+   169→  'Sanidad': { bg: 'bg-emerald-50 dark:bg-emerald-950/30', border: 'border-emerald-200 dark:border-emerald-800', text: 'text-emerald-800 dark:text-emerald-300', badge: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300' },
+   170→  'Supervisión de Infraestructura': { bg: 'bg-violet-50 dark:bg-violet-950/30', border: 'border-violet-200 dark:border-violet-800', text: 'text-violet-800 dark:text-violet-300', badge: 'bg-violet-100 text-violet-700 dark:bg-violet-900 dark:text-violet-300' },
+   171→  'Sanidad Agraria': { bg: 'bg-lime-50 dark:bg-lime-950/30', border: 'border-lime-200 dark:border-lime-800', text: 'text-lime-800 dark:text-lime-300', badge: 'bg-lime-100 text-lime-700 dark:bg-lime-900 dark:text-lime-300' },
+   172→  'Investigación de Accidentes': { bg: 'bg-red-50 dark:bg-red-950/30', border: 'border-red-200 dark:border-red-800', text: 'text-red-800 dark:text-red-300', badge: 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300' },
+   173→}
+   174→
+   175→const DEFAULT_CATEGORY_COLOR = { bg: 'bg-slate-50 dark:bg-slate-950/30', border: 'border-slate-200 dark:border-slate-700', text: 'text-slate-800 dark:text-slate-300', badge: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300' }
+   176→
+   177→const REGULATION_TYPE_COLORS: Record<string, { bg: string; text: string; icon: React.ReactNode }> = {
+   178→  'LEY': { bg: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300', text: 'text-blue-700 dark:text-blue-300', icon: <Scale className="size-4" /> },
+   179→  'REGLAMENTO': { bg: 'bg-violet-100 text-violet-700 dark:bg-violet-900 dark:text-violet-300', text: 'text-violet-700 dark:text-violet-300', icon: <FileCheck className="size-4" /> },
+   180→  'RAP': { bg: 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300', text: 'text-amber-700 dark:text-amber-300', icon: <BookMarked className="size-4" /> },
+   181→  'CONVENIO': { bg: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300', text: 'text-emerald-700 dark:text-emerald-300', icon: <Globe className="size-4" /> },
+   182→}
+   183→
+   184→const MONTHS_ES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+   185→
+   186→const MONTHS_EN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+   187→
+   188→// ─── Animation Variants ───────────────────────────────────────────────
+   189→
+   190→const fadeIn = {
+   191→  initial: { opacity: 0, y: 8 },
+   192→  animate: { opacity: 1, y: 0 },
+   193→  exit: { opacity: 0, y: -8 },
+   194→  transition: { duration: 0.2 },
+   195→}
+   196→
+   197→const staggerContainer = {
+   198→  animate: { transition: { staggerChildren: 0.04 } },
+   199→}
+   200→
+   201→const staggerItem = {
+   202→  initial: { opacity: 0, x: -8 },
+   203→  animate: { opacity: 1, x: 0 },
+   204→}
+   205→
+   206→// ─── Sub-View: Authorities (GEN 1.1) ─────────────────────────────────
+   207→
+   208→function AuthoritiesView({ lang }: { lang: 'es' | 'en' }) {
+   209→  const [authorities, setAuthorities] = useState<DesignatedAuthority[]>([])
+   210→  const [loading, setLoading] = useState(true)
+   211→
+   212→  useEffect(() => {
+   213→    fetch('/api/authorities')
+   214→      .then(r => r.ok ? r.json() : [])
+   215→      .then(d => setAuthorities(Array.isArray(d) ? d : d.authorities || []))
+   216→      .catch(() => {})
+   217→      .finally(() => setLoading(false))
+   218→  }, [])
+   219→
+   220→  const grouped = useMemo(() => {
+   221→    const map = new Map<string, DesignatedAuthority[]>()
+   222→    for (const a of authorities) {
+   223→      const cat = lang === 'en' ? a.categoryEn : a.category
+   224→      if (!map.has(cat)) map.set(cat, [])
+   225→      map.get(cat)!.push(a)
+   226→    }
+   227→    return map
+   228→  }, [authorities, lang])
+   229→
+   230→  if (loading) {
+   231→    return (
+   232→      <div className="flex items-center justify-center py-16">
+   233→        <Loader2 className="size-8 animate-spin text-amber-500" />
+   234→      </div>
+   235→    )
+   236→  }
+   237→
+   238→  return (
+   239→    <motion.div variants={staggerContainer} initial="initial" animate="animate" className="space-y-6">
+   240→      <div className="flex items-center gap-3 mb-2">
+   241→        <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/50">
+   242→          <Building2 className="size-5 text-blue-600 dark:text-blue-400" />
+   243→        </div>
+   244→        <div>
+   245→          <h3 className="text-lg font-semibold text-navy dark:text-white">
+   246→            {lang === 'es' ? 'Autoridades Designadas' : 'Designated Authorities'}
+   247→          </h3>
+   248→          <p className="text-sm text-muted-foreground">
+   249→            {lang === 'es'
+   250→              ? 'Autoridades responsables de los servicios de aviación civil'
+   251→              : 'Authorities responsible for civil aviation services'}
+   252→          </p>
+   253→        </div>
+   254→      </div>
+   255→
+   256→      {Array.from(grouped.entries()).map(([category, items]) => {
+   257→        const colors = CATEGORY_COLORS[items[0]?.category] || DEFAULT_CATEGORY_COLOR
+   258→        return (
+   259→          <motion.div key={category} variants={staggerItem}>
+   260→            <div className="mb-2">
+   261→              <Badge className={`${colors.badge} text-xs font-medium`}>{category}</Badge>
+   262→            </div>
+   263→            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+   264→              {items.map((auth, i) => (
+   265→                <motion.div
+   266→                  key={i}
+   267→                  variants={staggerItem}
+   268→                  className={`rounded-lg border ${colors.border} ${colors.bg} p-4 transition-shadow hover:shadow-md`}
+   269→                >
+   270→                  <h4 className={`font-semibold text-sm ${colors.text} mb-2`}>
+   271→                    {lang === 'en' ? auth.nameEn : auth.name}
+   272→                  </h4>
+   273→                  <div className="space-y-1.5 text-xs text-muted-foreground">
+   274→                    {auth.address && (
+   275→                      <div className="flex items-start gap-2">
+   276→                        <MapPin className="size-3.5 mt-0.5 shrink-0" />
+   277→                        <span>{auth.address}</span>
+   278→                      </div>
+   279→                    )}
+   280→                    {auth.phone && (
+   281→                      <div className="flex items-start gap-2">
+   282→                        <Phone className="size-3.5 mt-0.5 shrink-0" />
+   283→                        <span>{auth.phone}</span>
+   284→                      </div>
+   285→                    )}
+   286→                    {auth.email && (
+   287→                      <div className="flex items-start gap-2">
+   288→                        <Mail className="size-3.5 mt-0.5 shrink-0" />
+   289→                        <a href={`mailto:${auth.email}`} className="text-amber-600 dark:text-amber-400 hover:underline">{auth.email}</a>
+   290→                      </div>
+   291→                    )}
+   292→                    {auth.aftn && (
+   293→                      <div className="flex items-start gap-2">
+   294→                        <Radio className="size-3.5 mt-0.5 shrink-0" />
+   295→                        <span className="font-mono">AFTN: {auth.aftn}</span>
+   296→                      </div>
+   297→                    )}
+   298→                  </div>
+   299→                </motion.div>
+   300→              ))}
+   301→            </div>
+   302→          </motion.div>
+   303→        )
+   304→      })}
+   305→    </motion.div>
+   306→  )
+   307→}
+   308→
+   309→// ─── Sub-View: Holidays (GEN 2.1) ────────────────────────────────────
+   310→
+   311→function HolidaysView({ lang }: { lang: 'es' | 'en' }) {
+   312→  const [holidays, setHolidays] = useState<PublicHoliday[]>([])
+   313→  const [loading, setLoading] = useState(true)
+   314→
+   315→  useEffect(() => {
+   316→    fetch('/api/holidays')
+   317→      .then(r => r.ok ? r.json() : [])
+   318→      .then(d => setHolidays(Array.isArray(d) ? d : d.holidays || []))
+   319→      .catch(() => {})
+   320→      .finally(() => setLoading(false))
+   321→  }, [])
+   322→
+   323→  const currentMonth = new Date().getMonth() + 1
+   324→
+   325→  const fixedHolidays = useMemo(() => holidays.filter(h => !h.isVariable), [holidays])
+   326→  const variableHolidays = useMemo(() => holidays.filter(h => h.isVariable), [holidays])
+   327→
+   328→  const holidaysByMonth = useMemo(() => {
+   329→    const map = new Map<number, PublicHoliday[]>()
+   330→    for (const h of fixedHolidays) {
+   331→      if (!map.has(h.month)) map.set(h.month, [])
+   332→      map.get(h.month)!.push(h)
+   333→    }
+   334→    return map
+   335→  }, [fixedHolidays])
+   336→
+   337→  if (loading) {
+   338→    return (
+   339→      <div className="flex items-center justify-center py-16">
+   340→        <Loader2 className="size-8 animate-spin text-amber-500" />
+   341→      </div>
+   342→    )
+   343→  }
+   344→
+   345→  const monthNames = lang === 'es' ? MONTHS_ES : MONTHS_EN
+   346→
+   347→  return (
+   348→    <motion.div initial="initial" animate="animate" className="space-y-6">
+   349→      <div className="flex items-center gap-3 mb-2">
+   350→        <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-900/50">
+   351→          <Calendar className="size-5 text-amber-600 dark:text-amber-400" />
+   352→        </div>
+   353→        <div>
+   354→          <h3 className="text-lg font-semibold text-navy dark:text-white">
+   355→            {lang === 'es' ? 'Días Feriados Nacionales' : 'National Public Holidays'}
+   356→          </h3>
+   357→          <p className="text-sm text-muted-foreground">
+   358→            {lang === 'es'
+   359→              ? 'Días feriados oficiales del Perú'
+   360→              : 'Official Peruvian public holidays'}
+   361→          </p>
+   362→        </div>
+   363→      </div>
+   364→
+   365→      {/* Variable Holidays */}
+   366→      {variableHolidays.length > 0 && (
+   367→        <div>
+   368→          <h4 className="text-sm font-semibold text-navy dark:text-white mb-3 flex items-center gap-2">
+   369→            <Clock className="size-4 text-amber-500" />
+   370→            {lang === 'es' ? 'Fechas Variables' : 'Variable Dates'}
+   371→          </h4>
+   372→          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+   373→            {variableHolidays.map((h, i) => (
+   374→              <motion.div
+   375→                key={i}
+   376→                initial={{ opacity: 0, y: 6 }}
+   377→                animate={{ opacity: 1, y: 0 }}
+   378→                transition={{ delay: i * 0.05 }}
+   379→                className="flex items-center gap-3 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20 p-3"
+   380→              >
+   381→                <div className="flex items-center justify-center size-9 rounded-full bg-amber-200 dark:bg-amber-800 text-amber-700 dark:text-amber-300 font-bold text-xs">
+   382→                  <Clock className="size-4" />
+   383→                </div>
+   384→                <div>
+   385→                  <p className="font-medium text-sm text-navy dark:text-white">{lang === 'en' ? h.nameEn : h.name}</p>
+   386→                  <p className="text-xs text-muted-foreground">{lang === 'en' ? h.dateEn : h.date}</p>
+   387→                </div>
+   388→              </motion.div>
+   389→            ))}
+   390→          </div>
+   391→        </div>
+   392→      )}
+   393→
+   394→      {/* Fixed Holidays by Month */}
+   395→      <div>
+   396→        <h4 className="text-sm font-semibold text-navy dark:text-white mb-3 flex items-center gap-2">
+   397→          <Calendar className="size-4 text-amber-500" />
+   398→          {lang === 'es' ? 'Fechas Fijas' : 'Fixed Dates'}
+   399→        </h4>
+   400→        <div className="space-y-4">
+   401→          {Array.from(holidaysByMonth.entries())
+   402→            .sort(([a], [b]) => a - b)
+   403→            .map(([month, hols]) => {
+   404→              const isCurrentMonth = month === currentMonth
+   405→              return (
+   406→                <motion.div
+   407→                  key={month}
+   408→                  initial={{ opacity: 0, y: 6 }}
+   409→                  animate={{ opacity: 1, y: 0 }}
+   410→                  className={`rounded-lg border p-4 transition-colors ${
+   411→                    isCurrentMonth
+   412→                      ? 'border-amber-300 bg-amber-50 dark:border-amber-700 dark:bg-amber-950/20'
+   413→                      : 'border-border bg-card'
+   414→                  }`}
+   415→                >
+   416→                  <div className="flex items-center gap-2 mb-2">
+   417→                    <span className={`text-sm font-bold ${isCurrentMonth ? 'text-amber-600 dark:text-amber-400' : 'text-navy dark:text-white'}`}>
+   418→                      {monthNames[month - 1]}
+   419→                    </span>
+   420→                    {isCurrentMonth && (
+   421→                      <Badge className="bg-amber-500 text-white text-[10px] px-1.5 py-0">
+   422→                        {lang === 'es' ? 'Mes Actual' : 'Current Month'}
+   423→                      </Badge>
+   424→                    )}
+   425→                  </div>
+   426→                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+   427→                    {hols.map((h, i) => (
+   428→                      <div key={i} className="flex items-center gap-3">
+   429→                        <div className={`flex items-center justify-center size-8 rounded-full font-bold text-sm ${
+   430→                          isCurrentMonth
+   431→                            ? 'bg-amber-200 dark:bg-amber-800 text-amber-700 dark:text-amber-300'
+   432→                            : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
+   433→                        }`}>
+   434→                          {h.day}
+   435→                        </div>
+   436→                        <span className="text-sm">{lang === 'en' ? h.nameEn : h.name}</span>
+   437→                      </div>
+   438→                    ))}
+   439→                  </div>
+   440→                </motion.div>
+   441→              )
+   442→            })}
+   443→        </div>
+   444→      </div>
+   445→    </motion.div>
+   446→  )
+   447→}
+   448→
+   449→// ─── Sub-View: Abbreviations (GEN 2.2) ───────────────────────────────
+   450→
+   451→function AbbreviationsView({ lang }: { lang: 'es' | 'en' }) {
+   452→  const [abbreviations, setAbbreviations] = useState<Abbreviation[]>([])
+   453→  const [search, setSearch] = useState('')
+   454→  const [loading, setLoading] = useState(true)
+   455→
+   456→  useEffect(() => {
+   457→    const params = new URLSearchParams()
+   458→    if (search) params.set('q', search)
+   459→    fetch(`/api/abbreviations?${params.toString()}`)
+   460→      .then(r => r.ok ? r.json() : [])
+   461→      .then(d => setAbbreviations(Array.isArray(d) ? d : d.abbreviations || []))
+   462→      .catch(() => {})
+   463→      .finally(() => setLoading(false))
+   464→  }, [search])
+   465→
+   466→  const filtered = useMemo(() => {
+   467→    if (!search) return abbreviations
+   468→    const q = search.toLowerCase()
+   469→    return abbreviations.filter(a =>
+   470→      a.code.toLowerCase().includes(q) ||
+   471→      a.meaning.toLowerCase().includes(q) ||
+   472→      a.meaningEn.toLowerCase().includes(q)
+   473→    )
+   474→  }, [abbreviations, search])
+   475→
+   476→  return (
+   477→    <motion.div initial="initial" animate="animate" className="space-y-4">
+   478→      <div className="flex items-center gap-3 mb-2">
+   479→        <div className="p-2 rounded-lg bg-violet-100 dark:bg-violet-900/50">
+   480→          <BookMarked className="size-5 text-violet-600 dark:text-violet-400" />
+   481→        </div>
+   482→        <div>
+   483→          <h3 className="text-lg font-semibold text-navy dark:text-white">
+   484→            {lang === 'es' ? 'Abreviaturas' : 'Abbreviations'}
+   485→          </h3>
+   486→          <p className="text-sm text-muted-foreground">
+   487→            {lang === 'es'
+   488→              ? 'Abreviaturas utilizadas en publicaciones AIS'
+   489→              : 'Abbreviations used in AIS publications'}
+   490→          </p>
+   491→        </div>
+   492→      </div>
+   493→
+   494→      <div className="relative">
+   495→        <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+   496→        <Input
+   497→          placeholder={lang === 'es' ? 'Buscar abreviatura...' : 'Search abbreviation...'}
+   498→          value={search}
+   499→          onChange={e => setSearch(e.target.value)}
+   500→          className="pl-9"
+   501→        />
+   502→        {search && (
+   503→          <Button variant="ghost" size="sm" className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0" onClick={() => setSearch('')}>
+   504→            <X className="size-3.5" />
+   505→          </Button>
+   506→        )}
+   507→      </div>
+   508→
+   509→      {loading ? (
+   510→        <div className="flex items-center justify-center py-16">
+   511→          <Loader2 className="size-8 animate-spin text-amber-500" />
+   512→        </div>
+   513→      ) : (
+   514→        <div className="border rounded-lg overflow-hidden">
+   515→          <div className="max-h-[500px] overflow-auto">
+   516→            <table className="w-full text-sm">
+   517→              <thead className="sticky top-0 bg-navy dark:bg-slate-800 text-white">
+   518→                <tr>
+   519→                  <th className="text-left px-4 py-2.5 font-medium w-24">{lang === 'es' ? 'Código' : 'Code'}</th>
+   520→                  <th className="text-left px-4 py-2.5 font-medium">{lang === 'es' ? 'Significado (ES)' : 'Meaning (ES)'}</th>
+   521→                  <th className="text-left px-4 py-2.5 font-medium">{lang === 'es' ? 'Significado (EN)' : 'Meaning (EN)'}</th>
+   522→                  <th className="text-center px-4 py-2.5 font-medium w-16"></th>
+   523→                </tr>
+   524→              </thead>
+   525→              <tbody>
+   526→                {filtered.map((abbr, i) => (
+   527→                  <motion.tr
+   528→                    key={`${abbr.code}-${i}`}
+   529→                    initial={{ opacity: 0 }}
+   530→                    animate={{ opacity: 1 }}
+   531→                    transition={{ delay: Math.min(i * 0.01, 0.5) }}
+   532→                    className="border-b last:border-b-0 hover:bg-muted/50 transition-colors"
+   533→                  >
+   534→                    <td className="px-4 py-2.5">
+   535→                      <span className="font-mono font-bold text-amber-600 dark:text-amber-400">{abbr.code}</span>
+   536→                    </td>
+   537→                    <td className="px-4 py-2.5 text-muted-foreground">{abbr.meaning}</td>
+   538→                    <td className="px-4 py-2.5 text-muted-foreground">{abbr.meaningEn}</td>
+   539→                    <td className="px-4 py-2.5 text-center">
+   540→                      <div className="flex items-center justify-center gap-1">
+   541→                        {abbr.remarks && (
+   542→                          <TooltipProvider>
+   543→                            <Tooltip>
+   544→                              <TooltipTrigger>
+   545→                                <AlertCircle className="size-3.5 text-orange-500" />
+   546→                              </TooltipTrigger>
+   547→                              <TooltipContent>
+   548→                                <p className="text-xs max-w-xs">{abbr.remarks}</p>
+   549→                              </TooltipContent>
+   550→                            </Tooltip>
+   551→                          </TooltipProvider>
+   552→                        )}
+   553→                        {abbr.radioUsage && (
+   554→                          <TooltipProvider>
+   555→                            <Tooltip>
+   556→                              <TooltipTrigger>
+   557→                                <Radio className="size-3.5 text-blue-500" />
+   558→                              </TooltipTrigger>
+   559→                              <TooltipContent>
+   560→                                <p className="text-xs">{abbr.radioUsage}</p>
+   561→                              </TooltipContent>
+   562→                            </Tooltip>
+   563→                          </TooltipProvider>
+   564→                        )}
+   565→                      </div>
+   566→                    </td>
+   567→                  </motion.tr>
+   568→                ))}
+   569→              </tbody>
+   570→            </table>
+   571→            {filtered.length === 0 && (
+   572→              <div className="text-center py-8 text-muted-foreground text-sm">
+   573→                {lang === 'es' ? 'No se encontraron abreviaturas' : 'No abbreviations found'}
+   574→              </div>
+   575→            )}
+   576→          </div>
+   577→        </div>
+   578→      )}
+   579→
+   580→      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+   581→        <span className="flex items-center gap-1"><AlertCircle className="size-3 text-orange-500" /> {lang === 'es' ? 'Diferencia OACI' : 'ICAO Difference'}</span>
+   582→        <span className="flex items-center gap-1"><Radio className="size-3 text-blue-500" /> {lang === 'es' ? 'Uso radiofónico' : 'Radio usage'}</span>
+   583→        <Badge variant="secondary" className="text-xs">{filtered.length} {lang === 'es' ? 'resultados' : 'results'}</Badge>
+   584→      </div>
+   585→    </motion.div>
+   586→  )
+   587→}
+   588→
+   589→// ─── Sub-View: Regulations (GEN 1.6) ─────────────────────────────────
+   590→
+   591→function RegulationsView({ lang }: { lang: 'es' | 'en' }) {
+   592→  const [regulations, setRegulations] = useState<NationalRegulation[]>([])
+   593→  const [typeFilter, setTypeFilter] = useState<string>('all')
+   594→  const [loading, setLoading] = useState(true)
+   595→  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
+   596→
+   597→  useEffect(() => {
+   598→    const params = new URLSearchParams()
+   599→    if (typeFilter && typeFilter !== 'all') params.set('type', typeFilter)
+   600→    fetch(`/api/regulations?${params.toString()}`)
+   601→      .then(r => r.ok ? r.json() : [])
+   602→      .then(d => setRegulations(Array.isArray(d) ? d : d.regulations || []))
+   603→      .catch(() => {})
+   604→      .finally(() => setLoading(false))
+   605→  }, [typeFilter])
+   606→
+   607→  const grouped = useMemo(() => {
+   608→    const map = new Map<string, NationalRegulation[]>()
+   609→    for (const r of regulations) {
+   610→      if (!map.has(r.type)) map.set(r.type, [])
+   611→      map.get(r.type)!.push(r)
+   612→    }
+   613→    return map
+   614→  }, [regulations])
+   615→
+   616→  const toggleExpand = (code: string) => {
+   617→    setExpandedIds(prev => {
+   618→      const next = new Set(prev)
+   619→      if (next.has(code)) next.delete(code)
+   620→      else next.add(code)
+   621→      return next
+   622→    })
+   623→  }
+   624→
+   625→  if (loading) {
+   626→    return (
+   627→      <div className="flex items-center justify-center py-16">
+   628→        <Loader2 className="size-8 animate-spin text-amber-500" />
+   629→      </div>
+   630→    )
+   631→  }
+   632→
+   633→  const typeOrder = ['LEY', 'REGLAMENTO', 'RAP', 'CONVENIO']
+   634→
+   635→  return (
+   636→    <motion.div initial="initial" animate="animate" className="space-y-4">
+   637→      <div className="flex items-center gap-3 mb-2">
+   638→        <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-900/50">
+   639→          <Scale className="size-5 text-amber-600 dark:text-amber-400" />
+   640→        </div>
+   641→        <div>
+   642→          <h3 className="text-lg font-semibold text-navy dark:text-white">
+   643→            {lang === 'es' ? 'Reglamentos Nacionales y Convenios' : 'National Regulations and Conventions'}
+   644→          </h3>
+   645→          <p className="text-sm text-muted-foreground">
+   646→            {lang === 'es'
+   647→              ? 'Marco legal y regulaciones aeronáuticas del Perú'
+   648→              : 'Peruvian legal framework and aeronautical regulations'}
+   649→          </p>
+   650→        </div>
+   651→      </div>
+   652→
+   653→      {/* Type filter */}
+   654→      <div className="flex flex-wrap gap-2">
+   655→        <Button
+   656→          variant={typeFilter === 'all' ? 'default' : 'outline'}
+   657→          size="sm"
+   658→          onClick={() => setTypeFilter('all')}
+   659→          className={typeFilter === 'all' ? 'bg-navy hover:bg-navy-light text-white' : ''}
+   660→        >
+   661→          {lang === 'es' ? 'Todos' : 'All'}
+   662→        </Button>
+   663→        {typeOrder.map(type => {
+   664→          const config = REGULATION_TYPE_COLORS[type]
+   665→          return (
+   666→            <Button
+   667→              key={type}
+   668→              variant={typeFilter === type ? 'default' : 'outline'}
+   669→              size="sm"
+   670→              onClick={() => setTypeFilter(type)}
+   671→              className={typeFilter === type ? 'bg-navy hover:bg-navy-light text-white' : ''}
+   672→            >
+   673→              {config.icon}
+   674→              <span className="ml-1">{type}</span>
+   675→              <Badge variant="secondary" className="ml-1 text-[10px] px-1 py-0">
+   676→                {grouped.get(type)?.length || 0}
+   677→              </Badge>
+   678→            </Button>
+   679→          )
+   680→        })}
+   681→      </div>
+   682→
+   683→      {/* Regulations list */}
+   684→      <div className="space-y-2">
+   685→        {typeOrder
+   686→          .filter(t => typeFilter === 'all' || typeFilter === t)
+   687→          .filter(t => grouped.has(t))
+   688→          .map(type => {
+   689→            const config = REGULATION_TYPE_COLORS[type]
+   690→            const items = grouped.get(type) || []
+   691→            return (
+   692→              <div key={type}>
+   693→                <div className="flex items-center gap-2 mb-2">
+   694→                  <Badge className={`${config.bg} text-xs`}>{type}</Badge>
+   695→                  <span className="text-xs text-muted-foreground">{items.length} {lang === 'es' ? 'elementos' : 'items'}</span>
+   696→                </div>
+   697→                <div className="space-y-1.5">
+   698→                  {items.map(reg => {
+   699→                    const isExpanded = expandedIds.has(reg.code)
+   700→                    return (
+   701→                      <motion.div
+   702→                        key={reg.code}
+   703→                        initial={{ opacity: 0, y: 4 }}
+   704→                        animate={{ opacity: 1, y: 0 }}
+   705→                        className={`rounded-lg border transition-colors cursor-pointer ${
+   706→                          isExpanded
+   707→                            ? 'border-amber-300 bg-amber-50 dark:border-amber-700 dark:bg-amber-950/20'
+   708→                            : 'border-border hover:border-amber-200 dark:hover:border-amber-800'
+   709→                        }`}
+   710→                        onClick={() => toggleExpand(reg.code)}
+   711→                      >
+   712→                        <div className="flex items-center gap-3 px-4 py-3">
+   713→                          <ChevronRight className={`size-4 shrink-0 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+   714→                          <span className="font-mono font-bold text-sm text-amber-600 dark:text-amber-400">{reg.code}</span>
+   715→                          <span className="text-sm text-muted-foreground truncate flex-1">
+   716→                            {lang === 'en' ? reg.titleEn : reg.title}
+   717→                          </span>
+   718→                        </div>
+   719→                        <AnimatePresence>
+   720→                          {isExpanded && (
+   721→                            <motion.div
+   722→                              initial={{ height: 0, opacity: 0 }}
+   723→                              animate={{ height: 'auto', opacity: 1 }}
+   724→                              exit={{ height: 0, opacity: 0 }}
+   725→                              transition={{ duration: 0.15 }}
+   726→                              className="overflow-hidden"
+   727→                            >
+   728→                              <div className="px-4 pb-3 pt-0 border-t border-border/50">
+   729→                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-3">
+   730→                                  <div>
+   731→                                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">Español</p>
+   732→                                    <p className="text-sm">{reg.title}</p>
+   733→                                  </div>
+   734→                                  <div>
+   735→                                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">English</p>
+   736→                                    <p className="text-sm">{reg.titleEn}</p>
+   737→                                  </div>
+   738→                                  <div>
+   739→                                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">{lang === 'es' ? 'Categoría' : 'Category'}</p>
+   740→                                    <p className="text-sm">{reg.category}</p>
+   741→                                  </div>
+   742→                                  <div>
+   743→                                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">{lang === 'es' ? 'Tipo' : 'Type'}</p>
+   744→                                    <Badge className={`${config.bg} text-xs`}>{reg.type}</Badge>
+   745→                                  </div>
+   746→                                </div>
+   747→                              </div>
+   748→                            </motion.div>
+   749→                          )}
+   750→                        </AnimatePresence>
+   751→                      </motion.div>
+   752→                    )
+   753→                  })}
+   754→                </div>
+   755→              </div>
+   756→            )
+   757→          })}
+   758→      </div>
+   759→    </motion.div>
+   760→  )
+   761→}
+   762→
+   763→// ─── Sub-View: ENR Navigation Links ──────────────────────────────────
+   764→
+   765→function EnrNavigationView({ code, lang, onNavigate }: {
+   766→  code: string
+   767→  lang: 'es' | 'en'
+   768→  onNavigate: AipPublicationBrowserProps
+   769→}) {
+   770→  const links = useMemo(() => {
+   771→    switch (code) {
+   772→      case 'ENR_3':
+   773→        return [{
+   774→          icon: <ArrowRight className="size-5" />,
+   775→          title: lang === 'es' ? 'Rutas ATS / Aerovías' : 'ATS Routes / Airways',
+   776→          desc: lang === 'es' ? 'Consulte el listado completo de aerovías y rutas ATS' : 'View the complete airway and ATS route listing',
+   777→          action: onNavigate.onNavigateAirways,
+   778→          color: 'text-blue-600 dark:text-blue-400',
+   779→          bg: 'bg-blue-50 dark:bg-blue-950/30',
+   780→        }]
+   781→      case 'ENR_4':
+   782→        return [{
+   783→          icon: <Radio className="size-5" />,
+   784→          title: lang === 'es' ? 'Radioayudas para la Navegación' : 'Radio Navigation Aids',
+   785→          desc: lang === 'es' ? 'VOR, DME, NDB y otros sistemas de navegación' : 'VOR, DME, NDB and other navigation systems',
+   786→          action: onNavigate.onNavigateAirways,
+   787→          color: 'text-violet-600 dark:text-violet-400',
+   788→          bg: 'bg-violet-50 dark:bg-violet-950/30',
+   789→        }]
+   790→      case 'ENR_5':
+   791→        return [{
+   792→          icon: <Shield className="size-5" />,
+   793→          title: lang === 'es' ? 'Zonas Prohibidas, Restringidas y Peligrosas' : 'Prohibited, Restricted and Danger Areas',
+   794→          desc: lang === 'es' ? 'Consulte las restricciones del espacio aéreo peruano' : 'View Peruvian airspace restrictions',
+   795→          action: onNavigate.onNavigateAirspace,
+   796→          color: 'text-red-600 dark:text-red-400',
+   797→          bg: 'bg-red-50 dark:bg-red-950/30',
+   798→        }]
+   799→      default:
+   800→        return []
+   801→    }
+   802→  }, [code, lang, onNavigate])
+   803→
+   804→  return (
+   805→    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+   806→      <div className="flex items-center gap-3">
+   807→        <div className="p-2 rounded-lg bg-navy dark:bg-slate-800">
+   808→          <Plane className="size-5 text-amber-500" />
+   809→        </div>
+   810→        <div>
+   811→          <h3 className="text-lg font-semibold text-navy dark:text-white">
+   812→            {lang === 'es' ? 'Información En Ruta' : 'En-Route Information'}
+   813→          </h3>
+   814→          <p className="text-sm text-muted-foreground">
+   815→            {lang === 'es'
+   816→              ? 'Acceda a las funciones de la aplicación para datos en ruta'
+   817→              : 'Access app features for en-route data'}
+   818→          </p>
+   819→        </div>
+   820→      </div>
+   821→
+   822→      <div className="grid grid-cols-1 gap-3">
+   823→        {links.map((link, i) => (
+   824→          <motion.div
+   825→            key={i}
+   826→            initial={{ opacity: 0, x: -12 }}
+   827→            animate={{ opacity: 1, x: 0 }}
+   828→            transition={{ delay: i * 0.1 }}
+   829→          >
+   830→            <Card
+   831→              className={`cursor-pointer hover:shadow-lg transition-all border-2 hover:border-amber-300 dark:hover:border-amber-700`}
+   832→              onClick={link.action}
+   833→            >
+   834→              <CardContent className="flex items-center gap-4 py-4">
+   835→                <div className={`p-3 rounded-xl ${link.bg} ${link.color}`}>
+   836→                  {link.icon}
+   837→                </div>
+   838→                <div className="flex-1 min-w-0">
+   839→                  <h4 className="font-semibold text-navy dark:text-white">{link.title}</h4>
+   840→                  <p className="text-sm text-muted-foreground mt-0.5">{link.desc}</p>
+   841→                </div>
+   842→                <ChevronRight className="size-5 text-muted-foreground shrink-0" />
+   843→              </CardContent>
+   844→            </Card>
+   845→          </motion.div>
+   846→        ))}
+   847→      </div>
+   848→
+   849→      {!links.length && (
+   850→        <div className="text-center py-12">
+   851→          <FileText className="size-10 text-muted-foreground mx-auto mb-3 opacity-50" />
+   852→          <p className="text-muted-foreground text-sm">
+   853→            {lang === 'es' ? 'Sección disponible próximamente' : 'Section coming soon'}
+   854→          </p>
+   855→        </div>
+   856→      )}
+   857→    </motion.div>
+   858→  )
+   859→}
+   860→
+   861→// ─── Sub-View: AD Navigation Links ───────────────────────────────────
+   862→
+   863→function AdNavigationView({ code, lang, onNavigate }: {
+   864→  code: string
+   865→  lang: 'es' | 'en'
+   866→  onNavigate: AipPublicationBrowserProps
+   867→}) {
+   868→  const links = useMemo(() => {
+   869→    switch (code) {
+   870→      case 'AD_2':
+   871→        return [{
+   872→          icon: <Building2 className="size-5" />,
+   873→          title: lang === 'es' ? 'Aeródromos' : 'Aerodromes',
+   874→          desc: lang === 'es' ? 'Consulte el listado completo de aeródromos peruanos' : 'View the complete Peruvian aerodrome listing',
+   875→          action: onNavigate.onNavigateAirports,
+   876→          color: 'text-blue-600 dark:text-blue-400',
+   877→          bg: 'bg-blue-50 dark:bg-blue-950/30',
+   878→        }]
+   879→      case 'AD_3':
+   880→        return [{
+   881→          icon: <Flag className="size-5" />,
+   882→          title: lang === 'es' ? 'Heliportos' : 'Heliports',
+   883→          desc: lang === 'es' ? 'Consulte el listado completo de heliportos' : 'View the complete heliport listing',
+   884→          action: onNavigate.onNavigateHeliports,
+   885→          color: 'text-emerald-600 dark:text-emerald-400',
+   886→          bg: 'bg-emerald-50 dark:bg-emerald-950/30',
+   887→        }]
+   888→      default:
+   889→        return []
+   890→    }
+   891→  }, [code, lang, onNavigate])
+   892→
+   893→  return (
+   894→    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+   895→      <div className="flex items-center gap-3">
+   896→        <div className="p-2 rounded-lg bg-navy dark:bg-slate-800">
+   897→          <Building2 className="size-5 text-amber-500" />
+   898→        </div>
+   899→        <div>
+   900→          <h3 className="text-lg font-semibold text-navy dark:text-white">
+   901→            {lang === 'es' ? 'Información de Aeródromos' : 'Aerodrome Information'}
+   902→          </h3>
+   903→          <p className="text-sm text-muted-foreground">
+   904→            {lang === 'es'
+   905→              ? 'Acceda a las funciones de la aplicación para datos de aeródromos'
+   906→              : 'Access app features for aerodrome data'}
+   907→          </p>
+   908→        </div>
+   909→      </div>
+   910→
+   911→      <div className="grid grid-cols-1 gap-3">
+   912→        {links.map((link, i) => (
+   913→          <motion.div
+   914→            key={i}
+   915→            initial={{ opacity: 0, x: -12 }}
+   916→            animate={{ opacity: 1, x: 0 }}
+   917→            transition={{ delay: i * 0.1 }}
+   918→          >
+   919→            <Card
+   920→              className="cursor-pointer hover:shadow-lg transition-all border-2 hover:border-amber-300 dark:hover:border-amber-700"
+   921→              onClick={link.action}
+   922→            >
+   923→              <CardContent className="flex items-center gap-4 py-4">
+   924→                <div className={`p-3 rounded-xl ${link.bg} ${link.color}`}>
+   925→                  {link.icon}
+   926→                </div>
+   927→                <div className="flex-1 min-w-0">
+   928→                  <h4 className="font-semibold text-navy dark:text-white">{link.title}</h4>
+   929→                  <p className="text-sm text-muted-foreground mt-0.5">{link.desc}</p>
+   930→                </div>
+   931→                <ChevronRight className="size-5 text-muted-foreground shrink-0" />
+   932→              </CardContent>
+   933→            </Card>
+   934→          </motion.div>
+   935→        ))}
+   936→      </div>
+   937→
+   938→      {!links.length && (
+   939→        <div className="text-center py-12">
+   940→          <FileText className="size-10 text-muted-foreground mx-auto mb-3 opacity-50" />
+   941→          <p className="text-muted-foreground text-sm">
+   942→            {lang === 'es' ? 'Sección disponible próximamente' : 'Section coming soon'}
+   943→          </p>
+   944→        </div>
+   945→      )}
+   946→    </motion.div>
+   947→  )
+   948→}
+   949→
+   950→// ─── Sub-View: Generic HTML Content ──────────────────────────────────
+   951→
+   952→function GenericContentView({ section, lang }: { section: AipSection; lang: 'es' | 'en' }) {
+   953→  const content = lang === 'en' && section.contentEn ? section.contentEn : section.content
+   954→  const title = lang === 'en' ? section.titleEn : section.title
+   955→
+   956→  return (
+   957→    <motion.div {...fadeIn} className="space-y-4">
+   958→      {/* Section header */}
+   959→      <div className="flex flex-wrap items-center gap-3">
+   960→        <Badge className="bg-navy text-white text-xs font-mono">{section.sectionCode.replace('_', '.')}</Badge>
+   961→        {section.lastAmendment && (
+   962→          <Badge variant="outline" className="text-xs border-amber-400 text-amber-600 dark:text-amber-400">
+   963→            {section.lastAmendment}
+   964→          </Badge>
+   965→        )}
+   966→        {section.effectiveDate && (
+   967→          <Badge variant="outline" className="text-xs">
+   968→            <Clock className="size-3 mr-1" />
+   969→            {section.effectiveDate}
+   970→          </Badge>
+   971→        )}
+   972→        {section.sourceFile && (
+   973→          <TooltipProvider>
+   974→            <Tooltip>
+   975→              <TooltipTrigger asChild>
+   976→                <Badge variant="secondary" className="text-xs cursor-help">
+   977→                  <FileText className="size-3 mr-1" />
+   978→                  {section.sourceFile}
+   979→                </Badge>
+   980→              </TooltipTrigger>
+   981→              <TooltipContent>
+   982→                <p className="text-xs">{lang === 'es' ? 'Archivo fuente' : 'Source file'}: {section.sourceFile}</p>
+   983→              </TooltipContent>
+   984→            </Tooltip>
+   985→          </TooltipProvider>
+   986→        )}
+   987→      </div>
+   988→
+   989→      {/* Rendered HTML content */}
+   990→      <div
+   991→        className="prose prose-sm dark:prose-invert max-w-none
+   992→          prose-headings:text-navy dark:prose-headings:text-white
+   993→          prose-h2:text-lg prose-h2:font-semibold prose-h2:mt-6 prose-h2:mb-3
+   994→          prose-h3:text-base prose-h3:font-semibold prose-h3:mt-4 prose-h3:mb-2
+   995→          prose-p:text-muted-foreground prose-p:leading-relaxed
+   996→          prose-li:text-muted-foreground
+   997→          prose-strong:text-navy dark:prose-strong:text-white
+   998→          prose-ul:my-2 prose-ol:my-2"
+   999→        dangerouslySetInnerHTML={{ __html: content }}
+  1000→      />
+  1001→    </motion.div>
+  1002→  )
+  1003→}
+  1004→
+  1005→// ─── Tree Node Component ──────────────────────────────────────────────
+  1006→
+  1007→function TreeNodeItem({
+  1008→  node,
+  1009→  depth,
+  1010→  selectedCode,
+  1011→  onSelect,
+  1012→  expandedCodes,
+  1013→  toggleExpand,
+  1014→  searchQuery,
+  1015→  lang,
+  1016→}: {
+  1017→  node: TreeNode
+  1018→  depth: number
+  1019→  selectedCode: string | null
+  1020→  onSelect: (code: string) => void
+  1021→  expandedCodes: Set<string>
+  1022→  toggleExpand: (code: string) => void
+  1023→  searchQuery: string
+  1024→  lang: 'es' | 'en'
+  1025→}) {
+  1026→  const isExpanded = expandedCodes.has(node.code)
+  1027→  const isSelected = selectedCode === node.code
+  1028→  const isLeaf = node.isLeaf
+  1029→  const hasChildren = node.children && node.children.length > 0
+  1030→  const label = lang === 'en' ? node.labelEn : node.label
+  1031→
+  1032→  // Check if any descendant matches search
+  1033→  const matchesSearch = useMemo(() => {
+  1034→    if (!searchQuery) return true
+  1035→    const q = searchQuery.toLowerCase()
+  1036→    if (label.toLowerCase().includes(q) || node.code.toLowerCase().includes(q)) return true
+  1037→    if (node.children) {
+  1038→      return node.children.some(child => {
+  1039→        const childLabel = lang === 'en' ? child.labelEn : child.label
+  1040→        return childLabel.toLowerCase().includes(q) || child.code.toLowerCase().includes(q)
+  1041→      })
+  1042→    }
+  1043→    return false
+  1044→  }, [searchQuery, label, node, lang])
+  1045→
+  1046→  if (!matchesSearch) return null
+  1047→
+  1048→  return (
+  1049→    <div>
+  1050→      <motion.div
+  1051→        className={`flex items-center gap-1.5 rounded-md px-2 py-1.5 cursor-pointer transition-colors text-sm
+  1052→          ${isSelected
+  1053→            ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 font-medium'
+  1054→            : isLeaf
+  1055→              ? 'hover:bg-muted/80 text-foreground'
+  1056→              : 'hover:bg-muted/60 text-foreground font-medium'
+  1057→          }
+  1058→          ${depth === 0 ? 'mt-1' : ''}
+  1059→        `}
+  1060→        style={{ paddingLeft: `${depth * 16 + 8}px` }}
+  1061→        onClick={() => {
+  1062→          if (hasChildren) {
+  1063→            toggleExpand(node.code)
+  1064→          }
+  1065→          if (isLeaf) {
+  1066→            onSelect(node.code)
+  1067→          }
+  1068→        }}
+  1069→        whileTap={{ scale: 0.98 }}
+  1070→      >
+  1071→        {hasChildren ? (
+  1072→          <motion.div
+  1073→            animate={{ rotate: isExpanded ? 90 : 0 }}
+  1074→            transition={{ duration: 0.15 }}
+  1075→            className="shrink-0"
+  1076→          >
+  1077→            <ChevronRight className="size-3.5 text-muted-foreground" />
+  1078→          </motion.div>
+  1079→        ) : (
+  1080→          <span className="w-3.5 shrink-0" />
+  1081→        )}
+  1082→
+  1083→        <span className={`shrink-0 ${isSelected ? 'text-amber-500' : 'text-muted-foreground'}`}>
+  1084→          {node.icon}
+  1085→        </span>
+  1086→
+  1087→        <span className="truncate text-xs sm:text-sm">
+  1088→          {label}
+  1089→        </span>
+  1090→
+  1091→        {isSelected && isLeaf && (
+  1092→          <ChevronRight className="size-3.5 shrink-0 ml-auto text-amber-500" />
+  1093→        )}
+  1094→      </motion.div>
+  1095→
+  1096→      <AnimatePresence>
+  1097→        {hasChildren && isExpanded && (
+  1098→          <motion.div
+  1099→            initial={{ height: 0, opacity: 0 }}
+  1100→            animate={{ height: 'auto', opacity: 1 }}
+  1101→            exit={{ height: 0, opacity: 0 }}
+  1102→            transition={{ duration: 0.15 }}
+  1103→            className="overflow-hidden"
+  1104→          >
+  1105→            {node.children!.map(child => (
+  1106→              <TreeNodeItem
+  1107→                key={child.code}
+  1108→                node={child}
+  1109→                depth={depth + 1}
+  1110→                selectedCode={selectedCode}
+  1111→                onSelect={onSelect}
+  1112→                expandedCodes={expandedCodes}
+  1113→                toggleExpand={toggleExpand}
+  1114→                searchQuery={searchQuery}
+  1115→                lang={lang}
+  1116→              />
+  1117→            ))}
+  1118→          </motion.div>
+  1119→        )}
+  1120→      </AnimatePresence>
+  1121→    </div>
+  1122→  )
+  1123→}
+  1124→
+  1125→// ─── Main Component ───────────────────────────────────────────────────
+  1126→
+  1127→export function AipPublicationBrowser({
+  1128→  onNavigateAirports,
+  1129→  onNavigateHeliports,
+  1130→  onNavigateAirways,
+  1131→  onNavigateAirspace,
+  1132→}: AipPublicationBrowserProps) {
+  1133→  const [selectedCode, setSelectedCode] = useState<string | null>(null)
+  1134→  const [searchQuery, setSearchQuery] = useState('')
+  1135→  const [lang, setLang] = useState<'es' | 'en'>('es')
+  1136→  const [sectionData, setSectionData] = useState<AipSection | null>(null)
+  1137→  const [sectionLoading, setSectionLoading] = useState(false)
+  1138→  const [expandedCodes, setExpandedCodes] = useState<Set<string>>(new Set(['GEN', 'ENR', 'AD']))
+  1139→  const [sidebarOpen, setSidebarOpen] = useState(true)
+  1140→
+  1141→  const toggleExpand = useCallback((code: string) => {
+  1142→    setExpandedCodes(prev => {
+  1143→      const next = new Set(prev)
+  1144→      if (next.has(code)) next.delete(code)
+  1145→      else next.add(code)
+  1146→      return next
+  1147→    })
+  1148→  }, [])
+  1149→
+  1150→  // Fetch section data when selection changes
+  1151→  const fetchSectionData = useCallback(async (code: string) => {
+  1152→    setSectionLoading(true)
+  1153→    try {
+  1154→      const r = await fetch(`/api/aip-sections/${code}`)
+  1155→      const d = r.ok ? await r.json() : null
+  1156→      setSectionData(d)
+  1157→    } catch {
+  1158→      setSectionData(null)
+  1159→    } finally {
+  1160→      setSectionLoading(false)
+  1161→    }
+  1162→  }, [])
+  1163→
+  1164→  useEffect(() => {
+  1165→    if (selectedCode) {
+  1166→      fetchSectionData(selectedCode)
+  1167→    }
+  1168→  }, [selectedCode, fetchSectionData])
+  1169→
+  1170→  // Determine which special view to render
+  1171→  const renderContent = useCallback(() => {
+  1172→    if (!selectedCode) {
+  1173→      return <WelcomeView lang={lang} />
+  1174→    }
+  1175→
+  1176→    if (sectionLoading) {
+  1177→      return (
+  1178→        <div className="flex items-center justify-center py-24">
+  1179→          <div className="text-center">
+  1180→            <Loader2 className="size-8 animate-spin text-amber-500 mx-auto mb-3" />
+  1181→            <p className="text-sm text-muted-foreground">
+  1182→              {lang === 'es' ? 'Cargando sección...' : 'Loading section...'}
+  1183→            </p>
+  1184→          </div>
+  1185→        </div>
+  1186→      )
+  1187→    }
+  1188→
+  1189→    // Special views for specific sections
+  1190→    if (selectedCode === 'GEN_1.1') {
+  1191→      return <AuthoritiesView lang={lang} />
+  1192→    }
+  1193→    if (selectedCode === 'GEN_2.1') {
+  1194→      return <HolidaysView lang={lang} />
+  1195→    }
+  1196→    if (selectedCode === 'GEN_2.2') {
+  1197→      return <AbbreviationsView lang={lang} />
+  1198→    }
+  1199→    if (selectedCode === 'GEN_1.6') {
+  1200→      return <RegulationsView lang={lang} />
+  1201→    }
+  1202→
+  1203→    // ENR navigation links
+  1204→    if (['ENR_3', 'ENR_4', 'ENR_5'].includes(selectedCode)) {
+  1205→      return (
+  1206→        <EnrNavigationView
+  1207→          code={selectedCode}
+  1208→          lang={lang}
+  1209→          onNavigate={{ onNavigateAirports, onNavigateHeliports, onNavigateAirways, onNavigateAirspace }}
+  1210→        />
+  1211→      )
+  1212→    }
+  1213→
+  1214→    // AD navigation links
+  1215→    if (['AD_2', 'AD_3'].includes(selectedCode)) {
+  1216→      return (
+  1217→        <AdNavigationView
+  1218→          code={selectedCode}
+  1219→          lang={lang}
+  1220→          onNavigate={{ onNavigateAirports, onNavigateHeliports, onNavigateAirways, onNavigateAirspace }}
+  1221→        />
+  1222→      )
+  1223→    }
+  1224→
+  1225→    // Generic HTML content view
+  1226→    if (sectionData) {
+  1227→      return <GenericContentView section={sectionData} lang={lang} />
+  1228→    }
+  1229→
+  1230→    // No data available
+  1231→    return (
+  1232→      <div className="text-center py-24">
+  1233→        <FileText className="size-10 text-muted-foreground mx-auto mb-3 opacity-50" />
+  1234→        <h3 className="text-lg font-medium">
+  1235→          {lang === 'es' ? 'Sección no disponible' : 'Section not available'}
+  1236→        </h3>
+  1237→        <p className="text-muted-foreground mt-1 text-sm">
+  1238→          {lang === 'es'
+  1239→            ? 'Los datos de esta sección aún no han sido cargados'
+  1240→            : 'Data for this section has not been loaded yet'}
+  1241→        </p>
+  1242→      </div>
+  1243→    )
+  1244→  }, [selectedCode, sectionLoading, sectionData, lang, onNavigateAirports, onNavigateHeliports, onNavigateAirways, onNavigateAirspace])
+  1245→
+  1246→  // Get section title for header
+  1247→  const getSectionTitle = useCallback((code: string | null) => {
+  1248→    if (!code) return null
+  1249→    for (const part of SECTION_TREE) {
+  1250→      if (part.code === code) return lang === 'en' ? part.labelEn : part.label
+  1251→      if (part.children) {
+  1252→        for (const sub of part.children) {
+  1253→          if (sub.code === code) return lang === 'en' ? sub.labelEn : sub.label
+  1254→          if (sub.children) {
+  1255→            for (const leaf of sub.children) {
+  1256→              if (leaf.code === code) return lang === 'en' ? leaf.labelEn : leaf.label
+  1257→            }
+  1258→          }
+  1259→        }
+  1260→      }
+  1261→    }
+  1262→    return code
+  1263→  }, [lang])
+  1264→
+  1265→  return (
+  1266→    <div className="h-[calc(100vh-4rem)] flex flex-col">
+  1267→      {/* Top Bar */}
+  1268→      <div className="bg-navy dark:bg-slate-900 text-white px-4 py-3 flex items-center gap-3 shrink-0">
+  1269→        <div className="flex items-center gap-2">
+  1270→          <BookOpen className="size-5 text-amber-500" />
+  1271→          <h2 className="font-bold text-lg tracking-tight">
+  1272→            AIP <span className="text-amber-500">PERÚ</span>
+  1273→          </h2>
+  1274→        </div>
+  1275→
+  1276→        <div className="flex-1 max-w-md mx-4">
+  1277→          <div className="relative">
+  1278→            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
+  1279→            <Input
+  1280→              placeholder={lang === 'es' ? 'Buscar sección...' : 'Search section...'}
+  1281→              value={searchQuery}
+  1282→              onChange={e => setSearchQuery(e.target.value)}
+  1283→              className="pl-9 bg-navy-light dark:bg-slate-800 border-slate-600 text-white placeholder:text-slate-400 h-8 text-sm"
+  1284→            />
+  1285→            {searchQuery && (
+  1286→              <Button
+  1287→                variant="ghost"
+  1288→                size="sm"
+  1289→                className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 p-0 text-slate-400 hover:text-white"
+  1290→                onClick={() => setSearchQuery('')}
+  1291→              >
+  1292→                <X className="size-3" />
+  1293→              </Button>
+  1294→            )}
+  1295→          </div>
+  1296→        </div>
+  1297→
+  1298→        <div className="flex items-center gap-2">
+  1299→          <TooltipProvider>
+  1300→            <Tooltip>
+  1301→              <TooltipTrigger asChild>
+  1302→                <Button
+  1303→                  variant="ghost"
+  1304→                  size="sm"
+  1305→                  onClick={() => setLang(l => l === 'es' ? 'en' : 'es')}
+  1306→                  className="text-slate-300 hover:text-amber-400 hover:bg-navy-light dark:hover:bg-slate-800 gap-1 text-xs"
+  1307→                >
+  1308→                  <Languages className="size-4" />
+  1309→                  {lang === 'es' ? 'ES' : 'EN'}
+  1310→                </Button>
+  1311→              </TooltipTrigger>
+  1312→              <TooltipContent>
+  1313→                <p className="text-xs">{lang === 'es' ? 'Cambiar a inglés' : 'Switch to Spanish'}</p>
+  1314→              </TooltipContent>
+  1315→            </Tooltip>
+  1316→          </TooltipProvider>
+  1317→
+  1318→          <Button
+  1319→            variant="ghost"
+  1320→            size="sm"
+  1321→            onClick={() => setSidebarOpen(o => !o)}
+  1322→            className="text-slate-300 hover:text-amber-400 hover:bg-navy-light dark:hover:bg-slate-800 lg:hidden"
+  1323→          >
+  1324→            {sidebarOpen ? <ChevronLeft className="size-4" /> : <ChevronRight className="size-4" />}
+  1325→          </Button>
+  1326→        </div>
+  1327→      </div>
+  1328→
+  1329→      {/* Main Layout */}
+  1330→      <div className="flex flex-1 min-h-0">
+  1331→        {/* Left Sidebar */}
+  1332→        <AnimatePresence mode="wait">
+  1333→          {sidebarOpen && (
+  1334→            <motion.div
+  1335→              initial={{ width: 0, opacity: 0 }}
+  1336→              animate={{ width: 300, opacity: 1 }}
+  1337→              exit={{ width: 0, opacity: 0 }}
+  1338→              transition={{ duration: 0.2 }}
+  1339→              className="border-r border-border bg-card shrink-0 overflow-hidden"
+  1340→              style={{ maxWidth: '300px', minWidth: '280px' }}
+  1341→            >
+  1342→              <ScrollArea className="h-full">
+  1343→                <div className="p-3 space-y-0.5">
+  1344→                  {/* AIP Root label */}
+  1345→                  <div className="flex items-center gap-2 px-2 py-2 mb-1">
+  1346→                    <BookOpen className="size-4 text-amber-500" />
+  1347→                    <span className="font-bold text-sm text-navy dark:text-white">
+  1348→                      {lang === 'es' ? 'Publicación de Información Aeronáutica' : 'Aeronautical Information Publication'}
+  1349→                    </span>
+  1350→                  </div>
+  1351→
+  1352→                  {SECTION_TREE.map(node => (
+  1353→                    <TreeNodeItem
+  1354→                      key={node.code}
+  1355→                      node={node}
+  1356→                      depth={0}
+  1357→                      selectedCode={selectedCode}
+  1358→                      onSelect={setSelectedCode}
+  1359→                      expandedCodes={expandedCodes}
+  1360→                      toggleExpand={toggleExpand}
+  1361→                      searchQuery={searchQuery}
+  1362→                      lang={lang}
+  1363→                    />
+  1364→                  ))}
+  1365→                </div>
+  1366→              </ScrollArea>
+  1367→            </motion.div>
+  1368→          )}
+  1369→        </AnimatePresence>
+  1370→
+  1371→        {/* Right Content Panel */}
+  1372→        <div className="flex-1 min-w-0 overflow-hidden">
+  1373→          <div className="h-full flex flex-col">
+  1374→            {/* Content Header */}
+  1375→            {selectedCode && (
+  1376→              <motion.div
+  1377→                initial={{ opacity: 0, y: -4 }}
+  1378→                animate={{ opacity: 1, y: 0 }}
+  1379→                className="px-6 py-3 border-b border-border bg-muted/30 flex items-center gap-3 shrink-0"
+  1380→              >
+  1381→                <Button
+  1382→                  variant="ghost"
+  1383→                  size="sm"
+  1384→                  onClick={() => setSidebarOpen(o => !o)}
+  1385→                  className="text-muted-foreground hover:text-foreground h-7 w-7 p-0"
+  1386→                >
+  1387→                  {sidebarOpen ? <ChevronLeft className="size-4" /> : <ChevronRight className="size-4" />}
+  1388→                </Button>
+  1389→                <div className="flex-1 min-w-0">
+  1390→                  <div className="flex items-center gap-2">
+  1391→                    <Badge className="bg-navy text-white text-xs font-mono">
+  1392→                      {selectedCode.replace('_', '.')}
+  1393→                    </Badge>
+  1394→                    <h3 className="font-semibold text-sm truncate text-navy dark:text-white">
+  1395→                      {getSectionTitle(selectedCode)}
+  1396→                    </h3>
+  1397→                  </div>
+  1398→                </div>
+  1399→                {sectionData && (
+  1400→                  <div className="hidden sm:flex items-center gap-2">
+  1401→                    {sectionData.lastAmendment && (
+  1402→                      <Badge variant="outline" className="text-[10px] border-amber-400 text-amber-600 dark:text-amber-400">
+  1403→                        {sectionData.lastAmendment}
+  1404→                      </Badge>
+  1405→                    )}
+  1406→                  </div>
+  1407→                )}
+  1408→              </motion.div>
+  1409→            )}
+  1410→
+  1411→            {/* Content Area */}
+  1412→            <ScrollArea className="flex-1">
+  1413→              <div className="p-6 max-w-4xl">
+  1414→                <AnimatePresence mode="wait">
+  1415→                  <motion.div
+  1416→                    key={selectedCode || 'welcome'}
+  1417→                    initial={{ opacity: 0, y: 6 }}
+  1418→                    animate={{ opacity: 1, y: 0 }}
+  1419→                    exit={{ opacity: 0, y: -6 }}
+  1420→                    transition={{ duration: 0.15 }}
+  1421→                  >
+  1422→                    {renderContent()}
+  1423→                  </motion.div>
+  1424→                </AnimatePresence>
+  1425→              </div>
+  1426→            </ScrollArea>
+  1427→          </div>
+  1428→        </div>
+  1429→      </div>
+  1430→    </div>
+  1431→  )
+  1432→}
+  1433→
+  1434→// ─── Welcome View ─────────────────────────────────────────────────────
+  1435→
+  1436→function WelcomeView({ lang }: { lang: 'es' | 'en' }) {
+  1437→  return (
+  1438→    <motion.div
+  1439→      initial={{ opacity: 0 }}
+  1440→      animate={{ opacity: 1 }}
+  1441→      className="flex flex-col items-center justify-center py-16"
+  1442→    >
+  1443→      <motion.div
+  1444→        initial={{ scale: 0.9, opacity: 0 }}
+  1445→        animate={{ scale: 1, opacity: 1 }}
+  1446→        transition={{ duration: 0.3 }}
+  1447→        className="text-center"
+  1448→      >
+  1449→        <div className="inline-flex items-center justify-center size-20 rounded-2xl bg-navy dark:bg-slate-800 mb-6">
+  1450→          <BookOpen className="size-10 text-amber-500" />
+  1451→        </div>
+  1452→        <h2 className="text-2xl font-bold text-navy dark:text-white mb-2">
+  1453→          AIP <span className="text-amber-500">PERÚ</span>
+  1454→        </h2>
+  1455→        <p className="text-muted-foreground max-w-md mb-8">
+  1456→          {lang === 'es'
+  1457→            ? 'Publicación de Información Aeronáutica del Perú. Seleccione una sección del panel izquierdo para explorar el contenido.'
+  1458→            : 'Aeronautical Information Publication of Peru. Select a section from the left panel to explore the content.'}
+  1459→        </p>
+  1460→
+  1461→        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-lg mx-auto">
+  1462→          {[
+  1463→            {
+  1464→              icon: <BookOpen className="size-6" />,
+  1465→              title: 'GEN',
+  1466→              desc: lang === 'es' ? 'General' : 'General',
+  1467→              color: 'text-blue-500',
+  1468→              bg: 'bg-blue-50 dark:bg-blue-950/30',
+  1469→            },
+  1470→            {
+  1471→              icon: <Plane className="size-6" />,
+  1472→              title: 'ENR',
+  1473→              desc: lang === 'es' ? 'En Ruta' : 'En Route',
+  1474→              color: 'text-amber-500',
+  1475→              bg: 'bg-amber-50 dark:bg-amber-950/30',
+  1476→            },
+  1477→            {
+  1478→              icon: <Building2 className="size-6" />,
+  1479→              title: 'AD',
+  1480→              desc: lang === 'es' ? 'Aeródromos' : 'Aerodromes',
+  1481→              color: 'text-emerald-500',
+  1482→              bg: 'bg-emerald-50 dark:bg-emerald-950/30',
+  1483→            },
+  1484→          ].map((item, i) => (
+  1485→            <motion.div
+  1486→              key={item.title}
+  1487→              initial={{ opacity: 0, y: 12 }}
+  1488→              animate={{ opacity: 1, y: 0 }}
+  1489→              transition={{ delay: 0.1 + i * 0.1 }}
+  1490→              className={`rounded-xl border border-border p-4 text-center ${item.bg}`}
+  1491→            >
+  1492→              <div className={`inline-flex items-center justify-center size-10 rounded-lg mb-2 ${item.color}`}>
+  1493→                {item.icon}
+  1494→              </div>
+  1495→              <h4 className="font-bold text-navy dark:text-white">{item.title}</h4>
+  1496→              <p className="text-xs text-muted-foreground">{item.desc}</p>
+  1497→            </motion.div>
+  1498→          ))}
+  1499→        </div>
+  1500→
+  1501→        <div className="mt-8 flex items-center gap-2 text-xs text-muted-foreground">
+  1502→          <CheckCircle2 className="size-3.5 text-emerald-500" />
+  1503→          <span>
+  1504→            {lang === 'es'
+  1505→              ? 'Conforme al Anexo 15 de OACI y Doc 8126 (Manual del AIS)'
+  1506→              : 'In accordance with ICAO Annex 15 and Doc 8126 (AIS Manual)'}
+  1507→          </span>
+  1508→        </div>
+  1509→      </motion.div>
+  1510→    </motion.div>
+  1511→  )
+  1512→}
+  1513→

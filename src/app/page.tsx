@@ -1,35 +1,200 @@
 "use client"
 
-import { useState } from "react"
-import { Moon, Sun, Plane } from "lucide-react"
+import { useState, useCallback, Suspense } from "react"
+import dynamic from "next/dynamic"
+import { Moon, Sun, Plane, Map, FileText, Route, Settings, Crosshair, Navigation2, AlertTriangle, Shield, Calculator, Search, BookOpen } from "lucide-react"
 import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
+import { Skeleton } from "@/components/ui/skeleton"
 import { AirportListing } from "@/components/airport-listing"
 import { AirportDetailView } from "@/components/airport-detail"
-import type { Airport } from "@/lib/types"
+import { HeliportListing } from "@/components/heliport-listing"
+import { HeliportDetail } from "@/components/heliport-detail"
+import { FlightPlan } from "@/components/flight-plan"
+import { RouteCalculator } from "@/components/route-calculator"
+import { AirwaysListing } from "@/components/airways-listing"
+import { GlobalSearch } from "@/components/global-search"
+import { ErrorBoundary } from "@/components/error-boundary"
+import type { Airport, Heliport, RoutePoint, RouteSummary } from "@/lib/types"
+
+// Dynamic imports for heavy components to reduce initial bundle
+const AeronauticalChart = dynamic(
+  () =>
+    import("@/components/aeronautical-chart").then(
+      (mod) => mod.AeronauticalChart
+    ),
+  {
+    ssr: false,
+    loading: () => <Skeleton className="h-[600px] w-full" />,
+  }
+)
+
+const AdminPanel = dynamic(
+  () =>
+    import("@/components/admin-panel").then(
+      (mod) => mod.AdminPanel
+    ),
+  {
+    ssr: false,
+    loading: () => <Skeleton className="h-[600px] w-full" />,
+  }
+)
+
+const NotamListing = dynamic(
+  () =>
+    import("@/components/notam-listing").then(
+      (mod) => mod.NotamListing
+    ),
+  {
+    ssr: false,
+    loading: () => <Skeleton className="h-[600px] w-full" />,
+  }
+)
+
+const AirspaceRestrictions = dynamic(
+  () =>
+    import("@/components/airspace-restrictions").then(
+      (mod) => mod.AirspaceRestrictions
+    ),
+  {
+    ssr: false,
+    loading: () => <Skeleton className="h-[600px] w-full" />,
+  }
+)
+
+const AeronauticalCalculator = dynamic(
+  () =>
+    import("@/components/aeronautical-calculator").then(
+      (mod) => mod.AeronauticalCalculator
+    ).catch(() => {
+      // Return a fallback component if the calculator fails to load
+      return function CalculatorFallback() {
+        return (
+          <div className="text-center py-12">
+            <Calculator className="size-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+            <h3 className="text-lg font-medium">Error al cargar la calculadora</h3>
+            <p className="text-muted-foreground mt-1">Intente recargar la página</p>
+          </div>
+        )
+      }
+    }),
+  {
+    ssr: false,
+    loading: () => <Skeleton className="h-[600px] w-full" />,
+  }
+)
+
+const AipPublicationBrowser = dynamic(
+  () =>
+    import("@/components/aip-publication-browser").then(
+      (mod) => mod.AipPublicationBrowser
+    ),
+  {
+    ssr: false,
+    loading: () => <Skeleton className="h-[600px] w-full" />,
+  }
+)
+
+type ViewMode = "airports" | "heliports" | "chart" | "flight-plan" | "route-calculator" | "airways" | "admin" | "notams" | "airspace" | "calculator" | "publications"
 
 export default function Home() {
   const [selectedAirport, setSelectedAirport] = useState<Airport | null>(null)
+  const [selectedHeliport, setSelectedHeliport] = useState<Heliport | null>(null)
+  const [viewMode, setViewMode] = useState<ViewMode>("airports")
+  const [flightPlanRoute, setFlightPlanRoute] = useState<RoutePoint[] | undefined>(undefined)
+  const [flightPlanSummary, setFlightPlanSummary] = useState<RouteSummary | undefined>(undefined)
   const { theme, setTheme } = useTheme()
 
   const handleSelectAirport = (airport: Airport) => {
     setSelectedAirport(airport)
+    setViewMode("airports")
     window.scrollTo({ top: 0, behavior: "smooth" })
+  }
+
+  const handleSelectHeliport = (heliport: Heliport) => {
+    setSelectedHeliport(heliport)
+    setViewMode("heliports")
+    window.scrollTo({ top: 0, behavior: "smooth" })
+  }
+
+  const handleHeliportBack = () => {
+    setSelectedHeliport(null)
   }
 
   const handleBack = () => {
     setSelectedAirport(null)
   }
 
+  const handleLogoClick = () => {
+    setSelectedAirport(null)
+    setSelectedHeliport(null)
+    setViewMode("airports")
+  }
+
+  const handleGenerateFlightPlan = useCallback((route: RoutePoint[], summary: RouteSummary) => {
+    setFlightPlanRoute(route)
+    setFlightPlanSummary(summary)
+    setViewMode("flight-plan")
+  }, [])
+
+  const handleSearchResult = useCallback((result: { type: string; id: string; name: string }) => {
+    if (result.type === "airport") {
+      // Fetch airport details and navigate
+      fetch(`/api/airports/${result.name}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data) {
+            setSelectedAirport(data)
+            setViewMode("airports")
+          }
+        })
+        .catch(() => {})
+    } else if (result.type === "heliport") {
+      fetch(`/api/heliports/${result.id}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data) {
+            setSelectedHeliport(data)
+            setViewMode("heliports")
+          }
+        })
+        .catch(() => {})
+    } else if (result.type === "airway") {
+      setViewMode("airways")
+    } else if (result.type === "notam") {
+      setViewMode("notams")
+    } else if (result.type === "airspace") {
+      setViewMode("airspace")
+    } else if (result.type === "abbreviation" || result.type === "regulation" || result.type === "authority" || result.type === "aipsection") {
+      setViewMode("publications")
+    }
+  }, [])
+
+  // Navigation buttons configuration
+  const navButtons = [
+    { mode: "publications" as ViewMode, icon: BookOpen, label: "Publicaciones AIP", activeLabel: "Aeródromos" },
+    { mode: "heliports" as ViewMode, icon: Crosshair, label: "Helipuertos", activeLabel: "Aeródromos" },
+    { mode: "airways" as ViewMode, icon: Navigation2, label: "Rutas", activeLabel: "Aeródromos" },
+    { mode: "notams" as ViewMode, icon: AlertTriangle, label: "NOTAMs", activeLabel: "Aeródromos" },
+    { mode: "airspace" as ViewMode, icon: Shield, label: "Zonas", activeLabel: "Aeródromos" },
+    { mode: "chart" as ViewMode, icon: Map, label: "Carta Aeronáutica", activeLabel: "Aeródromos" },
+    { mode: "route-calculator" as ViewMode, icon: Route, label: "Calculadora", activeLabel: "Aeródromos" },
+    { mode: "calculator" as ViewMode, icon: Calculator, label: "Calc. Aero", activeLabel: "Aeródromos" },
+    { mode: "flight-plan" as ViewMode, icon: FileText, label: "Plan de Vuelo", activeLabel: "Aeródromos" },
+    { mode: "admin" as ViewMode, icon: Settings, label: "Admin", activeLabel: "Aeródromos" },
+  ]
+
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-navy text-white shadow-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-14 sm:h-16">
-            <div className="flex items-center gap-2.5 cursor-pointer" onClick={handleBack}>
+          <div className="flex items-center justify-between h-14 sm:h-16 gap-3">
+            <div
+              className="flex items-center gap-2.5 cursor-pointer shrink-0"
+              onClick={handleLogoClick}
+            >
               <Plane className="size-6 text-amber-500" />
               <div className="flex items-baseline gap-1.5">
                 <span className="font-bold text-lg tracking-tight">AIP</span>
@@ -39,17 +204,71 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            {/* Global Search */}
+            {!selectedAirport && !selectedHeliport && (
+              <div className="hidden sm:block flex-1 max-w-xs">
+                <GlobalSearch onSelectResult={handleSearchResult} />
+              </div>
+            )}
+
+            <div className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto">
               {selectedAirport && (
                 <Badge className="hidden sm:inline-flex bg-navy-light text-amber-400 border border-amber-500/30 text-xs tracking-wider">
                   {selectedAirport.icaoCode}
                 </Badge>
               )}
+              {selectedHeliport && (
+                <Badge className="hidden sm:inline-flex bg-navy-light text-amber-400 border border-amber-500/30 text-xs tracking-wider">
+                  {selectedHeliport.icaoCode}
+                </Badge>
+              )}
+
+              {/* Navigation buttons (shown when no airport/heliport selected) */}
+              {!selectedAirport && !selectedHeliport && (
+                <>
+                  {navButtons.map(({ mode, icon: Icon, label, activeLabel }) => (
+                    <Button
+                      key={mode}
+                      variant={viewMode === mode ? "default" : "ghost"}
+                      size="sm"
+                      onClick={() =>
+                        setViewMode(viewMode === mode ? "airports" : mode)
+                      }
+                      className={
+                        viewMode === mode
+                          ? "bg-amber-500 text-navy hover:bg-amber-600 gap-1 text-xs shrink-0"
+                          : "text-white hover:bg-navy-light hover:text-amber-400 gap-1 text-xs shrink-0"
+                      }
+                    >
+                      <Icon className="size-3.5" />
+                      <span className="hidden lg:inline">
+                        {viewMode === mode ? activeLabel : label}
+                      </span>
+                    </Button>
+                  ))}
+                </>
+              )}
+
+              {/* Mobile search button */}
+              {!selectedAirport && !selectedHeliport && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="sm:hidden text-white hover:bg-navy-light hover:text-amber-400 shrink-0"
+                  onClick={() => {
+                    const event = new KeyboardEvent('keydown', { key: 'k', metaKey: true, ctrlKey: true })
+                    document.dispatchEvent(event)
+                  }}
+                >
+                  <Search className="size-4" />
+                </Button>
+              )}
+
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                className="text-white hover:bg-navy-light hover:text-amber-400"
+                className="text-white hover:bg-navy-light hover:text-amber-400 shrink-0"
               >
                 <Sun className="size-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
                 <Moon className="absolute size-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
@@ -62,7 +281,130 @@ export default function Home() {
 
       {/* Main Content */}
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        {selectedAirport ? (
+        {viewMode === "heliports" && selectedHeliport ? (
+          <HeliportDetail
+            heliport={selectedHeliport}
+            onBack={handleHeliportBack}
+          />
+        ) : viewMode === "heliports" && !selectedHeliport ? (
+          <HeliportListing onSelectHeliport={handleSelectHeliport} />
+        ) : viewMode === "airways" && !selectedAirport ? (
+          <AirwaysListing
+            onViewChart={() => setViewMode("chart")}
+          />
+        ) : viewMode === "notams" && !selectedAirport ? (
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="size-6 text-amber-500" />
+              <div>
+                <h1 className="text-xl font-bold tracking-tight">
+                  NOTAMs — Avisos a los Aeronavegantes
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                  Avisos que contienen información sobre el establecimiento, condición o modificación de cualquier componente del espacio aéreo — FIR Lima (SPIM)
+                </p>
+              </div>
+              <Badge variant="outline" className="hidden sm:inline-flex gap-1 text-xs text-amber-600 dark:text-amber-400 border-amber-300 dark:border-amber-700 ml-auto shrink-0">
+                <Plane className="size-3" />
+                Filtrar por Aeródromo
+              </Badge>
+            </div>
+            <NotamListing />
+          </div>
+        ) : viewMode === "airspace" && !selectedAirport ? (
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <Shield className="size-6 text-amber-500" />
+              <div>
+                <h1 className="text-xl font-bold tracking-tight">
+                  Zonas de Espacio Aéreo Restringido
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                  Zonas prohibidas, restringidas, de peligro y áreas de control — Perú
+                </p>
+              </div>
+            </div>
+            <AirspaceRestrictions />
+          </div>
+        ) : viewMode === "calculator" && !selectedAirport ? (
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <Calculator className="size-6 text-amber-500" />
+              <div>
+                <h1 className="text-xl font-bold tracking-tight">
+                  Calculadora Aeronáutica
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                  Herramientas de cálculo para planificación de vuelo — Altitud de densidad, viento, QNH, amanecer/atardecer, conversión de unidades
+                </p>
+              </div>
+              <Badge variant="outline" className="hidden sm:inline-flex gap-1 text-xs text-amber-600 dark:text-amber-400 border-amber-300 dark:border-amber-700 ml-auto shrink-0">
+                <Plane className="size-3" />
+                Seleccionar Aeródromo
+              </Badge>
+            </div>
+            <Suspense fallback={<Skeleton className="h-[600px] w-full" />}>
+              <ErrorBoundary>
+                <AeronauticalCalculator />
+              </ErrorBoundary>
+            </Suspense>
+          </div>
+        ) : viewMode === "publications" && !selectedAirport ? (
+          <AipPublicationBrowser
+            onNavigateAirports={() => setViewMode("airports")}
+            onNavigateHeliports={() => setViewMode("heliports")}
+            onNavigateAirways={() => setViewMode("airways")}
+            onNavigateAirspace={() => setViewMode("airspace")}
+          />
+        ) : viewMode === "chart" && !selectedAirport ? (
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <Map className="size-6 text-amber-500" />
+              <div>
+                <h1 className="text-xl font-bold tracking-tight">
+                  Carta Aeronáutica
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                  Aerovías, waypoints, radioayudas y límites FIR – Región de
+                  información de vuelo Lima (SPIM)
+                </p>
+              </div>
+            </div>
+            <AeronauticalChart />
+          </div>
+        ) : viewMode === "route-calculator" && !selectedAirport ? (
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <Route className="size-6 text-amber-500" />
+              <div>
+                <h1 className="text-xl font-bold tracking-tight">
+                  Calculadora de Ruta
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                  Construye una ruta seleccionando waypoints y aerovías – Calcula distancias y tiempos
+                </p>
+              </div>
+            </div>
+            <RouteCalculator onGenerateFlightPlan={handleGenerateFlightPlan} />
+          </div>
+        ) : viewMode === "flight-plan" && !selectedAirport ? (
+          <FlightPlan initialRoute={flightPlanRoute} initialSummary={flightPlanSummary} />
+        ) : viewMode === "admin" && !selectedAirport ? (
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <Settings className="size-6 text-amber-500" />
+              <div>
+                <h1 className="text-xl font-bold tracking-tight">
+                  Panel de Administración
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                  Gestión de datos aeronáuticos — Waypoints, Radioayudas, Aerovías, FIR
+                </p>
+              </div>
+            </div>
+            <AdminPanel />
+          </div>
+        ) : selectedAirport ? (
           <AirportDetailView
             airport={selectedAirport}
             onBack={handleBack}
@@ -79,12 +421,12 @@ export default function Home() {
             <div className="flex items-center gap-2">
               <Plane className="size-4 text-amber-500" />
               <span className="text-sm font-medium">
-                CORPAC S.A. - AIS PERÚ
+                CORPAC S.A. — AIS PERÚ
               </span>
             </div>
             <p className="text-xs text-slate-400">
               © {new Date().getFullYear()} Publicación de Información
-              Aeronáutica - AIP PERÚ. Todos los derechos reservados.
+              Aeronáutica — AIP PERÚ. Todos los derechos reservados.
             </p>
           </div>
         </div>

@@ -1,0 +1,999 @@
+     1→"use client"
+     2→
+     3→import { useEffect, useState } from "react"
+     4→import {
+     5→  ArrowLeft,
+     6→  Plane,
+     7→  MapPin,
+     8→  Clock,
+     9→  Building2,
+    10→  Phone,
+    11→  Mail,
+    12→  Globe,
+    13→  Flag,
+    14→  Ruler,
+    15→  Thermometer,
+    16→  Flame,
+    17→  CloudSun,
+    18→  Fuel,
+    19→  Snowflake,
+    20→  Warehouse,
+    21→  Shield,
+    22→  AlertTriangle,
+    23→  Info,
+    24→  Radio,
+    25→  MessageSquare,
+    26→  Compass,
+    27→  Mountain,
+    28→  Map,
+    29→  Navigation,
+    30→  PlaneTakeoff,
+    31→  PlaneLanding,
+    32→  X,
+    33→  ZoomIn,
+    34→  ChevronLeft,
+    35→  ChevronRight,
+    36→  Eye,
+    37→  Cog,
+    38→  Volume2,
+    39→} from "lucide-react"
+    40→import { Button } from "@/components/ui/button"
+    41→import { Badge } from "@/components/ui/badge"
+    42→import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+    43→import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+    44→import {
+    45→  Table,
+    46→  TableBody,
+    47→  TableCell,
+    48→  TableHead,
+    49→  TableHeader,
+    50→  TableRow,
+    51→} from "@/components/ui/table"
+    52→import { Separator } from "@/components/ui/separator"
+    53→import { ScrollArea } from "@/components/ui/scroll-area"
+    54→import { Skeleton } from "@/components/ui/skeleton"
+    55→import type { Airport, AirportDetail, Obstacle } from "@/lib/types"
+    56→
+    57→interface AirportDetailProps {
+    58→  airport: Airport
+    59→  onBack: () => void
+    60→}
+    61→
+    62→function InfoRow({
+    63→  label,
+    64→  value,
+    65→  icon: Icon,
+    66→}: {
+    67→  label: string
+    68→  value?: string | null
+    69→  icon?: React.ComponentType<{ className?: string }>
+    70→}) {
+    71→  if (!value || value === "NIL" || value === "NO AVBL") return null
+    72→  return (
+    73→    <div className="flex items-start gap-3 py-2">
+    74→      {Icon && <Icon className="size-4 text-amber-600 mt-0.5 shrink-0" />}
+    75→      <div className="min-w-0">
+    76→        <p className="text-xs text-muted-foreground">{label}</p>
+    77→        <p className="text-sm font-medium break-words">{value}</p>
+    78→      </div>
+    79→    </div>
+    80→  )
+    81→}
+    82→
+    83→function SectionCard({
+    84→  title,
+    85→  icon: Icon,
+    86→  children,
+    87→}: {
+    88→  title: string
+    89→  icon: React.ComponentType<{ className?: string }>
+    90→  children: React.ReactNode
+    91→}) {
+    92→  return (
+    93→    <Card>
+    94→      <CardHeader className="pb-3">
+    95→        <CardTitle className="flex items-center gap-2 text-base">
+    96→          <Icon className="size-5 text-amber-600" />
+    97→          {title}
+    98→        </CardTitle>
+    99→      </CardHeader>
+   100→      <CardContent>{children}</CardContent>
+   101→    </Card>
+   102→  )
+   103→}
+   104→
+   105→function JsonInfoDisplay({
+   106→  data,
+   107→}: {
+   108→  data: Record<string, unknown> | unknown[] | string | undefined | null
+   109→}) {
+   110→  if (!data) return <p className="text-sm text-muted-foreground">Sin información disponible</p>
+   111→  if (typeof data === "string") return <p className="text-sm text-muted-foreground">{data === "NIL" ? "Sin información disponible" : data}</p>
+   112→
+   113→  // Handle array of objects (e.g. taxiway data with multiple entries)
+   114→  if (Array.isArray(data)) {
+   115→    if (data.length === 0) return <p className="text-sm text-muted-foreground">Sin información disponible</p>
+   116→    return (
+   117→      <div className="space-y-3">
+   118→        {data.map((item, idx) => {
+   119→          if (typeof item !== "object" || item === null) return null
+   120→          const entries = Object.entries(item as Record<string, unknown>).filter(
+   121→            ([, v]) => v && v !== "NIL"
+   122→          )
+   123→          if (entries.length === 0) return null
+   124→          return (
+   125→            <div key={idx} className="rounded-lg border bg-muted/30 p-3">
+   126→              {entries.map(([key, value]) => (
+   127→                <div key={key} className="py-1 flex justify-between gap-4">
+   128→                  <span className="text-xs text-muted-foreground capitalize">
+   129→                    {key.replace(/([A-Z])/g, " $1").trim()}
+   130→                  </span>
+   131→                  <span className="text-sm font-medium text-right">{String(value)}</span>
+   132→                </div>
+   133→              ))}
+   134→            </div>
+   135→          )
+   136→        })}
+   137→      </div>
+   138→    )
+   139→  }
+   140→
+   141→  // Handle simple object
+   142→  const entries = Object.entries(data).filter(([, v]) => v && v !== "NIL")
+   143→  if (entries.length === 0) return <p className="text-sm text-muted-foreground">Sin información disponible</p>
+   144→  return (
+   145→    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1">
+   146→      {entries.map(([key, value]) => (
+   147→        <div key={key} className="py-1.5">
+   148→          <p className="text-xs text-muted-foreground capitalize">
+   149→            {key.replace(/([A-Z])/g, " $1").trim()}
+   150→          </p>
+   151→          <p className="text-sm font-medium">{String(value)}</p>
+   152→        </div>
+   153→      ))}
+   154→    </div>
+   155→  )
+   156→}
+   157→
+   158→interface ChartData {
+   159→  type: string
+   160→  name: string
+   161→  file: string
+   162→  url: string
+   163→}
+   164→
+   165→interface ChartsResponse {
+   166→  icaoCode: string
+   167→  totalCharts: number
+   168→  charts: ChartData[]
+   169→  grouped: Record<string, ChartData[]>
+   170→}
+   171→
+   172→export function AirportDetailView({ airport, onBack }: AirportDetailProps) {
+   173→  const [detail, setDetail] = useState<AirportDetail | null>(null)
+   174→  const [obstacles, setObstacles] = useState<Obstacle[]>([])
+   175→  const [chartsData, setChartsData] = useState<ChartsResponse | null>(null)
+   176→  const [loading, setLoading] = useState(true)
+   177→  const [obstaclesLoading, setObstaclesLoading] = useState(true)
+   178→  const [chartsLoading, setChartsLoading] = useState(true)
+   179→  const [selectedChart, setSelectedChart] = useState<ChartData | null>(null)
+   180→  const [chartFilter, setChartFilter] = useState<string>("all")
+   181→
+   182→  useEffect(() => {
+   183→    async function fetchDetail() {
+   184→      setLoading(true)
+   185→      try {
+   186→        const response = await fetch(`/api/airports/${airport.icaoCode}`)
+   187→        if (response.ok) {
+   188→          const data = await response.json()
+   189→          setDetail(data)
+   190→        }
+   191→      } catch {
+   192→        // Will show empty state
+   193→      } finally {
+   194→        setLoading(false)
+   195→      }
+   196→    }
+   197→    fetchDetail()
+   198→  }, [airport.icaoCode])
+   199→
+   200→  useEffect(() => {
+   201→    async function fetchObstacles() {
+   202→      setObstaclesLoading(true)
+   203→      try {
+   204→        const response = await fetch(
+   205→          `/api/airports/${airport.icaoCode}/obstacles`
+   206→        )
+   207→        if (response.ok) {
+   208→          const data = await response.json()
+   209→          setObstacles(data.obstacles || [])
+   210→        }
+   211→      } catch {
+   212→        // Will show empty state
+   213→      } finally {
+   214→        setObstaclesLoading(false)
+   215→      }
+   216→    }
+   217→    fetchObstacles()
+   218→  }, [airport.icaoCode])
+   219→
+   220→  useEffect(() => {
+   221→    async function fetchCharts() {
+   222→      setChartsLoading(true)
+   223→      try {
+   224→        const response = await fetch(
+   225→          `/api/airports/${airport.icaoCode}/charts`
+   226→        )
+   227→        if (response.ok) {
+   228→          const data = await response.json()
+   229→          setChartsData(data)
+   230→        }
+   231→      } catch {
+   232→        // Will show empty state
+   233→      } finally {
+   234→        setChartsLoading(false)
+   235→      }
+   236→    }
+   237→    fetchCharts()
+   238→  }, [airport.icaoCode])
+   239→
+   240→  const chartTypes = ["SID", "STAR", "IAC", "ADC", "TMA", "VAC", "HELO", "NADP"]
+   241→  const chartTypeLabels: Record<string, { label: string; icon: React.ComponentType<{ className?: string }> }> = {
+   242→    SID: { label: "Salida Normalizada (SID)", icon: PlaneTakeoff },
+   243→    STAR: { label: "Llegada Normalizada (STAR)", icon: PlaneLanding },
+   244→    IAC: { label: "Aproximación por Instrumentos", icon: Navigation },
+   245→    ADC: { label: "Plano de Aeródromo", icon: Map },
+   246→    TMA: { label: "Área de Control Terminal", icon: Globe },
+   247→    VAC: { label: "Carta de Aproximación Visual", icon: Eye },
+   248→    HELO: { label: "Circuitos de Helicópteros", icon: Plane },
+   249→    NADP: { label: "Procedimiento de Atenuación de Ruido", icon: Volume2 },
+   250→  }
+   251→
+   252→  const filteredCharts = chartFilter === "all"
+   253→    ? (chartsData?.charts || [])
+   254→    : (chartsData?.grouped?.[chartFilter] || [])
+   255→
+   256→  const airportData = detail || airport
+   257→  const runways = detail?.runways || []
+   258→  const declaredDistances = detail?.declaredDistances || []
+   259→  const detailObstacles = detail?.obstacles || obstacles
+   260→  const radioNavAids = detail?.radioNavAids || []
+   261→  const communications = detail?.communications || []
+   262→
+   263→  // Merge runway data with declared distances
+   264→  const runwayData = runways.map((rw) => {
+   265→    const dd = declaredDistances.find((d) => d.rwy === rw.designator)
+   266→    return { ...rw, declaredDistance: dd }
+   267→  })
+   268→
+   269→  return (
+   270→    <div className="space-y-6">
+   271→      {/* Header */}
+   272→      <div className="flex items-start gap-4">
+   273→        <Button
+   274→          variant="outline"
+   275→          size="icon"
+   276→          onClick={onBack}
+   277→          className="shrink-0 mt-1"
+   278→        >
+   279→          <ArrowLeft className="size-4" />
+   280→        </Button>
+   281→        <div className="min-w-0 flex-1">
+   282→          <div className="flex items-center gap-3 flex-wrap">
+   283→            <Badge className="bg-navy text-white font-bold text-base px-4 py-1 tracking-wider">
+   284→              {airportData.icaoCode}
+   285→            </Badge>
+   286→            {airportData.category === "INTERNACIONAL" ? (
+   287→              <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-400 border border-amber-300 dark:border-amber-700 font-semibold text-xs px-2.5 py-1 tracking-wider gap-1">
+   288→                <Globe className="size-3" />
+   289→                INTERNACIONAL
+   290→              </Badge>
+   291→            ) : (
+   292→              <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-700 font-semibold text-xs px-2.5 py-1 tracking-wider gap-1">
+   293→                <Flag className="size-3" />
+   294→                NACIONAL
+   295→              </Badge>
+   296→            )}
+   297→            <Badge variant="outline" className="text-amber-700 border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-700">
+   298→              {airportData.authorizedTraffic}
+   299→            </Badge>
+   300→          </div>
+   301→          <h2 className="text-xl sm:text-2xl font-bold mt-2">
+   302→            {airportData.name}
+   303→          </h2>
+   304→          <p className="text-muted-foreground flex items-center gap-1 mt-1">
+   305→            <MapPin className="size-4" />
+   306→            {airportData.city}, {airportData.department}
+   307→          </p>
+   308→        </div>
+   309→      </div>
+   310→
+   311→      <Separator />
+   312→
+   313→      {/* Tabbed Content */}
+   314→      <Tabs defaultValue="general" className="w-full">
+   315→        <ScrollArea className="w-full">
+   316→          <TabsList className="w-full flex-wrap h-auto gap-1 p-1">
+   317→            <TabsTrigger value="general" className="flex-1 min-w-0">
+   318→              <Info className="size-4" />
+   319→              <span className="hidden sm:inline ml-1.5">General</span>
+   320→            </TabsTrigger>
+   321→            <TabsTrigger value="pista" className="flex-1 min-w-0">
+   322→              <Ruler className="size-4" />
+   323→              <span className="hidden sm:inline ml-1.5">Pista</span>
+   324→            </TabsTrigger>
+   325→            <TabsTrigger value="plataforma" className="flex-1 min-w-0">
+   326→              <Building2 className="size-4" />
+   327→              <span className="hidden sm:inline ml-1.5">Plataforma</span>
+   328→            </TabsTrigger>
+   329→            <TabsTrigger value="servicios" className="flex-1 min-w-0">
+   330→              <Shield className="size-4" />
+   331→              <span className="hidden sm:inline ml-1.5">Servicios</span>
+   332→            </TabsTrigger>
+   333→            <TabsTrigger value="obstaculos" className="flex-1 min-w-0">
+   334→              <AlertTriangle className="size-4" />
+   335→              <span className="hidden sm:inline ml-1.5">Obstáculos</span>
+   336→            </TabsTrigger>
+   337→            <TabsTrigger value="cartas" className="flex-1 min-w-0">
+   338→              <Map className="size-4" />
+   339→              <span className="hidden sm:inline ml-1.5">Cartas</span>
+   340→            </TabsTrigger>
+   341→          </TabsList>
+   342→        </ScrollArea>
+   343→
+   344→        {/* General Tab */}
+   345→        <TabsContent value="general" className="mt-4">
+   346→          {loading ? (
+   347→            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+   348→              {Array.from({ length: 4 }).map((_, i) => (
+   349→                <Card key={i}>
+   350→                  <CardContent className="pt-6 space-y-3">
+   351→                    <Skeleton className="h-5 w-32" />
+   352→                    <Skeleton className="h-4 w-full" />
+   353→                    <Skeleton className="h-4 w-3/4" />
+   354→                    <Skeleton className="h-4 w-1/2" />
+   355→                  </CardContent>
+   356→                </Card>
+   357→              ))}
+   358→            </div>
+   359→          ) : (
+   360→            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+   361→              {/* Datos Geográficos */}
+   362→              <SectionCard title="Datos Geográficos" icon={MapPin}>
+   363→                <div className="space-y-0.5">
+   364→                  <InfoRow label="Código ICAO" value={airportData.icaoCode} icon={Plane} />
+   365→                  <InfoRow label="Latitud ARP" value={detail?.arpLatitude} icon={Compass} />
+   366→                  <InfoRow label="Longitud ARP" value={detail?.arpLongitude} icon={Compass} />
+   367→                  <InfoRow label="Elevación" value={airportData.elevation} icon={Mountain} />
+   368→                  <InfoRow label="Temperatura de Referencia" value={detail?.temperature} icon={Thermometer} />
+   369→                  <InfoRow label="Undulación Geoidal" value={detail?.geoidalUndulation} icon={Mountain} />
+   370→                  <InfoRow label="Declinación Magnética" value={detail?.magneticDeclination} icon={Compass} />
+   371→                  <InfoRow label="Cambio Anual" value={detail?.annualChange} icon={Clock} />
+   372→                  <InfoRow label="Distancia a la Ciudad" value={detail?.distanceFromCity} icon={MapPin} />
+   373→                </div>
+   374→              </SectionCard>
+   375→
+   376→              {/* Administración */}
+   377→              <SectionCard title="Administración" icon={Building2}>
+   378→                <div className="space-y-0.5">
+   379→                  <InfoRow label="Tipo de Administración" value={detail?.administrationType} icon={Building2} />
+   380→                  <InfoRow label="Dirección" value={detail?.address} icon={MapPin} />
+   381→                  <InfoRow label="Teléfono" value={detail?.phone} icon={Phone} />
+   382→                  <InfoRow label="Fax" value={detail?.fax} icon={Phone} />
+   383→                  <InfoRow label="AFTN" value={detail?.aftn} icon={Radio} />
+   384→                  <InfoRow label="Correo Electrónico" value={detail?.email} icon={Mail} />
+   385→                </div>
+   386→              </SectionCard>
+   387→
+   388→              {/* Horario de Operación */}
+   389→              <SectionCard title="Horario de Operación" icon={Clock}>
+   390→                {detail?.operatingHours && typeof detail.operatingHours === "object" ? (
+   391→                  <JsonInfoDisplay data={detail.operatingHours as Record<string, unknown>} />
+   392→                ) : (
+   393→                  <p className="text-sm text-muted-foreground">Sin información disponible</p>
+   394→                )}
+   395→              </SectionCard>
+   396→
+   397→              {/* Observaciones */}
+   398→              <SectionCard title="Observaciones" icon={Info}>
+   399→                <p className="text-sm text-muted-foreground">
+   400→                  {airportData.remarks && airportData.remarks !== "NIL"
+   401→                    ? airportData.remarks
+   402→                    : "Sin observaciones"}
+   403→                </p>
+   404→              </SectionCard>
+   405→
+   406→              {/* Comunicaciones */}
+   407→              {communications.length > 0 && (
+   408→                <SectionCard title="Comunicaciones" icon={MessageSquare} className="md:col-span-2">
+   409→                  <ScrollArea className="w-full">
+   410→                    <Table>
+   411→                      <TableHeader>
+   412→                        <TableRow>
+   413→                          <TableHead>Servicio</TableHead>
+   414→                          <TableHead>Frecuencia</TableHead>
+   415→                          <TableHead>Indicativo</TableHead>
+   416→                          <TableHead>Horario</TableHead>
+   417→                          <TableHead>Observaciones</TableHead>
+   418→                        </TableRow>
+   419→                      </TableHeader>
+   420→                      <TableBody>
+   421→                        {communications.map((comm) => (
+   422→                          <TableRow key={comm.id}>
+   423→                            <TableCell className="font-medium">{comm.service || "—"}</TableCell>
+   424→                            <TableCell>{comm.frequency || "—"}</TableCell>
+   425→                            <TableCell>{comm.callsign || "—"}</TableCell>
+   426→                            <TableCell>{comm.hours || "—"}</TableCell>
+   427→                            <TableCell>{comm.remarks || "—"}</TableCell>
+   428→                          </TableRow>
+   429→                        ))}
+   430→                      </TableBody>
+   431→                    </Table>
+   432→                  </ScrollArea>
+   433→                </SectionCard>
+   434→              )}
+   435→
+   436→              {/* Ayudas Radioeléctricas */}
+   437→              {radioNavAids.length > 0 && (
+   438→                <SectionCard title="Ayudas Radioeléctricas de Navegación" icon={Radio} className="md:col-span-2">
+   439→                  <ScrollArea className="w-full">
+   440→                    <Table>
+   441→                      <TableHeader>
+   442→                        <TableRow>
+   443→                          <TableHead>Tipo</TableHead>
+   444→                          <TableHead>Identificador</TableHead>
+   445→                          <TableHead>Frecuencia</TableHead>
+   446→                          <TableHead>Coordenadas</TableHead>
+   447→                          <TableHead>Elevación</TableHead>
+   448→                          <TableHead>Observaciones</TableHead>
+   449→                        </TableRow>
+   450→                      </TableHeader>
+   451→                      <TableBody>
+   452→                        {radioNavAids.map((nav) => (
+   453→                          <TableRow key={nav.id}>
+   454→                            <TableCell className="font-medium">{nav.type || "—"}</TableCell>
+   455→                            <TableCell>{nav.identifier || "—"}</TableCell>
+   456→                            <TableCell>{nav.frequency || "—"}</TableCell>
+   457→                            <TableCell>{nav.coordinates || "—"}</TableCell>
+   458→                            <TableCell>{nav.elevation || "—"}</TableCell>
+   459→                            <TableCell>{nav.remarks || "—"}</TableCell>
+   460→                          </TableRow>
+   461→                        ))}
+   462→                      </TableBody>
+   463→                    </Table>
+   464→                  </ScrollArea>
+   465→                </SectionCard>
+   466→              )}
+   467→            </div>
+   468→          )}
+   469→        </TabsContent>
+   470→
+   471→        {/* Pista Tab */}
+   472→        <TabsContent value="pista" className="mt-4">
+   473→          {loading ? (
+   474→            <Card>
+   475→              <CardContent className="pt-6 space-y-3">
+   476→                <Skeleton className="h-8 w-full" />
+   477→                <Skeleton className="h-8 w-full" />
+   478→                <Skeleton className="h-8 w-full" />
+   479→              </CardContent>
+   480→            </Card>
+   481→          ) : runwayData.length > 0 ? (
+   482→            <div className="space-y-4">
+   483→              {/* Runway Characteristics Table */}
+   484→              <Card>
+   485→                <CardHeader className="pb-3">
+   486→                  <CardTitle className="flex items-center gap-2 text-base">
+   487→                    <Ruler className="size-5 text-amber-600" />
+   488→                    Características Físicas
+   489→                  </CardTitle>
+   490→                </CardHeader>
+   491→                <CardContent>
+   492→                  <ScrollArea className="w-full">
+   493→                    <Table>
+   494→                      <TableHeader>
+   495→                        <TableRow>
+   496→                          <TableHead>Designación</TableHead>
+   497→                          <TableHead>Rumbo Geo.</TableHead>
+   498→                          <TableHead>Rumbo Mag.</TableHead>
+   499→                          <TableHead>Dimensiones (m)</TableHead>
+   500→                          <TableHead>Superficie</TableHead>
+   501→                          <TableHead>PCN</TableHead>
+   502→                          <TableHead>Elev. Umbral</TableHead>
+   503→                          <TableHead>Coord. Umbral</TableHead>
+   504→                        </TableRow>
+   505→                      </TableHeader>
+   506→                      <TableBody>
+   507→                        {runwayData.map((runway) => (
+   508→                          <TableRow key={runway.designator}>
+   509→                            <TableCell className="font-medium">{runway.designator}</TableCell>
+   510→                            <TableCell>{runway.brgGeo || "—"}</TableCell>
+   511→                            <TableCell>{runway.brgMag || "—"}</TableCell>
+   512→                            <TableCell>{runway.dimensions || "—"}</TableCell>
+   513→                            <TableCell>{runway.surface || "—"}</TableCell>
+   514→                            <TableCell>{runway.pcn || "—"}</TableCell>
+   515→                            <TableCell>{runway.thrElevation || "—"}</TableCell>
+   516→                            <TableCell className="max-w-48 text-xs">{runway.thrCoords || "—"}</TableCell>
+   517→                          </TableRow>
+   518→                        ))}
+   519→                      </TableBody>
+   520→                    </Table>
+   521→                  </ScrollArea>
+   522→                </CardContent>
+   523→              </Card>
+   524→
+   525→              {/* Declared Distances Table */}
+   526→              {declaredDistances.length > 0 && (
+   527→                <Card>
+   528→                  <CardHeader className="pb-3">
+   529→                    <CardTitle className="flex items-center gap-2 text-base">
+   530→                      <Ruler className="size-5 text-amber-600" />
+   531→                      Distancias Declaradas
+   532→                    </CardTitle>
+   533→                  </CardHeader>
+   534→                  <CardContent>
+   535→                    <ScrollArea className="w-full">
+   536→                      <Table>
+   537→                        <TableHeader>
+   538→                          <TableRow>
+   539→                            <TableHead>PISTA</TableHead>
+   540→                            <TableHead>TORA (m)</TableHead>
+   541→                            <TableHead>TODA (m)</TableHead>
+   542→                            <TableHead>ASDA (m)</TableHead>
+   543→                            <TableHead>LDA (m)</TableHead>
+   544→                            <TableHead>Observaciones</TableHead>
+   545→                          </TableRow>
+   546→                        </TableHeader>
+   547→                        <TableBody>
+   548→                          {declaredDistances.map((dd) => (
+   549→                            <TableRow key={dd.rwy}>
+   550→                              <TableCell className="font-medium">{dd.rwy}</TableCell>
+   551→                              <TableCell>{dd.tora}</TableCell>
+   552→                              <TableCell>{dd.toda}</TableCell>
+   553→                              <TableCell>{dd.asda}</TableCell>
+   554→                              <TableCell>{dd.lda}</TableCell>
+   555→                              <TableCell>{dd.remarks || "—"}</TableCell>
+   556→                            </TableRow>
+   557→                          ))}
+   558→                        </TableBody>
+   559→                      </Table>
+   560→                    </ScrollArea>
+   561→                  </CardContent>
+   562→                </Card>
+   563→              )}
+   564→
+   565→              {/* Individual Runway Details */}
+   566→              {runwayData.map((runway) => (
+   567→                <Card key={runway.designator}>
+   568→                  <CardHeader className="pb-3">
+   569→                    <CardTitle className="text-base">
+   570→                      Pista {runway.designator} — Detalles
+   571→                    </CardTitle>
+   572→                  </CardHeader>
+   573→                  <CardContent>
+   574→                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+   575→                      <InfoRow label="SWY (m)" value={runway.swyDimensions} icon={Ruler} />
+   576→                      <InfoRow label="CWY (m)" value={runway.cwyDimensions} icon={Ruler} />
+   577→                      <InfoRow label="Franja (m)" value={runway.stripDimensions} icon={Ruler} />
+   578→                      <InfoRow label="OFZ" value={runway.ofz} icon={Building2} />
+   579→                      <InfoRow label="RESA" value={runway.resa} icon={Shield} />
+   580→                    </div>
+   581→                  </CardContent>
+   582→                </Card>
+   583→              ))}
+   584→            </div>
+   585→          ) : (
+   586→            <Card>
+   587→              <CardContent className="py-12 text-center">
+   588→                <Ruler className="size-10 text-muted-foreground mx-auto mb-3 opacity-50" />
+   589→                <h3 className="text-lg font-medium">Sin información de pista</h3>
+   590→                <p className="text-muted-foreground mt-1">
+   591→                  No hay datos de pista disponibles para este aeródromo
+   592→                </p>
+   593→              </CardContent>
+   594→            </Card>
+   595→          )}
+   596→        </TabsContent>
+   597→
+   598→        {/* Plataforma Tab */}
+   599→        <TabsContent value="plataforma" className="mt-4">
+   600→          {loading ? (
+   601→            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+   602→              {Array.from({ length: 2 }).map((_, i) => (
+   603→                <Card key={i}>
+   604→                  <CardContent className="pt-6 space-y-3">
+   605→                    <Skeleton className="h-5 w-32" />
+   606→                    <Skeleton className="h-4 w-full" />
+   607→                    <Skeleton className="h-4 w-3/4" />
+   608→                  </CardContent>
+   609→                </Card>
+   610→              ))}
+   611→            </div>
+   612→          ) : (
+   613→            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+   614→              {/* Platform Data */}
+   615→              <SectionCard title="Plataforma" icon={Building2}>
+   616→                {detail?.platformData ? (
+   617→                  <JsonInfoDisplay data={detail.platformData as Record<string, unknown> | unknown[] | string} />
+   618→                ) : (
+   619→                  <p className="text-sm text-muted-foreground">Sin información disponible</p>
+   620→                )}
+   621→                {detail?.platformRemarks && detail.platformRemarks !== "NIL" && (
+   622→                  <div className="mt-3 pt-3 border-t">
+   623→                    <InfoRow label="Observaciones" value={detail.platformRemarks} icon={Info} />
+   624→                  </div>
+   625→                )}
+   626→              </SectionCard>
+   627→
+   628→              {/* Taxiway Data */}
+   629→              <SectionCard title="Calles de Rodaje" icon={Plane}>
+   630→                {detail?.taxiwayData ? (
+   631→                  <JsonInfoDisplay data={detail.taxiwayData as Record<string, unknown> | unknown[] | string} />
+   632→                ) : (
+   633→                  <p className="text-sm text-muted-foreground">Sin información disponible</p>
+   634→                )}
+   635→              </SectionCard>
+   636→
+   637→              {/* Checkpoints */}
+   638→              <SectionCard title="Puntos de Verificación" icon={MapPin}>
+   639→                {detail?.checkpointData ? (
+   640→                  <JsonInfoDisplay data={detail.checkpointData as Record<string, unknown> | unknown[] | string} />
+   641→                ) : (
+   642→                  <p className="text-sm text-muted-foreground">Sin información disponible</p>
+   643→                )}
+   644→              </SectionCard>
+   645→
+   646→              {/* Surface Guidance */}
+   647→              <SectionCard title="Guía de Movimiento en Superficie" icon={Info}>
+   648→                <div className="space-y-0.5">
+   649→                  <InfoRow label="Guía de Rodaje" value={detail?.surfaceGuidance} icon={Info} />
+   650→                  <InfoRow label="Señales en Pista" value={detail?.runwaySigns} icon={Info} />
+   651→                  <InfoRow label="Señales en Calles de Rodaje" value={detail?.taxiwaySigns} icon={Info} />
+   652→                  <InfoRow label="Barras de Parada" value={detail?.stopBars} icon={Info} />
+   653→                  <InfoRow label="Observaciones" value={detail?.guidanceRemarks} icon={Info} />
+   654→                </div>
+   655→              </SectionCard>
+   656→            </div>
+   657→          )}
+   658→        </TabsContent>
+   659→
+   660→        {/* Servicios Tab */}
+   661→        <TabsContent value="servicios" className="mt-4">
+   662→          {loading ? (
+   663→            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+   664→              {Array.from({ length: 4 }).map((_, i) => (
+   665→                <Card key={i}>
+   666→                  <CardContent className="pt-6 space-y-3">
+   667→                    <Skeleton className="h-5 w-32" />
+   668→                    <Skeleton className="h-4 w-full" />
+   669→                    <Skeleton className="h-4 w-3/4" />
+   670→                  </CardContent>
+   671→                </Card>
+   672→              ))}
+   673→            </div>
+   674→          ) : (
+   675→            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+   676→              {/* Scale Installations */}
+   677→              <SectionCard title="Instalaciones de Escala" icon={Building2}>
+   678→                <div className="space-y-0.5">
+   679→                  <InfoRow label="Instalaciones de Carga" value={detail?.cargoHandlingFacilities} icon={Building2} />
+   680→                  <InfoRow label="Observaciones" value={detail?.scaleRemarks} icon={Info} />
+   681→                </div>
+   682→              </SectionCard>
+   683→
+   684→              {/* Refueling */}
+   685→              <SectionCard title="Reabastecimiento de Combustible" icon={Fuel}>
+   686→                <div className="space-y-0.5">
+   687→                  <InfoRow label="Tipos de Combustible" value={detail?.fuelTypes} icon={Fuel} />
+   688→                  <InfoRow label="Tipos de Lubricantes" value={detail?.lubricantTypes} icon={Fuel} />
+   689→                  {detail?.refuelingFacilities ? (
+   690→                    typeof detail.refuelingFacilities === "object" ? (
+   691→                      <JsonInfoDisplay data={detail.refuelingFacilities as Record<string, unknown>} />
+   692→                    ) : (
+   693→                      <InfoRow label="Instalaciones" value={detail.refuelingFacilities as string} icon={Fuel} />
+   694→                    )
+   695→                  ) : null}
+   696→                </div>
+   697→              </SectionCard>
+   698→
+   699→              {/* Passenger Facilities */}
+   700→              <SectionCard title="Instalaciones para Pasajeros" icon={Plane}>
+   701→                <div className="space-y-0.5">
+   702→                  <InfoRow label="Hoteles" value={detail?.hotels} icon={Building2} />
+   703→                  <InfoRow label="Restaurantes" value={detail?.restaurants} icon={Building2} />
+   704→                  <InfoRow label="Transporte" value={detail?.transport} icon={Plane} />
+   705→                  <InfoRow label="Instalaciones Médicas" value={detail?.medicalFacilities} icon={Shield} />
+   706→                  <InfoRow label="Banco / Correo" value={detail?.bankingPost} icon={Building2} />
+   707→                  <InfoRow label="Oficina de Turismo" value={detail?.tourismOffice} icon={Info} />
+   708→                  <InfoRow label="Observaciones" value={detail?.passengerRemarks} icon={Info} />
+   709→                </div>
+   710→              </SectionCard>
+   711→
+   712→              {/* Fire Fighting */}
+   713→              <SectionCard title="Servicio de Extinción de Incendios" icon={Flame}>
+   714→                <div className="space-y-0.5">
+   715→                  <InfoRow label="Categoría" value={airportData.fireCategory} icon={Flame} />
+   716→                  <InfoRow label="Equipo de Salvamento" value={detail?.rescueEquipment} icon={Shield} />
+   717→                  <InfoRow label="Capacidad de Remoción de Aeronaves" value={detail?.aircraftRemovalCapacity} icon={Info} />
+   718→                  <InfoRow label="Observaciones" value={detail?.rescueRemarks} icon={Info} />
+   719→                </div>
+   720→              </SectionCard>
+   721→
+   722→              {/* Hangars & Maintenance */}
+   723→              <SectionCard title="Hangares y Mantenimiento" icon={Warehouse}>
+   724→                <div className="space-y-0.5">
+   725→                  <InfoRow label="Espacio de Hangar" value={detail?.hangarSpace} icon={Warehouse} />
+   726→                  <InfoRow label="Instalaciones de Reparación" value={detail?.repairFacilities} icon={Warehouse} />
+   727→                  <InfoRow label="Servicio de Deshielo" value={detail?.deIcingFacilities} icon={Snowflake} />
+   728→                </div>
+   729→              </SectionCard>
+   730→
+   731→              {/* Meteorological Info */}
+   732→              <SectionCard title="Información Meteorológica" icon={CloudSun}>
+   733→                <div className="space-y-0.5">
+   734→                  <InfoRow label="Oficina Meteorológica" value={detail?.metOffice} icon={CloudSun} />
+   735→                  <InfoRow label="Horario" value={detail?.metHours} icon={Clock} />
+   736→                  <InfoRow label="Oficina de Pronóstico" value={detail?.metForecastOffice} icon={CloudSun} />
+   737→                  <InfoRow label="Validez" value={detail?.metValidity} icon={Clock} />
+   738→                  <InfoRow label="Pronóstico de Aterrizaje" value={detail?.metLandingForecast} icon={CloudSun} />
+   739→                  <InfoRow label="Intervalo de Tendencia" value={detail?.metTrendInterval} icon={Clock} />
+   740→                  <InfoRow label="Briefing" value={detail?.metBriefing} icon={Info} />
+   741→                  <InfoRow label="Consultas" value={detail?.metConsultation} icon={Info} />
+   742→                  <InfoRow label="Documentación" value={detail?.metDocumentation} icon={Info} />
+   743→                  <InfoRow label="Idioma" value={detail?.metLanguage} icon={Info} />
+   744→                  <InfoRow label="Cartas" value={detail?.metCharts} icon={Info} />
+   745→                  <InfoRow label="Información Suplementaria" value={detail?.metSupplementary} icon={Info} />
+   746→                  <InfoRow label="Dependencias ATS" value={detail?.metAtsDependencies} icon={Info} />
+   747→                  <InfoRow label="Información Adicional" value={detail?.metAdditionalInfo} icon={Info} />
+   748→                </div>
+   749→              </SectionCard>
+   750→            </div>
+   751→          )}
+   752→        </TabsContent>
+   753→
+   754→        {/* Obstáculos Tab */}
+   755→        <TabsContent value="obstaculos" className="mt-4">
+   756→          {obstaclesLoading ? (
+   757→            <Card>
+   758→              <CardContent className="pt-6 space-y-3">
+   759→                <Skeleton className="h-8 w-full" />
+   760→                <Skeleton className="h-8 w-full" />
+   761→                <Skeleton className="h-8 w-full" />
+   762→                <Skeleton className="h-8 w-full" />
+   763→              </CardContent>
+   764→            </Card>
+   765→          ) : detailObstacles.length > 0 ? (
+   766→            <Card>
+   767→              <CardHeader className="pb-3">
+   768→                <CardTitle className="flex items-center gap-2 text-base">
+   769→                  <AlertTriangle className="size-5 text-amber-600" />
+   770→                  Obstáculos del Aeródromo ({detailObstacles.length})
+   771→                </CardTitle>
+   772→              </CardHeader>
+   773→              <CardContent>
+   774→                <ScrollArea className="w-full">
+   775→                  <Table>
+   776→                    <TableHeader>
+   777→                      <TableRow>
+   778→                        <TableHead>Área de Pista</TableHead>
+   779→                        <TableHead>Tipo de Obstáculo</TableHead>
+   780→                        <TableHead>Elevación</TableHead>
+   781→                        <TableHead>Marcación / Iluminación</TableHead>
+   782→                        <TableHead>Coordenadas</TableHead>
+   783→                        <TableHead>Observaciones</TableHead>
+   784→                      </TableRow>
+   785→                    </TableHeader>
+   786→                    <TableBody>
+   787→                      {detailObstacles.map((obs) => (
+   788→                        <TableRow key={obs.id}>
+   789→                          <TableCell className="font-medium">
+   790→                            {obs.runwayArea || "—"}
+   791→                          </TableCell>
+   792→                          <TableCell>{obs.obstacleType || "—"}</TableCell>
+   793→                          <TableCell>{obs.elevation || "—"}</TableCell>
+   794→                          <TableCell>{obs.markingLighting || "—"}</TableCell>
+   795→                          <TableCell className="text-xs">{obs.coordinates || "—"}</TableCell>
+   796→                          <TableCell>{obs.remarks || "—"}</TableCell>
+   797→                        </TableRow>
+   798→                      ))}
+   799→                    </TableBody>
+   800→                  </Table>
+   801→                </ScrollArea>
+   802→              </CardContent>
+   803→            </Card>
+   804→          ) : (
+   805→            <Card>
+   806→              <CardContent className="py-12 text-center">
+   807→                <AlertTriangle className="size-10 text-muted-foreground mx-auto mb-3 opacity-50" />
+   808→                <h3 className="text-lg font-medium">Sin obstáculos</h3>
+   809→                <p className="text-muted-foreground mt-1">
+   810→                  No hay obstáculos registrados para este aeródromo
+   811→                </p>
+   812→              </CardContent>
+   813→            </Card>
+   814→          )}
+   815→        </TabsContent>
+   816→        {/* Cartas Tab */}
+   817→        <TabsContent value="cartas" className="mt-4">
+   818→          {chartsLoading ? (
+   819→            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+   820→              {Array.from({ length: 6 }).map((_, i) => (
+   821→                <Card key={i}>
+   822→                  <CardContent className="pt-6 space-y-3">
+   823→                    <Skeleton className="h-4 w-20" />
+   824→                    <Skeleton className="h-40 w-full" />
+   825→                    <Skeleton className="h-4 w-32" />
+   826→                  </CardContent>
+   827→                </Card>
+   828→              ))}
+   829→            </div>
+   830→          ) : chartsData && chartsData.totalCharts > 0 ? (
+   831→            <div className="space-y-4">
+   832→              {/* Chart type filter */}
+   833→              <div className="flex items-center gap-2 flex-wrap">
+   834→                <Button
+   835→                  variant={chartFilter === "all" ? "default" : "outline"}
+   836→                  size="sm"
+   837→                  onClick={() => setChartFilter("all")}
+   838→                >
+   839→                  Todas ({chartsData.totalCharts})
+   840→                </Button>
+   841→                {chartTypes.filter(t => chartsData.grouped[t]).map(type => {
+   842→                  const TypeIcon = chartTypeLabels[type]?.icon || Map
+   843→                  return (
+   844→                    <Button
+   845→                      key={type}
+   846→                      variant={chartFilter === type ? "default" : "outline"}
+   847→                      size="sm"
+   848→                      onClick={() => setChartFilter(type)}
+   849→                      className="gap-1.5"
+   850→                    >
+   851→                      <TypeIcon className="size-3.5" />
+   852→                      {type} ({chartsData.grouped[type].length})
+   853→                    </Button>
+   854→                  )
+   855→                })}
+   856→              </div>
+   857→
+   858→              {/* Chart grid */}
+   859→              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+   860→                {filteredCharts.map((chart) => {
+   861→                  const TypeIcon = chartTypeLabels[chart.type]?.icon || Map
+   862→                  return (
+   863→                    <Card
+   864→                      key={chart.file}
+   865→                      className="cursor-pointer hover:ring-2 hover:ring-amber-400 transition-all overflow-hidden group"
+   866→                      onClick={() => setSelectedChart(chart)}
+   867→                    >
+   868→                      <div className="relative bg-slate-100 dark:bg-slate-800">
+   869→                        <img
+   870→                          src={chart.url}
+   871→                          alt={`${chart.type} - ${chart.name}`}
+   872→                          className="w-full h-48 object-contain p-2 group-hover:scale-105 transition-transform"
+   873→                        />
+   874→                        <div className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+   875→                          <ZoomIn className="size-4" />
+   876→                        </div>
+   877→                      </div>
+   878→                      <CardContent className="p-3">
+   879→                        <div className="flex items-center gap-2 mb-1">
+   880→                          <Badge
+   881→                            variant="outline"
+   882→                            className={`text-xs font-bold ${
+   883→                              chart.type === "SID" ? "border-green-500 text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950/30" :
+   884→                              chart.type === "STAR" ? "border-blue-500 text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30" :
+   885→                              chart.type === "IAC" ? "border-red-500 text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/30" :
+   886→                              chart.type === "ADC" ? "border-purple-500 text-purple-700 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/30" :
+   887→                              chart.type === "TMA" ? "border-amber-500 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30" :
+   888→                              chart.type === "VAC" ? "border-cyan-500 text-cyan-700 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-950/30" :
+   889→                              chart.type === "HELO" ? "border-orange-500 text-orange-700 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/30" :
+   890→                              chart.type === "NADP" ? "border-slate-500 text-slate-700 dark:text-slate-400 bg-slate-50 dark:bg-slate-950/30" :
+   891→                              "border-gray-500 text-gray-700 dark:text-gray-400 bg-gray-50 dark:bg-gray-950/30"
+   892→                            }`}
+   893→                          >
+   894→                            <TypeIcon className="size-3 mr-1" />
+   895→                            {chart.type}
+   896→                          </Badge>
+   897→                        </div>
+   898→                        <p className="text-sm font-medium leading-tight">{chart.name}</p>
+   899→                      </CardContent>
+   900→                    </Card>
+   901→                  )
+   902→                })}
+   903→              </div>
+   904→            </div>
+   905→          ) : (
+   906→            <Card>
+   907→              <CardContent className="py-12 text-center">
+   908→                <Map className="size-10 text-muted-foreground mx-auto mb-3 opacity-50" />
+   909→                <h3 className="text-lg font-medium">Sin cartas disponibles</h3>
+   910→                <p className="text-muted-foreground mt-1">
+   911→                  No hay cartas SID/STAR/IAC disponibles para este aeródromo
+   912→                </p>
+   913→              </CardContent>
+   914→            </Card>
+   915→          )}
+   916→        </TabsContent>
+   917→      </Tabs>
+   918→
+   919→      {/* Chart Full-screen Viewer Modal */}
+   920→      {selectedChart && (
+   921→        <div
+   922→          className="fixed inset-0 z-50 bg-black/90 flex flex-col"
+   923→          onClick={() => setSelectedChart(null)}
+   924→        >
+   925→          <div className="flex items-center justify-between p-3 bg-black/50">
+   926→            <div className="flex items-center gap-3">
+   927→              <Badge
+   928→                variant="outline"
+   929→                className={`text-xs font-bold ${
+   930→                  selectedChart.type === "SID" ? "border-green-400 text-green-400" :
+   931→                  selectedChart.type === "STAR" ? "border-blue-400 text-blue-400" :
+   932→                  selectedChart.type === "IAC" ? "border-red-400 text-red-400" :
+   933→                  selectedChart.type === "ADC" ? "border-purple-400 text-purple-400" :
+   934→                  "border-amber-400 text-amber-400"
+   935→                }`}
+   936→              >
+   937→                {selectedChart.type}
+   938→              </Badge>
+   939→              <span className="text-white text-sm font-medium">{selectedChart.name}</span>
+   940→              <span className="text-white/50 text-xs">{airport.icaoCode}</span>
+   941→            </div>
+   942→            <div className="flex items-center gap-2">
+   943→              {chartsData && (() => {
+   944→                const allCharts = chartFilter === "all"
+   945→                  ? chartsData.charts
+   946→                  : (chartsData.grouped[chartFilter] || chartsData.charts)
+   947→                const currentIndex = allCharts.findIndex(c => c.file === selectedChart.file)
+   948→                const prevChart = currentIndex > 0 ? allCharts[currentIndex - 1] : null
+   949→                const nextChart = currentIndex < allCharts.length - 1 ? allCharts[currentIndex + 1] : null
+   950→                return (
+   951→                  <>
+   952→                    <Button
+   953→                      variant="outline"
+   954→                      size="icon"
+   955→                      className="border-white/30 text-white hover:bg-white/20"
+   956→                      disabled={!prevChart}
+   957→                      onClick={(e) => { e.stopPropagation(); if (prevChart) setSelectedChart(prevChart) }}
+   958→                    >
+   959→                      <ChevronLeft className="size-4" />
+   960→                    </Button>
+   961→                    <span className="text-white/60 text-xs">{currentIndex + 1} / {allCharts.length}</span>
+   962→                    <Button
+   963→                      variant="outline"
+   964→                      size="icon"
+   965→                      className="border-white/30 text-white hover:bg-white/20"
+   966→                      disabled={!nextChart}
+   967→                      onClick={(e) => { e.stopPropagation(); if (nextChart) setSelectedChart(nextChart) }}
+   968→                    >
+   969→                      <ChevronRight className="size-4" />
+   970→                    </Button>
+   971→                  </>
+   972→                )
+   973→              })()}
+   974→              <Button
+   975→                variant="outline"
+   976→                size="icon"
+   977→                className="border-white/30 text-white hover:bg-white/20 ml-2"
+   978→                onClick={(e) => { e.stopPropagation(); setSelectedChart(null) }}
+   979→              >
+   980→                <X className="size-4" />
+   981→              </Button>
+   982→            </div>
+   983→          </div>
+   984→          <div
+   985→            className="flex-1 flex items-center justify-center p-4 overflow-auto"
+   986→            onClick={(e) => e.stopPropagation()}
+   987→          >
+   988→            <img
+   989→              src={selectedChart.url}
+   990→              alt={`${selectedChart.type} - ${selectedChart.name}`}
+   991→              className="max-w-full max-h-full object-contain"
+   992→            />
+   993→          </div>
+   994→        </div>
+   995→      )}
+   996→    </div>
+   997→  )
+   998→}
+   999→
