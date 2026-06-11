@@ -126,6 +126,7 @@ export function AirportListing({ onSelectAirport }: AirportListingProps) {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-10 h-11"
+              suppressHydrationWarning
             />
           </div>
           <div className="relative">
@@ -134,6 +135,7 @@ export function AirportListing({ onSelectAirport }: AirportListingProps) {
               value={selectedDepartment}
               onChange={(e) => setSelectedDepartment(e.target.value)}
               className="h-11 pl-10 pr-8 rounded-md border border-input bg-background text-sm appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-ring"
+              suppressHydrationWarning
             >
               <option value="">Todos los departamentos</option>
               {departments.map((dept) => (
