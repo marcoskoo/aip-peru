@@ -53,3 +53,24 @@ Stage Summary:
 - Category badges on listing cards and detail headers
 - SPUR charts added (1 ADC), SPCL charts expanded to 15
 - 8 single-page ADC charts added (SPHY, SPAS, SPEO, SPNC, SPJE, SPJJ, SPJI, SPMF)
+
+---
+Task ID: 4
+Agent: Main Agent
+Task: Integrate SPJC (Lima) aeronautical information from 7 PDFs and implement tab-based airport organization
+
+Work Log:
+- Processed 7 SPJC PDFs via subagents: VAC, Helicopter circuits (salida/entrada), SID, STAR, IAC, main LIMA PDF
+- Extracted 32 new chart images for SPJC using pdftoppm + VLM identification
+- Added VAC (1), HELO (2), NADP (1), SID (12), STAR (7), IAC (9) charts to SPJC
+- Updated charts-metadata.json with 32 new SPJC chart entries (total now 43 charts for SPJC)
+- Implemented tab-based airport organization with shadcn Tabs: Todos/Internacionales/Nacionales
+- Added VAC, HELO, NADP chart type support in airport detail view
+- Added color-coded badges for new chart types (VAC=cyan, HELO=orange, NADP=slate)
+- Fixed Helicopter icon import error (not available in lucide-react, used Plane instead)
+- Verified with Agent Browser: tabs working, all 43 charts displaying, no errors
+
+Stage Summary:
+- SPJC Lima now has 43 charts (was 11): 6 ADC, 3 TMA, 1 VAC, 2 HELO, 1 NADP, 13 SID, 8 STAR, 9 IAC
+- Airport listing now uses tabs: Todos (33), Internacionales (15), Nacionales (18)
+- New chart types supported: VAC, HELO, NADP with distinct icons and colors

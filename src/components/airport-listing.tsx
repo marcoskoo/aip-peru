@@ -5,6 +5,7 @@ import { Search, Plane, MapPin, Globe, Flag } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { AirportCard } from "@/components/airport-card"
 import type { Airport } from "@/lib/types"
 
@@ -28,10 +29,8 @@ export function AirportListing({ onSelectAirport }: AirportListingProps) {
       const response = await fetch(`/api/airports?${params.toString()}`)
       if (response.ok) {
         const data = await response.json()
-        // API returns an array directly
         const airportList = Array.isArray(data) ? data : data.airports || []
         setAirports(airportList)
-        // Extract unique departments
         const depts = [...new Set(airportList.map((a: Airport) => a.department).filter(Boolean))] as string[]
         setDepartments(depts.sort())
       }
@@ -57,6 +56,31 @@ export function AirportListing({ onSelectAirport }: AirportListingProps) {
   // Group airports by category
   const internationalAirports = airports.filter(a => a.category === "INTERNACIONAL")
   const nationalAirports = airports.filter(a => a.category !== "INTERNACIONAL")
+
+  const renderAirportGrid = (list: Airport[]) => {
+    if (list.length === 0) {
+      return (
+        <div className="text-center py-12">
+          <Plane className="size-10 text-muted-foreground mx-auto mb-3 opacity-50" />
+          <h3 className="text-lg font-medium">No se encontraron aeródromos</h3>
+          <p className="text-muted-foreground mt-1">
+            Intente con otros términos de búsqueda
+          </p>
+        </div>
+      )
+    }
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {list.map((airport) => (
+          <AirportCard
+            key={airport.icaoCode}
+            airport={airport}
+            onClick={onSelectAirport}
+          />
+        ))}
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-8">
@@ -143,7 +167,7 @@ export function AirportListing({ onSelectAirport }: AirportListingProps) {
         </div>
       </div>
 
-      {/* Airport Grid */}
+      {/* Tab-based Airport Grid */}
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
@@ -168,61 +192,81 @@ export function AirportListing({ onSelectAirport }: AirportListingProps) {
           </p>
         </div>
       ) : (
-        <div className="space-y-10">
-          {/* Internacional Section */}
-          {internationalAirports.length > 0 && (
-            <div>
-              <div className="flex items-center gap-3 mb-4">
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
-                  <Globe className="size-4 text-amber-600 dark:text-amber-400" />
-                  <span className="font-semibold text-amber-800 dark:text-amber-300 text-sm tracking-wide">
-                    AEROPUERTOS INTERNACIONALES
-                  </span>
-                </div>
-                <Badge variant="secondary" className="text-xs">
-                  {internationalAirports.length}
-                </Badge>
-                <div className="flex-1 h-px bg-border" />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {internationalAirports.map((airport) => (
-                  <AirportCard
-                    key={airport.icaoCode}
-                    airport={airport}
-                    onClick={onSelectAirport}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
+        <Tabs defaultValue="todos" className="w-full">
+          <TabsList className="w-full sm:w-auto grid grid-cols-3 sm:inline-flex h-auto gap-1 p-1">
+            <TabsTrigger value="todos" className="gap-1.5 text-xs sm:text-sm">
+              <Plane className="size-3.5 sm:size-4" />
+              <span>Todos</span>
+              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 min-w-4">
+                {airports.length}
+              </Badge>
+            </TabsTrigger>
+            <TabsTrigger value="internacionales" className="gap-1.5 text-xs sm:text-sm">
+              <Globe className="size-3.5 sm:size-4" />
+              <span>Internacionales</span>
+              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 min-w-4">
+                {internationalAirports.length}
+              </Badge>
+            </TabsTrigger>
+            <TabsTrigger value="nacionales" className="gap-1.5 text-xs sm:text-sm">
+              <Flag className="size-3.5 sm:size-4" />
+              <span>Nacionales</span>
+              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 min-w-4">
+                {nationalAirports.length}
+              </Badge>
+            </TabsTrigger>
+          </TabsList>
 
-          {/* Nacional Section */}
-          {nationalAirports.length > 0 && (
-            <div>
-              <div className="flex items-center gap-3 mb-4">
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800">
-                  <Flag className="size-4 text-emerald-600 dark:text-emerald-400" />
-                  <span className="font-semibold text-emerald-800 dark:text-emerald-300 text-sm tracking-wide">
-                    AEROPUERTOS NACIONALES
-                  </span>
+          <TabsContent value="todos" className="mt-4">
+            <div className="space-y-10">
+              {/* Internacional Section */}
+              {internationalAirports.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                      <Globe className="size-4 text-amber-600 dark:text-amber-400" />
+                      <span className="font-semibold text-amber-800 dark:text-amber-300 text-sm tracking-wide">
+                        AEROPUERTOS INTERNACIONALES
+                      </span>
+                    </div>
+                    <Badge variant="secondary" className="text-xs">
+                      {internationalAirports.length}
+                    </Badge>
+                    <div className="flex-1 h-px bg-border" />
+                  </div>
+                  {renderAirportGrid(internationalAirports)}
                 </div>
-                <Badge variant="secondary" className="text-xs">
-                  {nationalAirports.length}
-                </Badge>
-                <div className="flex-1 h-px bg-border" />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {nationalAirports.map((airport) => (
-                  <AirportCard
-                    key={airport.icaoCode}
-                    airport={airport}
-                    onClick={onSelectAirport}
-                  />
-                ))}
-              </div>
+              )}
+
+              {/* Nacional Section */}
+              {nationalAirports.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800">
+                      <Flag className="size-4 text-emerald-600 dark:text-emerald-400" />
+                      <span className="font-semibold text-emerald-800 dark:text-emerald-300 text-sm tracking-wide">
+                        AEROPUERTOS NACIONALES
+                      </span>
+                    </div>
+                    <Badge variant="secondary" className="text-xs">
+                      {nationalAirports.length}
+                    </Badge>
+                    <div className="flex-1 h-px bg-border" />
+                  </div>
+                  {renderAirportGrid(nationalAirports)}
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </TabsContent>
+
+          <TabsContent value="internacionales" className="mt-4">
+            {renderAirportGrid(internationalAirports)}
+          </TabsContent>
+
+          <TabsContent value="nacionales" className="mt-4">
+            {renderAirportGrid(nationalAirports)}
+          </TabsContent>
+        </Tabs>
       )}
     </div>
   )

@@ -33,6 +33,9 @@ import {
   ZoomIn,
   ChevronLeft,
   ChevronRight,
+  Eye,
+  Cog,
+  Volume2,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -234,13 +237,16 @@ export function AirportDetailView({ airport, onBack }: AirportDetailProps) {
     fetchCharts()
   }, [airport.icaoCode])
 
-  const chartTypes = ["SID", "STAR", "IAC", "ADC", "TMA"]
+  const chartTypes = ["SID", "STAR", "IAC", "ADC", "TMA", "VAC", "HELO", "NADP"]
   const chartTypeLabels: Record<string, { label: string; icon: React.ComponentType<{ className?: string }> }> = {
     SID: { label: "Salida Normalizada (SID)", icon: PlaneTakeoff },
     STAR: { label: "Llegada Normalizada (STAR)", icon: PlaneLanding },
     IAC: { label: "Aproximación por Instrumentos", icon: Navigation },
     ADC: { label: "Plano de Aeródromo", icon: Map },
     TMA: { label: "Área de Control Terminal", icon: Globe },
+    VAC: { label: "Carta de Aproximación Visual", icon: Eye },
+    HELO: { label: "Circuitos de Helicópteros", icon: Plane },
+    NADP: { label: "Procedimiento de Atenuación de Ruido", icon: Volume2 },
   }
 
   const filteredCharts = chartFilter === "all"
@@ -878,7 +884,11 @@ export function AirportDetailView({ airport, onBack }: AirportDetailProps) {
                               chart.type === "STAR" ? "border-blue-500 text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30" :
                               chart.type === "IAC" ? "border-red-500 text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/30" :
                               chart.type === "ADC" ? "border-purple-500 text-purple-700 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/30" :
-                              "border-amber-500 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30"
+                              chart.type === "TMA" ? "border-amber-500 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30" :
+                              chart.type === "VAC" ? "border-cyan-500 text-cyan-700 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-950/30" :
+                              chart.type === "HELO" ? "border-orange-500 text-orange-700 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/30" :
+                              chart.type === "NADP" ? "border-slate-500 text-slate-700 dark:text-slate-400 bg-slate-50 dark:bg-slate-950/30" :
+                              "border-gray-500 text-gray-700 dark:text-gray-400 bg-gray-50 dark:bg-gray-950/30"
                             }`}
                           >
                             <TypeIcon className="size-3 mr-1" />
