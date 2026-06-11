@@ -113,3 +113,66 @@ Stage Summary:
 - 15 communications seeded for the 9 new airports
 - 8 radioNavAids seeded for 5 of the 9 new airports
 - All data verified in database
+
+---
+Task ID: 9
+Agent: Main Agent
+Task: Integrate information from 6 uploaded PDFs (Chimbote SPEO, Huánuco SPNC, Jaén SPJE, Jauja SPJJ, Juanjuí SPJI, Mazamarí SPMF)
+
+Work Log:
+- Extracted text from all 6 PDFs using pdfplumber
+- Parsed AIP data from each PDF: coordinates, elevation, temperature, runway data, communications, radioNavAids, obstacles
+- Updated existing SPEO (Chimbote) airport data with new information from updated PDF
+- Added 5 new airports to seed file: SPNC (Huánuco), SPJE (Jaén), SPJJ (Jauja), SPJI (Juanjuí), SPMF (Mazamarí)
+- Added communications for all 5 new airports and SPEO
+- Added radioNavAid (VOR BTE) for SPEO
+- Added obstacles for SPEO (2 antennas), SPNC (3 obstacles), SPJI (1 antenna), SPMF (2 obstacles)
+- Re-seeded database: 24 airports, 22 communications, 8 radioNavAids, 34 obstacles
+- Verified via Agent Browser: 24 airports displayed, search works, detail view works for new airports
+- Verified department filter works (HUÁNUCO filter shows SPNC)
+- Verified Pista tab shows correct runway data for SPNC (07/25, 2500x30, DTHR 300m)
+- Verified Obstacles tab shows correct obstacle data for SPNC
+
+Stage Summary:
+- 5 new airports integrated: SPNC, SPJE, SPJJ, SPJI, SPMF
+- SPEO data updated with new PDF information
+- Database now contains 24 airports total
+- All new airports have complete data: geographic info, runway data, declared distances, communications
+- Application verified working with all new data
+
+---
+Task ID: 8
+Agent: Main Agent
+Task: Add 5 new airports (SPNC, SPJE, SPJJ, SPJI, SPMF) and update SPEO data
+
+Work Log:
+- Read existing seed file to understand structure (24 airports, existing SPEO at line 1784)
+- Updated SPEO (Chimbote) remarks with complete text including "Pistola de señales inutilizable", LDG/TKOF info, and "Se brindan servicios" prefix
+- Added WDI RWY 19 field to SPEO RWY 19 runway entry
+- Added 5 new airports to the airports array before closing `];`:
+  - SPNC (HUÁNUCO - ALFÉREZ FAP DAVID FIGUEROA FERNANDINI): 2500x30 asphalt runway 07/25, PCN 34 F/C/X/T, DTHR 07=300m, CAT 5
+  - SPJE (JAÉN - FERNANDO BELAÚNDE TERRY): 2400x45 runway 16/34, PCN 54 F/D/X/T, DTHR 34=300m por fisuras, PAPI 3° RWY 34 INOP, CAT 5
+  - SPJJ (JAUJA - FRANCISCO CARLÉ): 2810x45 runway 13/31, PCN 46 F/C/W/T, APAPI 3° RWY 31, CAT 5
+  - SPJI (JUANJUÍ): 2000x30 runway 03/21, PCN 14 F/C/X/T, terreno natural, CAT 1
+  - SPMF (MAZAMARI - MAYOR PNP NANCY FLORES PÁUCAR): 1760x30 runway 15/33, PCN 34 F/C/Y/T, PAPI 3.1° RWY 15, CAT 5
+- Added communications for all 5 new airports:
+  - SPNC: AFIS/FIS 126.9 MHz, EMERGENCIA 121.5 MHz
+  - SPJE: FIS/AFIS 126.9 MHz, EMERGENCIA 121.5 MHz
+  - SPJJ: FIS/AFIS 126.9 MHz
+  - SPJI: FIS/AFIS 118.1 MHz
+  - SPMF: AFIS 118.3 MHz
+- Updated SPEO communications section to add obstacles (2 antenas near RWY 19)
+- Added obstacles for 3 new airports:
+  - SPNC: 3 obstacles (cerros, 2 torres metálicas alta tensión)
+  - SPJI: 1 obstacle (antena 38.50m)
+  - SPMF: 2 obstacles (postes cemento, antena)
+- Lint passes with no errors
+- Seed runs successfully: 24 airports, 22 communications, 8 radioNavAids, 34 obstacles
+
+Stage Summary:
+- Seed script at /home/z/my-project/prisma/seed.ts updated
+- 24 airports total (19 previous + 5 new)
+- SPEO updated with enhanced remarks, WDI info, and obstacles
+- 22 communications seeded (15 previous + 7 new for SPNC/SPJE/SPJJ/SPJI/SPMF)
+- 34 obstacles seeded (26 previous + 2 SPEO + 3 SPNC + 1 SPJI + 2 SPMF)
+- All data verified in database

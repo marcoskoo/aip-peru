@@ -1796,7 +1796,7 @@ async function main() {
       distanceFromCity: "12 km SE",
       administrationType: "CORPAC S.A.",
       authorizedTraffic: "VFR",
-      remarks: "Uso Público. AFIS/FIS/ALRS/COM/MET/AIS/ARO. FIZ: Círculo 22 NM radio centro VOR BTE, GND/FL065. Despegues VFR solo diurnas. Peligro aviario RWY 01. Obstáculo antena 30 m a 496 m Umbral RWY 19 y 25 m a 570 m Umbral RWY 19.",
+      remarks: "Uso Público. Se brindan servicios AFIS/FIS/ALRS/COM/MET/AIS/ARO. Zona CHIMBOTE FIZ: Círculo 22 NM radio centro VOR BTE, GND/FL065. Despegues VFR solo diurnas. Peligro aviario RWY 01. Pistola de señales inutilizable. Obstáculo antena 30m a 496m Umbral RWY 19 y 25m a 570m Umbral RWY 19. LDG: RWY 19 Aproximación de no precisión / RWY 01 Aproximación visual. TKOF: RWY 19/01.",
       operatingHours: JSON.stringify({
         oficinaMET: "1300-2100",
         ats: "1300-2100 y O/R",
@@ -1838,12 +1838,354 @@ async function main() {
           ofz: "NIL",
           resa: "NIL",
           slope: "0.89%",
-          papi: "PAPI 3° RWY 19"
+          papi: "PAPI 3° RWY 19",
+          wdi: "WDI RWY 19"
         }
       ]),
       declaredDistances: JSON.stringify([
         { rwy: "01", tora: 1800, toda: 1800, asda: 1860, lda: 1800, remarks: "NIL" },
         { rwy: "19", tora: 1800, toda: 1800, asda: 1860, lda: 1800, remarks: "NIL" }
+      ])
+    },
+    {
+      icaoCode: "SPNC",
+      name: "ALFÉREZ FAP DAVID FIGUEROA FERNANDINI",
+      city: "HUÁNUCO",
+      region: "HUÁNUCO",
+      department: "HUÁNUCO",
+      province: "HUÁNUCO",
+      district: "HUÁNUCO",
+      arpLatitude: "09°52'43.25\"S",
+      arpLongitude: "076°12'16.45\"W",
+      elevation: "1850 m / 6070 ft",
+      temperature: "28°C (NOV)",
+      geoidalUndulation: "NIL",
+      magneticDeclination: "NIL",
+      annualChange: "NIL",
+      distanceFromCity: "6 km NE",
+      administrationType: "CORPAC S.A.",
+      authorizedTraffic: "VFR",
+      remarks: "Uso Público. Se brindan servicios FIS/AFIS/COM/MET/AIS/ARO/ALRS. Solo operaciones diurnas y VFR. Opera L-D 1400/2200. Precaución vuelos militares sin COM. DTHR RWY 07 = 300 m. Márgenes laterales 7.5 m. Virajes después del aterrizaje prohibidos. Orientación pista: 068°/248°. Calle rodaje: perpendicular a 1190 m del THR RWY 07, 60.5 m x 18 m. Plataforma: 120 m x 60 m lado norte.",
+      operatingHours: JSON.stringify({
+        oficinaMET: "1300-2200",
+        oficinaARO: "1300-2200",
+        oficinaAIS: "1300-2200",
+        ats: "1400-2200",
+        seguridad: "1400-2200",
+        com: "1300-2200",
+        notas: "Aeródromo opera L-D 1400/2200"
+      }),
+      fireCategory: "CAT 5",
+      fuelTypes: "NIL",
+      runways: JSON.stringify([
+        {
+          designator: "07",
+          brgGeo: "068°",
+          brgMag: "068°",
+          dimensions: "2500 X 30",
+          pcn: "PCN 34 F/C/X/T",
+          surface: "Asfalto",
+          thrCoords: "09°52'58.70''S - 076°12'54.40''W",
+          thrElevation: "NIL",
+          swyDimensions: "NIL",
+          cwyDimensions: "NIL",
+          stripDimensions: "2710 X 100-150",
+          ofz: "NIL",
+          resa: "NIL",
+          slope: "0.53%",
+          dthr: "DTHR 07 = 300 m"
+        },
+        {
+          designator: "25",
+          brgGeo: "248°",
+          brgMag: "248°",
+          dimensions: "2500 X 30",
+          pcn: "PCN 34 F/C/X/T",
+          surface: "Asfalto",
+          thrCoords: "09°52'27.80''S - 076°11'38.50''W",
+          thrElevation: "NIL",
+          swyDimensions: "NIL",
+          cwyDimensions: "NIL",
+          stripDimensions: "2710 X 100-150",
+          ofz: "NIL",
+          resa: "NIL",
+          slope: "0.53%"
+        }
+      ]),
+      declaredDistances: JSON.stringify([
+        { rwy: "07", tora: 2500, toda: 2500, asda: 2500, lda: 2200, remarks: "DTHR 300 m" },
+        { rwy: "25", tora: 2500, toda: 2500, asda: 2500, lda: 2500, remarks: "NIL" }
+      ])
+    },
+    {
+      icaoCode: "SPJE",
+      name: "FERNANDO BELAÚNDE TERRY",
+      city: "JAÉN",
+      region: "CAJAMARCA",
+      department: "CAJAMARCA",
+      province: "JAÉN",
+      district: "JAÉN",
+      arpLatitude: "05°35'29\"S",
+      arpLongitude: "078°46'17\"W",
+      elevation: "755 m / 2477 ft",
+      temperature: "33.8°C (NOV)",
+      geoidalUndulation: "NIL",
+      magneticDeclination: "NIL",
+      annualChange: "NIL",
+      distanceFromCity: "17 km al N",
+      administrationType: "CORPAC S.A.",
+      authorizedTraffic: "VFR",
+      remarks: "Uso Público. Se brindan servicios AFIS/FIS/ALRS. Solo operaciones diurnas y VFR. Cerrado domingos. DTHR RWY 34 = 300 m por fisuras. Nuevas distancias declaradas: RWY 34 TORA 2100, TODA 2100, ASDA 2200, LDA 2100. RWY 16 TORA 2100, TODA 2100, ASDA 2100, LDA 2100. Desniveles en Pista 16/34. Orientación pista: 160°/340°. Plataforma: 120 m x 70 m, concreto.",
+      operatingHours: JSON.stringify({
+        oficinaMET: "1300-2100",
+        ats: "1300-2100 y O/R",
+        seguridad: "1300-2100 y O/R",
+        com: "1300-2100",
+        notas: "Cerrado domingos"
+      }),
+      fireCategory: "CAT 5",
+      fuelTypes: "NIL",
+      runways: JSON.stringify([
+        {
+          designator: "16",
+          brgGeo: "160°",
+          brgMag: "160°",
+          dimensions: "2400 X 45",
+          pcn: "PCN 54 F/D/X/T",
+          surface: "Primeros 2100 m Asfalto",
+          thrCoords: "NIL",
+          thrElevation: "NIL",
+          swyDimensions: "100 X 51",
+          cwyDimensions: "NIL",
+          stripDimensions: "2600 X 150",
+          ofz: "NIL",
+          resa: "NIL",
+          slope: "0.116%"
+        },
+        {
+          designator: "34",
+          brgGeo: "340°",
+          brgMag: "340°",
+          dimensions: "2400 X 45",
+          pcn: "PCN 54 F/D/X/T",
+          surface: "Primeros 2100 m Asfalto",
+          thrCoords: "NIL",
+          thrElevation: "54.68 ft / 16.67 m",
+          swyDimensions: "100 X 51",
+          cwyDimensions: "NIL",
+          stripDimensions: "2600 X 150",
+          ofz: "NIL",
+          resa: "NIL",
+          slope: "0.116%",
+          dthr: "DTHR 34 = 300 m por fisuras",
+          papi: "PAPI 3° RWY 34 INOP"
+        }
+      ]),
+      declaredDistances: JSON.stringify([
+        { rwy: "16", tora: 2100, toda: 2100, asda: 2100, lda: 2100, remarks: "DTHR RWY 34 = 300 m" },
+        { rwy: "34", tora: 2100, toda: 2100, asda: 2200, lda: 2100, remarks: "DTHR 300 m por fisuras" }
+      ])
+    },
+    {
+      icaoCode: "SPJJ",
+      name: "FRANCISCO CARLÉ",
+      city: "JAUJA",
+      region: "JUNÍN",
+      department: "JUNÍN",
+      province: "JAUJA",
+      district: "JAUJA",
+      arpLatitude: "11°47'0.20\"S",
+      arpLongitude: "075°28'24.10\"W",
+      elevation: "3363 m / 11034 ft",
+      temperature: "21.7°C (NOV)",
+      geoidalUndulation: "NIL",
+      magneticDeclination: "NIL",
+      annualChange: "NIL",
+      distanceFromCity: "2 km SE",
+      administrationType: "CORPAC S.A.",
+      authorizedTraffic: "VFR",
+      remarks: "Uso Público. Se brindan servicios AFIS/FIS/ALRS. Solo operaciones diurnas y VFR. AFIS sin visualización área aterrizaje y umbrales. Pistola de señales disponible. Virajes después del aterrizaje RWY 31 prohibidos. Orientación pista: 130°/310°. Calle rodaje: a 1305 m del THR RWY 31, 42.5 m x 23 m. Plataforma: 90 m x 70 m.",
+      operatingHours: JSON.stringify({
+        oficinaMET: "1000-2300",
+        ats: "1100-2300",
+        seguridad: "1100-2300",
+        com: "1000-2300"
+      }),
+      fireCategory: "CAT 5",
+      fuelTypes: "NIL",
+      runways: JSON.stringify([
+        {
+          designator: "13",
+          brgGeo: "130°",
+          brgMag: "130°",
+          dimensions: "2810 X 45",
+          pcn: "PCN 46 F/C/W/T",
+          surface: "Asfalto",
+          thrCoords: "11°46'32.15''S - 075°29'0.77''W",
+          thrElevation: "NIL",
+          swyDimensions: "60 X 51",
+          cwyDimensions: "NIL",
+          stripDimensions: "2930 X 100",
+          ofz: "NIL",
+          resa: "NIL",
+          slope: "0.299%"
+        },
+        {
+          designator: "31",
+          brgGeo: "310°",
+          brgMag: "310°",
+          dimensions: "2810 X 45",
+          pcn: "PCN 46 F/C/W/T",
+          surface: "Asfalto",
+          thrCoords: "11°47'28.20''S - 075°27'47.42''W",
+          thrElevation: "45.67 ft / 13.92 m",
+          swyDimensions: "60 X 51",
+          cwyDimensions: "NIL",
+          stripDimensions: "2930 X 100",
+          ofz: "NIL",
+          resa: "NIL",
+          slope: "0.299%",
+          papi: "APAPI 3° RWY 31"
+        }
+      ]),
+      declaredDistances: JSON.stringify([
+        { rwy: "13", tora: 2810, toda: 2810, asda: 2870, lda: 2810, remarks: "NIL" },
+        { rwy: "31", tora: 2810, toda: 2810, asda: 2870, lda: 2810, remarks: "NIL" }
+      ])
+    },
+    {
+      icaoCode: "SPJI",
+      name: "JUANJUÍ",
+      city: "JUANJUÍ",
+      region: "SAN MARTÍN",
+      department: "SAN MARTÍN",
+      province: "MARISCAL CÁCERES",
+      district: "JUANJUÍ",
+      arpLatitude: "07°10'11\"S",
+      arpLongitude: "076°43'45\"W",
+      elevation: "350 m / 1148 ft",
+      temperature: "33°C (NOV)",
+      geoidalUndulation: "NIL",
+      magneticDeclination: "NIL",
+      annualChange: "NIL",
+      distanceFromCity: "1 km W",
+      administrationType: "CORPAC S.A.",
+      authorizedTraffic: "VFR",
+      remarks: "Uso Público. Se brindan servicios AFIS/FIS/ALRS. Cerrado domingos. Obstáculo: Antena 38.50 m altura, coords 07°10'09''S - 076°43'20''W. Orientación pista: 030°/210°.",
+      operatingHours: JSON.stringify({
+        oficinaMET: "1300-2100",
+        ats: "1300-2100",
+        seguridad: "1300-2100",
+        com: "1300-2100",
+        notas: "Cerrado domingos"
+      }),
+      fireCategory: "CAT 1",
+      fuelTypes: "NIL",
+      runways: JSON.stringify([
+        {
+          designator: "03",
+          brgGeo: "030°",
+          brgMag: "030°",
+          dimensions: "2000 X 30",
+          pcn: "PCN 14 F/C/X/T",
+          surface: "Terreno natural",
+          thrCoords: "07°10'38.9''S - 076°44'03.7''W",
+          thrElevation: "282 m / 925 ft",
+          swyDimensions: "NIL",
+          cwyDimensions: "NIL",
+          stripDimensions: "2300 X 100",
+          ofz: "NIL",
+          resa: "NIL",
+          slope: "0.35%"
+        },
+        {
+          designator: "21",
+          brgGeo: "210°",
+          brgMag: "210°",
+          dimensions: "2000 X 30",
+          pcn: "PCN 14 F/C/X/T",
+          surface: "Terreno natural",
+          thrCoords: "07°09'31.5''S - 076°43'18.0''W",
+          thrElevation: "274 m / 899 ft",
+          swyDimensions: "NIL",
+          cwyDimensions: "NIL",
+          stripDimensions: "2300 X 100",
+          ofz: "NIL",
+          resa: "NIL",
+          slope: "0.35%"
+        }
+      ]),
+      declaredDistances: JSON.stringify([
+        { rwy: "03", tora: 2000, toda: 2000, asda: 2000, lda: 2000, remarks: "NIL" },
+        { rwy: "21", tora: 2000, toda: 2000, asda: 2000, lda: 2000, remarks: "NIL" }
+      ])
+    },
+    {
+      icaoCode: "SPMF",
+      name: "MAYOR PNP NANCY FLORES PÁUCAR",
+      city: "MAZAMARI",
+      region: "JUNÍN",
+      department: "JUNÍN",
+      province: "SATIPO",
+      district: "MAZAMARI",
+      arpLatitude: "11°19'31.86\"S",
+      arpLongitude: "074°32'08.98\"W",
+      elevation: "664 m / 2180 ft",
+      temperature: "32.6°C (NOV)",
+      geoidalUndulation: "NIL",
+      magneticDeclination: "NIL",
+      annualChange: "NIL",
+      distanceFromCity: "0.5 km",
+      administrationType: "POLICÍA NACIONAL DEL PERÚ - MINISTERIO DEL INTERIOR / Administrador CORPAC S.A.",
+      authorizedTraffic: "VFR",
+      remarks: "Uso Público. Se brindan servicios AFIS/FIS/ALRS. Cerrado domingos. Obstáculos: Postes cemento 8m a 75m Umbral RWY 15; Antena 25m a 60m Umbral RWY 33 lado derecho. AFIS sin visualización primeros 500m Umbral RWY 15 y plataforma. Helicópteros estacionan ambos lados franja primeros 150m RWY 33. Orientación pista: 150°/330°. Plataforma: 95 m x 70 m.",
+      operatingHours: JSON.stringify({
+        oficinaMET: "1300-2300",
+        ats: "1300-2300",
+        seguridad: "1300-2300",
+        com: "1300-2300",
+        notas: "Cerrado domingos"
+      }),
+      fireCategory: "CAT 5",
+      fuelTypes: "NIL",
+      runways: JSON.stringify([
+        {
+          designator: "15",
+          brgGeo: "150°",
+          brgMag: "150°",
+          dimensions: "1760 X 30",
+          pcn: "PCN 34 F/C/Y/T",
+          surface: "Asfalto",
+          thrCoords: "11°19'06.44''S - 074°32'22.37''W",
+          thrElevation: "NIL",
+          swyDimensions: "40 X 45",
+          cwyDimensions: "NIL",
+          stripDimensions: "1800 X 100",
+          ofz: "NIL",
+          resa: "NIL",
+          slope: "2.145%",
+          papi: "PAPI 3.1° RWY 15"
+        },
+        {
+          designator: "33",
+          brgGeo: "330°",
+          brgMag: "330°",
+          dimensions: "1760 X 30",
+          pcn: "PCN 34 F/C/Y/T",
+          surface: "Asfalto",
+          thrCoords: "11°19'57.28''S - 074°31'55.59''W",
+          thrElevation: "NIL",
+          swyDimensions: "NIL",
+          cwyDimensions: "NIL",
+          stripDimensions: "1800 X 100",
+          ofz: "NIL",
+          resa: "NIL",
+          slope: "2.145%"
+        }
+      ]),
+      declaredDistances: JSON.stringify([
+        { rwy: "15", tora: 1760, toda: 1760, asda: 1800, lda: 1760, remarks: "NIL" },
+        { rwy: "33", tora: 1760, toda: 1760, asda: 1760, lda: 1760, remarks: "NIL" }
       ])
     }
   ];
@@ -2087,6 +2429,103 @@ async function main() {
     ];
     for (const navAid of navAids) {
       await db.radioNavAid.create({ data: { ...navAid, airportId: speoAirport.id } });
+    }
+    const obstacles = [
+      { runwayArea: "RWY 19 approach", obstacleType: "Antena", elevation: "30 m de altura", coordinates: "496 m del Umbral RWY 19", markingLighting: "NIL" },
+      { runwayArea: "RWY 19 approach", obstacleType: "Antena", elevation: "25 m de altura", coordinates: "570 m del Umbral RWY 19", markingLighting: "NIL" },
+    ];
+    for (const obs of obstacles) {
+      await db.obstacle.create({ data: { ...obs, airportId: speoAirport.id } });
+    }
+  }
+
+  // Add communications for SPNC - HUÁNUCO
+  const spncAirport = await db.airport.findUnique({ where: { icaoCode: "SPNC" } });
+  if (spncAirport) {
+    const comms = [
+      { service: "AFIS/FIS", callsign: "HUÁNUCO INFO DE AD", frequency: "126.9 MHz", hours: "1400-2200" },
+      { service: "EMERGENCIA", callsign: "EMERGENCIA", frequency: "121.5 MHz", hours: "1400-2200" },
+    ];
+    for (const comm of comms) {
+      await db.communication.create({ data: { ...comm, airportId: spncAirport.id } });
+    }
+  }
+
+  // Add communications for SPJE - JAÉN
+  const spjeAirport = await db.airport.findUnique({ where: { icaoCode: "SPJE" } });
+  if (spjeAirport) {
+    const comms = [
+      { service: "FIS/AFIS", callsign: "JAÉN INFO DE AD", frequency: "126.9 MHz", hours: "1300-2100 y O/R" },
+      { service: "EMERGENCIA", callsign: "EMERGENCIA", frequency: "121.5 MHz", hours: "1300-2100 y O/R" },
+    ];
+    for (const comm of comms) {
+      await db.communication.create({ data: { ...comm, airportId: spjeAirport.id } });
+    }
+  }
+
+  // Add communications for SPJJ - JAUJA
+  const spjjAirport = await db.airport.findUnique({ where: { icaoCode: "SPJJ" } });
+  if (spjjAirport) {
+    const comms = [
+      { service: "FIS/AFIS", callsign: "JAUJA INFO DE AD", frequency: "126.9 MHz", hours: "1100-2300" },
+    ];
+    for (const comm of comms) {
+      await db.communication.create({ data: { ...comm, airportId: spjjAirport.id } });
+    }
+  }
+
+  // Add communications for SPJI - JUANJUÍ
+  const spjiAirport = await db.airport.findUnique({ where: { icaoCode: "SPJI" } });
+  if (spjiAirport) {
+    const comms = [
+      { service: "FIS/AFIS", callsign: "JUANJUI INFO DE AD", frequency: "118.1 MHz", hours: "1300-2100" },
+    ];
+    for (const comm of comms) {
+      await db.communication.create({ data: { ...comm, airportId: spjiAirport.id } });
+    }
+  }
+
+  // Add communications for SPMF - MAZAMARI
+  const spmfAirport = await db.airport.findUnique({ where: { icaoCode: "SPMF" } });
+  if (spmfAirport) {
+    const comms = [
+      { service: "AFIS", callsign: "MAZAMARI INFO DE AD", frequency: "118.3 MHz", hours: "1300-2300" },
+    ];
+    for (const comm of comms) {
+      await db.communication.create({ data: { ...comm, airportId: spmfAirport.id } });
+    }
+  }
+
+  // Add obstacles for SPNC - HUÁNUCO
+  if (spncAirport) {
+    const obstacles = [
+      { runwayArea: "Área del aeródromo", obstacleType: "Cerros", elevation: "Atraviesan superficie limitadora de obstáculos", markingLighting: "NIL" },
+      { runwayArea: "Norte del AD", obstacleType: "Torres metálicas alta tensión", elevation: "35 m de alto a 1.5 km al norte", markingLighting: "NIL" },
+      { runwayArea: "Oeste del AD", obstacleType: "Torres metálicas alta tensión", elevation: "35 m de alto a 3 km al oeste", markingLighting: "NIL" },
+    ];
+    for (const obs of obstacles) {
+      await db.obstacle.create({ data: { ...obs, airportId: spncAirport.id } });
+    }
+  }
+
+  // Add obstacles for SPJI - JUANJUÍ
+  if (spjiAirport) {
+    const obstacles = [
+      { runwayArea: "Área del aeródromo", obstacleType: "Antena", elevation: "38.50 m de altura", coordinates: "07°10'09''S - 076°43'20''W", markingLighting: "NIL" },
+    ];
+    for (const obs of obstacles) {
+      await db.obstacle.create({ data: { ...obs, airportId: spjiAirport.id } });
+    }
+  }
+
+  // Add obstacles for SPMF - MAZAMARI
+  if (spmfAirport) {
+    const obstacles = [
+      { runwayArea: "RWY 15 approach", obstacleType: "Postes de cemento energizados", elevation: "8 m de alto a 75 m del Umbral RWY 15", markingLighting: "NIL" },
+      { runwayArea: "RWY 33 approach", obstacleType: "Antena", elevation: "25 m de altura a 60 m del Umbral RWY 33", coordinates: "90 m del eje de RWY 33", markingLighting: "NIL" },
+    ];
+    for (const obs of obstacles) {
+      await db.obstacle.create({ data: { ...obs, airportId: spmfAirport.id } });
     }
   }
 
