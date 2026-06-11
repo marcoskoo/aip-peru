@@ -2524,6 +2524,392 @@ async function main() {
         { tipo: "Perpendicular", distancia: "105 m umbral RWY 27", dimensiones: "52 m x 23 m" }
       ]),
       platformData: JSON.stringify({ ubicacion: "Lado Sur de pista, cercana umbral RWY 27", dimensiones: "135 m x 40 m" })
+    },
+    // === SPTU - PUERTO MALDONADO / PADRE ALDAMIZ ===
+    {
+      icaoCode: "SPTU",
+      name: "AEROPUERTO INTERNACIONAL PADRE ALDAMIZ",
+      city: "PUERTO MALDONADO",
+      region: "MADRE DE DIOS",
+      department: "MADRE DE DIOS",
+      province: "TAMBOPATA",
+      district: "PUERTO MALDONADO",
+      arpLatitude: "12°36'49.79\"S",
+      arpLongitude: "069°13'43.24\"W",
+      elevation: "201 m / 659 ft",
+      temperature: "33.1°C (OCT)",
+      geoidalUndulation: "NIL",
+      magneticDeclination: "NIL",
+      annualChange: "NIL",
+      distanceFromCity: "7 km W",
+      administrationType: "AEROPUERTOS ANDINOS DEL PERÚ S.A. - AAP",
+      authorizedTraffic: "IFR / VFR",
+      remarks: "Debido a proximidad del terminal de pasajeros con la plataforma, las aeronaves iniciarán rodaje utilizando mínima potencia. Peligro aviario en las pistas 01/19. Operadores de vuelos no regulares coordinar 24h antes de ETD con AAP: pemcoordinacionesfpl@aap.com.pe",
+      operatingHours: JSON.stringify({
+        aisAro: "1100 - 2300",
+        comMet: "1100 - 2300",
+        combustible: "1100 - 2300 y O/R",
+        sei: "CAT 5, 1100 - 2300 y O/R"
+      }),
+      fireCategory: "CAT 5",
+      fuelTypes: "AVGAS / Turbo Jet A1",
+      runways: JSON.stringify([
+        {
+          designator: "01",
+          brgGeo: "001°",
+          brgMag: "NIL",
+          dimensions: "3500 X 45",
+          pcn: "PCN 69 R/C/X/T",
+          surface: "Concreto",
+          thrCoords: "12°37'46.71\"S - 069°13'45.67\"W",
+          thrElevation: "NIL",
+          swyDimensions: "NIL",
+          cwyDimensions: "NIL",
+          stripDimensions: "3620 X 150",
+          ofz: "NIL",
+          resa: "90 X 90",
+          slope: "0.072%",
+          papi: "PAPI 3° RWY 01, Elev 16.83 m / 55.22 ft",
+          restrictions: "LDG RWY 01"
+        },
+        {
+          designator: "19",
+          brgGeo: "190°",
+          brgMag: "NIL",
+          dimensions: "3500 X 45",
+          pcn: "PCN 69 R/C/X/T",
+          surface: "Concreto",
+          thrCoords: "12°35'52.87\"S - 069°13'40.82\"W",
+          thrElevation: "NIL",
+          swyDimensions: "NIL",
+          cwyDimensions: "NIL",
+          stripDimensions: "3620 X 150",
+          ofz: "NIL",
+          resa: "90 X 90",
+          slope: "0.072%",
+          papi: "PAPI 3° RWY 19, Elev 17.26 m / 56.62 ft",
+          restrictions: "TKOF RWY 19"
+        }
+      ]),
+      declaredDistances: JSON.stringify([
+        { rwy: "01", tora: 3500, toda: 3500, asda: 3500, lda: 3500, remarks: "NIL" },
+        { rwy: "19", tora: 3500, toda: 3500, asda: 3500, lda: 3500, remarks: "NIL" }
+      ]),
+      taxiwayData: JSON.stringify({ tipo: "Perpendicular", ubicacion: "Lado izquierdo sentido 19-01, a 560 m del THR 19", dimensiones: "625 m x 24 m", superficie: "Concreto" }),
+      platformData: JSON.stringify({ dimensiones: "204 m x 90 m", superficie: "Concreto" })
+    },
+    // === SPLO - ILO / GENERAL JORGE FERNÁNDEZ MALDONADO SOLARI ===
+    {
+      icaoCode: "SPLO",
+      name: "AEROPUERTO GENERAL JORGE FERNÁNDEZ MALDONADO SOLARI",
+      city: "ILO",
+      region: "MOQUEGUA",
+      department: "MOQUEGUA",
+      province: "ILO",
+      district: "ILO",
+      arpLatitude: "17°41'42\"S",
+      arpLongitude: "071°20'38\"W",
+      elevation: "22 m / 72 ft",
+      temperature: "27.8°C",
+      geoidalUndulation: "NIL",
+      magneticDeclination: "5°W (2020)",
+      annualChange: "0°12'W",
+      distanceFromCity: "8 km",
+      administrationType: "CORPAC S.A.",
+      address: "Carretera Costanera Sur km 7 y 8, Pampa de Palos",
+      phone: "(053) 495021 / 978470281",
+      fax: "(053) 495021",
+      aftn: "SPLOYDYX",
+      email: "csotomayor@corpac.gob.pe",
+      authorizedTraffic: "IFR / VFR",
+      remarks: "Uso: Público. Terreno elevado al Este del Aeródromo, circular por el sector Sur. Debido a la altura de la dependencia AFIS, no se dispone de visualización adecuada de la superficie de la Pista 12/30. Pilotos precaución al despegue y aterrizaje.",
+      operatingHours: JSON.stringify({
+        administracion: "1300-2100 (UTC)",
+        aduanaInmigracion: "NIL",
+        serviciosMedicos: "NIL",
+        oficinaAIS: "1300-2100 (UTC) O/R",
+        oficinaARO: "1300-2100 (UTC) O/R",
+        oficinaMET: "1300-2100 (UTC) O/R",
+        ats: "1300-2100 (UTC) O/R",
+        combustible: "NIL",
+        despacho: "NIL",
+        seguridad: "NIL",
+        descongelamiento: "NIL",
+        com: "1300-2100 (UTC) CLSD SUN"
+      }),
+      cargoHandlingFacilities: "NIL",
+      fuelTypes: "NIL",
+      lubricantTypes: "NIL",
+      refuelingFacilities: "NIL",
+      deIcingFacilities: "NIL",
+      hangarSpace: "NIL",
+      repairFacilities: "NIL",
+      scaleRemarks: "NIL",
+      hotels: "En la ciudad",
+      restaurants: "En la ciudad",
+      transport: "En la ciudad",
+      medicalFacilities: "En la ciudad",
+      bankingPost: "NIL",
+      tourismOffice: "En la ciudad",
+      passengerRemarks: "NIL",
+      fireCategory: "CAT A3",
+      rescueEquipment: "NIL",
+      aircraftRemovalCapacity: "NIL",
+      rescueRemarks: "1300-2100 (UTC)",
+      platformData: JSON.stringify({ superficie: "Concreto", resistencia: "PCN 49/R/B/X/T" }),
+      taxiwayData: JSON.stringify({ superficie: "Asfalto", resistencia: "PCN 49/F/B/X/T" }),
+      checkpointData: JSON.stringify({ altimetro: "NIL", ins: "NIL", vordme: "NIL" }),
+      platformRemarks: "NIL",
+      surfaceGuidance: "Señalización vertical en puestos de estacionamiento (3). Líneas de estacionamiento en puestos 2 y 3. Señalización horizontal y vertical.",
+      runwaySigns: "NIL",
+      taxiwaySigns: "NIL",
+      stopBars: "NIL",
+      guidanceRemarks: "NIL",
+      metOffice: "EMA",
+      metHours: "1300-2100 (UTC) O/R",
+      metForecastOffice: "NIL",
+      metValidity: "NIL",
+      metLandingForecast: "NIL",
+      metTrendInterval: "NIL",
+      metBriefing: "NIL",
+      metConsultation: "NIL",
+      metDocumentation: "NIL",
+      metLanguage: "ES",
+      metCharts: "NIL",
+      metSupplementary: "NIL",
+      metAtsDependencies: "ILO AFIS",
+      metAdditionalInfo: "NIL",
+      runways: JSON.stringify([
+        {
+          designator: "12",
+          brgGeo: "115°",
+          brgMag: "NIL",
+          dimensions: "2500 X 45",
+          pcn: "PCN 49/F/B/X/T",
+          surface: "Asfalto",
+          thrCoords: "17°41'25.00\"S - 071°21'16.80\"W",
+          thrElevation: "NIL",
+          swyDimensions: "NIL",
+          cwyDimensions: "NIL",
+          stripDimensions: "2820 X 150",
+          ofz: "NIL",
+          resa: "NIL",
+          slope: "+0.008%"
+        },
+        {
+          designator: "30",
+          brgGeo: "295°",
+          brgMag: "NIL",
+          dimensions: "2500 X 45",
+          pcn: "PCN 49/F/B/X/T",
+          surface: "Asfalto",
+          thrCoords: "17°41'59.20\"S - 071°19'59.50\"W",
+          thrElevation: "NIL",
+          swyDimensions: "NIL",
+          cwyDimensions: "NIL",
+          stripDimensions: "2820 X 150",
+          ofz: "NIL",
+          resa: "NIL",
+          slope: "+0.008%",
+          papi: "PAPI 3° RWY 30, Elev 47.62 ft"
+        }
+      ]),
+      declaredDistances: JSON.stringify([
+        { rwy: "12", tora: 2500, toda: 2500, asda: 2500, lda: 2500, remarks: "NIL" },
+        { rwy: "30", tora: 2500, toda: 2500, asda: 2500, lda: 2500, remarks: "NIL" }
+      ])
+    },
+    // === SPZA - NASCA / MARÍA REICHE NEUMAN ===
+    {
+      icaoCode: "SPZA",
+      name: "AEROPUERTO NACIONAL MARÍA REICHE NEUMAN",
+      city: "NASCA",
+      region: "ICA",
+      department: "ICA",
+      province: "NASCA",
+      district: "VISTA ALEGRE",
+      arpLatitude: "14°51'14.90\"S",
+      arpLongitude: "074°57'42.38\"W",
+      elevation: "552 m / 1813 ft",
+      temperature: "34.6°C (MAR)",
+      geoidalUndulation: "NIL",
+      magneticDeclination: "NIL",
+      annualChange: "NIL",
+      distanceFromCity: "4 km SW",
+      administrationType: "CORPAC S.A.",
+      address: "Carretera Panamericana Sur Km 452, Vista Alegre, Nasca",
+      phone: "056-522801",
+      aftn: "NIL",
+      email: "lgamboa@corpac.gob.pe",
+      authorizedTraffic: "VFR",
+      remarks: "Vuelos turísticos Líneas de Nazca y Palpa con procedimientos especiales. Pistola de señales fuera de servicio. Solo operaciones diurnas VFR. Intervalo mínimo 6 min entre despegues.",
+      operatingHours: JSON.stringify({
+        administracion: "1330 - 2130",
+        aduanaInmigracion: "NIL",
+        serviciosMedicos: "1100 - 2300",
+        oficinaAIS: "1400 - 2200",
+        oficinaARO: "1400 - 2200",
+        oficinaMET: "1400 - 2200",
+        ats: "1400 - 2200",
+        combustible: "Cada 10 días",
+        despacho: "1100 - 2300",
+        seguridad: "H24",
+        descongelamiento: "NIL",
+        com: "1400 - 2200"
+      }),
+      cargoHandlingFacilities: "NIL",
+      fuelTypes: "AVGAS 100LL y TURBO JET A1",
+      lubricantTypes: "NIL",
+      refuelingFacilities: "PEA 16 y 17",
+      deIcingFacilities: "NIL",
+      hangarSpace: "NIL",
+      repairFacilities: "NIL",
+      scaleRemarks: "OMA 093 Peregrimo Hawk (Part)",
+      hotels: "En la ciudad",
+      restaurants: "En la ciudad",
+      transport: "Taxis desde y hacia la ciudad",
+      medicalFacilities: "Primeros auxilios en el AD y hospitales en la ciudad",
+      bankingPost: "En la ciudad",
+      tourismOffice: "En la ciudad / En el aeropuerto",
+      passengerRemarks: "NIL",
+      fireCategory: "CAT 4",
+      rescueEquipment: "02 vehículos contraincendios",
+      aircraftRemovalCapacity: "NIL",
+      rescueRemarks: "1400 - 2200",
+      platformData: JSON.stringify({ superficie: "Asfalto", resistencia: "PCN 9/F/A/Y/T", ancho: "24.54 m", largo: "446.75 m", observacion: "Obligatorio para embarque y desembarque de pasajeros" }),
+      taxiwayData: JSON.stringify({ designadores: "A, B, C, D, E", ancho: "11 m", largo: "1000 m", superficie: "Asfalto", resistencia: "PCN 9/F/A/Y/T" }),
+      checkpointData: JSON.stringify({ altimetro: "NIL", ins: "NIL", vordme: "NIL" }),
+      platformRemarks: "Nueva área de maniobras en uso",
+      surfaceGuidance: "Señalizado por línea continua amarilla, que bordea la aeronave generando línea de protección a su alrededor. Uso de señales ID en puestos de aeronaves.",
+      runwaySigns: "NIL",
+      taxiwaySigns: "NIL",
+      stopBars: "NIL",
+      guidanceRemarks: "NIL",
+      metOffice: "EMA",
+      metHours: "1400 - 2200",
+      metForecastOffice: "OMA/SPQU",
+      metValidity: "1030 - 2300",
+      metLandingForecast: "NO AVBL",
+      metTrendInterval: "NO AVBL",
+      metBriefing: "NO AVBL",
+      metConsultation: "Consulta personal",
+      metDocumentation: "Pronóstico, Observaciones e Informes MET",
+      metLanguage: "ES",
+      metCharts: "NO AVBL",
+      metSupplementary: "Terminal AMHS CADAS",
+      metAtsDependencies: "TWR/AIS",
+      metAdditionalInfo: "NIL",
+      runways: JSON.stringify([
+        {
+          designator: "07",
+          brgGeo: "065°",
+          brgMag: "NIL",
+          dimensions: "1000 X 18",
+          pcn: "PCN 9/F/A/Y/T",
+          surface: "Asfalto",
+          thrCoords: "14°51'21.58\"S - 074°57'57.64\"W",
+          thrElevation: "1770 ft / 539.5 m",
+          swyDimensions: "30 X 18",
+          cwyDimensions: "NIL",
+          stripDimensions: "1080 X 80",
+          ofz: "NIL",
+          resa: "NIL",
+          slope: "1.304%"
+        },
+        {
+          designator: "25",
+          brgGeo: "245°",
+          brgMag: "NIL",
+          dimensions: "1000 X 18",
+          pcn: "PCN 9/F/A/Y/T",
+          surface: "Asfalto",
+          thrCoords: "14°51'08.21\"S - 074°57'27.13\"W",
+          thrElevation: "1813 ft / 552.5 m",
+          swyDimensions: "30 X 18",
+          cwyDimensions: "NIL",
+          stripDimensions: "1080 X 80",
+          ofz: "NIL",
+          resa: "NIL",
+          slope: "1.304%",
+          papi: "APAPI 3° RWY 25 (no disponible a más de 0.8 NM debido a obstáculo)"
+        }
+      ]),
+      declaredDistances: JSON.stringify([
+        { rwy: "07", tora: 1000, toda: 1000, asda: 1030, lda: 1000, remarks: "NIL" },
+        { rwy: "25", tora: 1000, toda: 1000, asda: 1030, lda: 1000, remarks: "NIL" }
+      ])
+    },
+    // === SPME - TUMBES / CAPITÁN FAP PEDRO CANGA RODRÍGUEZ ===
+    {
+      icaoCode: "SPME",
+      name: "AEROPUERTO CAPITÁN FAP PEDRO CANGA RODRÍGUEZ",
+      city: "TUMBES",
+      region: "TUMBES",
+      department: "TUMBES",
+      province: "TUMBES",
+      district: "TUMBES",
+      arpLatitude: "03°33'08.15\"S",
+      arpLongitude: "080°22'51.85\"W",
+      elevation: "35 m / 115 ft",
+      temperature: "31.6°C (MAR)",
+      geoidalUndulation: "NIL",
+      magneticDeclination: "NIL",
+      annualChange: "NIL",
+      distanceFromCity: "8.5 km NE",
+      administrationType: "AEROPUERTOS DEL PERÚ S.A. - ADP",
+      authorizedTraffic: "IFR / VFR",
+      remarks: "ATZ: Círculo de 5 NM de radio con centro en VOR BES, GND / 1500 ft AMSL. Para operaciones nocturnas solicitar con 3 horas de anticipación. Aeronaves harán viraje de 180° en plataforma de viraje en Pista 14/32. Mínima potencia en plataforma. Coeficiente de fricción: 0.76. Peligro aviario Pista 14/32.",
+      operatingHours: JSON.stringify({
+        comMet: "1200 - 0300",
+        aisAro: "1500 - 0300",
+        sei: "CAT 7, 1500 - 0300"
+      }),
+      fireCategory: "CAT 7",
+      fuelTypes: "NIL",
+      runways: JSON.stringify([
+        {
+          designator: "14",
+          brgGeo: "142°",
+          brgMag: "NIL",
+          dimensions: "2500 X 45",
+          pcn: "PCN 47 F/C/X/T",
+          surface: "Asfalto",
+          thrCoords: "03°32'36.3\"S - 080°23'17.1\"W",
+          thrElevation: "24 m / 78 ft",
+          swyDimensions: "60 X 45",
+          cwyDimensions: "NIL",
+          stripDimensions: "2800 X 150",
+          ofz: "NIL",
+          resa: "NIL",
+          slope: "0.453%",
+          papi: "PAPI 3° RWY 14, Elev 15.03 m / 49.30 ft",
+          restrictions: "LDG RWY 14 Aproximación Visual"
+        },
+        {
+          designator: "32",
+          brgGeo: "322°",
+          brgMag: "NIL",
+          dimensions: "2500 X 45",
+          pcn: "PCN 47 F/C/X/T",
+          surface: "Asfalto",
+          thrCoords: "03°33'40\"S - 080°22'26.6\"W",
+          thrElevation: "35 m / 115 ft",
+          swyDimensions: "60 X 45",
+          cwyDimensions: "NIL",
+          stripDimensions: "2800 X 150",
+          ofz: "NIL",
+          resa: "NIL",
+          slope: "0.453%",
+          papi: "PAPI 3° RWY 32, Elev 17.68 m / 58.02 ft",
+          restrictions: "LDG RWY 32 Aproximación NPA y Visual"
+        }
+      ]),
+      declaredDistances: JSON.stringify([
+        { rwy: "14", tora: 2500, toda: 2500, asda: 2560, lda: 2500, remarks: "NIL" },
+        { rwy: "32", tora: 2500, toda: 2500, asda: 2560, lda: 2500, remarks: "NIL" }
+      ]),
+      taxiwayData: JSON.stringify({ tipo: "Perpendicular", ubicacion: "A 911.5 m del umbral de Pista 14", dimensiones: "77.5 m x 18 m", superficie: "Asfalto" }),
+      platformData: JSON.stringify({ ubicacion: "Sureste de la pista", dimensiones: "160 m x 80 m", superficie: "Asfalto" })
     }
   ];
 
@@ -2958,6 +3344,90 @@ async function main() {
       await db.communication.create({ data: { ...comm, airportId: spmsAirport.id } });
     }
     // RadioNavAids: NIL
+  }
+
+  // Add communications and radio nav aids for SPTU - PUERTO MALDONADO
+  const sptuAirport = await db.airport.findUnique({ where: { icaoCode: "SPTU" } });
+  if (sptuAirport) {
+    const comms = [
+      { service: "FIS", callsign: "PUERTO MALDONADO TORRE", frequency: "126.9 MHz", hours: "1100 - 2300 y O/R" },
+      { service: "APP/TWR", callsign: "PUERTO MALDONADO TORRE", frequency: "118.5 MHz", hours: "1100 - 2300 y O/R" },
+      { service: "EMERGENCIA", callsign: "EMERGENCIA", frequency: "121.5 MHz", hours: "H24" },
+    ];
+    for (const comm of comms) {
+      await db.communication.create({ data: { ...comm, airportId: sptuAirport.id } });
+    }
+    const navAids = [
+      { type: "VOR/DME", identifier: "PDO", frequency: "116.1 MHz CH 108X", coordinates: "12°36'30\"S - 069°13'38\"W", remarks: "H24" },
+      { type: "ILS CAT I LOC", identifier: "IPJA", frequency: "109.7 MHz", coordinates: "12°35'41.6838\"S - 069°13'40.788\"W", remarks: "1100 - 2300 y O/R" },
+      { type: "ILS GP/DME", identifier: "IPJA GP/DME", frequency: "333.2 MHz CH 34X", coordinates: "12°37'35.4389\"S - 069°13'40.8466\"W", remarks: "1100 - 2300 y O/R" },
+    ];
+    for (const navAid of navAids) {
+      await db.radioNavAid.create({ data: { ...navAid, airportId: sptuAirport.id } });
+    }
+  }
+
+  // Add communications and radio nav aids for SPLO - ILO
+  const sploAirport = await db.airport.findUnique({ where: { icaoCode: "SPLO" } });
+  if (sploAirport) {
+    const comms = [
+      { service: "AFIS", callsign: "ILO INFO DE AD", frequency: "126.9 MHz", hours: "1300-2100 (UTC) O/R" },
+      { service: "FIS", callsign: "ILO INFO DE AD", frequency: "126.9 MHz", hours: "1300-2100 (UTC) O/R" },
+      { service: "EMERGENCIA", callsign: "EMERGENCIA", frequency: "121.5 MHz", hours: "H24" },
+    ];
+    for (const comm of comms) {
+      await db.communication.create({ data: { ...comm, airportId: sploAirport.id } });
+    }
+    const navAids = [
+      { type: "VOR", identifier: "ILO", frequency: "112.5 MHz", coordinates: "17°41'28.1\"S - 071°21'02.3\"W", remarks: "H24" },
+    ];
+    for (const navAid of navAids) {
+      await db.radioNavAid.create({ data: { ...navAid, airportId: sploAirport.id } });
+    }
+  }
+
+  // Add communications, obstacles for SPZA - NASCA
+  const spzaAirport = await db.airport.findUnique({ where: { icaoCode: "SPZA" } });
+  if (spzaAirport) {
+    const comms = [
+      { service: "TWR/FIS", callsign: "NASCA TORRE", frequency: "118.1 MHz", hours: "1400 - 2200", remarks: "Cobertura limitada" },
+      { service: "SMC", callsign: "NASCA CONTROL SUPERFICIE", frequency: "121.9 MHz", hours: "1400 - 2200" },
+      { service: "ATIS", callsign: "AEROPUERTO DE NASCA", frequency: "132.5 MHz", hours: "1400 - 2200" },
+      { service: "EMERGENCIA", callsign: "EMERGENCIA", frequency: "121.5 MHz", hours: "1400 - 2200", remarks: "Cobertura limitada" },
+    ];
+    for (const comm of comms) {
+      await db.communication.create({ data: { ...comm, airportId: spzaAirport.id } });
+    }
+    const obstacles = [
+      { runwayArea: "RWY 25 approach", obstacleType: "Vivienda", elevation: "570 m", markingLighting: "NIL", coordinates: "A 50 m de THR 25" },
+      { runwayArea: "RWY 25 approach", obstacleType: "Árboles", elevation: "7 m", markingLighting: "NIL", coordinates: "Entre 70 y 200 m de distancia prolongación de la RWY" },
+      { runwayArea: "RWY 25 approach", obstacleType: "Antena", elevation: "1985 ft / 605.03 m", markingLighting: "No señalizado", coordinates: "14°50'45\"S - 074°56'38\"W" },
+      { runwayArea: "RWY 25 approach", obstacleType: "Antena (cerro Portachuelo)", elevation: "2180 ft / 664.46 m", markingLighting: "No señalizado", coordinates: "14°52'44\"S - 074°59'14\"W" },
+      { runwayArea: "RWY 07 approach", obstacleType: "Vivienda", elevation: "2 m", markingLighting: "NIL", coordinates: "En prolongación RWY a 80 m desde el THR" },
+      { runwayArea: "RWY 07 approach", obstacleType: "Montículo", elevation: "3 m", markingLighting: "NIL", coordinates: "A 150 m de THR" },
+    ];
+    for (const obs of obstacles) {
+      await db.obstacle.create({ data: { ...obs, airportId: spzaAirport.id } });
+    }
+    // RadioNavAids: NIL
+  }
+
+  // Add communications and radio nav aids for SPME - TUMBES
+  const spmeAirport = await db.airport.findUnique({ where: { icaoCode: "SPME" } });
+  if (spmeAirport) {
+    const comms = [
+      { service: "APP/TWR", callsign: "TUMBES TORRE", frequency: "126.8 MHz", hours: "1500 - 0300" },
+      { service: "EMERGENCIA", callsign: "EMERGENCIA", frequency: "121.5 MHz", hours: "H24" },
+    ];
+    for (const comm of comms) {
+      await db.communication.create({ data: { ...comm, airportId: spmeAirport.id } });
+    }
+    const navAids = [
+      { type: "VOR/DME", identifier: "BES", frequency: "112.9 MHz CH 76X", coordinates: "03°32'39.86\"S - 080°23'20.65\"W", remarks: "H24" },
+    ];
+    for (const navAid of navAids) {
+      await db.radioNavAid.create({ data: { ...navAid, airportId: spmeAirport.id } });
+    }
   }
 
   console.log("Seed completed successfully!");

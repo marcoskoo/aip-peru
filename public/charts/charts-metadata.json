@@ -200,5 +200,31 @@
     "charts": [
       {"type": "ADC", "name": "Datos del Aeródromo", "file": "adc.png"}
     ]
+  },
+  {
+    "icaoCode": "SPTU",
+    "charts": [
+      {"type": "ADC", "name": "Datos del Aeródromo", "file": "adc.png"}
+    ]
+  },
+  {
+    "icaoCode": "SPLO",
+    "charts": [
+      {"type": "IAC", "name": "Aproximación VOR RWY 12 CAT A-B", "file": "iac_vor_rwy12_cat_ab.png"},
+      {"type": "IAC", "name": "Aproximación VOR RWY 12 CAT C", "file": "iac_vor_rwy12_cat_c.png"},
+      {"type": "VAC", "name": "Carta de Aproximación Visual", "file": "vac.png"}
+    ]
+  },
+  {
+    "icaoCode": "SPZA",
+    "charts": [
+      {"type": "VAC", "name": "Carta de Aproximación Visual", "file": "vac.png"}
+    ]
+  },
+  {
+    "icaoCode": "SPME",
+    "charts": [
+      {"type": "ADC", "name": "Datos del Aeródromo", "file": "adc.png"}
+    ]
   }
 ]

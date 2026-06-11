@@ -33,3 +33,31 @@ Stage Summary:
 - SPGM (Tingo María): VFR-only aerodrome, RWY 19/01, AFIS service
 - SPMS (Yurimaguas): VFR-only aerodrome, RWY 09/27, AFIS service
 - Database now contains 28 airports total
+
+---
+Task ID: 2
+Agent: Main Agent
+Task: Integrate aeronautical information from 4 newly uploaded PDFs into the AIP PERU application
+
+Work Log:
+- Read 4 uploaded PDFs: Puerto Maldonado(SPTU).pdf, SPLO-ILO.pdf, SPZA-NASCA.pdf, Tumbes(SPME).pdf
+- Extracted text data from all 4 PDFs using pdftotext
+- Extracted chart images from multi-page PDFs (SPLO 18 pages, SPZA 21 pages) using pdftoppm
+- Used VLM (z-ai vision) to identify chart types on each page
+- SPLO: Identified IAC CAT A-B VOR RWY 12 (page 13), IAC CAT C VOR RWY 12 (page 15), VAC (page 17)
+- SPZA: Identified VAC chart (page 21)
+- Created ADC chart images for SPTU and SPME from their single-page PDFs
+- Copied all chart images to public/charts/{ICAO}/ directories
+- Added 4 new airport entries to prisma/seed.ts
+- Added related data: 6 obstacles (SPZA), 12 communications, 5 radio nav aids
+- Updated charts-metadata.json with new chart entries for all 4 airports
+- Seeded the database: 32 airports, 49 obstacles, 42 communications, 15 radio nav aids
+- Verified with Agent Browser: all 4 airports searchable, detail pages display correctly, charts visible
+
+Stage Summary:
+- Successfully integrated 4 new Peruvian aerodromes into the AIP PERU application
+- SPTU (Puerto Maldonado): IFR/VFR airport with ILS, RWY 01/19, CAT 5
+- SPLO (Ilo): IFR/VFR airport with VOR, RWY 12/30, CAT A3, AFIS service, 3 charts (2 IAC + VAC)
+- SPZA (Nazca): VFR-only aerodrome, RWY 07/25, CAT 4, special Nazca Lines tourist flight procedures, 6 obstacles, 1 chart (VAC)
+- SPME (Tumbes): IFR/VFR airport with VOR/DME, RWY 14/32, CAT 7
+- Database now contains 32 airports total
