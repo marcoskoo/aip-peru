@@ -1,0 +1,169 @@
+[
+  {
+    "icaoCode": "SPCL",
+    "charts": [
+      {"type": "TMA", "name": "Área de Control Terminal", "file": "tma.png"},
+      {"type": "TMA", "name": "TMA Pucallpa", "file": "tma2.png"},
+      {"type": "SID", "name": "Salida Normalizada RWY 02", "file": "sid_rwy02.png"},
+      {"type": "SID", "name": "Salida Normalizada RWY 20", "file": "sid_rwy20.png"},
+      {"type": "SID", "name": "Salida Normalizada RWY 20 (2)", "file": "sid_rwy20b.png"},
+      {"type": "IAC", "name": "Aproximación por Instrumentos RWY 02", "file": "iac_rwy02.png"}
+    ]
+  },
+  {
+    "icaoCode": "SPHI",
+    "charts": [
+      {"type": "TMA", "name": "Área de Control Terminal", "file": "tma.png"},
+      {"type": "SID", "name": "Salida Normalizada", "file": "sid.png"},
+      {"type": "ADC", "name": "Plano de Aeródromo", "file": "adc.png"},
+      {"type": "SID", "name": "SID RWY 19 (A)", "file": "sid_rwy19a.png"},
+      {"type": "SID", "name": "SID RWY 19 (B)", "file": "sid_rwy19b.png"},
+      {"type": "SID", "name": "SID RWY 19 (C)", "file": "sid_rwy19c.png"},
+      {"type": "SID", "name": "SID RWY 01 (A)", "file": "sid_rwy01a.png"},
+      {"type": "SID", "name": "SID RWY 01 (B)", "file": "sid_rwy01b.png"},
+      {"type": "STAR", "name": "STAR RWY 19 (A)", "file": "star_rwy19a.png"},
+      {"type": "STAR", "name": "STAR RWY 19 (B)", "file": "star_rwy19b.png"},
+      {"type": "STAR", "name": "STAR RWY 19 (C)", "file": "star_rwy19c.png"},
+      {"type": "STAR", "name": "STAR RWY 19 (D)", "file": "star_rwy19d.png"},
+      {"type": "STAR", "name": "STAR RWY 01 (A)", "file": "star_rwy01a.png"},
+      {"type": "STAR", "name": "STAR RWY 01 (B)", "file": "star_rwy01b.png"},
+      {"type": "STAR", "name": "STAR RWY 01 (C)", "file": "star_rwy01c.png"},
+      {"type": "STAR", "name": "STAR RWY 01 (D)", "file": "star_rwy01d.png"},
+      {"type": "STAR", "name": "STAR RWY 01 (E)", "file": "star_rwy01e.png"},
+      {"type": "IAC", "name": "Aproximación RWY 19", "file": "iac_rwy19.png"},
+      {"type": "IAC", "name": "Aproximación RWY 01", "file": "iac_rwy01.png"},
+      {"type": "IAC", "name": "Aproximación RWY 19 (2)", "file": "iac_rwy19b.png"},
+      {"type": "IAC", "name": "Aproximación RWY 01 (2)", "file": "iac_rwy01b.png"}
+    ]
+  },
+  {
+    "icaoCode": "SPJL",
+    "charts": [
+      {"type": "SID", "name": "Salida Normalizada", "file": "sid.png"},
+      {"type": "ADC", "name": "Plano de Aeródromo", "file": "adc.png"},
+      {"type": "ADC", "name": "Plano de Aeródromo (2)", "file": "adc2.png"},
+      {"type": "SID", "name": "SID RWY 12 (A)", "file": "sid_rwy12a.png"},
+      {"type": "SID", "name": "SID RWY 12 (B)", "file": "sid_rwy12b.png"},
+      {"type": "SID", "name": "SID RWY 30", "file": "sid_rwy30.png"},
+      {"type": "STAR", "name": "STAR RWY 12", "file": "star_rwy12.png"},
+      {"type": "STAR", "name": "STAR RWY 30", "file": "star_rwy30.png"},
+      {"type": "IAC", "name": "Aproximación RWY 12", "file": "iac_rwy12.png"},
+      {"type": "IAC", "name": "Aproximación RWY 30", "file": "iac_rwy30.png"}
+    ]
+  },
+  {
+    "icaoCode": "SPQT",
+    "charts": [
+      {"type": "TMA", "name": "Área de Control Terminal", "file": "tma.png"},
+      {"type": "SID", "name": "Salida Normalizada", "file": "sid.png"},
+      {"type": "ADC", "name": "Plano de Aeródromo", "file": "adc.png"},
+      {"type": "STAR", "name": "STAR RWY 06", "file": "star_rwy06.png"},
+      {"type": "STAR", "name": "STAR RWY 24 (A)", "file": "star_rwy24a.png"},
+      {"type": "STAR", "name": "STAR RWY 24 (B)", "file": "star_rwy24b.png"},
+      {"type": "IAC", "name": "Aproximación RWY 06", "file": "iac_rwy06.png"},
+      {"type": "IAC", "name": "Aproximación RWY 24", "file": "iac_rwy24.png"}
+    ]
+  },
+  {
+    "icaoCode": "SPQU",
+    "charts": [
+      {"type": "TMA", "name": "Área de Control Terminal", "file": "tma.png"},
+      {"type": "SID", "name": "Salida Normalizada", "file": "sid.png"},
+      {"type": "ADC", "name": "Plano de Aeródromo", "file": "adc.png"},
+      {"type": "ADC", "name": "Plano de Aeródromo (2)", "file": "adc2.png"},
+      {"type": "SID", "name": "SID RWY 10 (A)", "file": "sid_rwy10a.png"},
+      {"type": "SID", "name": "SID RWY 10 (B)", "file": "sid_rwy10b.png"},
+      {"type": "SID", "name": "SID RWY 10 (C)", "file": "sid_rwy10c.png"},
+      {"type": "SID", "name": "SID RWY 28 (A)", "file": "sid_rwy28a.png"},
+      {"type": "SID", "name": "SID RWY 28 (B)", "file": "sid_rwy28b.png"},
+      {"type": "SID", "name": "SID RWY 28 (C)", "file": "sid_rwy28c.png"},
+      {"type": "STAR", "name": "STAR RWY 10", "file": "star_rwy10.png"},
+      {"type": "STAR", "name": "STAR RWY 28 (A)", "file": "star_rwy28a.png"},
+      {"type": "STAR", "name": "STAR RWY 28 (B)", "file": "star_rwy28b.png"},
+      {"type": "IAC", "name": "Aproximación RWY 10", "file": "iac_rwy10.png"},
+      {"type": "IAC", "name": "Aproximación RWY 28", "file": "iac_rwy28.png"}
+    ]
+  },
+  {
+    "icaoCode": "SPRU",
+    "charts": [
+      {"type": "TMA", "name": "Área de Control Terminal", "file": "tma.png"},
+      {"type": "SID", "name": "Salida Normalizada", "file": "sid.png"},
+      {"type": "ADC", "name": "Plano de Aeródromo", "file": "adc.png"},
+      {"type": "SID", "name": "SID RWY 02 (A)", "file": "sid_rwy02a.png"},
+      {"type": "SID", "name": "SID RWY 02 (B)", "file": "sid_rwy02b.png"},
+      {"type": "SID", "name": "SID RWY 02 (C)", "file": "sid_rwy02c.png"},
+      {"type": "SID", "name": "SID RWY 20 (A)", "file": "sid_rwy20a.png"},
+      {"type": "SID", "name": "SID RWY 20 (B)", "file": "sid_rwy20b.png"},
+      {"type": "SID", "name": "SID RWY 20 (C)", "file": "sid_rwy20c.png"},
+      {"type": "STAR", "name": "STAR RWY 02", "file": "star_rwy02.png"},
+      {"type": "STAR", "name": "STAR RWY 20 (A)", "file": "star_rwy20a.png"},
+      {"type": "STAR", "name": "STAR RWY 20 (B)", "file": "star_rwy20b.png"},
+      {"type": "IAC", "name": "Aproximación RWY 02", "file": "iac_rwy02.png"},
+      {"type": "IAC", "name": "Aproximación RWY 20 (A)", "file": "iac_rwy20a.png"},
+      {"type": "IAC", "name": "Aproximación RWY 20 (B)", "file": "iac_rwy20b.png"},
+      {"type": "IAC", "name": "Aproximación RWY 20 (C)", "file": "iac_rwy20c.png"},
+      {"type": "IAC", "name": "Aproximación RWY 20 (D)", "file": "iac_rwy20d.png"}
+    ]
+  },
+  {
+    "icaoCode": "SPSO",
+    "charts": [
+      {"type": "TMA", "name": "Área de Control Terminal", "file": "tma.png"},
+      {"type": "SID", "name": "Salida Normalizada", "file": "sid.png"},
+      {"type": "ADC", "name": "Plano de Aeródromo", "file": "adc.png"},
+      {"type": "SID", "name": "SID RWY 04 (A)", "file": "sid_rwy04a.png"},
+      {"type": "SID", "name": "SID RWY 04 (B)", "file": "sid_rwy04b.png"},
+      {"type": "SID", "name": "SID RWY 22", "file": "sid_rwy22.png"},
+      {"type": "STAR", "name": "STAR RWY 22", "file": "star_rwy22.png"}
+    ]
+  },
+  {
+    "icaoCode": "SPTN",
+    "charts": [
+      {"type": "ADC", "name": "Plano de Aeródromo", "file": "adc.png"},
+      {"type": "SID", "name": "Salida Normalizada", "file": "sid.png"},
+      {"type": "ADC", "name": "Plano de Aeródromo (2)", "file": "adc2.png"},
+      {"type": "ADC", "name": "Plano de Aeródromo (3)", "file": "adc3.png"},
+      {"type": "SID", "name": "SID RWY 02 (A)", "file": "sid_rwy02a.png"},
+      {"type": "SID", "name": "SID RWY 02 (B)", "file": "sid_rwy02b.png"},
+      {"type": "SID", "name": "SID RWY 20", "file": "sid_rwy20.png"},
+      {"type": "STAR", "name": "STAR RWY 02", "file": "star_rwy02.png"},
+      {"type": "STAR", "name": "STAR RWY 20", "file": "star_rwy20.png"}
+    ]
+  },
+  {
+    "icaoCode": "SPYL",
+    "charts": [
+      {"type": "IAC", "name": "Aproximación RWY 17", "file": "iac_rwy17.png"},
+      {"type": "IAC", "name": "Aproximación RWY 35 (A)", "file": "iac_rwy35a.png"},
+      {"type": "IAC", "name": "Aproximación RWY 35 (B)", "file": "iac_rwy35b.png"}
+    ]
+  },
+  {
+    "icaoCode": "SPZO",
+    "charts": [
+      {"type": "IAC", "name": "Aproximación RWY 10", "file": "iac_rwy10.png"},
+      {"type": "SID", "name": "Salida Normalizada", "file": "sid.png"},
+      {"type": "TMA", "name": "Área de Control Terminal", "file": "tma.png"},
+      {"type": "SID", "name": "SID RWY 10 (A)", "file": "sid_rwy10a.png"},
+      {"type": "SID", "name": "SID RWY 10 (B)", "file": "sid_rwy10b.png"},
+      {"type": "SID", "name": "SID RWY 10 (C)", "file": "sid_rwy10c.png"},
+      {"type": "SID", "name": "SID RWY 10 (D)", "file": "sid_rwy10d.png"},
+      {"type": "SID", "name": "SID TAUJA RWY 10", "file": "sid_tauja_rwy10.png"},
+      {"type": "SID", "name": "SID TAUJA ILMOX", "file": "sid_tauja_ilmox.png"},
+      {"type": "SID", "name": "SID TAUJA GAXUN", "file": "sid_tauja_gaxun.png"},
+      {"type": "SID", "name": "SID TAUJA TILPA", "file": "sid_tauja_tilpa.png"},
+      {"type": "SID", "name": "SID TAUJA CEMIL", "file": "sid_tauja_cemil.png"},
+      {"type": "SID", "name": "SID TAUJA Codificación", "file": "sid_tauja_coding.png"},
+      {"type": "STAR", "name": "Llegada Normalizada", "file": "star.png"},
+      {"type": "STAR", "name": "STAR RWY 28 (A)", "file": "star_rwy28.png"},
+      {"type": "STAR", "name": "STAR RWY 28 (B)", "file": "star_rwy28b.png"},
+      {"type": "STAR", "name": "STAR RWY 28 (C)", "file": "star_rwy28c.png"},
+      {"type": "IAC", "name": "RNP RWY 28 (AR)", "file": "iac_rnp_rwy28.png"},
+      {"type": "IAC", "name": "Aproximación RWY 28", "file": "iac_rwy28.png"},
+      {"type": "IAC", "name": "RNP RWY 28 Codificación", "file": "iac_rnp_rwy28_coding.png"},
+      {"type": "IAC", "name": "RNP RWY 28 Codificación (2)", "file": "iac_rnp_rwy28_coding2.png"}
+    ]
+  }
+]

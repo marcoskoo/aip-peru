@@ -24,6 +24,14 @@ import {
   MessageSquare,
   Compass,
   Mountain,
+  Map,
+  Navigation,
+  PlaneTakeoff,
+  PlaneLanding,
+  X,
+  ZoomIn,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -113,11 +121,29 @@ function JsonInfoDisplay({
   )
 }
 
+interface ChartData {
+  type: string
+  name: string
+  file: string
+  url: string
+}
+
+interface ChartsResponse {
+  icaoCode: string
+  totalCharts: number
+  charts: ChartData[]
+  grouped: Record<string, ChartData[]>
+}
+
 export function AirportDetailView({ airport, onBack }: AirportDetailProps) {
   const [detail, setDetail] = useState<AirportDetail | null>(null)
   const [obstacles, setObstacles] = useState<Obstacle[]>([])
+  const [chartsData, setChartsData] = useState<ChartsResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [obstaclesLoading, setObstaclesLoading] = useState(true)
+  const [chartsLoading, setChartsLoading] = useState(true)
+  const [selectedChart, setSelectedChart] = useState<ChartData | null>(null)
+  const [chartFilter, setChartFilter] = useState<string>("all")
 
   useEffect(() => {
     async function fetchDetail() {
@@ -156,6 +182,39 @@ export function AirportDetailView({ airport, onBack }: AirportDetailProps) {
     }
     fetchObstacles()
   }, [airport.icaoCode])
+
+  useEffect(() => {
+    async function fetchCharts() {
+      setChartsLoading(true)
+      try {
+        const response = await fetch(
+          `/api/airports/${airport.icaoCode}/charts`
+        )
+        if (response.ok) {
+          const data = await response.json()
+          setChartsData(data)
+        }
+      } catch {
+        // Will show empty state
+      } finally {
+        setChartsLoading(false)
+      }
+    }
+    fetchCharts()
+  }, [airport.icaoCode])
+
+  const chartTypes = ["SID", "STAR", "IAC", "ADC", "TMA"]
+  const chartTypeLabels: Record<string, { label: string; icon: React.ComponentType<{ className?: string }> }> = {
+    SID: { label: "Salida Normalizada (SID)", icon: PlaneTakeoff },
+    STAR: { label: "Llegada Normalizada (STAR)", icon: PlaneLanding },
+    IAC: { label: "Aproximación por Instrumentos", icon: Navigation },
+    ADC: { label: "Plano de Aeródromo", icon: Map },
+    TMA: { label: "Área de Control Terminal", icon: Globe },
+  }
+
+  const filteredCharts = chartFilter === "all"
+    ? (chartsData?.charts || [])
+    : (chartsData?.grouped?.[chartFilter] || [])
 
   const airportData = detail || airport
   const runways = detail?.runways || []
@@ -226,6 +285,10 @@ export function AirportDetailView({ airport, onBack }: AirportDetailProps) {
             <TabsTrigger value="obstaculos" className="flex-1 min-w-0">
               <AlertTriangle className="size-4" />
               <span className="hidden sm:inline ml-1.5">Obstáculos</span>
+            </TabsTrigger>
+            <TabsTrigger value="cartas" className="flex-1 min-w-0">
+              <Map className="size-4" />
+              <span className="hidden sm:inline ml-1.5">Cartas</span>
             </TabsTrigger>
           </TabsList>
         </ScrollArea>
@@ -702,7 +765,182 @@ export function AirportDetailView({ airport, onBack }: AirportDetailProps) {
             </Card>
           )}
         </TabsContent>
+        {/* Cartas Tab */}
+        <TabsContent value="cartas" className="mt-4">
+          {chartsLoading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <Card key={i}>
+                  <CardContent className="pt-6 space-y-3">
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-40 w-full" />
+                    <Skeleton className="h-4 w-32" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : chartsData && chartsData.totalCharts > 0 ? (
+            <div className="space-y-4">
+              {/* Chart type filter */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <Button
+                  variant={chartFilter === "all" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setChartFilter("all")}
+                >
+                  Todas ({chartsData.totalCharts})
+                </Button>
+                {chartTypes.filter(t => chartsData.grouped[t]).map(type => {
+                  const TypeIcon = chartTypeLabels[type]?.icon || Map
+                  return (
+                    <Button
+                      key={type}
+                      variant={chartFilter === type ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setChartFilter(type)}
+                      className="gap-1.5"
+                    >
+                      <TypeIcon className="size-3.5" />
+                      {type} ({chartsData.grouped[type].length})
+                    </Button>
+                  )
+                })}
+              </div>
+
+              {/* Chart grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredCharts.map((chart) => {
+                  const TypeIcon = chartTypeLabels[chart.type]?.icon || Map
+                  return (
+                    <Card
+                      key={chart.file}
+                      className="cursor-pointer hover:ring-2 hover:ring-amber-400 transition-all overflow-hidden group"
+                      onClick={() => setSelectedChart(chart)}
+                    >
+                      <div className="relative bg-slate-100 dark:bg-slate-800">
+                        <img
+                          src={chart.url}
+                          alt={`${chart.type} - ${chart.name}`}
+                          className="w-full h-48 object-contain p-2 group-hover:scale-105 transition-transform"
+                        />
+                        <div className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <ZoomIn className="size-4" />
+                        </div>
+                      </div>
+                      <CardContent className="p-3">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Badge
+                            variant="outline"
+                            className={`text-xs font-bold ${
+                              chart.type === "SID" ? "border-green-500 text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950/30" :
+                              chart.type === "STAR" ? "border-blue-500 text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30" :
+                              chart.type === "IAC" ? "border-red-500 text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/30" :
+                              chart.type === "ADC" ? "border-purple-500 text-purple-700 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/30" :
+                              "border-amber-500 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30"
+                            }`}
+                          >
+                            <TypeIcon className="size-3 mr-1" />
+                            {chart.type}
+                          </Badge>
+                        </div>
+                        <p className="text-sm font-medium leading-tight">{chart.name}</p>
+                      </CardContent>
+                    </Card>
+                  )
+                })}
+              </div>
+            </div>
+          ) : (
+            <Card>
+              <CardContent className="py-12 text-center">
+                <Map className="size-10 text-muted-foreground mx-auto mb-3 opacity-50" />
+                <h3 className="text-lg font-medium">Sin cartas disponibles</h3>
+                <p className="text-muted-foreground mt-1">
+                  No hay cartas SID/STAR/IAC disponibles para este aeródromo
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
       </Tabs>
+
+      {/* Chart Full-screen Viewer Modal */}
+      {selectedChart && (
+        <div
+          className="fixed inset-0 z-50 bg-black/90 flex flex-col"
+          onClick={() => setSelectedChart(null)}
+        >
+          <div className="flex items-center justify-between p-3 bg-black/50">
+            <div className="flex items-center gap-3">
+              <Badge
+                variant="outline"
+                className={`text-xs font-bold ${
+                  selectedChart.type === "SID" ? "border-green-400 text-green-400" :
+                  selectedChart.type === "STAR" ? "border-blue-400 text-blue-400" :
+                  selectedChart.type === "IAC" ? "border-red-400 text-red-400" :
+                  selectedChart.type === "ADC" ? "border-purple-400 text-purple-400" :
+                  "border-amber-400 text-amber-400"
+                }`}
+              >
+                {selectedChart.type}
+              </Badge>
+              <span className="text-white text-sm font-medium">{selectedChart.name}</span>
+              <span className="text-white/50 text-xs">{airport.icaoCode}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              {chartsData && (() => {
+                const allCharts = chartFilter === "all"
+                  ? chartsData.charts
+                  : (chartsData.grouped[chartFilter] || chartsData.charts)
+                const currentIndex = allCharts.findIndex(c => c.file === selectedChart.file)
+                const prevChart = currentIndex > 0 ? allCharts[currentIndex - 1] : null
+                const nextChart = currentIndex < allCharts.length - 1 ? allCharts[currentIndex + 1] : null
+                return (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="border-white/30 text-white hover:bg-white/20"
+                      disabled={!prevChart}
+                      onClick={(e) => { e.stopPropagation(); if (prevChart) setSelectedChart(prevChart) }}
+                    >
+                      <ChevronLeft className="size-4" />
+                    </Button>
+                    <span className="text-white/60 text-xs">{currentIndex + 1} / {allCharts.length}</span>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="border-white/30 text-white hover:bg-white/20"
+                      disabled={!nextChart}
+                      onClick={(e) => { e.stopPropagation(); if (nextChart) setSelectedChart(nextChart) }}
+                    >
+                      <ChevronRight className="size-4" />
+                    </Button>
+                  </>
+                )
+              })()}
+              <Button
+                variant="outline"
+                size="icon"
+                className="border-white/30 text-white hover:bg-white/20 ml-2"
+                onClick={(e) => { e.stopPropagation(); setSelectedChart(null) }}
+              >
+                <X className="size-4" />
+              </Button>
+            </div>
+          </div>
+          <div
+            className="flex-1 flex items-center justify-center p-4 overflow-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={selectedChart.url}
+              alt={`${selectedChart.type} - ${selectedChart.name}`}
+              className="max-w-full max-h-full object-contain"
+            />
+          </div>
+        </div>
+      )}
     </div>
   )
 }
