@@ -289,5 +289,21 @@
     "charts": [
       {"type": "ADC", "name": "Plano de Aeródromo", "file": "adc.png"}
     ]
+  },
+  {
+    "icaoCode": "SPJC",
+    "charts": [
+      {"type": "ADC", "name": "Plano de Aeródromo", "file": "adc.png"},
+      {"type": "ADC", "name": "Lugares Críticos / Hot Spots", "file": "adc2.png"},
+      {"type": "ADC", "name": "Plano de Estacionamiento y Atraque de Aeronaves", "file": "adc-estacionamiento.png"},
+      {"type": "ADC", "name": "Plano de Obstáculos de Aeródromo", "file": "adc-obstaculos.png"},
+      {"type": "ADC", "name": "Carta Topográfica para Aproximaciones de Precisión", "file": "adc-topografica.png"},
+      {"type": "ADC", "name": "Plano de Área de Concentración de Aves", "file": "adc-aves.png"},
+      {"type": "TMA", "name": "Carta de Altitud Mínima de Vigilancia", "file": "tma-mva.png"},
+      {"type": "TMA", "name": "Área de Control Terminal de Lima - TMA Lima", "file": "tma.png"},
+      {"type": "TMA", "name": "Procedimientos SID/STAR del TMA Lima", "file": "tma2.png"},
+      {"type": "SID", "name": "Carta de Área - Ruta de Salida", "file": "sid-area.png"},
+      {"type": "STAR", "name": "Carta de Área - Ruta de Llegada", "file": "star-area.png"}
+    ]
   }
 ]
