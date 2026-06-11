@@ -74,3 +74,24 @@ Stage Summary:
 - SPJC Lima now has 43 charts (was 11): 6 ADC, 3 TMA, 1 VAC, 2 HELO, 1 NADP, 13 SID, 8 STAR, 9 IAC
 - Airport listing now uses tabs: Todos (33), Internacionales (15), Nacionales (18)
 - New chart types supported: VAC, HELO, NADP with distinct icons and colors
+
+---
+Task ID: 5
+Agent: Main Agent
+Task: Add second runway data for SPJC Lima (16L/34R and 16R/34L)
+
+Work Log:
+- Checked current SPJC runway data - only had 16/34 (old designation, single runway)
+- User reported Lima has 2 runways (15/33, 16/34)
+- Searched web for SPJC second runway data using z-ai web-search
+- Found AIRAC AIP SUP 23/23 (effective 22 Feb 2024) with complete dual runway data
+- Read eAIP supplement via web-reader: runways are designated 16L/34R and 16R/34L
+- Extracted full runway characteristics and declared distances from eAIP SUP 23/23
+- Updated database with both runways, 4 declared distances, and corrected metadata
+- Verified via Agent Browser: both runways and all 4 declared distances render correctly
+
+Stage Summary:
+- SPJC Lima now shows 2 runways: 16L/34R (3508x45, Concreto, PCN 74/R/A/X/T) and 16R/34L (3480x45, Asfalto, PCN 82/F/A/X/T)
+- 4 declared distances: 16L, 34R, 16R, 34L
+- Corrected ARP coordinates, temperature, geoidal undulation, magnetic declination from eAIP SUP 23/23
+- Note: Runways are 16L/34R and 16R/34L (parallel), not 15/33 as user mentioned
