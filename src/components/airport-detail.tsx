@@ -10,6 +10,7 @@ import {
   Phone,
   Mail,
   Globe,
+  Flag,
   Ruler,
   Thermometer,
   Flame,
@@ -101,10 +102,40 @@ function SectionCard({
 function JsonInfoDisplay({
   data,
 }: {
-  data: Record<string, string> | string | undefined | null
+  data: Record<string, unknown> | unknown[] | string | undefined | null
 }) {
   if (!data) return <p className="text-sm text-muted-foreground">Sin información disponible</p>
   if (typeof data === "string") return <p className="text-sm text-muted-foreground">{data === "NIL" ? "Sin información disponible" : data}</p>
+
+  // Handle array of objects (e.g. taxiway data with multiple entries)
+  if (Array.isArray(data)) {
+    if (data.length === 0) return <p className="text-sm text-muted-foreground">Sin información disponible</p>
+    return (
+      <div className="space-y-3">
+        {data.map((item, idx) => {
+          if (typeof item !== "object" || item === null) return null
+          const entries = Object.entries(item as Record<string, unknown>).filter(
+            ([, v]) => v && v !== "NIL"
+          )
+          if (entries.length === 0) return null
+          return (
+            <div key={idx} className="rounded-lg border bg-muted/30 p-3">
+              {entries.map(([key, value]) => (
+                <div key={key} className="py-1 flex justify-between gap-4">
+                  <span className="text-xs text-muted-foreground capitalize">
+                    {key.replace(/([A-Z])/g, " $1").trim()}
+                  </span>
+                  <span className="text-sm font-medium text-right">{String(value)}</span>
+                </div>
+              ))}
+            </div>
+          )
+        })}
+      </div>
+    )
+  }
+
+  // Handle simple object
   const entries = Object.entries(data).filter(([, v]) => v && v !== "NIL")
   if (entries.length === 0) return <p className="text-sm text-muted-foreground">Sin información disponible</p>
   return (
@@ -114,7 +145,7 @@ function JsonInfoDisplay({
           <p className="text-xs text-muted-foreground capitalize">
             {key.replace(/([A-Z])/g, " $1").trim()}
           </p>
-          <p className="text-sm font-medium">{value}</p>
+          <p className="text-sm font-medium">{String(value)}</p>
         </div>
       ))}
     </div>
@@ -246,6 +277,17 @@ export function AirportDetailView({ airport, onBack }: AirportDetailProps) {
             <Badge className="bg-navy text-white font-bold text-base px-4 py-1 tracking-wider">
               {airportData.icaoCode}
             </Badge>
+            {airportData.category === "INTERNACIONAL" ? (
+              <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-400 border border-amber-300 dark:border-amber-700 font-semibold text-xs px-2.5 py-1 tracking-wider gap-1">
+                <Globe className="size-3" />
+                INTERNACIONAL
+              </Badge>
+            ) : (
+              <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-700 font-semibold text-xs px-2.5 py-1 tracking-wider gap-1">
+                <Flag className="size-3" />
+                NACIONAL
+              </Badge>
+            )}
             <Badge variant="outline" className="text-amber-700 border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-700">
               {airportData.authorizedTraffic}
             </Badge>
@@ -340,7 +382,7 @@ export function AirportDetailView({ airport, onBack }: AirportDetailProps) {
               {/* Horario de Operación */}
               <SectionCard title="Horario de Operación" icon={Clock}>
                 {detail?.operatingHours && typeof detail.operatingHours === "object" ? (
-                  <JsonInfoDisplay data={detail.operatingHours as Record<string, string>} />
+                  <JsonInfoDisplay data={detail.operatingHours as Record<string, unknown>} />
                 ) : (
                   <p className="text-sm text-muted-foreground">Sin información disponible</p>
                 )}
@@ -566,7 +608,7 @@ export function AirportDetailView({ airport, onBack }: AirportDetailProps) {
               {/* Platform Data */}
               <SectionCard title="Plataforma" icon={Building2}>
                 {detail?.platformData ? (
-                  <JsonInfoDisplay data={detail.platformData as Record<string, string> | string} />
+                  <JsonInfoDisplay data={detail.platformData as Record<string, unknown> | unknown[] | string} />
                 ) : (
                   <p className="text-sm text-muted-foreground">Sin información disponible</p>
                 )}
@@ -580,7 +622,7 @@ export function AirportDetailView({ airport, onBack }: AirportDetailProps) {
               {/* Taxiway Data */}
               <SectionCard title="Calles de Rodaje" icon={Plane}>
                 {detail?.taxiwayData ? (
-                  <JsonInfoDisplay data={detail.taxiwayData as Record<string, string> | string} />
+                  <JsonInfoDisplay data={detail.taxiwayData as Record<string, unknown> | unknown[] | string} />
                 ) : (
                   <p className="text-sm text-muted-foreground">Sin información disponible</p>
                 )}
@@ -589,7 +631,7 @@ export function AirportDetailView({ airport, onBack }: AirportDetailProps) {
               {/* Checkpoints */}
               <SectionCard title="Puntos de Verificación" icon={MapPin}>
                 {detail?.checkpointData ? (
-                  <JsonInfoDisplay data={detail.checkpointData as Record<string, string> | string} />
+                  <JsonInfoDisplay data={detail.checkpointData as Record<string, unknown> | unknown[] | string} />
                 ) : (
                   <p className="text-sm text-muted-foreground">Sin información disponible</p>
                 )}
@@ -640,7 +682,7 @@ export function AirportDetailView({ airport, onBack }: AirportDetailProps) {
                   <InfoRow label="Tipos de Lubricantes" value={detail?.lubricantTypes} icon={Fuel} />
                   {detail?.refuelingFacilities ? (
                     typeof detail.refuelingFacilities === "object" ? (
-                      <JsonInfoDisplay data={detail.refuelingFacilities as Record<string, string>} />
+                      <JsonInfoDisplay data={detail.refuelingFacilities as Record<string, unknown>} />
                     ) : (
                       <InfoRow label="Instalaciones" value={detail.refuelingFacilities as string} icon={Fuel} />
                     )

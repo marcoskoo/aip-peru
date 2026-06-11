@@ -2,12 +2,27 @@
   {
     "icaoCode": "SPCL",
     "charts": [
+      {"type": "ADC", "name": "Plano de Aeródromo", "file": "adc.png"},
       {"type": "TMA", "name": "Área de Control Terminal", "file": "tma.png"},
       {"type": "TMA", "name": "TMA Pucallpa", "file": "tma2.png"},
-      {"type": "SID", "name": "Salida Normalizada RWY 02", "file": "sid_rwy02.png"},
-      {"type": "SID", "name": "Salida Normalizada RWY 20", "file": "sid_rwy20.png"},
-      {"type": "SID", "name": "Salida Normalizada RWY 20 (2)", "file": "sid_rwy20b.png"},
-      {"type": "IAC", "name": "Aproximación por Instrumentos RWY 02", "file": "iac_rwy02.png"}
+      {"type": "SID", "name": "SID COCOS 1 RWY 02", "file": "sid_rwy02.png"},
+      {"type": "SID", "name": "SID COCOS 1 RWY 20", "file": "sid_rwy20.png"},
+      {"type": "SID", "name": "SID COCOS 1 RWY 20 (2)", "file": "sid_rwy20b.png"},
+      {"type": "STAR", "name": "STAR MIKAR 1A RWY 02", "file": "star_rwy02_mikar1a.png"},
+      {"type": "STAR", "name": "STAR MIKAR 1B RWY 02", "file": "star_rwy02_mikar1b.png"},
+      {"type": "STAR", "name": "STAR MIKAR 1B RWY 02 (2)", "file": "star_rwy02_mikar1b2.png"},
+      {"type": "IAC", "name": "Aproximación VOR Z RWY 02", "file": "iac_rwy02.png"},
+      {"type": "IAC", "name": "Aproximación VOR W RWY 02", "file": "iac_vor_w_rwy02.png"},
+      {"type": "IAC", "name": "Aproximación VOR A RWY 02", "file": "iac_vor_a_rwy02.png"},
+      {"type": "IAC", "name": "Aproximación VOR U RWY 02", "file": "iac_vor_u_rwy02.png"},
+      {"type": "IAC", "name": "Aproximación VOR A RWY 20", "file": "iac_vor_a_rwy20.png"},
+      {"type": "VAC", "name": "Carta de Aproximación Visual", "file": "vac.png"}
+    ]
+  },
+  {
+    "icaoCode": "SPUR",
+    "charts": [
+      {"type": "ADC", "name": "Datos del Aeródromo", "file": "adc.png"}
     ]
   },
   {
@@ -225,6 +240,54 @@
     "icaoCode": "SPME",
     "charts": [
       {"type": "ADC", "name": "Datos del Aeródromo", "file": "adc.png"}
+    ]
+  },
+  {
+    "icaoCode": "SPHY",
+    "charts": [
+      {"type": "ADC", "name": "Plano de Aeródromo", "file": "adc.png"}
+    ]
+  },
+  {
+    "icaoCode": "SPAS",
+    "charts": [
+      {"type": "ADC", "name": "Plano de Aeródromo", "file": "adc.png"}
+    ]
+  },
+  {
+    "icaoCode": "SPEO",
+    "charts": [
+      {"type": "ADC", "name": "Plano de Aeródromo", "file": "adc.png"}
+    ]
+  },
+  {
+    "icaoCode": "SPNC",
+    "charts": [
+      {"type": "ADC", "name": "Plano de Aeródromo", "file": "adc.png"}
+    ]
+  },
+  {
+    "icaoCode": "SPJE",
+    "charts": [
+      {"type": "ADC", "name": "Plano de Aeródromo", "file": "adc.png"}
+    ]
+  },
+  {
+    "icaoCode": "SPJJ",
+    "charts": [
+      {"type": "ADC", "name": "Plano de Aeródromo", "file": "adc.png"}
+    ]
+  },
+  {
+    "icaoCode": "SPJI",
+    "charts": [
+      {"type": "ADC", "name": "Plano de Aeródromo", "file": "adc.png"}
+    ]
+  },
+  {
+    "icaoCode": "SPMF",
+    "charts": [
+      {"type": "ADC", "name": "Plano de Aeródromo", "file": "adc.png"}
     ]
   }
 ]

@@ -32,8 +32,12 @@ export async function GET(request: NextRequest) {
         elevation: true,
         authorizedTraffic: true,
         fireCategory: true,
+        category: true,
       },
-      orderBy: { icaoCode: 'asc' },
+      orderBy: [
+        { category: 'desc' },  // INTERNACIONAL first, then NACIONAL
+        { icaoCode: 'asc' },
+      ],
     })
 
     return NextResponse.json(airports)

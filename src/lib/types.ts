@@ -8,6 +8,7 @@ export interface Airport {
   elevation: string; // e.g. "157 m / 516 ft"
   fireCategory: string;
   authorizedTraffic: string;
+  category?: string; // INTERNACIONAL or NACIONAL
 }
 
 export interface AirportDetail extends Airport {
@@ -48,7 +49,7 @@ export interface AirportDetail extends Airport {
   aircraftRemovalCapacity?: string;
   rescueRemarks?: string;
   platformData?: { superficie?: string; resistencia?: string } | string;
-  taxiwayData?: { ancho?: string; superficie?: string; resistencia?: string } | string;
+  taxiwayData?: { ancho?: string; superficie?: string; resistencia?: string } | { nombre?: string; ancho?: string; superficie?: string; resistencia?: string }[] | string;
   checkpointData?: { altimetro?: string; ins?: string; vordme?: string } | string;
   platformRemarks?: string;
   surfaceGuidance?: string;

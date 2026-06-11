@@ -1,9 +1,10 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
-import { Search, Plane, MapPin } from "lucide-react"
+import { Search, Plane, MapPin, Globe, Flag } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Badge } from "@/components/ui/badge"
 import { AirportCard } from "@/components/airport-card"
 import type { Airport } from "@/lib/types"
 
@@ -52,6 +53,10 @@ export function AirportListing({ onSelectAirport }: AirportListingProps) {
     }, 300)
     return () => clearTimeout(timer)
   }, [search, fetchAirports])
+
+  // Group airports by category
+  const internationalAirports = airports.filter(a => a.category === "INTERNACIONAL")
+  const nationalAirports = airports.filter(a => a.category !== "INTERNACIONAL")
 
   return (
     <div className="space-y-8">
@@ -122,6 +127,19 @@ export function AirportListing({ onSelectAirport }: AirportListingProps) {
               ? "Buscando..."
               : `${airports.length} aeródromo${airports.length !== 1 ? "s" : ""} encontrado${airports.length !== 1 ? "s" : ""}`}
           </span>
+          {!loading && airports.length > 0 && (
+            <div className="hidden sm:flex items-center gap-3">
+              <span className="flex items-center gap-1.5">
+                <Globe className="size-3.5 text-amber-600" />
+                {internationalAirports.length} internacional{internationalAirports.length !== 1 ? "es" : ""}
+              </span>
+              <span className="text-border">|</span>
+              <span className="flex items-center gap-1.5">
+                <Flag className="size-3.5 text-emerald-600" />
+                {nationalAirports.length} nacional{nationalAirports.length !== 1 ? "es" : ""}
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -150,14 +168,60 @@ export function AirportListing({ onSelectAirport }: AirportListingProps) {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {airports.map((airport) => (
-            <AirportCard
-              key={airport.icaoCode}
-              airport={airport}
-              onClick={onSelectAirport}
-            />
-          ))}
+        <div className="space-y-10">
+          {/* Internacional Section */}
+          {internationalAirports.length > 0 && (
+            <div>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                  <Globe className="size-4 text-amber-600 dark:text-amber-400" />
+                  <span className="font-semibold text-amber-800 dark:text-amber-300 text-sm tracking-wide">
+                    AEROPUERTOS INTERNACIONALES
+                  </span>
+                </div>
+                <Badge variant="secondary" className="text-xs">
+                  {internationalAirports.length}
+                </Badge>
+                <div className="flex-1 h-px bg-border" />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {internationalAirports.map((airport) => (
+                  <AirportCard
+                    key={airport.icaoCode}
+                    airport={airport}
+                    onClick={onSelectAirport}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Nacional Section */}
+          {nationalAirports.length > 0 && (
+            <div>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800">
+                  <Flag className="size-4 text-emerald-600 dark:text-emerald-400" />
+                  <span className="font-semibold text-emerald-800 dark:text-emerald-300 text-sm tracking-wide">
+                    AEROPUERTOS NACIONALES
+                  </span>
+                </div>
+                <Badge variant="secondary" className="text-xs">
+                  {nationalAirports.length}
+                </Badge>
+                <div className="flex-1 h-px bg-border" />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {nationalAirports.map((airport) => (
+                  <AirportCard
+                    key={airport.icaoCode}
+                    airport={airport}
+                    onClick={onSelectAirport}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -41,6 +41,7 @@ model Airport {
   aftn            String?
   email           String?
   authorizedTraffic String?       // e.g. VFR / IFR
+  category        String?         // INTERNACIONAL or NACIONAL
   remarks         String?        // Observaciones
 
   // Operating hours (stored as JSON string)
