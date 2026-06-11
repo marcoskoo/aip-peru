@@ -1,0 +1,153 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Airport {
+  id          String   @id @default(cuid())
+  icaoCode    String   @unique  // e.g. SPCL, SPHI
+  name        String              // e.g. AEROPUERTO INTERNACIONAL CAP. FAP DAVID ARMANDO ABENSUR RENGIFO
+  city        String              // e.g. PUCALLPA, CHICLAYO
+  region      String?             // e.g. UCAYALI, LAMBAYEQUE
+  department  String?             // e.g. UCAYALI, LAMBAYEQUE
+  province    String?             // e.g. CRNL. PORTILLO, CHICLAYO
+  district    String?             // e.g. CALLERIA, CHICLAYO
+  country     String   @default("PERÚ")
+
+  // Geographic data
+  arpLatitude   String?           // e.g. 08º22'40.59"S
+  arpLongitude  String?           // e.g. 074°34'27.48"W
+  elevation     String?           // e.g. 157 m / 516 ft
+  temperature   String?           // e.g. 33.6° C (SET)
+  geoidalUndulation String?      // e.g. NIL
+  magneticDeclination String?     // e.g. 4°W (JAN 2015)
+  annualChange  String?           // e.g. 0°10' W
+
+  // Distance from city
+  distanceFromCity String?       // e.g. 5 km al SW
+
+  // Administration
+  administrationType String?     // e.g. AD Aeropuertos del Perú S.A. - ADP
+  address         String?
+  phone           String?
+  fax             String?
+  aftn            String?
+  email           String?
+  authorizedTraffic String?       // e.g. VFR / IFR
+  remarks         String?        // Observaciones
+
+  // Operating hours (stored as JSON string)
+  operatingHours  String?        // JSON with hours for each service
+
+  // Scale installations & services
+  cargoHandlingFacilities  String?  // JSON
+  fuelTypes                String?  // e.g. AVGAS, Turbo A1
+  lubricantTypes           String?  // e.g. NIL
+  refuelingFacilities      String?  // JSON
+  deIcingFacilities        String?
+  hangarSpace              String?
+  repairFacilities         String?
+  scaleRemarks             String?
+
+  // Passenger facilities
+  hotels          String?
+  restaurants     String?
+  transport       String?
+  medicalFacilities String?
+  bankingPost     String?
+  tourismOffice   String?
+  passengerRemarks String?
+
+  // Rescue & fire fighting
+  fireCategory    String?         // e.g. CAT 7
+  rescueEquipment String?
+  aircraftRemovalCapacity String?
+  rescueRemarks   String?
+
+  // Platform, taxiway data
+  platformData    String?         // JSON
+  taxiwayData     String?         // JSON
+  checkpointData  String?         // JSON
+  platformRemarks String?
+
+  // Surface movement guidance
+  surfaceGuidance  String?        // JSON
+  runwaySigns      String?
+  taxiwaySigns     String?
+  stopBars         String?
+  guidanceRemarks  String?
+
+  // Meteorological information
+  metOffice          String?      // JSON
+  metHours           String?
+  metForecastOffice  String?
+  metValidity        String?
+  metLandingForecast String?
+  metTrendInterval   String?
+  metBriefing        String?
+  metConsultation    String?
+  metDocumentation   String?
+  metLanguage        String?
+  metCharts          String?
+  metSupplementary   String?
+  metAtsDependencies String?
+  metAdditionalInfo  String?
+
+  // Runway data (JSON for each runway)
+  runways           String?       // JSON array with runway data
+
+  // Declared distances
+  declaredDistances  String?      // JSON array
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  obstacles   Obstacle[]
+  radioNavAids RadioNavAid[]
+  communications Communication[]
+}
+    
+model Obstacle {
+  id          String   @id @default(cuid())
+  airportId   String
+  runwayArea  String?           // e.g. "RWY 02 approach", "RWY 20 approach", "Circuit area"
+  obstacleType String?           // e.g. Antena, Edificio, Árbol
+  elevation   String?            // e.g. 3329.48 m / 10923.4908 ft
+  markingLighting String?        // e.g. NIL, LGTD
+  coordinates String?            // e.g. 13°32'03.85"S / 071°55'20.03"W
+  remarks     String?
+
+  airport     Airport  @relation(fields: [airportId], references: [id], onDelete: Cascade)
+}
+
+model RadioNavAid {
+  id          String   @id @default(cuid())
+  airportId   String
+  type        String?            // e.g. VOR/DME, NDB, ILS
+  identifier  String?            // e.g. PCL
+  frequency   String?            // e.g. 116.3 MHz
+  coordinates String?
+  elevation   String?
+  remarks     String?
+
+  airport     Airport  @relation(fields: [airportId], references: [id], onDelete: Cascade)
+}
+
+model Communication {
+  id          String   @id @default(cuid())
+  airportId   String
+  service     String?            // e.g. TWR, APP, GND
+  frequency   String?            // e.g. 118.3 MHz
+  callsign    String?
+  hours       String?
+  remarks     String?
+
+  airport     Airport  @relation(fields: [airportId], references: [id], onDelete: Cascade)
+}
