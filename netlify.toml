@@ -1,0 +1,26 @@
+[build]
+  command = """
+    prisma generate &&
+    next build
+  """
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "20"
+  NPM_FLAGS = "--legacy-peer-deps"
+  NEXT_TELEMETRY_DISABLED = "1"
+  # Prisma necesita saber dónde está el schema en build time
+  PRISMA_GENERATE_DATAMODEL_PATH = "prisma/schema.prisma"
+
+# Next.js 16 con App Router usa el plugin oficial de Netlify
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# Headers de seguridad para una app aeronáutica
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "geolocation=(), microphone=(), camera=()"
