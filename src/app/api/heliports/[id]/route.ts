@@ -2,7 +2,13 @@ import { db } from '@/lib/db'
 import { NextRequest, NextResponse } from 'next/server'
 
 // JSON string fields that need parsing before returning
-const JSON_FIELDS = ['communications'] as const
+const JSON_FIELDS = [
+  'communications',
+  'commsAts',
+  'radioNavAids',
+  'declaredDistances',
+  'obstacles',
+] as const
 
 function parseJsonFields(
   heliport: Record<string, unknown>
@@ -21,6 +27,23 @@ function parseJsonFields(
   return result
 }
 
+/**
+ * Resolves a single heliport by its database id or, as a fallback,
+ * by its ICAO code. This keeps backwards compatibility with callers
+ * that previously used /api/heliports/[icaoCode].
+ */
+async function resolveHeliport(slug: string) {
+  // First, attempt a direct lookup by id (most common path).
+  const byId = await db.heliport.findUnique({ where: { id: slug } })
+  if (byId) return byId
+
+  // Fallback: treat the slug as an ICAO code (case-insensitive).
+  const byIcao = await db.heliport.findUnique({
+    where: { icaoCode: slug.toUpperCase() },
+  })
+  return byIcao
+}
+
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -28,13 +51,11 @@ export async function GET(
   try {
     const { id } = await params
 
-    const heliport = await db.heliport.findUnique({
-      where: { id },
-    })
+    const heliport = await resolveHeliport(id)
 
     if (!heliport) {
       return NextResponse.json(
-        { error: `Heliport with id "${id}" not found` },
+        { error: `Heliport with id or ICAO code "${id}" not found` },
         { status: 404 }
       )
     }

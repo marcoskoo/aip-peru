@@ -185,3 +185,38 @@ Stage Summary:
 - AerodromeSelector component created and integrated into NOTAMs, Calculator, and standalone use
 - AirwaysListing now shows detailed segment view with classification badges (A/D/G/F), magnetic tracks, route width, and control frequency remarks
 - Replaced all fake/invented airways (W50, W86, W10, UW20, etc.) with real AIP PERÚ routes
+
+---
+Task ID: fix-heliports-slug-conflict
+Agent: Main Agent
+Task: Fix Next.js build error "You cannot use different slug names for the same dynamic path ('icaoCode' !== 'id')"
+
+Work Log:
+- Read dev.log and found startup error: slug name conflict under /api/heliports/
+- Inspected /src/app/api/heliports/ and found two sibling dynamic folders: [icaoCode]/ and [id]/
+- Confirmed Next.js requires all sibling dynamic segments to share the same slug name
+- Merged both route files into a single [id]/route.ts:
+  - GET now resolves by database id first, falls back to ICAO code lookup (uppercase)
+  - Preserved PUT and DELETE handlers (by id)
+  - Combined JSON_FIELDS from both files: communications, commsAts, radioNavAids, declaredDistances, obstacles
+- Deleted the duplicate [icaoCode]/ folder
+- Restarted dev server (was crashing on startup due to the slug conflict)
+- Verified all endpoints:
+  - GET / -> HTTP 200
+  - GET /api/heliports -> HTTP 200 (21 heliports)
+  - GET /api/heliports/<id> -> HTTP 200
+  - GET /api/heliports/<icao> (fallback) -> HTTP 200 (tested SPLB)
+- Ran `bun run lint` -> clean, zero errors
+
+Stage Summary:
+- Root cause: /api/heliports/ had two sibling dynamic route folders ([icaoCode] and [id]) with different slug names, which Next.js 16 forbids
+- Fix: merged into a single [id]/route.ts that resolves heliports by id OR ICAO code (backward compatible)
+- Dev server now starts cleanly ("Ready in 572ms", no slug conflict error)
+- All heliport API endpoints verified working (list, by-id, by-icao)
+- Lint passes cleanly
+
+Browser Verification (Agent Browser):
+- Homepage / loads: "AIP PERÚ - Publicación de Información Aeronáutica", 33 airports shown
+- Helipuertos view: "Todos 21" with full heliport cards (SPLB, SPLE, SPLG, etc.)
+- Network: GET /api/heliports? -> 200, no console errors
+- All navigation buttons render and work

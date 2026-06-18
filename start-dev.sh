@@ -1,6 +1,4 @@
 #!/bin/bash
-while true; do
-  bun --bun run dev
-  echo "Server crashed, restarting in 3 seconds..."
-  sleep 3
-done
+cd /home/z/my-project
+export PATH="/home/z/my-project/node_modules/.bin:$PATH"
+exec next dev -p 3000 > /home/z/my-project/dev.log 2>&1
