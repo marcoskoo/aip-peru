@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { AirportCard } from "@/components/airport-card"
 import type { Airport } from "@/lib/types"
+import { isInternationalAirport } from "@/lib/utils"
 
 interface AirportListingProps {
   onSelectAirport: (airport: Airport) => void
@@ -53,9 +54,11 @@ export function AirportListing({ onSelectAirport }: AirportListingProps) {
     return () => clearTimeout(timer)
   }, [search, fetchAirports])
 
-  // Group airports by category
-  const internationalAirports = airports.filter(a => a.category === "INTERNACIONAL")
-  const nationalAirports = airports.filter(a => a.category !== "INTERNACIONAL")
+  // Group airports by category.
+  // Uses isInternationalAirport() which falls back to name-based detection
+  // when the explicit `category` field is null (as is the case for seeded data).
+  const internationalAirports = airports.filter(a => isInternationalAirport(a))
+  const nationalAirports = airports.filter(a => !isInternationalAirport(a))
 
   const renderAirportGrid = (list: Airport[]) => {
     if (list.length === 0) {

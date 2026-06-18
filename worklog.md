@@ -439,3 +439,44 @@ Stage Summary:
   ✅ "Plantilla" and "Nueva sección" buttons present
   ✅ 9 existing AIP sections listed with Descargar/Editar/Eliminar actions
   ✅ Lint passes cleanly
+
+---
+Task ID: fix-international-airports-zero
+Agent: Main Agent
+Task: User reported "Aeródromos internacionales figura 0" (International airports tab shows 0)
+
+Work Log:
+- Analyzed user screenshot (IMG_5874.jpeg) via VLM: confirmed Internacionales tab showed 0
+- Queried /api/airports and found the root cause:
+  - All 32 airports had `category: null` in the database
+  - 11 airports have "INTERNACIONAL" in their name (SPCL, SPHI, SPJL, SPQT, SPQU, SPRU, SPSO, SPTN, SPTU, SPYL, SPZO)
+  - But the filter `a.category === "INTERNACIONAL"` returned 0 matches because category was null
+- Frontend fix: Created shared helper `isInternationalAirport()` in src/lib/utils.ts
+  - Primary signal: explicit category field === "INTERNACIONAL"
+  - Fallback signal (for null category): airport name contains "INTERNACIONAL"
+- Updated src/components/airport-listing.tsx to use the helper for filtering
+- Updated src/components/airport-card.tsx to use the helper for INTL/NAC badge display
+- Database backfill: ran a one-time script to set category properly
+  - 11 airports -> category = "INTERNACIONAL"
+  - 21 airports -> category = "NACIONAL"
+  - Verified counts: INTERNACIONAL=11, NACIONAL=21
+
+Verification (Agent Browser):
+- Reloaded homepage
+- Tab counts now correct: "Todos 32", "Internacionales 11", "Nacionales 21"
+- Clicked Internacionales tab -> 11 international airports displayed
+- VLM confirmed all 11 ICAO codes visible: SPCL, SPHI, SPJL, SPQT, SPQU, SPRU, SPSO, SPTN, SPTU, SPYL, SPZO
+- All cards show INTL badge (amber, with Globe icon)
+- `bun run lint` -> clean, zero errors
+
+Stage Summary:
+- Root cause: seeded airports had null `category` field; UI filter only checked that field
+- Fix: dual-layer solution
+  1. Frontend: isInternationalAirport() helper with name-based fallback (immediate, robust)
+  2. Database: backfilled category field for all 32 airports (proper long-term data)
+- Result: Internacionales tab now shows 11 airports (was 0)
+- Files modified:
+  - src/lib/utils.ts (added isInternationalAirport helper)
+  - src/components/airport-listing.tsx (use helper)
+  - src/components/airport-card.tsx (use helper)
+- Database: 32 Airport records updated with correct category field

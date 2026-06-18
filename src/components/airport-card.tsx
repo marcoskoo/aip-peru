@@ -4,6 +4,7 @@ import { Plane, Mountain, Flame, ArrowRightLeft, Globe, Flag } from "lucide-reac
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import type { Airport } from "@/lib/types"
+import { isInternationalAirport } from "@/lib/utils"
 
 interface AirportCardProps {
   airport: Airport
@@ -11,7 +12,7 @@ interface AirportCardProps {
 }
 
 export function AirportCard({ airport, onClick }: AirportCardProps) {
-  const isInternational = airport.category === "INTERNACIONAL"
+  const isInternational = isInternationalAirport(airport)
 
   return (
     <Card
