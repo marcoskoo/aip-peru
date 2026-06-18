@@ -220,3 +220,32 @@ Browser Verification (Agent Browser):
 - Helipuertos view: "Todos 21" with full heliport cards (SPLB, SPLE, SPLG, etc.)
 - Network: GET /api/heliports? -> 200, no console errors
 - All navigation buttons render and work
+
+---
+Task ID: fix-sandbox-inactive
+Agent: Main Agent
+Task: Fix "sandbox is inactive" error in preview panel (dev server dying between bash sessions)
+
+Work Log:
+- User reported preview panel showed {"error":"sandbox is inactive"}
+- Analyzed screenshot via VLM: confirmed the preview panel showed the error
+- Root cause: dev server was dying between bash sessions despite nohup+setsid
+- Previous attempts: nohup setsid /home/z/my-project/start-dev.sh - process died between sessions
+- Solution: created /home/z/my-project/launch-dev.sh using double-fork pattern
+  - Uses subshell ( ) & to create the double-fork
+  - disown to remove from job table
+  - Process gets adopted by init (PPID=1), fully detached from controlling terminal
+- Killed stale processes and started fresh with new launcher
+- Verified server survives across multiple bash sessions (PPID=1, HTTP 200)
+- Browser verification: page loads correctly with title "AIP PERÚ - Publicación de Información Aeronáutica"
+- All navigation buttons render, no page errors
+
+Stage Summary:
+- Root cause: dev server was being killed when bash sessions exited (not properly detached)
+- Fix: double-fork pattern via /home/z/my-project/launch-dev.sh - process now has PPID=1 (adopted by init)
+- Dev server now persists across bash sessions
+- Preview panel should now show the running AIP PERÚ application
+- All endpoints verified working: GET / -> 200, GET /api/heliports -> 200, GET /api/airports -> 200
+
+To restart dev server if needed:
+  nohup setsid /home/z/my-project/launch-dev.sh < /dev/null > /dev/null 2>&1 &
