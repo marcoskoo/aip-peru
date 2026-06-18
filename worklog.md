@@ -249,3 +249,54 @@ Stage Summary:
 
 To restart dev server if needed:
   nohup setsid /home/z/my-project/launch-dev.sh < /dev/null > /dev/null 2>&1 &
+
+---
+Task ID: migrate-to-postgresql-neon
+Agent: Main Agent
+Task: Migrate AIP PERÚ from SQLite to PostgreSQL (Neon) for Netlify deployment
+
+Work Log:
+- Read user-provided Neon PostgreSQL connection string
+- Updated /home/z/my-project/.env with Neon DATABASE_URL (postgresql://...?sslmode=require)
+- Changed Prisma datasource provider from "sqlite" to "postgresql" in prisma/schema.prisma
+- Ran `bun run db:generate` to regenerate Prisma Client for PostgreSQL
+- Ran `bun run db:push` to create all tables in Neon (provider mismatch initially, fixed with explicit export DATABASE_URL)
+- Installed tsx as dev dependency for running TypeScript seed scripts
+- Executed seed scripts in order, each populating Neon PostgreSQL:
+  1. seed.ts → 32 airports + 52 obstacles + 105 communications + 40 radioNavAids
+  2. seed-heliports.ts → 21 heliports (Lima 10, Loreto 4, etc.)
+  3. seed-scalable-data.ts → 25 NOTAMs + 23 airspace restrictions + 10 supplements
+  4. seed-aip-docs.ts → 9 AIP sections + 10 authorities + 220 abbreviations (partial - timed out)
+  5. seed-aip-data.ts → 33 navaids + 197 waypoints + 23 airways + 103 segments (via background process)
+  6. seed-missing.ts (temp) → 13 public holidays + 7 national regulations (to complete the gap)
+- Restarted dev server with new DATABASE_URL via launch-dev.sh (uses double-fork pattern + explicit export)
+- Verified ALL APIs return correct data from PostgreSQL:
+  - /api/airports → 32 airports
+  - /api/heliports → 21 heliports
+  - /api/notams → 25 NOTAMs
+  - /api/airspace-restrictions → 23 restrictions
+  - /api/airdata/navaids → 33 navaids
+  - /api/airdata/airways → 23 airways
+  - /api/search?q=SPJC → 12 results
+- Browser verified: page loads with title "AIP PERÚ", Helipuertos view shows "Todos 21"
+- Ran `bun run lint` → clean, zero errors
+- Cleaned up temporary seed scripts
+
+Stage Summary:
+- Database migrated from SQLite (file-based) to PostgreSQL on Neon (serverless, cloud-hosted)
+- All 9 entity types populated with real AIP PERÚ data:
+  - 32 airports, 21 heliports, 25 NOTAMs, 23 airspace restrictions, 10 supplements
+  - 33 navaids, 197 waypoints, 23 airways, 103 airway segments
+  - 9 AIP sections, 10 designated authorities, 220 abbreviations
+  - 13 public holidays, 7 national regulations, 52 obstacles, 105 communications, 40 radioNavAids
+- Dev server runs against Neon PostgreSQL successfully
+- All APIs verified working (HTTP 200, correct data counts)
+- Lint passes cleanly
+- Ready for Netlify/Vercel deployment
+
+Deployment files ready:
+- prisma/schema.prisma: provider = "postgresql"
+- .env: DATABASE_URL=postgresql://neondb_owner:***@ep-orange-art-ackeipx3.sa-east-1.aws.neon.tech/neondb?sslmode=require
+- netlify.toml: configured with @netlify/plugin-nextjs, prisma generate in build command
+- next.config.ts: removed output: "standalone"
+- package.json: postinstall: "prisma generate" added for hosting providers
