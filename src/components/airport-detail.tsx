@@ -54,6 +54,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Skeleton } from "@/components/ui/skeleton"
 import type { Airport, AirportDetail, Obstacle } from "@/lib/types"
 import dynamic from "next/dynamic"
+import { HighResChartViewer } from "@/components/high-res-chart-viewer"
 
 const WeatherPanel = dynamic(
   () => import("@/components/weather-panel").then((mod) => mod.WeatherPanel),
@@ -931,83 +932,15 @@ export function AirportDetailView({ airport, onBack }: AirportDetailProps) {
         </TabsContent>
       </Tabs>
 
-      {/* Chart Full-screen Viewer Modal */}
-      {selectedChart && (
-        <div
-          className="fixed inset-0 z-50 bg-black/90 flex flex-col"
-          onClick={() => setSelectedChart(null)}
-        >
-          <div className="flex items-center justify-between p-3 bg-black/50">
-            <div className="flex items-center gap-3">
-              <Badge
-                variant="outline"
-                className={`text-xs font-bold ${
-                  selectedChart.type === "SID" ? "border-green-400 text-green-400" :
-                  selectedChart.type === "STAR" ? "border-blue-400 text-blue-400" :
-                  selectedChart.type === "IAC" ? "border-red-400 text-red-400" :
-                  selectedChart.type === "ADC" ? "border-purple-400 text-purple-400" :
-                  "border-amber-400 text-amber-400"
-                }`}
-              >
-                {selectedChart.type}
-              </Badge>
-              <span className="text-white text-sm font-medium">{selectedChart.name}</span>
-              <span className="text-white/50 text-xs">{airport.icaoCode}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              {chartsData && (() => {
-                const allCharts = chartFilter === "all"
-                  ? chartsData.charts
-                  : (chartsData.grouped[chartFilter] || chartsData.charts)
-                const currentIndex = allCharts.findIndex(c => c.file === selectedChart.file)
-                const prevChart = currentIndex > 0 ? allCharts[currentIndex - 1] : null
-                const nextChart = currentIndex < allCharts.length - 1 ? allCharts[currentIndex + 1] : null
-                return (
-                  <>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="border-white/30 text-white hover:bg-white/20"
-                      disabled={!prevChart}
-                      onClick={(e) => { e.stopPropagation(); if (prevChart) setSelectedChart(prevChart) }}
-                    >
-                      <ChevronLeft className="size-4" />
-                    </Button>
-                    <span className="text-white/60 text-xs">{currentIndex + 1} / {allCharts.length}</span>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="border-white/30 text-white hover:bg-white/20"
-                      disabled={!nextChart}
-                      onClick={(e) => { e.stopPropagation(); if (nextChart) setSelectedChart(nextChart) }}
-                    >
-                      <ChevronRight className="size-4" />
-                    </Button>
-                  </>
-                )
-              })()}
-              <Button
-                variant="outline"
-                size="icon"
-                className="border-white/30 text-white hover:bg-white/20 ml-2"
-                onClick={(e) => { e.stopPropagation(); setSelectedChart(null) }}
-              >
-                <X className="size-4" />
-              </Button>
-            </div>
-          </div>
-          <div
-            className="flex-1 flex items-center justify-center p-4 overflow-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <img
-              src={selectedChart.url}
-              alt={`${selectedChart.type} - ${selectedChart.name}`}
-              className="max-w-full max-h-full object-contain"
-            />
-          </div>
-        </div>
-      )}
+      {/* High-Resolution Chart Viewer with Zoom/Pan/Rotate */}
+      <HighResChartViewer
+        charts={filteredCharts}
+        initialIndex={selectedChart ? Math.max(0, filteredCharts.findIndex(c => c.file === selectedChart.file)) : 0}
+        isOpen={!!selectedChart}
+        onClose={() => setSelectedChart(null)}
+        airportIcao={airport.icaoCode}
+        airportName={airport.name}
+      />
     </div>
   )
 }

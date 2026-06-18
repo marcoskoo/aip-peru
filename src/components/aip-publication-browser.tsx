@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { MarkdownRenderer } from '@/components/markdown-renderer'
 
 // ─── Types ────────────────────────────────────────────────────────
 
@@ -365,15 +366,15 @@ export function AipPublicationBrowser({ onNavigateAirports, onNavigateHeliports,
                 {selectedCode === 'GEN_2.1' && <HolidaysView lang={lang} />}
                 {selectedCode === 'GEN_2.2' && <AbbreviationsView lang={lang} />}
 
-                {/* Generic HTML Content */}
+                {/* Generic Content - Markdown or HTML (auto-detected) */}
                 {!['GEN_1.1', 'GEN_1.6', 'GEN_2.1', 'GEN_2.2'].includes(selectedCode) && (
                   <div className="prose prose-sm dark:prose-invert max-w-none">
-                    <div
-                      dangerouslySetInnerHTML={{
-                        __html: lang === 'en' && sectionData.contentEn
+                    <MarkdownRenderer
+                      content={
+                        lang === 'en' && sectionData.contentEn
                           ? sectionData.contentEn
-                          : sectionData.content || '<p>Contenido no disponible</p>'
-                      }}
+                          : sectionData.content || ''
+                      }
                     />
                   </div>
                 )}

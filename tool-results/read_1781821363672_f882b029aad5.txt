@@ -1,0 +1,706 @@
+     1→"use client"
+     2→
+     3→import { useState, useEffect, useCallback } from "react"
+     4→import { Plus, Pencil, Trash2, Search, X, Loader2, ChevronDown, ChevronRight } from "lucide-react"
+     5→import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+     6→import { Card, CardContent } from "@/components/ui/card"
+     7→import { Button } from "@/components/ui/button"
+     8→import { Input } from "@/components/ui/input"
+     9→import { Label } from "@/components/ui/label"
+    10→import { Badge } from "@/components/ui/badge"
+    11→import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+    12→import { ScrollArea } from "@/components/ui/scroll-area"
+    13→
+    14→// ─── Types ────────────────────────────────────────────────────────
+    15→
+    16→interface WaypointRecord {
+    17→  id: string; name: string; type: string; lat: number; lon: number; description: string | null
+    18→}
+    19→interface NavaidRecord {
+    20→  id: string; name: string; type: string; frequency: string; lat: number; lon: number; elevation: number | null
+    21→}
+    22→interface AirwaySegmentRecord {
+    23→  id: string; orderIndex: number; fromPoint: string; toPoint: string; distance: number; bearing: number; minFL: number | null; maxFL: number | null
+    24→}
+    25→interface AirwayRecord {
+    26→  id: string; designator: string; type: string; level: string; segments: AirwaySegmentRecord[]
+    27→}
+    28→interface FIRRecord {
+    29→  id: string; name: string; type: string; centerLat: number; centerLon: number; polygon: string
+    30→}
+    31→interface AdjacentFIRRecord {
+    32→  id: string; icao: string; name: string; country: string; borderPoints: string | null; color: string | null
+    33→}
+    34→interface SegmentForm {
+    35→  from: string; to: string; distance: string; bearing: string; minFL: string; maxFL: string
+    36→}
+    37→
+    38→// ─── Custom Hook ──────────────────────────────────────────────────
+    39→
+    40→function useAirdata<T>(url: string) {
+    41→  const [data, setData] = useState<T[]>([])
+    42→  const [loading, setLoading] = useState(true)
+    43→  const [refreshKey, setRefreshKey] = useState(0)
+    44→  const refresh = useCallback(() => setRefreshKey((k) => k + 1), [])
+    45→
+    46→  useEffect(() => {
+    47→    let cancelled = false
+    48→    queueMicrotask(() => {
+    49→      if (cancelled) return
+    50→      setLoading(true)
+    51→      fetch(url)
+    52→        .then((r) => r.ok ? r.json() : Promise.reject())
+    53→        .then((j) => { if (!cancelled) setData(j) })
+    54→        .catch(() => {})
+    55→        .finally(() => { if (!cancelled) setLoading(false) })
+    56→    })
+    57→    return () => { cancelled = true }
+    58→  }, [url, refreshKey])
+    59→
+    60→  return { data, loading, refresh }
+    61→}
+    62→
+    63→// ─── CRUD Helpers ─────────────────────────────────────────────────
+    64→
+    65→async function apiPost(url: string, data: unknown) {
+    66→  const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) })
+    67→  if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || "Error al crear")
+    68→  return r.json()
+    69→}
+    70→async function apiPut(url: string, data: unknown) {
+    71→  const r = await fetch(url, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) })
+    72→  if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || "Error al actualizar")
+    73→  return r.json()
+    74→}
+    75→async function apiDel(url: string) {
+    76→  const r = await fetch(url, { method: "DELETE" })
+    77→  if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || "Error al eliminar")
+    78→}
+    79→
+    80→// ─── Shared UI bits ──────────────────────────────────────────────
+    81→
+    82→function Notif({ msg }: { msg: { type: "ok" | "err"; text: string } | null }) {
+    83→  if (!msg) return null
+    84→  const ok = msg.type === "ok"
+    85→  return (
+    86→    <div className={`mb-3 px-3 py-2 rounded text-sm font-medium ${ok ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200" : "bg-red-50 text-red-800 dark:bg-red-950 dark:text-red-200"}`}>
+    87→      {ok ? "✓" : "✕"} {msg.text}
+    88→    </div>
+    89→  )
+    90→}
+    91→
+    92→function SearchBar({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder: string }) {
+    93→  return (
+    94→    <div className="relative flex-1 max-w-sm">
+    95→      <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
+    96→      <Input placeholder={placeholder} value={value} onChange={(e) => onChange(e.target.value)} className="pl-9 h-9" />
+    97→    </div>
+    98→  )
+    99→}
+   100→
+   101→function ActionBtns({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => void }) {
+   102→  return (
+   103→    <div className="flex gap-1">
+   104→      <Button variant="ghost" size="icon" className="size-8" onClick={onEdit}><Pencil className="size-3.5" /></Button>
+   105→      <Button variant="ghost" size="icon" className="size-8 text-red-500 hover:text-red-700" onClick={onDelete}><Trash2 className="size-3.5" /></Button>
+   106→    </div>
+   107→  )
+   108→}
+   109→
+   110→function FormRow({ children }: { children: React.ReactNode }) {
+   111→  return <div className="grid grid-cols-2 gap-3">{children}</div>
+   112→}
+   113→
+   114→function Field({ label, children }: { label: string; children: React.ReactNode }) {
+   115→  return <div className="space-y-1"><Label className="text-xs">{label}</Label>{children}</div>
+   116→}
+   117→
+   118→// ─── Waypoints Tab ────────────────────────────────────────────────
+   119→
+   120→function WaypointsTab() {
+   121→  const { data, loading, refresh } = useAirdata<WaypointRecord>("/api/airdata/waypoints")
+   122→  const [search, setSearch] = useState("")
+   123→  const [editing, setEditing] = useState<WaypointRecord | null>(null)
+   124→  const [showForm, setShowForm] = useState(false)
+   125→  const [saving, setSaving] = useState(false)
+   126→  const [fid, setFid] = useState("")
+   127→  const [fname, setFname] = useState("")
+   128→  const [ftype, setFtype] = useState("WAYPOINT")
+   129→  const [flat, setFlat] = useState("")
+   130→  const [flon, setFlon] = useState("")
+   131→  const [fdesc, setFdesc] = useState("")
+   132→  const [notif, setNotif] = useState<{ type: "ok" | "err"; text: string } | null>(null)
+   133→
+   134→  const notify = useCallback((type: "ok" | "err", text: string) => {
+   135→    setNotif({ type, text })
+   136→    setTimeout(() => setNotif(null), 3000)
+   137→  }, [])
+   138→
+   139→  const openCreate = () => {
+   140→    setEditing(null); setFid(""); setFname(""); setFtype("WAYPOINT"); setFlat(""); setFlon(""); setFdesc(""); setShowForm(true)
+   141→  }
+   142→  const openEdit = (w: WaypointRecord) => {
+   143→    setEditing(w); setFid(w.id); setFname(w.name); setFtype(w.type); setFlat(String(w.lat)); setFlon(String(w.lon)); setFdesc(w.description || ""); setShowForm(true)
+   144→  }
+   145→
+   146→  const handleSave = async () => {
+   147→    if (!fid || !fname || !flat || !flon) { notify("err", "Complete los campos requeridos"); return }
+   148→    setSaving(true)
+   149→    try {
+   150→      const p = { id: fid, name: fname, type: ftype, lat: parseFloat(flat), lon: parseFloat(flon), description: fdesc || null }
+   151→      if (editing) { await apiPut(`/api/airdata/waypoints/${editing.id}`, p); notify("ok", "Waypoint actualizado") }
+   152→      else { await apiPost("/api/airdata/waypoints", p); notify("ok", "Waypoint creado") }
+   153→      setShowForm(false); refresh()
+   154→    } catch (e) { notify("err", e instanceof Error ? e.message : "Error") }
+   155→    setSaving(false)
+   156→  }
+   157→
+   158→  const handleDel = async (w: WaypointRecord) => {
+   159→    if (!confirm(`¿Eliminar waypoint ${w.id} (${w.name})?`)) return
+   160→    try { await apiDel(`/api/airdata/waypoints/${w.id}`); notify("ok", "Waypoint eliminado"); refresh() }
+   161→    catch (e) { notify("err", e instanceof Error ? e.message : "Error") }
+   162→  }
+   163→
+   164→  const filtered = data.filter((w) => w.id.toLowerCase().includes(search.toLowerCase()) || w.name.toLowerCase().includes(search.toLowerCase()))
+   165→  const typeBadge = (t: string) => {
+   166→    const c = t === "NAVAID" ? "border-blue-300 text-blue-700" : t === "AIRPORT" ? "border-amber-300 text-amber-700" : "border-cyan-300 text-cyan-700"
+   167→    return <Badge variant="outline" className={`text-[10px] ${c}`}>{t}</Badge>
+   168→  }
+   169→
+   170→  return (
+   171→    <div className="space-y-3">
+   172→      <Notif msg={notif} />
+   173→      <div className="flex items-center justify-between gap-3">
+   174→        <SearchBar value={search} onChange={setSearch} placeholder="Buscar waypoint..." />
+   175→        <Button size="sm" onClick={openCreate}><Plus className="size-4 mr-1" />Agregar</Button>
+   176→      </div>
+   177→
+   178→      {showForm && (
+   179→        <Card><CardContent className="p-4 space-y-3">
+   180→          <div className="flex items-center justify-between">
+   181→            <span className="font-semibold text-sm">{editing ? "Editar Waypoint" : "Nuevo Waypoint"}</span>
+   182→            <Button variant="ghost" size="icon" className="size-7" onClick={() => setShowForm(false)}><X className="size-4" /></Button>
+   183→          </div>
+   184→          <FormRow>
+   185→            <Field label="ID"><Input value={fid} onChange={(e) => setFid(e.target.value)} placeholder="ISKAR" disabled={!!editing} /></Field>
+   186→            <Field label="Nombre"><Input value={fname} onChange={(e) => setFname(e.target.value)} placeholder="ISKAR" /></Field>
+   187→          </FormRow>
+   188→          <Field label="Tipo">
+   189→            <Select value={ftype} onValueChange={setFtype}><SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+   190→            <SelectContent><SelectItem value="WAYPOINT">WAYPOINT</SelectItem><SelectItem value="NAVAID">NAVAID</SelectItem><SelectItem value="AIRPORT">AIRPORT</SelectItem></SelectContent></Select>
+   191→          </Field>
+   192→          <FormRow>
+   193→            <Field label="Latitud"><Input type="number" value={flat} onChange={(e) => setFlat(e.target.value)} placeholder="-10.2167" step="0.0001" /></Field>
+   194→            <Field label="Longitud"><Input type="number" value={flon} onChange={(e) => setFlon(e.target.value)} placeholder="-77.0833" step="0.0001" /></Field>
+   195→          </FormRow>
+   196→          <Field label="Descripción"><Input value={fdesc} onChange={(e) => setFdesc(e.target.value)} placeholder="ENR intersection..." /></Field>
+   197→          <div className="flex justify-end gap-2">
+   198→            <Button variant="outline" size="sm" onClick={() => setShowForm(false)}>Cancelar</Button>
+   199→            <Button size="sm" onClick={handleSave} disabled={saving}>{saving && <Loader2 className="size-4 animate-spin mr-1" />}Guardar</Button>
+   200→          </div>
+   201→        </CardContent></Card>
+   202→      )}
+   203→
+   204→      {loading ? <div className="flex justify-center py-8 text-muted-foreground"><Loader2 className="size-5 animate-spin mr-2" />Cargando...</div> : (
+   205→        <ScrollArea className="max-h-[500px]">
+   206→          <div className="space-y-2">
+   207→            {filtered.length === 0 && <p className="text-center py-6 text-sm text-muted-foreground">No se encontraron waypoints</p>}
+   208→            {filtered.map((w) => (
+   209→              <div key={w.id} className="flex items-center justify-between border rounded-lg px-3 py-2 hover:bg-muted/50 transition-colors">
+   210→                <div className="flex items-center gap-3 min-w-0">
+   211→                  <span className="font-mono text-xs font-medium">{w.id}</span>
+   212→                  <span className="text-sm truncate">{w.name}</span>
+   213→                  {typeBadge(w.type)}
+   214→                  <span className="hidden md:inline text-xs text-muted-foreground font-mono">{w.lat.toFixed(4)}, {w.lon.toFixed(4)}</span>
+   215→                </div>
+   216→                <ActionBtns onEdit={() => openEdit(w)} onDelete={() => handleDel(w)} />
+   217→              </div>
+   218→            ))}
+   219→          </div>
+   220→        </ScrollArea>
+   221→      )}
+   222→    </div>
+   223→  )
+   224→}
+   225→
+   226→// ─── Navaids Tab ──────────────────────────────────────────────────
+   227→
+   228→function NavaidsTab() {
+   229→  const { data, loading, refresh } = useAirdata<NavaidRecord>("/api/airdata/navaids")
+   230→  const [search, setSearch] = useState("")
+   231→  const [editing, setEditing] = useState<NavaidRecord | null>(null)
+   232→  const [showForm, setShowForm] = useState(false)
+   233→  const [saving, setSaving] = useState(false)
+   234→  const [fid, setFid] = useState("")
+   235→  const [fname, setFname] = useState("")
+   236→  const [ftype, setFtype] = useState("DVOR/DME")
+   237→  const [ffreq, setFfreq] = useState("")
+   238→  const [flat, setFlat] = useState("")
+   239→  const [flon, setFlon] = useState("")
+   240→  const [felev, setFelev] = useState("")
+   241→  const [notif, setNotif] = useState<{ type: "ok" | "err"; text: string } | null>(null)
+   242→
+   243→  const notify = useCallback((type: "ok" | "err", text: string) => {
+   244→    setNotif({ type, text }); setTimeout(() => setNotif(null), 3000)
+   245→  }, [])
+   246→
+   247→  const openCreate = () => {
+   248→    setEditing(null); setFid(""); setFname(""); setFtype("DVOR/DME"); setFfreq(""); setFlat(""); setFlon(""); setFelev(""); setShowForm(true)
+   249→  }
+   250→  const openEdit = (n: NavaidRecord) => {
+   251→    setEditing(n); setFid(n.id); setFname(n.name); setFtype(n.type); setFfreq(n.frequency); setFlat(String(n.lat)); setFlon(String(n.lon)); setFelev(n.elevation !== null ? String(n.elevation) : ""); setShowForm(true)
+   252→  }
+   253→
+   254→  const handleSave = async () => {
+   255→    if (!fid || !fname || !ffreq || !flat || !flon) { notify("err", "Complete los campos requeridos"); return }
+   256→    setSaving(true)
+   257→    try {
+   258→      const p = { id: fid, name: fname, type: ftype, frequency: ffreq, lat: parseFloat(flat), lon: parseFloat(flon), elevation: felev ? parseFloat(felev) : null }
+   259→      if (editing) { await apiPut(`/api/airdata/navaids/${editing.id}`, p); notify("ok", "Radioayuda actualizada") }
+   260→      else { await apiPost("/api/airdata/navaids", p); notify("ok", "Radioayuda creada") }
+   261→      setShowForm(false); refresh()
+   262→    } catch (e) { notify("err", e instanceof Error ? e.message : "Error") }
+   263→    setSaving(false)
+   264→  }
+   265→
+   266→  const handleDel = async (n: NavaidRecord) => {
+   267→    if (!confirm(`¿Eliminar radioayuda ${n.id} (${n.name})?`)) return
+   268→    try { await apiDel(`/api/airdata/navaids/${n.id}`); notify("ok", "Radioayuda eliminada"); refresh() }
+   269→    catch (e) { notify("err", e instanceof Error ? e.message : "Error") }
+   270→  }
+   271→
+   272→  const filtered = data.filter((n) => n.id.toLowerCase().includes(search.toLowerCase()) || n.name.toLowerCase().includes(search.toLowerCase()))
+   273→
+   274→  return (
+   275→    <div className="space-y-3">
+   276→      <Notif msg={notif} />
+   277→      <div className="flex items-center justify-between gap-3">
+   278→        <SearchBar value={search} onChange={setSearch} placeholder="Buscar radioayuda..." />
+   279→        <Button size="sm" onClick={openCreate}><Plus className="size-4 mr-1" />Agregar</Button>
+   280→      </div>
+   281→
+   282→      {showForm && (
+   283→        <Card><CardContent className="p-4 space-y-3">
+   284→          <div className="flex items-center justify-between">
+   285→            <span className="font-semibold text-sm">{editing ? "Editar Radioayuda" : "Nueva Radioayuda"}</span>
+   286→            <Button variant="ghost" size="icon" className="size-7" onClick={() => setShowForm(false)}><X className="size-4" /></Button>
+   287→          </div>
+   288→          <FormRow>
+   289→            <Field label="ID"><Input value={fid} onChange={(e) => setFid(e.target.value)} placeholder="LIM" disabled={!!editing} /></Field>
+   290→            <Field label="Nombre"><Input value={fname} onChange={(e) => setFname(e.target.value)} placeholder="LIMA" /></Field>
+   291→          </FormRow>
+   292→          <FormRow>
+   293→            <Field label="Tipo"><Select value={ftype} onValueChange={setFtype}><SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+   294→            <SelectContent><SelectItem value="DVOR/DME">DVOR/DME</SelectItem><SelectItem value="VOR/DME">VOR/DME</SelectItem><SelectItem value="NDB">NDB</SelectItem><SelectItem value="VOR">VOR</SelectItem><SelectItem value="DME">DME</SelectItem><SelectItem value="TACAN">TACAN</SelectItem></SelectContent></Select></Field>
+   295→            <Field label="Frecuencia"><Input value={ffreq} onChange={(e) => setFfreq(e.target.value)} placeholder="116.1 MHz" /></Field>
+   296→          </FormRow>
+   297→          <FormRow>
+   298→            <Field label="Latitud"><Input type="number" value={flat} onChange={(e) => setFlat(e.target.value)} placeholder="-12.0086" step="0.0001" /></Field>
+   299→            <Field label="Longitud"><Input type="number" value={flon} onChange={(e) => setFlon(e.target.value)} placeholder="-77.1228" step="0.0001" /></Field>
+   300→          </FormRow>
+   301→          <Field label="Elevación (ft)"><Input type="number" value={felev} onChange={(e) => setFelev(e.target.value)} placeholder="33" /></Field>
+   302→          <div className="flex justify-end gap-2">
+   303→            <Button variant="outline" size="sm" onClick={() => setShowForm(false)}>Cancelar</Button>
+   304→            <Button size="sm" onClick={handleSave} disabled={saving}>{saving && <Loader2 className="size-4 animate-spin mr-1" />}Guardar</Button>
+   305→          </div>
+   306→        </CardContent></Card>
+   307→      )}
+   308→
+   309→      {loading ? <div className="flex justify-center py-8 text-muted-foreground"><Loader2 className="size-5 animate-spin mr-2" />Cargando...</div> : (
+   310→        <ScrollArea className="max-h-[500px]">
+   311→          <div className="space-y-2">
+   312→            {filtered.length === 0 && <p className="text-center py-6 text-sm text-muted-foreground">No se encontraron radioayudas</p>}
+   313→            {filtered.map((n) => (
+   314→              <div key={n.id} className="flex items-center justify-between border rounded-lg px-3 py-2 hover:bg-muted/50 transition-colors">
+   315→                <div className="flex items-center gap-3 min-w-0">
+   316→                  <span className="font-mono text-xs font-medium">{n.id}</span>
+   317→                  <span className="text-sm truncate">{n.name}</span>
+   318→                  <Badge variant="outline" className="text-[10px] border-blue-300 text-blue-700">{n.type}</Badge>
+   319→                  <span className="hidden sm:inline text-xs font-mono text-muted-foreground">{n.frequency}</span>
+   320→                  <span className="hidden md:inline text-xs text-muted-foreground font-mono">{n.lat.toFixed(4)}, {n.lon.toFixed(4)}</span>
+   321→                </div>
+   322→                <ActionBtns onEdit={() => openEdit(n)} onDelete={() => handleDel(n)} />
+   323→              </div>
+   324→            ))}
+   325→          </div>
+   326→        </ScrollArea>
+   327→      )}
+   328→    </div>
+   329→  )
+   330→}
+   331→
+   332→// ─── Airways Tab ──────────────────────────────────────────────────
+   333→
+   334→function AirwaysTab() {
+   335→  const { data, loading, refresh } = useAirdata<AirwayRecord>("/api/airdata/airways")
+   336→  const [search, setSearch] = useState("")
+   337→  const [editing, setEditing] = useState<AirwayRecord | null>(null)
+   338→  const [showForm, setShowForm] = useState(false)
+   339→  const [saving, setSaving] = useState(false)
+   340→  const [expanded, setExpanded] = useState<Set<string>>(new Set())
+   341→  const [fDesignator, setFDesignator] = useState("")
+   342→  const [fType, setFType] = useState("CONVENTIONAL")
+   343→  const [fLevel, setFLevel] = useState("LOWER")
+   344→  const [fSegments, setFSegments] = useState<SegmentForm[]>([])
+   345→  const [notif, setNotif] = useState<{ type: "ok" | "err"; text: string } | null>(null)
+   346→
+   347→  const notify = useCallback((type: "ok" | "err", text: string) => {
+   348→    setNotif({ type, text }); setTimeout(() => setNotif(null), 3000)
+   349→  }, [])
+   350→
+   351→  const toggleExpand = (id: string) => setExpanded((p) => { const n = new Set(p); if (n.has(id)) { n.delete(id) } else { n.add(id) }; return n })
+   352→
+   353→  const openCreate = () => {
+   354→    setEditing(null); setFDesignator(""); setFType("CONVENTIONAL"); setFLevel("LOWER"); setFSegments([]); setShowForm(true)
+   355→  }
+   356→  const openEdit = (a: AirwayRecord) => {
+   357→    setEditing(a); setFDesignator(a.designator); setFType(a.type); setFLevel(a.level)
+   358→    setFSegments(a.segments.map((s) => ({ from: s.fromPoint, to: s.toPoint, distance: String(s.distance), bearing: String(s.bearing), minFL: s.minFL !== null ? String(s.minFL) : "", maxFL: s.maxFL !== null ? String(s.maxFL) : "" })))
+   359→    setShowForm(true)
+   360→  }
+   361→
+   362→  const handleSave = async () => {
+   363→    if (!fDesignator || !fType || !fLevel) { notify("err", "Complete los campos requeridos"); return }
+   364→    setSaving(true)
+   365→    try {
+   366→      const p = {
+   367→        designator: fDesignator, type: fType, level: fLevel,
+   368→        segments: fSegments.filter((s) => s.from && s.to).map((s) => ({
+   369→          from: s.from, to: s.to, distance: parseFloat(s.distance) || 0, bearing: parseFloat(s.bearing) || 0,
+   370→          minFL: s.minFL ? parseInt(s.minFL) : null, maxFL: s.maxFL ? parseInt(s.maxFL) : null,
+   371→        })),
+   372→      }
+   373→      if (editing) { await apiPut(`/api/airdata/airways/${editing.id}`, p); notify("ok", "Aerovía actualizada") }
+   374→      else { await apiPost("/api/airdata/airways", p); notify("ok", "Aerovía creada") }
+   375→      setShowForm(false); refresh()
+   376→    } catch (e) { notify("err", e instanceof Error ? e.message : "Error") }
+   377→    setSaving(false)
+   378→  }
+   379→
+   380→  const handleDel = async (a: AirwayRecord) => {
+   381→    if (!confirm(`¿Eliminar aerovía ${a.designator}?`)) return
+   382→    try { await apiDel(`/api/airdata/airways/${a.id}`); notify("ok", "Aerovía eliminada"); refresh() }
+   383→    catch (e) { notify("err", e instanceof Error ? e.message : "Error") }
+   384→  }
+   385→
+   386→  const addSeg = () => setFSegments((p) => [...p, { from: "", to: "", distance: "", bearing: "", minFL: "", maxFL: "" }])
+   387→  const rmSeg = (i: number) => setFSegments((p) => p.filter((_, j) => j !== i))
+   388→  const updSeg = (i: number, f: keyof SegmentForm, v: string) => setFSegments((p) => { const u = [...p]; u[i] = { ...u[i], [f]: v }; return u })
+   389→
+   390→  const filtered = data.filter((a) => a.designator.toLowerCase().includes(search.toLowerCase()) || a.type.toLowerCase().includes(search.toLowerCase()))
+   391→  const typeColor = (t: string) => t === "CONVENTIONAL" ? "border-green-300 text-green-700" : "border-fuchsia-300 text-fuchsia-700"
+   392→
+   393→  return (
+   394→    <div className="space-y-3">
+   395→      <Notif msg={notif} />
+   396→      <div className="flex items-center justify-between gap-3">
+   397→        <SearchBar value={search} onChange={setSearch} placeholder="Buscar aerovía..." />
+   398→        <Button size="sm" onClick={openCreate}><Plus className="size-4 mr-1" />Agregar</Button>
+   399→      </div>
+   400→
+   401→      {showForm && (
+   402→        <Card><CardContent className="p-4 space-y-3">
+   403→          <div className="flex items-center justify-between">
+   404→            <span className="font-semibold text-sm">{editing ? "Editar Aerovía" : "Nueva Aerovía"}</span>
+   405→            <Button variant="ghost" size="icon" className="size-7" onClick={() => setShowForm(false)}><X className="size-4" /></Button>
+   406→          </div>
+   407→          <FormRow>
+   408→            <Field label="Designador"><Input value={fDesignator} onChange={(e) => setFDesignator(e.target.value)} placeholder="G679" /></Field>
+   409→            <Field label="Nivel"><Select value={fLevel} onValueChange={setFLevel}><SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+   410→            <SelectContent><SelectItem value="LOWER">LOWER</SelectItem><SelectItem value="UPPER">UPPER</SelectItem></SelectContent></Select></Field>
+   411→          </FormRow>
+   412→          <Field label="Tipo"><Select value={fType} onValueChange={setFType}><SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+   413→          <SelectContent><SelectItem value="CONVENTIONAL">CONVENTIONAL</SelectItem><SelectItem value="RNAV">RNAV</SelectItem></SelectContent></Select></Field>
+   414→
+   415→          <div className="space-y-2">
+   416→            <div className="flex items-center justify-between">
+   417→              <Label className="text-xs font-semibold">Segmentos ({fSegments.length})</Label>
+   418→              <Button type="button" variant="outline" size="sm" onClick={addSeg}><Plus className="size-3 mr-1" />Segmento</Button>
+   419→            </div>
+   420→            <ScrollArea className="max-h-48">
+   421→              <div className="space-y-1.5">
+   422→                {fSegments.map((s, i) => (
+   423→                  <div key={i} className="grid grid-cols-[1fr_1fr_60px_60px_50px_50px_28px] gap-1 items-end text-xs border rounded p-1.5 bg-muted/30">
+   424→                    <Input value={s.from} onChange={(e) => updSeg(i, "from", e.target.value)} placeholder="Desde" className="h-6 text-xs" />
+   425→                    <Input value={s.to} onChange={(e) => updSeg(i, "to", e.target.value)} placeholder="Hasta" className="h-6 text-xs" />
+   426→                    <Input type="number" value={s.distance} onChange={(e) => updSeg(i, "distance", e.target.value)} placeholder="NM" className="h-6 text-xs" step="0.1" />
+   427→                    <Input type="number" value={s.bearing} onChange={(e) => updSeg(i, "bearing", e.target.value)} placeholder="°" className="h-6 text-xs" step="0.1" />
+   428→                    <Input type="number" value={s.minFL} onChange={(e) => updSeg(i, "minFL", e.target.value)} placeholder="mn" className="h-6 text-xs" />
+   429→                    <Input type="number" value={s.maxFL} onChange={(e) => updSeg(i, "maxFL", e.target.value)} placeholder="mx" className="h-6 text-xs" />
+   430→                    <Button type="button" variant="ghost" size="icon" className="size-6 text-red-500" onClick={() => rmSeg(i)}><Trash2 className="size-3" /></Button>
+   431→                  </div>
+   432→                ))}
+   433→              </div>
+   434→            </ScrollArea>
+   435→          </div>
+   436→
+   437→          <div className="flex justify-end gap-2">
+   438→            <Button variant="outline" size="sm" onClick={() => setShowForm(false)}>Cancelar</Button>
+   439→            <Button size="sm" onClick={handleSave} disabled={saving}>{saving && <Loader2 className="size-4 animate-spin mr-1" />}Guardar</Button>
+   440→          </div>
+   441→        </CardContent></Card>
+   442→      )}
+   443→
+   444→      {loading ? <div className="flex justify-center py-8 text-muted-foreground"><Loader2 className="size-5 animate-spin mr-2" />Cargando...</div> : (
+   445→        <ScrollArea className="max-h-[500px]">
+   446→          <div className="space-y-2">
+   447→            {filtered.length === 0 && <p className="text-center py-6 text-sm text-muted-foreground">No se encontraron aerovías</p>}
+   448→            {filtered.map((a) => (
+   449→              <div key={a.id} className="border rounded-lg overflow-hidden">
+   450→                <div className="flex items-center justify-between px-3 py-2 hover:bg-muted/50 transition-colors">
+   451→                  <div className="flex items-center gap-3 min-w-0">
+   452→                    <Button variant="ghost" size="icon" className="size-6" onClick={() => toggleExpand(a.id)}>
+   453→                      {expanded.has(a.id) ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
+   454→                    </Button>
+   455→                    <span className="font-mono text-sm font-medium">{a.designator}</span>
+   456→                    <Badge variant="outline" className={`text-[10px] ${typeColor(a.type)}`}>{a.type}</Badge>
+   457→                    <Badge variant="outline" className="text-[10px]">{a.level}</Badge>
+   458→                    <span className="text-xs text-muted-foreground">{a.segments.length} seg.</span>
+   459→                  </div>
+   460→                  <ActionBtns onEdit={() => openEdit(a)} onDelete={() => handleDel(a)} />
+   461→                </div>
+   462→                {expanded.has(a.id) && a.segments.length > 0 && (
+   463→                  <div className="border-t bg-muted/20 px-4 py-2">
+   464→                    <div className="text-[10px] grid grid-cols-[1fr_1fr_60px_60px_50px_50px] gap-1 text-muted-foreground mb-1 px-1">
+   465→                      <span>Desde</span><span>Hasta</span><span>NM</span><span>°</span><span>Min</span><span>Max</span>
+   466→                    </div>
+   467→                    {a.segments.map((s, i) => (
+   468→                      <div key={i} className="grid grid-cols-[1fr_1fr_60px_60px_50px_50px] gap-1 text-xs py-0.5 px-1">
+   469→                        <span className="font-mono">{s.fromPoint}</span>
+   470→                        <span className="font-mono">{s.toPoint}</span>
+   471→                        <span>{s.distance}</span>
+   472→                        <span>{s.bearing}</span>
+   473→                        <span>{s.minFL ?? "—"}</span>
+   474→                        <span>{s.maxFL ?? "—"}</span>
+   475→                      </div>
+   476→                    ))}
+   477→                  </div>
+   478→                )}
+   479→              </div>
+   480→            ))}
+   481→          </div>
+   482→        </ScrollArea>
+   483→      )}
+   484→    </div>
+   485→  )
+   486→}
+   487→
+   488→// ─── FIR Tab ──────────────────────────────────────────────────────
+   489→
+   490→function FIRTab() {
+   491→  const { data, loading, refresh } = useAirdata<FIRRecord>("/api/airdata/fir")
+   492→  const [editing, setEditing] = useState<FIRRecord | null>(null)
+   493→  const [showForm, setShowForm] = useState(false)
+   494→  const [saving, setSaving] = useState(false)
+   495→  const [fid, setFid] = useState("")
+   496→  const [fname, setFname] = useState("")
+   497→  const [ftype, setFtype] = useState("FIR")
+   498→  const [fcLat, setFcLat] = useState("")
+   499→  const [fcLon, setFcLon] = useState("")
+   500→  const [fpoly, setFpoly] = useState("")
+   501→  const [notif, setNotif] = useState<{ type: "ok" | "err"; text: string } | null>(null)
+   502→
+   503→  const notify = useCallback((type: "ok" | "err", text: string) => {
+   504→    setNotif({ type, text }); setTimeout(() => setNotif(null), 3000)
+   505→  }, [])
+   506→
+   507→  const openCreate = () => {
+   508→    setEditing(null); setFid(""); setFname(""); setFtype("FIR"); setFcLat(""); setFcLon(""); setFpoly("[]"); setShowForm(true)
+   509→  }
+   510→  const openEdit = (f: FIRRecord) => {
+   511→    setEditing(f); setFid(f.id); setFname(f.name); setFtype(f.type); setFcLat(String(f.centerLat)); setFcLon(String(f.centerLon)); setFpoly(f.polygon); setShowForm(true)
+   512→  }
+   513→
+   514→  const handleSave = async () => {
+   515→    if (!fid || !fname || !fcLat || !fcLon) { notify("err", "Complete los campos requeridos"); return }
+   516→    setSaving(true)
+   517→    try {
+   518→      const p = { id: fid, name: fname, type: ftype, centerLat: parseFloat(fcLat), centerLon: parseFloat(fcLon), polygon: fpoly }
+   519→      if (editing) { await apiPut(`/api/airdata/fir/${editing.id}`, p); notify("ok", "FIR actualizado") }
+   520→      else { await apiPost("/api/airdata/fir", p); notify("ok", "FIR creado") }
+   521→      setShowForm(false); refresh()
+   522→    } catch (e) { notify("err", e instanceof Error ? e.message : "Error") }
+   523→    setSaving(false)
+   524→  }
+   525→
+   526→  const handleDel = async (f: FIRRecord) => {
+   527→    if (!confirm(`¿Eliminar FIR ${f.name}?`)) return
+   528→    try { await apiDel(`/api/airdata/fir/${f.id}`); notify("ok", "FIR eliminado"); refresh() }
+   529→    catch (e) { notify("err", e instanceof Error ? e.message : "Error") }
+   530→  }
+   531→
+   532→  return (
+   533→    <div className="space-y-3">
+   534→      <Notif msg={notif} />
+   535→      <div className="flex items-center justify-end gap-3">
+   536→        <Button size="sm" onClick={openCreate}><Plus className="size-4 mr-1" />Agregar</Button>
+   537→      </div>
+   538→
+   539→      {showForm && (
+   540→        <Card><CardContent className="p-4 space-y-3">
+   541→          <div className="flex items-center justify-between">
+   542→            <span className="font-semibold text-sm">{editing ? "Editar FIR" : "Nuevo FIR"}</span>
+   543→            <Button variant="ghost" size="icon" className="size-7" onClick={() => setShowForm(false)}><X className="size-4" /></Button>
+   544→          </div>
+   545→          <FormRow>
+   546→            <Field label="ID"><Input value={fid} onChange={(e) => setFid(e.target.value)} placeholder="SPIM" disabled={!!editing} /></Field>
+   547→            <Field label="Nombre"><Input value={fname} onChange={(e) => setFname(e.target.value)} placeholder="Lima" /></Field>
+   548→          </FormRow>
+   549→          <FormRow>
+   550→            <Field label="Centro Lat"><Input type="number" value={fcLat} onChange={(e) => setFcLat(e.target.value)} step="0.0001" /></Field>
+   551→            <Field label="Centro Lon"><Input type="number" value={fcLon} onChange={(e) => setFcLon(e.target.value)} step="0.0001" /></Field>
+   552→          </FormRow>
+   553→          <Field label="Polígono (JSON)">
+   554→            <textarea value={fpoly} onChange={(e) => setFpoly(e.target.value)} rows={4} className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-xs font-mono ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
+   555→          </Field>
+   556→          <div className="flex justify-end gap-2">
+   557→            <Button variant="outline" size="sm" onClick={() => setShowForm(false)}>Cancelar</Button>
+   558→            <Button size="sm" onClick={handleSave} disabled={saving}>{saving && <Loader2 className="size-4 animate-spin mr-1" />}Guardar</Button>
+   559→          </div>
+   560→        </CardContent></Card>
+   561→      )}
+   562→
+   563→      {loading ? <div className="flex justify-center py-8 text-muted-foreground"><Loader2 className="size-5 animate-spin mr-2" />Cargando...</div> : (
+   564→        <div className="space-y-2">
+   565→          {data.length === 0 && <p className="text-center py-6 text-sm text-muted-foreground">No hay FIRs</p>}
+   566→          {data.map((f) => (
+   567→            <div key={f.id} className="flex items-center justify-between border rounded-lg px-3 py-2 hover:bg-muted/50 transition-colors">
+   568→              <div className="flex items-center gap-3 min-w-0">
+   569→                <span className="font-mono text-xs font-medium">{f.id}</span>
+   570→                <span className="text-sm">{f.name}</span>
+   571→                <Badge variant="outline" className="text-[10px]">{f.type}</Badge>
+   572→                <span className="hidden md:inline text-xs text-muted-foreground font-mono">{f.centerLat}, {f.centerLon}</span>
+   573→                <span className="hidden lg:inline text-xs text-muted-foreground">{JSON.parse(f.polygon || "[]").length} pts</span>
+   574→              </div>
+   575→              <ActionBtns onEdit={() => openEdit(f)} onDelete={() => handleDel(f)} />
+   576→            </div>
+   577→          ))}
+   578→        </div>
+   579→      )}
+   580→    </div>
+   581→  )
+   582→}
+   583→
+   584→// ─── Adjacent FIRs Tab ────────────────────────────────────────────
+   585→
+   586→function AdjacentFIRsTab() {
+   587→  const { data, loading, refresh } = useAirdata<AdjacentFIRRecord>("/api/airdata/adjacent-fir")
+   588→  const [editing, setEditing] = useState<AdjacentFIRRecord | null>(null)
+   589→  const [showForm, setShowForm] = useState(false)
+   590→  const [saving, setSaving] = useState(false)
+   591→  const [ficao, setFicao] = useState("")
+   592→  const [fname, setFname] = useState("")
+   593→  const [fcountry, setFcountry] = useState("")
+   594→  const [fcolor, setFcolor] = useState("")
+   595→  const [fborder, setFborder] = useState("")
+   596→  const [notif, setNotif] = useState<{ type: "ok" | "err"; text: string } | null>(null)
+   597→
+   598→  const notify = useCallback((type: "ok" | "err", text: string) => {
+   599→    setNotif({ type, text }); setTimeout(() => setNotif(null), 3000)
+   600→  }, [])
+   601→
+   602→  const openCreate = () => {
+   603→    setEditing(null); setFicao(""); setFname(""); setFcountry(""); setFcolor("#ff6600"); setFborder("[]"); setShowForm(true)
+   604→  }
+   605→  const openEdit = (a: AdjacentFIRRecord) => {
+   606→    setEditing(a); setFicao(a.icao); setFname(a.name); setFcountry(a.country); setFcolor(a.color || "#ff6600"); setFborder(a.borderPoints || "[]"); setShowForm(true)
+   607→  }
+   608→
+   609→  const handleSave = async () => {
+   610→    if (!ficao || !fname || !fcountry) { notify("err", "Complete los campos requeridos"); return }
+   611→    setSaving(true)
+   612→    try {
+   613→      const p = { icao: ficao, name: fname, country: fcountry, color: fcolor || null, borderPoints: fborder }
+   614→      if (editing) { await apiPut(`/api/airdata/adjacent-fir/${editing.id}`, p); notify("ok", "FIR adyacente actualizado") }
+   615→      else { await apiPost("/api/airdata/adjacent-fir", p); notify("ok", "FIR adyacente creado") }
+   616→      setShowForm(false); refresh()
+   617→    } catch (e) { notify("err", e instanceof Error ? e.message : "Error") }
+   618→    setSaving(false)
+   619→  }
+   620→
+   621→  const handleDel = async (a: AdjacentFIRRecord) => {
+   622→    if (!confirm(`¿Eliminar FIR adyacente ${a.icao} (${a.name})?`)) return
+   623→    try { await apiDel(`/api/airdata/adjacent-fir/${a.id}`); notify("ok", "FIR adyacente eliminado"); refresh() }
+   624→    catch (e) { notify("err", e instanceof Error ? e.message : "Error") }
+   625→  }
+   626→
+   627→  return (
+   628→    <div className="space-y-3">
+   629→      <Notif msg={notif} />
+   630→      <div className="flex items-center justify-end gap-3">
+   631→        <Button size="sm" onClick={openCreate}><Plus className="size-4 mr-1" />Agregar</Button>
+   632→      </div>
+   633→
+   634→      {showForm && (
+   635→        <Card><CardContent className="p-4 space-y-3">
+   636→          <div className="flex items-center justify-between">
+   637→            <span className="font-semibold text-sm">{editing ? "Editar FIR Adyacente" : "Nuevo FIR Adyacente"}</span>
+   638→            <Button variant="ghost" size="icon" className="size-7" onClick={() => setShowForm(false)}><X className="size-4" /></Button>
+   639→          </div>
+   640→          <FormRow>
+   641→            <Field label="ICAO"><Input value={ficao} onChange={(e) => setFicao(e.target.value)} placeholder="SEGU" disabled={!!editing} /></Field>
+   642→            <Field label="Nombre"><Input value={fname} onChange={(e) => setFname(e.target.value)} placeholder="Guayaquil" /></Field>
+   643→          </FormRow>
+   644→          <FormRow>
+   645→            <Field label="País"><Input value={fcountry} onChange={(e) => setFcountry(e.target.value)} placeholder="Ecuador" /></Field>
+   646→            <Field label="Color">
+   647→              <div className="flex gap-2 items-center">
+   648→                <input type="color" value={fcolor} onChange={(e) => setFcolor(e.target.value)} className="size-9 rounded border cursor-pointer" />
+   649→                <Input value={fcolor} onChange={(e) => setFcolor(e.target.value)} className="flex-1" />
+   650→              </div>
+   651→            </Field>
+   652→          </FormRow>
+   653→          <Field label="Puntos frontera (JSON)">
+   654→            <textarea value={fborder} onChange={(e) => setFborder(e.target.value)} rows={4} className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-xs font-mono ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
+   655→          </Field>
+   656→          <div className="flex justify-end gap-2">
+   657→            <Button variant="outline" size="sm" onClick={() => setShowForm(false)}>Cancelar</Button>
+   658→            <Button size="sm" onClick={handleSave} disabled={saving}>{saving && <Loader2 className="size-4 animate-spin mr-1" />}Guardar</Button>
+   659→          </div>
+   660→        </CardContent></Card>
+   661→      )}
+   662→
+   663→      {loading ? <div className="flex justify-center py-8 text-muted-foreground"><Loader2 className="size-5 animate-spin mr-2" />Cargando...</div> : (
+   664→        <div className="space-y-2">
+   665→          {data.length === 0 && <p className="text-center py-6 text-sm text-muted-foreground">No hay FIRs adyacentes</p>}
+   666→          {data.map((a) => (
+   667→            <div key={a.id} className="flex items-center justify-between border rounded-lg px-3 py-2 hover:bg-muted/50 transition-colors">
+   668→              <div className="flex items-center gap-3 min-w-0">
+   669→                <span className="font-mono text-xs font-medium">{a.icao}</span>
+   670→                <span className="text-sm">{a.name}</span>
+   671→                <Badge variant="outline" className="text-[10px]">{a.country}</Badge>
+   672→                {a.color && <span className="size-4 rounded-full border" style={{ backgroundColor: a.color }} />}
+   673→                <span className="hidden lg:inline text-xs text-muted-foreground">{JSON.parse(a.borderPoints || "[]").length} pts</span>
+   674→              </div>
+   675→              <ActionBtns onEdit={() => openEdit(a)} onDelete={() => handleDel(a)} />
+   676→            </div>
+   677→          ))}
+   678→        </div>
+   679→      )}
+   680→    </div>
+   681→  )
+   682→}
+   683→
+   684→// ─── Main Component ───────────────────────────────────────────────
+   685→
+   686→export function AdminPanel() {
+   687→  return (
+   688→    <div className="w-full max-w-4xl mx-auto p-4">
+   689→      <Tabs defaultValue="waypoints">
+   690→        <TabsList className="grid w-full grid-cols-5 mb-4">
+   691→          <TabsTrigger value="waypoints" className="text-xs">Waypoints</TabsTrigger>
+   692→          <TabsTrigger value="navaids" className="text-xs">Radioayudas</TabsTrigger>
+   693→          <TabsTrigger value="airways" className="text-xs">Aerovías</TabsTrigger>
+   694→          <TabsTrigger value="fir" className="text-xs">FIR</TabsTrigger>
+   695→          <TabsTrigger value="adj-fir" className="text-xs">FIRs Adj.</TabsTrigger>
+   696→        </TabsList>
+   697→        <TabsContent value="waypoints"><WaypointsTab /></TabsContent>
+   698→        <TabsContent value="navaids"><NavaidsTab /></TabsContent>
+   699→        <TabsContent value="airways"><AirwaysTab /></TabsContent>
+   700→        <TabsContent value="fir"><FIRTab /></TabsContent>
+   701→        <TabsContent value="adj-fir"><AdjacentFIRsTab /></TabsContent>
+   702→      </Tabs>
+   703→    </div>
+   704→  )
+   705→}
+   706→

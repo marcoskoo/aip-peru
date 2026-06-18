@@ -300,3 +300,100 @@ Deployment files ready:
 - netlify.toml: configured with @netlify/plugin-nextjs, prisma generate in build command
 - next.config.ts: removed output: "standalone"
 - package.json: postinstall: "prisma generate" added for hosting providers
+
+---
+Task ID: markdown-upload-and-highres-charts
+Agent: Main Agent
+Task: Add markdown file upload for AIP sections + high-resolution chart viewer with zoom/pan
+
+Work Log:
+Feature 1: High-Resolution Chart Viewer (STAR/SID/IAC/ADC/TMA/VAC as embedded PNGs)
+- Installed react-zoom-pan-pinch@4.0.3 for zoom/pan capabilities
+- Created /home/z/my-project/src/components/high-res-chart-viewer.tsx with:
+  - Zoom in/out (up to 8x), pan, double-click zoom, mouse wheel zoom
+  - Rotate left/right (90° increments), reset rotation
+  - Fullscreen mode (F11-style)
+  - Download PNG button
+  - Prev/next chart navigation with arrow keys + on-screen buttons
+  - Keyboard shortcuts: ← → navigate, R rotate, Esc close
+  - Loading spinner while image loads
+  - Color-coded chart type badges (SID=green, STAR=blue, IAC=red, ADC=purple, TMA=amber, VAC=cyan)
+  - Airport ICAO code + name in header
+- Replaced the old simple chart modal in airport-detail.tsx with the new HighResChartViewer
+- Fixed critical bug: ZoomControls (which uses useControls() hook) MUST be rendered INSIDE <TransformWrapper> - restructured component layout to put bottom controls bar inside the wrapper
+
+Feature 2: Markdown File Upload for AIP Sections
+- Installed remark-gfm@4.0.1 for GitHub Flavored Markdown (tables, strikethrough, etc.)
+- Created /home/z/my-project/src/app/api/aip-sections/upload/route.ts:
+  - Accepts multipart/form-data with one or more .md files
+  - Parses optional YAML frontmatter (--- delimited) for metadata: sectionCode, title, titleEn, part, subPart, orderIndex, lastAmendment, effectiveDate, contentEn
+  - Auto-derives sectionCode from filename if no frontmatter (e.g. "ENR_3.1-rutas.md" -> "ENR_3.1")
+  - Auto-derives title from first H1 heading if not in frontmatter
+  - Creates new section or updates existing one (upsert by sectionCode)
+  - Returns detailed results: {created, updated, errors} per file
+- Added POST handler to /api/aip-sections/route.ts (create new section via JSON)
+- Added PUT and DELETE handlers to /api/aip-sections/[sectionCode]/route.ts (update/delete by code)
+- Created /home/z/my-project/src/components/markdown-renderer.tsx:
+  - Auto-detects HTML vs Markdown content (legacy HTML sections still work)
+  - Renders markdown with react-markdown + remark-gfm
+  - Custom components for tables, headings, code blocks, blockquotes, links, images
+  - Navy/amber themed styling matching the app
+  - Image error fallback handling
+- Updated /home/z/my-project/src/components/aip-publication-browser.tsx:
+  - Replaced dangerouslySetInnerHTML with MarkdownRenderer
+  - Auto-detects content type (HTML from seeds or Markdown from uploads)
+- Created /home/z/my-project/src/components/aip-sections-admin.tsx (new admin tab):
+  - Drag & drop upload zone for .md files (multiple files supported)
+  - File picker button as alternative
+  - Upload results panel showing created/updated/error per file
+  - List of existing sections grouped by part (GEN, ENR, AD)
+  - Per-section actions: Download .md, Edit, Delete (with confirmation)
+  - Inline editor with metadata fields (sectionCode, title, part, subPart, orderIndex, etc.)
+  - Toggle between code view and live markdown preview
+  - "Plantilla" button downloads a template .md file with frontmatter example
+  - "Nueva sección" button for manual creation
+- Added "AIP Secciones" as the first tab in admin-panel.tsx (now 6 tabs total)
+
+Browser verification:
+- Airport detail (Tarapoto SPST) → Cartas tab → clicked ADC chart
+- High-res viewer opened with: Acercar (+), Alejar (-), Restablecer, Rotar izq/der, Descargar, Pantalla completa, Cerrar
+- Zoom in worked (2x clicks)
+- Rotation button worked (0° displayed)
+- Close button returned to charts list
+- Admin panel → AIP Secciones tab → Subir .md dialog opened with "Seleccionar archivos" button
+- API tested: POST /api/aip-sections/upload with test-section.md → created successfully
+- API tested: GET /api/aip-sections/TEST_1.1 → returned parsed markdown content (358 chars)
+- API tested: DELETE /api/aip-sections/TEST_1.1 → deleted successfully
+- bun run lint → clean, zero errors
+
+Stage Summary:
+Feature 1 - High-Resolution Chart Viewer:
+- All chart types (SID, STAR, IAC, ADC, TMA, VAC, HELO, NADP) now display as embedded high-resolution PNGs
+- Full zoom (up to 8x), pan, rotate (90° increments), fullscreen, download capabilities
+- Keyboard navigation (arrows, R, Esc) + on-screen controls
+- Replaces the old static image modal in airport-detail.tsx
+
+Feature 2 - Markdown Upload:
+- POST /api/aip-sections/upload accepts multiple .md files via FormData
+- YAML frontmatter parsing with auto-derivation fallback
+- New "AIP Secciones" admin tab with drag & drop, file list, inline editor, download template
+- AipSection content now rendered with react-markdown (auto-detects HTML vs Markdown)
+- Full CRUD: POST/PUT/DELETE on /api/aip-sections endpoints
+- Existing 9 seeded sections (GEN_1.1 through GEN_2.3) continue to work (HTML auto-detected)
+
+Files created:
+- src/components/high-res-chart-viewer.tsx
+- src/components/markdown-renderer.tsx
+- src/components/aip-sections-admin.tsx
+- src/app/api/aip-sections/upload/route.ts
+
+Files modified:
+- src/components/airport-detail.tsx (replaced chart modal with HighResChartViewer)
+- src/components/aip-publication-browser.tsx (use MarkdownRenderer instead of dangerouslySetInnerHTML)
+- src/components/admin-panel.tsx (added AIP Secciones tab as first tab)
+- src/app/api/aip-sections/route.ts (added POST handler)
+- src/app/api/aip-sections/[sectionCode]/route.ts (added PUT and DELETE handlers)
+
+Dependencies added:
+- react-zoom-pan-pinch@4.0.3
+- remark-gfm@4.0.1
