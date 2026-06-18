@@ -397,3 +397,45 @@ Files modified:
 Dependencies added:
 - react-zoom-pan-pinch@4.0.3
 - remark-gfm@4.0.1
+
+---
+Task ID: fix-admin-visibility-ux
+Agent: Main Agent
+Task: User reported "Admin section, AIP Secciones tab, and Subir .md button not visible" — investigate and fix
+
+Work Log:
+- Used Agent Browser to open http://localhost:3000/ and inspect the rendered page
+- Found that the Admin button (ref=e16) IS visible in the header navigation
+- Clicked Admin → "Panel de Administración" heading appeared, with all 6 tabs visible:
+  AIP Secciones (selected), Waypoints, Radioayudas, Aerovías, FIR, FIRs Adj.
+- "Subir .md" button IS visible (ref=e27) and opens the upload dialog correctly
+- VLM analysis of screenshots confirmed all elements are present and functional
+- ROOT CAUSE identified: UX bug in page.tsx — every navigation button had
+  `activeLabel: "Aeródromos"`, so when Admin was clicked and became active,
+  its label changed from "Admin" to "Aeródromos", making it look like the user
+  was NOT on the Admin page. This caused the confusion.
+- Fix: removed the `activeLabel` property from all navButtons. Now each button
+  always shows its proper label (Admin, NOTAMs, etc.) regardless of active state.
+  The active state is still indicated by amber background styling.
+- Verified fix via Agent Browser: Admin button now shows "Admin" label even when active
+- Clicked Admin → panel loads with "Panel de Administración" heading
+- Clicked "Subir .md" → upload dialog opens with "Subir archivos Markdown (.md)" heading
+- `bun run lint` → clean, zero errors
+- No runtime errors in dev.log
+
+Stage Summary:
+- The Admin section, AIP Secciones tab, and Subir .md button were ALREADY implemented
+  and working (from Task ID: markdown-upload-and-highres-charts)
+- The user could not find them because of a confusing UX bug: when any nav button was
+  active, its text label changed to "Aeródromos" — so clicking "Admin" made the button
+  say "Aeródromos" instead of "Admin", hiding which section was active
+- Fixed by removing the `activeLabel` concept entirely; buttons now always show their
+  real label. Active state is shown via amber background color (unchanged).
+- All features verified working:
+  ✅ Admin button visible and labeled "Admin" in header
+  ✅ Admin panel loads with "Panel de Administración" heading
+  ✅ 6 tabs visible: AIP Secciones (first/selected), Waypoints, Radioayudas, Aerovías, FIR, FIRs Adj.
+  ✅ "Subir .md" button opens markdown upload dialog
+  ✅ "Plantilla" and "Nueva sección" buttons present
+  ✅ 9 existing AIP sections listed with Descargar/Editar/Eliminar actions
+  ✅ Lint passes cleanly

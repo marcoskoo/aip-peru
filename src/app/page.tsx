@@ -172,17 +172,18 @@ export default function Home() {
   }, [])
 
   // Navigation buttons configuration
+  // Each button always shows its own label. The active one is highlighted with amber styling.
   const navButtons = [
-    { mode: "publications" as ViewMode, icon: BookOpen, label: "Publicaciones AIP", activeLabel: "Aeródromos" },
-    { mode: "heliports" as ViewMode, icon: Crosshair, label: "Helipuertos", activeLabel: "Aeródromos" },
-    { mode: "airways" as ViewMode, icon: Navigation2, label: "Rutas", activeLabel: "Aeródromos" },
-    { mode: "notams" as ViewMode, icon: AlertTriangle, label: "NOTAMs", activeLabel: "Aeródromos" },
-    { mode: "airspace" as ViewMode, icon: Shield, label: "Zonas", activeLabel: "Aeródromos" },
-    { mode: "chart" as ViewMode, icon: Map, label: "Carta Aeronáutica", activeLabel: "Aeródromos" },
-    { mode: "route-calculator" as ViewMode, icon: Route, label: "Calculadora", activeLabel: "Aeródromos" },
-    { mode: "calculator" as ViewMode, icon: Calculator, label: "Calc. Aero", activeLabel: "Aeródromos" },
-    { mode: "flight-plan" as ViewMode, icon: FileText, label: "Plan de Vuelo", activeLabel: "Aeródromos" },
-    { mode: "admin" as ViewMode, icon: Settings, label: "Admin", activeLabel: "Aeródromos" },
+    { mode: "publications" as ViewMode, icon: BookOpen, label: "Publicaciones AIP" },
+    { mode: "heliports" as ViewMode, icon: Crosshair, label: "Helipuertos" },
+    { mode: "airways" as ViewMode, icon: Navigation2, label: "Rutas" },
+    { mode: "notams" as ViewMode, icon: AlertTriangle, label: "NOTAMs" },
+    { mode: "airspace" as ViewMode, icon: Shield, label: "Zonas" },
+    { mode: "chart" as ViewMode, icon: Map, label: "Carta Aeronáutica" },
+    { mode: "route-calculator" as ViewMode, icon: Route, label: "Calculadora" },
+    { mode: "calculator" as ViewMode, icon: Calculator, label: "Calc. Aero" },
+    { mode: "flight-plan" as ViewMode, icon: FileText, label: "Plan de Vuelo" },
+    { mode: "admin" as ViewMode, icon: Settings, label: "Admin" },
   ]
 
   return (
@@ -226,7 +227,7 @@ export default function Home() {
               {/* Navigation buttons (shown when no airport/heliport selected) */}
               {!selectedAirport && !selectedHeliport && (
                 <>
-                  {navButtons.map(({ mode, icon: Icon, label, activeLabel }) => (
+                  {navButtons.map(({ mode, icon: Icon, label }) => (
                     <Button
                       key={mode}
                       variant={viewMode === mode ? "default" : "ghost"}
@@ -242,7 +243,7 @@ export default function Home() {
                     >
                       <Icon className="size-3.5" />
                       <span className="hidden lg:inline">
-                        {viewMode === mode ? activeLabel : label}
+                        {label}
                       </span>
                     </Button>
                   ))}

@@ -1,0 +1,840 @@
+     1→"use client";
+     2→
+     3→import { useState, useEffect, useCallback, useRef } from "react";
+     4→import {
+     5→  Upload,
+     6→  FileText,
+     7→  Plus,
+     8→  Pencil,
+     9→  Trash2,
+    10→  Save,
+    11→  X,
+    12→  Eye,
+    13→  Code,
+    14→  Download,
+    15→  Loader2,
+    16→  CheckCircle2,
+    17→  AlertCircle,
+    18→  FileUp,
+    19→  RefreshCw,
+    20→} from "lucide-react";
+    21→import { Button } from "@/components/ui/button";
+    22→import { Input } from "@/components/ui/input";
+    23→import { Label } from "@/components/ui/label";
+    24→import { Textarea } from "@/components/ui/textarea";
+    25→import { Badge } from "@/components/ui/badge";
+    26→import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+    27→import {
+    28→  Dialog,
+    29→  DialogContent,
+    30→  DialogHeader,
+    31→  DialogTitle,
+    32→  DialogFooter,
+    33→} from "@/components/ui/dialog";
+    34→import {
+    35→  AlertDialog,
+    36→  AlertDialogAction,
+    37→  AlertDialogCancel,
+    38→  AlertDialogContent,
+    39→  AlertDialogDescription,
+    40→  AlertDialogFooter,
+    41→  AlertDialogHeader,
+    42→  AlertDialogTitle,
+    43→} from "@/components/ui/alert-dialog";
+    44→import { ScrollArea } from "@/components/ui/scroll-area";
+    45→import { toast } from "sonner";
+    46→import { MarkdownRenderer } from "@/components/markdown-renderer";
+    47→
+    48→interface AipSection {
+    49→  id: string;
+    50→  sectionCode: string;
+    51→  title: string;
+    52→  titleEn?: string | null;
+    53→  part: string;
+    54→  subPart: string;
+    55→  orderIndex: number;
+    56→  content?: string;
+    57→  contentEn?: string | null;
+    58→  lastAmendment?: string | null;
+    59→  effectiveDate?: string | null;
+    60→  sourceFile?: string | null;
+    61→}
+    62→
+    63→interface UploadResultItem {
+    64→  file: string;
+    65→  sectionCode: string;
+    66→  title: string;
+    67→  status: "created" | "updated" | "error";
+    68→  error?: string;
+    69→}
+    70→
+    71→const TEMPLATE_MARKDOWN = `---
+    72→sectionCode: ENR_3.1
+    73→title: Rutas ATS Convencionales - Espacio Aéreo Inferior
+    74→titleEn: Conventional ATS Routes - Lower Airspace
+    75→part: ENR
+    76→subPart: "3.1"
+    77→orderIndex: 31
+    78→lastAmendment: AMDT 33/2025
+    79→effectiveDate: 30 JUL 2025
+    80→---
+    81→
+    82→# Rutas ATS Convencionales - Espacio Aéreo Inferior
+    83→
+    84→## Descripción General
+    85→
+    86→Esta sección describe las rutas ATS convencionales del espacio aéreo inferior del Perú.
+    87→
+    88→## Tabla de Rutas
+    89→
+    90→| Designador | Tipo | Clasificación | Límite Inferior | Límite Superior |
+    91→|------------|------|---------------|-----------------|-----------------|
+    92→| A301       | Convecional | A | FL 080 | FL 240 |
+    93→| A304       | Convecional | A | FL 080 | FL 240 |
+    94→| V1         | Convecional | G | GND  | FL 240 |
+    95→
+    96→## Notas
+    97→
+    98→- Las rutas están diseñadas para **navegación convencional** (VOR/NDB).
+    99→- Consultar ENR 4.1 para frecuencias de radioayudas.
+   100→
+   101→> **Importante:** Verificar NOTAMs vigentes antes del vuelo.
+   102→`;
+   103→
+   104→export function AipSectionsTab() {
+   105→  const [sections, setSections] = useState<AipSection[]>([]);
+   106→  const [loading, setLoading] = useState(true);
+   107→  const [selectedSection, setSelectedSection] = useState<AipSection | null>(null);
+   108→  const [isEditorOpen, setIsEditorOpen] = useState(false);
+   109→  const [isUploadOpen, setIsUploadOpen] = useState(false);
+   110→  const [deleteTarget, setDeleteTarget] = useState<AipSection | null>(null);
+   111→  const [uploadingFiles, setUploadingFiles] = useState(false);
+   112→  const [uploadResults, setUploadResults] = useState<UploadResultItem[] | null>(null);
+   113→  const [viewMode, setViewMode] = useState<"preview" | "code">("preview");
+   114→  const fileInputRef = useRef<HTMLInputElement>(null);
+   115→  const [dragActive, setDragActive] = useState(false);
+   116→
+   117→  const fetchSections = useCallback(async () => {
+   118→    setLoading(true);
+   119→    try {
+   120→      const res = await fetch("/api/aip-sections");
+   121→      if (res.ok) {
+   122→        const data = await res.json();
+   123→        setSections(data);
+   124→      } else {
+   125→        toast.error("Error al cargar las secciones AIP");
+   126→      }
+   127→    } catch {
+   128→      toast.error("Error de conexión al cargar secciones");
+   129→    } finally {
+   130→      setLoading(false);
+   131→    }
+   132→  }, []);
+   133→
+   134→  useEffect(() => {
+   135→    fetchSections();
+   136→  }, [fetchSections]);
+   137→
+   138→  const handleUpload = async (files: FileList | File[]) => {
+   139→    if (!files || (files instanceof FileList && files.length === 0)) {
+   140→      toast.error("Selecciona al menos un archivo .md");
+   141→      return;
+   142→    }
+   143→
+   144→    const fileArray = Array.from(files);
+   145→    const invalidFiles = fileArray.filter(
+   146→      (f) => !f.name.toLowerCase().endsWith(".md") && !f.name.toLowerCase().endsWith(".markdown")
+   147→    );
+   148→    if (invalidFiles.length > 0) {
+   149→      toast.error(`Archivos no válidos: ${invalidFiles.map((f) => f.name).join(", ")}`);
+   150→      return;
+   151→    }
+   152→
+   153→    setUploadingFiles(true);
+   154→    setUploadResults(null);
+   155→
+   156→    try {
+   157→      const formData = new FormData();
+   158→      fileArray.forEach((file) => formData.append("files", file));
+   159→
+   160→      const res = await fetch("/api/aip-sections/upload", {
+   161→        method: "POST",
+   162→        body: formData,
+   163→      });
+   164→
+   165→      const data = await res.json();
+   166→
+   167→      if (res.ok) {
+   168→        setUploadResults(data.results || []);
+   169→        const { created = 0, updated = 0, errors = 0 } = data.summary || {};
+   170→        if (errors === 0) {
+   171→          toast.success(`${created} creada(s), ${updated} actualizada(s)`);
+   172→        } else {
+   173→          toast.warning(`${created} creadas, ${updated} actualizadas, ${errors} con error`);
+   174→        }
+   175→        fetchSections();
+   176→      } else {
+   177→        toast.error(data.error || "Error al subir archivos");
+   178→      }
+   179→    } catch (err) {
+   180→      toast.error("Error de conexión al subir archivos");
+   181→    } finally {
+   182→      setUploadingFiles(false);
+   183→    }
+   184→  };
+   185→
+   186→  const handleSaveSection = async (section: Partial<AipSection> & { content?: string }) => {
+   187→    try {
+   188→      const isUpdate = !!selectedSection;
+   189→      const url = isUpdate
+   190→        ? `/api/aip-sections/${selectedSection!.sectionCode}`
+   191→        : "/api/aip-sections";
+   192→      const method = isUpdate ? "PUT" : "POST";
+   193→
+   194→      const body: Record<string, unknown> = {
+   195→        sectionCode: section.sectionCode,
+   196→        title: section.title,
+   197→        titleEn: section.titleEn || null,
+   198→        part: section.part,
+   199→        subPart: String(section.subPart),
+   200→        orderIndex: section.orderIndex ?? 0,
+   201→        content: section.content || "",
+   202→        contentEn: section.contentEn || null,
+   203→        lastAmendment: section.lastAmendment || null,
+   204→        effectiveDate: section.effectiveDate || null,
+   205→      };
+   206→
+   207→      const res = await fetch(url, {
+   208→        method,
+   209→        headers: { "Content-Type": "application/json" },
+   210→        body: JSON.stringify(body),
+   211→      });
+   212→
+   213→      if (res.ok) {
+   214→        toast.success(isUpdate ? "Sección actualizada" : "Sección creada");
+   215→        setIsEditorOpen(false);
+   216→        setSelectedSection(null);
+   217→        fetchSections();
+   218→      } else {
+   219→        const data = await res.json();
+   220→        toast.error(data.error || "Error al guardar");
+   221→      }
+   222→    } catch {
+   223→      toast.error("Error de conexión");
+   224→    }
+   225→  };
+   226→
+   227→  const handleDelete = async (section: AipSection) => {
+   228→    try {
+   229→      const res = await fetch(`/api/aip-sections/${section.sectionCode}`, {
+   230→        method: "DELETE",
+   231→      });
+   232→      if (res.ok) {
+   233→        toast.success(`Sección ${section.sectionCode} eliminada`);
+   234→        setDeleteTarget(null);
+   235→        fetchSections();
+   236→      } else {
+   237→        const data = await res.json();
+   238→        toast.error(data.error || "Error al eliminar");
+   239→      }
+   240→    } catch {
+   241→      toast.error("Error de conexión");
+   242→    }
+   243→  };
+   244→
+   245→  const handleDownloadTemplate = () => {
+   246→    const blob = new Blob([TEMPLATE_MARKDOWN], { type: "text/markdown" });
+   247→    const url = URL.createObjectURL(blob);
+   248→    const a = document.createElement("a");
+   249→    a.href = url;
+   250→    a.download = "plantilla-aip-seccion.md";
+   251→    document.body.appendChild(a);
+   252→    a.click();
+   253→    document.body.removeChild(a);
+   254→    URL.revokeObjectURL(url);
+   255→    toast.success("Plantilla descargada");
+   256→  };
+   257→
+   258→  const handleDownloadSection = async (section: AipSection) => {
+   259→    try {
+   260→      // Fetch full content
+   261→      const res = await fetch(`/api/aip-sections/${section.sectionCode}`);
+   262→      const data = await res.json();
+   263→      const content = data.content || "";
+   264→
+   265→      const fm = [
+   266→        "---",
+   267→        `sectionCode: ${section.sectionCode}`,
+   268→        `title: ${section.title}`,
+   269→        section.titleEn ? `titleEn: ${section.titleEn}` : null,
+   270→        `part: ${section.part}`,
+   271→        `subPart: "${section.subPart}"`,
+   272→        `orderIndex: ${section.orderIndex}`,
+   273→        section.lastAmendment ? `lastAmendment: ${section.lastAmendment}` : null,
+   274→        section.effectiveDate ? `effectiveDate: ${section.effectiveDate}` : null,
+   275→        "---",
+   276→        "",
+   277→        content,
+   278→      ].filter(Boolean).join("\n");
+   279→
+   280→      const blob = new Blob([fm], { type: "text/markdown" });
+   281→      const url = URL.createObjectURL(blob);
+   282→      const a = document.createElement("a");
+   283→      a.href = url;
+   284→      a.download = `${section.sectionCode}.md`;
+   285→      document.body.appendChild(a);
+   286→      a.click();
+   287→      document.body.removeChild(a);
+   288→      URL.revokeObjectURL(url);
+   289→    } catch {
+   290→      toast.error("Error al descargar");
+   291→    }
+   292→  };
+   293→
+   294→  // Group sections by part
+   295→  const sectionsByPart = sections.reduce<Record<string, AipSection[]>>((acc, s) => {
+   296→    if (!acc[s.part]) acc[s.part] = [];
+   297→    acc[s.part].push(s);
+   298→    return acc;
+   299→  }, {});
+   300→
+   301→  const partOrder = ["GEN", "ENR", "AD"];
+   302→  const sortedParts = Object.keys(sectionsByPart).sort(
+   303→    (a, b) => partOrder.indexOf(a) - partOrder.indexOf(b)
+   304→  );
+   305→
+   306→  return (
+   307→    <div className="space-y-4">
+   308→      {/* Header actions */}
+   309→      <div className="flex flex-wrap items-center gap-2 justify-between">
+   310→        <div className="flex items-center gap-2">
+   311→          <h3 className="text-sm font-semibold flex items-center gap-2">
+   312→            <FileText className="size-4" />
+   313→            Secciones AIP
+   314→            <Badge variant="secondary" className="text-xs">
+   315→              {sections.length}
+   316→            </Badge>
+   317→          </h3>
+   318→        </div>
+   319→        <div className="flex flex-wrap items-center gap-2">
+   320→          <Button
+   321→            variant="outline"
+   322→            size="sm"
+   323→            onClick={handleDownloadTemplate}
+   324→            className="text-xs gap-1.5"
+   325→          >
+   326→            <Download className="size-3.5" />
+   327→            Plantilla
+   328→          </Button>
+   329→          <Button
+   330→            variant="outline"
+   331→            size="sm"
+   332→            onClick={() => setIsUploadOpen(true)}
+   333→            className="text-xs gap-1.5"
+   334→          >
+   335→            <Upload className="size-3.5" />
+   336→            Subir .md
+   337→          </Button>
+   338→          <Button
+   339→            size="sm"
+   340→            onClick={() => {
+   341→              setSelectedSection(null);
+   342→              setIsEditorOpen(true);
+   343→            }}
+   344→            className="text-xs gap-1.5 bg-navy hover:bg-navy/90"
+   345→          >
+   346→            <Plus className="size-3.5" />
+   347→            Nueva sección
+   348→          </Button>
+   349→        </div>
+   350→      </div>
+   351→
+   352→      {/* Sections list */}
+   353→      {loading ? (
+   354→        <div className="flex items-center justify-center py-12">
+   355→          <Loader2 className="size-6 animate-spin text-muted-foreground" />
+   356→        </div>
+   357→      ) : sections.length === 0 ? (
+   358→        <Card>
+   359→          <CardContent className="py-12 text-center">
+   360→            <FileText className="size-10 text-muted-foreground mx-auto mb-3" />
+   361→            <p className="text-sm text-muted-foreground mb-2">
+   362→              No hay secciones AIP cargadas
+   363→            </p>
+   364→            <p className="text-xs text-muted-foreground mb-4">
+   365→              Sube archivos .md o crea una sección manualmente
+   366→            </p>
+   367→            <Button
+   368→              size="sm"
+   369→              onClick={() => setIsUploadOpen(true)}
+   370→              className="gap-1.5"
+   371→            >
+   372→              <Upload className="size-4" />
+   373→              Subir primer archivo .md
+   374→            </Button>
+   375→          </CardContent>
+   376→        </Card>
+   377→      ) : (
+   378→        <div className="space-y-4">
+   379→          {sortedParts.map((part) => (
+   380→            <Card key={part}>
+   381→              <CardHeader className="pb-2">
+   382→                <CardTitle className="text-sm flex items-center gap-2">
+   383→                  <Badge className="bg-navy text-white">{part}</Badge>
+   384→                  <span className="text-muted-foreground font-normal text-xs">
+   385→                    {sectionsByPart[part].length} sección(es)
+   386→                  </span>
+   387→                </CardTitle>
+   388→              </CardHeader>
+   389→              <CardContent className="pt-0">
+   390→                <div className="space-y-1">
+   391→                  {sectionsByPart[part]
+   392→                    .sort((a, b) => a.orderIndex - b.orderIndex)
+   393→                    .map((section) => (
+   394→                      <div
+   395→                        key={section.id}
+   396→                        className="flex items-center gap-2 p-2 rounded-md hover:bg-muted/50 group"
+   397→                      >
+   398→                        <Badge variant="outline" className="font-mono text-xs shrink-0">
+   399→                          {section.sectionCode}
+   400→                        </Badge>
+   401→                        <span className="text-sm flex-1 truncate">{section.title}</span>
+   402→                        {section.sourceFile && (
+   403→                          <Badge variant="secondary" className="text-[10px] shrink-0 hidden sm:inline-flex">
+   404→                            <FileUp className="size-2.5 mr-1" />
+   405→                            {section.sourceFile}
+   406→                          </Badge>
+   407→                        )}
+   408→                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+   409→                          <Button
+   410→                            variant="ghost"
+   411→                            size="icon"
+   412→                            className="size-7"
+   413→                            onClick={() => handleDownloadSection(section)}
+   414→                            title="Descargar .md"
+   415→                          >
+   416→                            <Download className="size-3.5" />
+   417→                          </Button>
+   418→                          <Button
+   419→                            variant="ghost"
+   420→                            size="icon"
+   421→                            className="size-7"
+   422→                            onClick={() => {
+   423→                              setSelectedSection(section);
+   424→                              setIsEditorOpen(true);
+   425→                            }}
+   426→                            title="Editar"
+   427→                          >
+   428→                            <Pencil className="size-3.5" />
+   429→                          </Button>
+   430→                          <Button
+   431→                            variant="ghost"
+   432→                            size="icon"
+   433→                            className="size-7 text-red-600 hover:text-red-700"
+   434→                            onClick={() => setDeleteTarget(section)}
+   435→                            title="Eliminar"
+   436→                          >
+   437→                            <Trash2 className="size-3.5" />
+   438→                          </Button>
+   439→                        </div>
+   440→                      </div>
+   441→                    ))}
+   442→                </div>
+   443→              </CardContent>
+   444→            </Card>
+   445→          ))}
+   446→        </div>
+   447→      )}
+   448→
+   449→      {/* Upload Dialog */}
+   450→      <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
+   451→        <DialogContent className="max-w-2xl">
+   452→          <DialogHeader>
+   453→            <DialogTitle className="flex items-center gap-2">
+   454→              <Upload className="size-5" />
+   455→              Subir archivos Markdown (.md)
+   456→            </DialogTitle>
+   457→          </DialogHeader>
+   458→
+   459→          <div className="space-y-4">
+   460→            {/* Info about frontmatter */}
+   461→            <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-3 text-xs">
+   462→              <p className="font-semibold mb-1 text-amber-900 dark:text-amber-200">
+   463→                Formato soportado:
+   464→              </p>
+   465→              <p className="text-amber-800 dark:text-amber-300">
+   466→                Cada archivo puede incluir <strong>frontmatter YAML</strong> al inicio (entre <code className="bg-amber-100 dark:bg-amber-900 px-1 rounded">---</code>) con los campos:{" "}
+   467→                <code>sectionCode</code>, <code>title</code>, <code>part</code>, <code>subPart</code>, etc.
+   468→                Si no se incluye, se deriva del nombre del archivo.
+   469→              </p>
+   470→            </div>
+   471→
+   472→            {/* Drag & drop zone */}
+   473→            <div
+   474→              onDragEnter={(e) => {
+   475→                e.preventDefault();
+   476→                setDragActive(true);
+   477→              }}
+   478→              onDragLeave={(e) => {
+   479→                e.preventDefault();
+   480→                setDragActive(false);
+   481→              }}
+   482→              onDragOver={(e) => e.preventDefault()}
+   483→              onDrop={(e) => {
+   484→                e.preventDefault();
+   485→                setDragActive(false);
+   486→                if (e.dataTransfer.files.length > 0) {
+   487→                  handleUpload(e.dataTransfer.files);
+   488→                }
+   489→              }}
+   490→              className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+   491→                dragActive
+   492→                  ? "border-amber-500 bg-amber-50 dark:bg-amber-950/30"
+   493→                  : "border-slate-300 dark:border-slate-700"
+   494→              }`}
+   495→            >
+   496→              {uploadingFiles ? (
+   497→                <div className="flex flex-col items-center gap-2">
+   498→                  <Loader2 className="size-8 animate-spin text-amber-600" />
+   499→                  <p className="text-sm text-muted-foreground">Procesando archivos...</p>
+   500→                </div>
+   501→              ) : (
+   502→                <>
+   503→                  <FileUp className="size-10 text-muted-foreground mx-auto mb-3" />
+   504→                  <p className="text-sm font-medium mb-1">
+   505→                    Arrastra archivos .md aquí
+   506→                  </p>
+   507→                  <p className="text-xs text-muted-foreground mb-3">
+   508→                    o haz clic para seleccionar
+   509→                  </p>
+   510→                  <Button
+   511→                    type="button"
+   512→                    variant="outline"
+   513→                    size="sm"
+   514→                    onClick={() => fileInputRef.current?.click()}
+   515→                  >
+   516→                    Seleccionar archivos
+   517→                  </Button>
+   518→                  <input
+   519→                    ref={fileInputRef}
+   520→                    type="file"
+   521→                    accept=".md,.markdown"
+   522→                    multiple
+   523→                    className="hidden"
+   524→                    onChange={(e) => {
+   525→                      if (e.target.files && e.target.files.length > 0) {
+   526→                        handleUpload(e.target.files);
+   527→                        e.target.value = "";
+   528→                      }
+   529→                    }}
+   530→                  />
+   531→                </>
+   532→              )}
+   533→            </div>
+   534→
+   535→            {/* Upload results */}
+   536→            {uploadResults && (
+   537→              <div className="border rounded-lg max-h-60 overflow-y-auto">
+   538→                <div className="sticky top-0 bg-muted px-3 py-2 text-xs font-semibold flex items-center justify-between">
+   539→                  <span>Resultados ({uploadResults.length})</span>
+   540→                  <Button
+   541→                    variant="ghost"
+   542→                    size="icon"
+   543→                    className="size-6"
+   544→                    onClick={() => setUploadResults(null)}
+   545→                  >
+   546→                    <X className="size-3" />
+   547→                  </Button>
+   548→                </div>
+   549→                <div className="divide-y">
+   550→                  {uploadResults.map((r, i) => (
+   551→                    <div
+   552→                      key={i}
+   553→                      className="px-3 py-2 flex items-center gap-2 text-xs"
+   554→                    >
+   555→                      {r.status === "created" && (
+   556→                        <CheckCircle2 className="size-4 text-emerald-600 shrink-0" />
+   557→                      )}
+   558→                      {r.status === "updated" && (
+   559→                        <RefreshCw className="size-4 text-blue-600 shrink-0" />
+   560→                      )}
+   561→                      {r.status === "error" && (
+   562→                        <AlertCircle className="size-4 text-red-600 shrink-0" />
+   563→                      )}
+   564→                      <span className="font-mono shrink-0">{r.sectionCode || "—"}</span>
+   565→                      <span className="flex-1 truncate">{r.title || r.error}</span>
+   566→                      <Badge
+   567→                        variant="outline"
+   568→                        className={`text-[10px] shrink-0 ${
+   569→                          r.status === "error"
+   570→                            ? "border-red-300 text-red-700"
+   571→                            : r.status === "created"
+   572→                            ? "border-emerald-300 text-emerald-700"
+   573→                            : "border-blue-300 text-blue-700"
+   574→                        }`}
+   575→                      >
+   576→                        {r.status === "created"
+   577→                          ? "Creada"
+   578→                          : r.status === "updated"
+   579→                          ? "Actualizada"
+   580→                          : "Error"}
+   581→                      </Badge>
+   582→                    </div>
+   583→                  ))}
+   584→                </div>
+   585→              </div>
+   586→            )}
+   587→          </div>
+   588→
+   589→          <DialogFooter>
+   590→            <Button variant="outline" onClick={() => setIsUploadOpen(false)}>
+   591→              Cerrar
+   592→            </Button>
+   593→          </DialogFooter>
+   594→        </DialogContent>
+   595→      </Dialog>
+   596→
+   597→      {/* Editor Dialog */}
+   598→      <Dialog open={isEditorOpen} onOpenChange={setIsEditorOpen}>
+   599→        <DialogContent className="max-w-4xl max-h-[90vh]">
+   600→          <DialogHeader>
+   601→            <DialogTitle className="flex items-center gap-2">
+   602→              <Pencil className="size-5" />
+   603→              {selectedSection ? "Editar sección" : "Nueva sección AIP"}
+   604→            </DialogTitle>
+   605→          </DialogHeader>
+   606→          <SectionEditor
+   607→            section={selectedSection}
+   608→            onSave={handleSaveSection}
+   609→            viewMode={viewMode}
+   610→            onViewModeChange={setViewMode}
+   611→          />
+   612→        </DialogContent>
+   613→      </Dialog>
+   614→
+   615→      {/* Delete confirmation */}
+   616→      <AlertDialog
+   617→        open={!!deleteTarget}
+   618→        onOpenChange={(open) => !open && setDeleteTarget(null)}
+   619→      >
+   620→        <AlertDialogContent>
+   621→          <AlertDialogHeader>
+   622→            <AlertDialogTitle>¿Eliminar sección?</AlertDialogTitle>
+   623→            <AlertDialogDescription>
+   624→              Se eliminará permanentemente la sección{" "}
+   625→              <strong className="font-mono">{deleteTarget?.sectionCode}</strong> -{" "}
+   626→              {deleteTarget?.title}. Esta acción no se puede deshacer.
+   627→            </AlertDialogDescription>
+   628→          </AlertDialogHeader>
+   629→          <AlertDialogFooter>
+   630→            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+   631→            <AlertDialogAction
+   632→              onClick={() => deleteTarget && handleDelete(deleteTarget)}
+   633→              className="bg-red-600 hover:bg-red-700"
+   634→            >
+   635→              Eliminar
+   636→            </AlertDialogAction>
+   637→          </AlertDialogFooter>
+   638→        </AlertDialogContent>
+   639→      </AlertDialog>
+   640→    </div>
+   641→  );
+   642→}
+   643→
+   644→// ─── Editor subcomponent ──────────────────────────────────────────
+   645→
+   646→function SectionEditor({
+   647→  section,
+   648→  onSave,
+   649→  viewMode,
+   650→  onViewModeChange,
+   651→}: {
+   652→  section: AipSection | null;
+   653→  onSave: (section: Partial<AipSection> & { content?: string }) => void;
+   654→  viewMode: "preview" | "code";
+   655→  onViewModeChange: (mode: "preview" | "code") => void;
+   656→}) {
+   657→  const [form, setForm] = useState({
+   658→    sectionCode: section?.sectionCode || "",
+   659→    title: section?.title || "",
+   660→    titleEn: section?.titleEn || "",
+   661→    part: section?.part || "GEN",
+   662→    subPart: section?.subPart || "1",
+   663→    orderIndex: section?.orderIndex ?? 0,
+   664→    content: section?.content || "",
+   665→    lastAmendment: section?.lastAmendment || "",
+   666→    effectiveDate: section?.effectiveDate || "",
+   667→  });
+   668→
+   669→  // Reset form when section changes
+   670→  const sectionId = section?.id;
+   671→  const [lastSectionId, setLastSectionId] = useState<string | null>(sectionId);
+   672→  if (sectionId !== lastSectionId) {
+   673→    setLastSectionId(sectionId);
+   674→    setForm({
+   675→      sectionCode: section?.sectionCode || "",
+   676→      title: section?.title || "",
+   677→      titleEn: section?.titleEn || "",
+   678→      part: section?.part || "GEN",
+   679→      subPart: section?.subPart || "1",
+   680→      orderIndex: section?.orderIndex ?? 0,
+   681→      content: section?.content || "",
+   682→      lastAmendment: section?.lastAmendment || "",
+   683→      effectiveDate: section?.effectiveDate || "",
+   684→    });
+   685→  }
+   686→
+   687→  const handleSubmit = (e: React.FormEvent) => {
+   688→    e.preventDefault();
+   689→    if (!form.sectionCode || !form.title || !form.part) {
+   690→      toast.error("sectionCode, title y part son obligatorios");
+   691→      return;
+   692→    }
+   693→    onSave(form);
+   694→  };
+   695→
+   696→  return (
+   697→    <form onSubmit={handleSubmit} className="space-y-4">
+   698→      {/* Metadata fields */}
+   699→      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+   700→        <div className="space-y-1">
+   701→          <Label className="text-xs">Código *</Label>
+   702→          <Input
+   703→            value={form.sectionCode}
+   704→            onChange={(e) => setForm({ ...form, sectionCode: e.target.value })}
+   705→            placeholder="ENR_3.1"
+   706→            className="font-mono text-xs"
+   707→            disabled={!!section}
+   708→          />
+   709→        </div>
+   710→        <div className="space-y-1">
+   711→          <Label className="text-xs">Parte *</Label>
+   712→          <Input
+   713→            value={form.part}
+   714→            onChange={(e) => setForm({ ...form, part: e.target.value.toUpperCase() })}
+   715→            placeholder="GEN / ENR / AD"
+   716→            className="text-xs"
+   717→          />
+   718→        </div>
+   719→        <div className="space-y-1">
+   720→          <Label className="text-xs">Sub-parte</Label>
+   721→          <Input
+   722→            value={form.subPart}
+   723→            onChange={(e) => setForm({ ...form, subPart: e.target.value })}
+   724→            placeholder="3.1"
+   725→            className="text-xs"
+   726→          />
+   727→        </div>
+   728→        <div className="space-y-1">
+   729→          <Label className="text-xs">Orden</Label>
+   730→          <Input
+   731→            type="number"
+   732→            value={form.orderIndex}
+   733→            onChange={(e) =>
+   734→              setForm({ ...form, orderIndex: parseInt(e.target.value) || 0 })
+   735→            }
+   736→            className="text-xs"
+   737→          />
+   738→        </div>
+   739→      </div>
+   740→
+   741→      <div className="space-y-1">
+   742→        <Label className="text-xs">Título *</Label>
+   743→        <Input
+   744→          value={form.title}
+   745→          onChange={(e) => setForm({ ...form, title: e.target.value })}
+   746→          placeholder="Rutas ATS Convencionales"
+   747→          className="text-sm"
+   748→        />
+   749→      </div>
+   750→
+   751→      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+   752→        <div className="space-y-1">
+   753→          <Label className="text-xs">Título (EN)</Label>
+   754→          <Input
+   755→            value={form.titleEn}
+   756→            onChange={(e) => setForm({ ...form, titleEn: e.target.value })}
+   757→            placeholder="Conventional ATS Routes"
+   758→            className="text-xs"
+   759→          />
+   760→        </div>
+   761→        <div className="space-y-1">
+   762→          <Label className="text-xs">Enmienda</Label>
+   763→          <Input
+   764→            value={form.lastAmendment}
+   765→            onChange={(e) =>
+   766→              setForm({ ...form, lastAmendment: e.target.value })
+   767→            }
+   768→            placeholder="AMDT 33/2025"
+   769→            className="text-xs"
+   770→          />
+   771→        </div>
+   772→      </div>
+   773→
+   774→      {/* Content editor with preview toggle */}
+   775→      <div className="space-y-1">
+   776→        <div className="flex items-center justify-between">
+   777→          <Label className="text-xs">Contenido (Markdown)</Label>
+   778→          <div className="flex items-center gap-1">
+   779→            <Button
+   780→              type="button"
+   781→              variant={viewMode === "code" ? "default" : "ghost"}
+   782→              size="sm"
+   783→              className="h-7 text-xs gap-1"
+   784→              onClick={() => onViewModeChange("code")}
+   785→            >
+   786→              <Code className="size-3.5" />
+   787→              Código
+   788→            </Button>
+   789→            <Button
+   790→              type="button"
+   791→              variant={viewMode === "preview" ? "default" : "ghost"}
+   792→              size="sm"
+   793→              className="h-7 text-xs gap-1"
+   794→              onClick={() => onViewModeChange("preview")}
+   795→            >
+   796→              <Eye className="size-3.5" />
+   797→              Vista previa
+   798→            </Button>
+   799→          </div>
+   800→        </div>
+   801→
+   802→        {viewMode === "code" ? (
+   803→          <Textarea
+   804→            value={form.content}
+   805→            onChange={(e) => setForm({ ...form, content: e.target.value })}
+   806→            placeholder="Escribe contenido en Markdown..."
+   807→            className="font-mono text-xs min-h-[300px] resize-y"
+   808→          />
+   809→        ) : (
+   810→          <ScrollArea className="h-[300px] w-full rounded-md border p-4">
+   811→            {form.content ? (
+   812→              <MarkdownRenderer content={form.content} />
+   813→            ) : (
+   814→              <p className="text-xs text-muted-foreground italic">
+   815→                Sin contenido para previsualizar
+   816→              </p>
+   817→            )}
+   818→          </ScrollArea>
+   819→        )}
+   820→      </div>
+   821→
+   822→      <DialogFooter>
+   823→        <Button
+   824→          type="button"
+   825→          variant="outline"
+   826→          onClick={() => onViewModeChange(viewMode === "code" ? "preview" : "code")}
+   827→          className="text-xs gap-1.5"
+   828→        >
+   829→          {viewMode === "code" ? <Eye className="size-3.5" /> : <Code className="size-3.5" />}
+   830→          {viewMode === "code" ? "Vista previa" : "Editar código"}
+   831→        </Button>
+   832→        <Button type="submit" className="gap-1.5 bg-navy hover:bg-navy/90">
+   833→          <Save className="size-4" />
+   834→          Guardar
+   835→        </Button>
+   836→      </DialogFooter>
+   837→    </form>
+   838→  );
+   839→}
+   840→
