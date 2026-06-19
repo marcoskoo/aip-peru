@@ -766,3 +766,132 @@ Stage Summary:
   user before they upload.
 - Seeded sections no longer incorrectly show the MD badge (they have
   sourceFile ending in .pdf, not .md, so they're not treated as uploads).
+
+---
+Task ID: enr-6.1-chart-display
+Agent: Main Agent
+Task: User uploaded ENR_6.1-1.pdf and asked "revisa como muestra las rutas en ENR_6.1-1" — review how routes are displayed in ENR 6.1
+
+Work Log:
+Analysis of the uploaded PDF:
+- File: /home/z/my-project/upload/ENR_6.1-1.pdf (49 MB, 2 pages, Esri ArcMap PDF)
+- Page 1: "Red de Navegación del Espacio Aéreo Superior" (Upper Airspace Navigation Network)
+- Page 2: "Carta de Navegación en Ruta (ENRC) - Espacio Aéreo Inferior" (Lower Airspace)
+- Both pages are visual charts showing ATS routes on a map of Peru and surrounding FIRs
+- Validity: 24 MARZO 2022, Scale 1:3,000,000
+
+Verification of application's route display:
+- Queried /api/airdata/airways: 23 airways in database
+  - 16 LOWER (Inferior): A301, A304, A566, A568, A573, B552, G675, R567, V1, V2, V3, L302, L525, T216, T218, T226
+  - 7 UPPER (Superior): UV1, UV3, UV4, UV5, UV9, UV10, UV11
+- Opened "Rutas" view in Agent Browser: all 23 airways displayed correctly with
+  designator, type (Convencional/RNAV), level (Inferior/Superior), classification
+  (A/D/G/F), distance, segment count, and flight level range
+- Clicked "Ver en Carta" → interactive Leaflet map loaded showing:
+  - ATS routes as colored lines
+  - Navigation aids (VOR/NDB) and waypoints as markers
+  - FIR boundaries as purple lines
+  - Airway identifiers (A301, G675, UV1, etc.) readable on the map
+- Confirmed: the application correctly displays ALL routes that appear on the
+  ENR 6.1 chart, both in tabular form (AirwaysListing) and on the interactive
+  map (AeronauticalChart)
+
+Enhancement: Added ENR 6.1 chart as a viewable AIP section
+- The AIP Publication Browser previously had no ENR_6.1 section — users could
+  not view the official CORPAC chart. They could only see the tabular listing
+  (ENR 3) and the interactive map (Carta Aeronáutica button).
+- Converted both PDF pages to high-quality PNG images (150 DPI):
+  - /public/aip-charts/ENR_6.1/page-1.png (6.5 MB, Espacio Aéreo Superior)
+  - /public/aip-charts/ENR_6.1/page-2.png (5.4 MB, Espacio Aéreo Inferior)
+- Created ENR_6.1 section in database via POST /api/aip-sections:
+  - sectionCode: ENR_6.1
+  - title: "Carta de Navegación en Ruta (ENRC)"
+  - part: ENR, subPart: 6.1, orderIndex: 61
+  - lastAmendment: AMDT 33/2025, effectiveDate: 24 MAR 2022
+  - content: Markdown with embedded chart images, informational table,
+    route listings (16 lower + 7 upper), and symbology legend
+- The new section appears in the AIP Publication Browser under the existing
+  "ENR - En Ruta" part, in a new "ENR 6 - Servicios de Tránsito Aéreo" group
+  (auto-created by buildMergedTree via the SUBPART_LABELS lookup), as a
+  regular section — consistent with the previous task's pattern where
+  uploads update existing info rather than creating separate "uploaded"
+  sections.
+
+Enhancement: Improved MarkdownRenderer image rendering
+- Problem: The ENR 6.1 chart images are very large (4824x4236 px). With the
+  previous `max-w-full h-auto` CSS, they rendered at full container width,
+  making each chart take up multiple viewport heights and making the page
+  hard to navigate.
+- Solution: Updated the `img` component in markdown-renderer.tsx:
+  1. Wrapped images in a <figure> with click-to-zoom behavior
+  2. Added `max-h-[70vh] object-contain` so images fit within 70% of the
+     viewport height while maintaining aspect ratio
+  3. Added a "Ampliar" (zoom) hint overlay that appears on hover
+  4. Added a <figcaption> showing the alt text as a caption below the image
+  5. On click (or Enter/Space key), opens the HighResChartViewer with
+     zoom (up to 8x), pan, rotate (90° increments), download, and
+     fullscreen capabilities — the same viewer used for airport charts
+  6. Added keyboard accessibility (role=button, tabIndex=0, Enter/Space)
+- This enhancement benefits ALL markdown content with images, not just
+  ENR 6.1 — any .md file uploaded via the Admin panel that contains
+  images will now have click-to-zoom functionality.
+
+End-to-end verification (Agent Browser):
+1. Opened Publication Browser → expanded "ENR - En Ruta"
+2. "Carta de Navegación en Ruta (ENRC)" section appeared under
+   "ENR 6 - Servicios de Tránsito Aéreo" group (no "Secciones cargadas" label)
+3. Clicked the section → right panel loaded with:
+   - Title "Carta de Navegación en Ruta (ENRC)" with ENR_6.1 badge,
+     AMDT 33/2025 badge, 24 MAR 2022 effective date
+   - "Espacio Aéreo Superior" heading with chart image (properly sized,
+     not overflowing)
+   - "Espacio Aéreo Inferior" heading with second chart image
+   - "Información de la Carta" table (Publicación, Sección, Título, Escala,
+     Vigencia, AMD)
+   - "Rutas ATS Mostradas en la Carta" with lists of all 16 lower and
+     7 upper routes
+   - "Simbología" section explaining chart symbols
+4. VLM confirmed: chart image visible and properly sized, title and
+   metadata clearly visible
+5. Clicked the chart image → HighResChartViewer opened with controls:
+   Acercar, Alejar, Restablecer vista, Descargar PNG, Pantalla completa,
+   Cerrar, rotation controls
+6. Clicked "Acercar" (zoom in) twice → chart magnified, zoom controls
+   remained visible
+7. Closed viewer (Escape) → returned to section content
+8. `bun run lint` → clean, zero errors
+9. No runtime errors in dev.log
+
+Files created:
+- /public/aip-charts/ENR_6.1/page-1.png (Upper Airspace chart, 6.5 MB)
+- /public/aip-charts/ENR_6.1/page-2.png (Lower Airspace chart, 5.4 MB)
+
+Files modified:
+- src/components/markdown-renderer.tsx
+  - Added HighResChartViewer import and ZoomIn icon import
+  - Added viewerImage state and openViewer/closeViewer callbacks
+  - Replaced img rendering with figure+img+figcaption+zoom-hint
+  - Added max-h-[70vh] object-contain constraint
+  - Added click-to-zoom and keyboard accessibility
+  - Added HighResChartViewer render at the end of markdown output
+
+Database changes:
+- New AipSection record: ENR_6.1 "Carta de Navegación en Ruta (ENRC)"
+
+Stage Summary:
+- Verified the application correctly displays all 23 routes (16 lower + 7 upper)
+  that appear on the ENR 6.1 chart, both in:
+  1. Tabular listing (AirwaysListing under "Rutas" nav button) — all 23 airways
+     with full details (designator, type, level, classification, distance,
+     segments, flight levels)
+  2. Interactive map (AeronauticalChart under "Carta Aeronáutica" nav button,
+     or "Ver en Carta" button in AirwaysListing) — routes shown as colored
+     lines on a Leaflet map with VOR/NDB/waypoint markers and FIR boundaries
+- Added the official CORPAC ENR 6.1 chart as a viewable AIP section so users
+  can see the original publication alongside the application's interactive
+  views. The section appears under "ENR 6 - Servicios de Tránsito Aéreo"
+  in the AIP Publication Browser.
+- Enhanced the MarkdownRenderer so ALL images in uploaded .md content are
+  clickable to open the high-resolution viewer (zoom/pan/rotate/download/
+  fullscreen), and are properly sized with max-h-[70vh] to prevent
+  oversized charts from dominating the page.

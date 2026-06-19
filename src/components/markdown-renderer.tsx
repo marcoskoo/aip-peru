@@ -2,7 +2,9 @@
 
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
+import { HighResChartViewer } from "@/components/high-res-chart-viewer";
+import { ZoomIn } from "lucide-react";
 
 interface MarkdownRendererProps {
   content: string;
@@ -18,6 +20,8 @@ interface MarkdownRendererProps {
  */
 export function MarkdownRenderer({ content, className }: MarkdownRendererProps) {
   const [imageError, setImageError] = useState<Set<string>>(new Set());
+  // Image currently opened in the high-res viewer (null = viewer closed)
+  const [viewerImage, setViewerImage] = useState<{ src: string; alt: string } | null>(null);
 
   const isHtml = useMemo(() => {
     const trimmed = content.trim();
@@ -28,6 +32,14 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
       !trimmed.startsWith("<#") // not a markdown heading
     );
   }, [content]);
+
+  const openViewer = useCallback((src: string, alt: string) => {
+    setViewerImage({ src, alt });
+  }, []);
+
+  const closeViewer = useCallback(() => {
+    setViewerImage(null);
+  }, []);
 
   if (!content || content.trim() === "") {
     return (
@@ -146,7 +158,7 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
               {children}
             </a>
           ),
-          // Images - render with high-res support and error fallback
+          // Images - render with high-res support, click-to-zoom, and error fallback
           img: ({ src, alt }) => {
             const srcStr = typeof src === "string" ? src : "";
             if (imageError.has(srcStr)) {
@@ -157,14 +169,38 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
               );
             }
             return (
-              <img
-                src={src}
-                alt={alt || ""}
-                className="my-3 max-w-full h-auto rounded-lg border border-slate-200 dark:border-slate-700"
-                onError={() =>
-                  setImageError((prev) => new Set(prev).add(srcStr))
-                }
-              />
+              <figure
+                className="my-4 relative group cursor-zoom-in"
+                onClick={() => openViewer(srcStr, alt || "")}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    openViewer(srcStr, alt || "");
+                  }
+                }}
+                aria-label={`Ampliar imagen: ${alt || ""}`}
+              >
+                <img
+                  src={src}
+                  alt={alt || ""}
+                  className="w-full max-h-[70vh] object-contain rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm transition-shadow group-hover:shadow-md"
+                  onError={() =>
+                    setImageError((prev) => new Set(prev).add(srcStr))
+                  }
+                />
+                {/* Zoom hint overlay */}
+                <div className="absolute top-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded-md flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                  <ZoomIn className="size-3" />
+                  <span>Ampliar</span>
+                </div>
+                {alt && (
+                  <figcaption className="text-xs text-muted-foreground italic mt-1.5 text-center">
+                    {alt}
+                  </figcaption>
+                )}
+              </figure>
             );
           },
           // Horizontal rule
@@ -180,6 +216,25 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
       >
         {content}
       </ReactMarkdown>
+
+      {/* High-resolution chart viewer for images in this markdown content */}
+      {viewerImage && (
+        <HighResChartViewer
+          charts={[
+            {
+              type: "ENRC",
+              name: viewerImage.alt,
+              file: viewerImage.alt,
+              url: viewerImage.src,
+            },
+          ]}
+          initialIndex={0}
+          isOpen={true}
+          onClose={closeViewer}
+          airportIcao="ENR 6.1"
+          airportName="Carta de Navegación en Ruta"
+        />
+      )}
     </div>
   );
 }
