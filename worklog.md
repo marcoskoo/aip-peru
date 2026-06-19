@@ -1232,3 +1232,61 @@ Stage Summary:
   prioridad sobre cualquier variable stale del OS.
 - Verificado end-to-end: home, API routes, assets estáticos, todo
   responde HTTP 200 en producción local.
+
+---
+Task ID: zai-deploy-fix-2
+Agent: Main Agent
+Task: "nada" — el deploy en Z.ai sigue fallando con error genérico
+
+Work Log:
+- Analizado segundo screenshot del usuario: misma URL aippe.space-z.ai
+  con el mismo error genérico "Sorry, there was a problem deploying
+  the code."
+- Descubierto problema adicional: el dev server local estaba roto
+  (HTTP 500) porque el .next/dev se corrompió al ejecutar bun run build
+  durante las pruebas. Error:
+    "Cannot find module '../chunks/ssr/[turbopack]_runtime.js'"
+  Causa: next build sobreescribe algunos archivos de .next/dev.
+  Solución: rm -rf .next && bash launch-dev.sh → HTTP 200 ✓
+
+- Hipótesis sobre el deploy de Z.ai:
+  El error genérico no da detalles. Posibles causas:
+  1. netlify.toml interfería con la detección de Z.ai
+  2. @netlify/plugin-nextjs causaba conflictos
+  3. start.js fallaba si .env no existe (en Z.ai deploy, las vars
+     se inyectan vía el plataforma, no via .env)
+
+- Cambios aplicados:
+  * Eliminado netlify.toml (Z.ai no lo necesita)
+  * Eliminado @netlify/plugin-nextjs de devDependencies
+  * start.js reescrito para ser más robusto:
+    - Busca .env en múltiples ubicaciones (raíz, standalone)
+    - No falla si .env no existe (usa variables del OS)
+    - Log informativo del estado de DATABASE_URL
+    - Compatible con deploy de Z.ai donde DATABASE_URL se
+      configura como variable de entorno del plataforma
+
+- Verificación completa (simulando deploy de Z.ai):
+  * rm -rf .next (clean state)
+  * bun run build → exit 0, 12.2s, 22 páginas estáticas + 30 dinámicas
+  * .next/standalone/server.js generado ✓
+  * node start.js → server arranca en 73ms
+  * GET / → HTTP 200 ✓
+  * GET /api/airports → HTTP 200 ✓ (BD PostgreSQL conectada)
+  * Agent Browser: página carga completa
+  * VLM: "página se ve completa con hero, lista de aeropuertos,
+    sin errores evidentes"
+
+Archivos modificados:
+- start.js (más robusto, maneja múltiples escenarios de .env)
+- package.json (removido @netlify/plugin-nextjs)
+- netlify.toml (eliminado)
+
+Stage Summary:
+- El build y start funcionan perfectamente en simulación local.
+- Si el deploy de Z.ai sigue fallando, el usuario necesita:
+  1. Verificar que Z.ai tenga DATABASE_URL configurada como
+     variable de entorno del plataforma
+  2. Intentar redeploy después de que los cambios se propaguen
+  3. Si persiste, pedir el log de build de Z.ai (no el error
+     genérico) para diagnóstico preciso
