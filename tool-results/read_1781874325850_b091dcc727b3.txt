@@ -1,0 +1,977 @@
+     1→'use client'
+     2→
+     3→import { useState, useEffect, useCallback } from 'react'
+     4→import {
+     5→  BookOpen, FileText, Search, ChevronRight, ChevronDown, Globe, Plane,
+     6→  Building2, Shield, Clock, Phone, Mail, MapPin, Calendar,
+     7→  ArrowRight, Languages, BookMarked, Scale, Hash, Info, Loader2, RefreshCw
+     8→} from 'lucide-react'
+     9→import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+    10→import { Button } from '@/components/ui/button'
+    11→import { Input } from '@/components/ui/input'
+    12→import { Badge } from '@/components/ui/badge'
+    13→import { ScrollArea } from '@/components/ui/scroll-area'
+    14→import { MarkdownRenderer } from '@/components/markdown-renderer'
+    15→import { onAipSectionsChanged } from '@/lib/aip-events'
+    16→
+    17→// ─── Types ────────────────────────────────────────────────────────
+    18→
+    19→interface AipPublicationBrowserProps {
+    20→  onNavigateAirports?: () => void
+    21→  onNavigateHeliports?: () => void
+    22→  onNavigateAirways?: () => void
+    23→  onNavigateAirspace?: () => void
+    24→}
+    25→
+    26→interface AipSectionData {
+    27→  sectionCode: string
+    28→  title: string
+    29→  titleEn: string
+    30→  part: string
+    31→  subPart: string
+    32→  orderIndex: number
+    33→  content?: string
+    34→  contentEn?: string
+    35→  sourceFile?: string
+    36→  lastAmendment?: string
+    37→  effectiveDate?: string
+    38→}
+    39→
+    40→// Lightweight summary returned by GET /api/aip-sections (no content body)
+    41→interface AipSectionSummary {
+    42→  id: string
+    43→  sectionCode: string
+    44→  title: string
+    45→  titleEn?: string | null
+    46→  part: string
+    47→  subPart: string
+    48→  orderIndex: number
+    49→  lastAmendment?: string | null
+    50→  effectiveDate?: string | null
+    51→  sourceFile?: string | null
+    52→}
+    53→
+    54→interface SectionMeta {
+    55→  code: string
+    56→  title: string
+    57→}
+    58→
+    59→interface PartNode {
+    60→  part: string
+    61→  label: string
+    62→  labelEn: string
+    63→  icon: React.ComponentType<{ className?: string }>
+    64→  groups: {
+    65→    subPart: string
+    66→    label: string
+    67→    sections: SectionMeta[]
+    68→    action?: 'airports' | 'heliports' | 'airways' | 'airspace'
+    69→  }[]
+    70→}
+    71→
+    72→// ─── Section Tree (static skeleton) ─────────────────────────────
+    73→// This is the AIP structure skeleton. Sections uploaded via .md files are
+    74→// dynamically merged into this tree at runtime (see buildMergedTree below)
+    75→// so that uploaded content appears in the navigation immediately.
+    76→
+    77→const STATIC_SECTION_TREE: PartNode[] = [
+    78→  {
+    79→    part: 'GEN',
+    80→    label: 'GEN - General',
+    81→    labelEn: 'General',
+    82→    icon: BookOpen,
+    83→    groups: [
+    84→      {
+    85→        subPart: '1',
+    86→        label: 'GEN 1 - Reglamentos y Requisitos Nacionales',
+    87→        sections: [
+    88→          { code: 'GEN_1.1', title: 'Autoridades Designadas' },
+    89→          { code: 'GEN_1.2', title: 'Entrada, Tránsito y Salida de Aeronaves' },
+    90→          { code: 'GEN_1.4', title: 'Entrada, Tránsito y Salida de Mercancías' },
+    91→          { code: 'GEN_1.5', title: 'Instrumentos, Equipos y Documentos de Vuelo' },
+    92→          { code: 'GEN_1.6', title: 'Resumen de Reglamentos Nacionales' },
+    93→          { code: 'GEN_1.7', title: 'Diferencias respecto de las Normas OACI' },
+    94→        ]
+    95→      },
+    96→      {
+    97→        subPart: '2',
+    98→        label: 'GEN 2 - Tablas y Códigos',
+    99→        sections: [
+   100→          { code: 'GEN_2.1', title: 'Sistema de Medidas, Marcas, Días Feriados' },
+   101→          { code: 'GEN_2.2', title: 'Abreviaturas' },
+   102→          { code: 'GEN_2.3', title: 'Símbolos Cartográficos' },
+   103→        ]
+   104→      }
+   105→    ]
+   106→  },
+   107→  {
+   108→    part: 'ENR',
+   109→    label: 'ENR - En Ruta',
+   110→    labelEn: 'En Route',
+   111→    icon: Plane,
+   112→    groups: [
+   113→      {
+   114→        subPart: '3',
+   115→        label: 'ENR 3 - Rutas ATS',
+   116→        sections: [],
+   117→        action: 'airways' as const
+   118→      },
+   119→      {
+   120→        subPart: '4',
+   121→        label: 'ENR 4 - Radioayudas',
+   122→        sections: [],
+   123→      },
+   124→      {
+   125→        subPart: '5',
+   126→        label: 'ENR 5 - Zonas Prohibidas, Restringidas y Peligrosas',
+   127→        sections: [],
+   128→        action: 'airspace' as const
+   129→      }
+   130→    ]
+   131→  },
+   132→  {
+   133→    part: 'AD',
+   134→    label: 'AD - Aeródromos',
+   135→    labelEn: 'Aerodromes',
+   136→    icon: Building2,
+   137→    groups: [
+   138→      {
+   139→        subPart: '2',
+   140→        label: 'AD 2 - Aeródromos',
+   141→        sections: [],
+   142→        action: 'airports' as const
+   143→      },
+   144→      {
+   145→        subPart: '3',
+   146→        label: 'AD 3 - Heliportos',
+   147→        sections: [],
+   148→        action: 'heliports' as const
+   149→      }
+   150→    ]
+   151→  }
+   152→]
+   153→
+   154→// ─── Merge logic: combine static tree with DB sections ─────────
+   155→//
+   156→// buildMergedTree takes the static AIP skeleton and the list of sections
+   157→// fetched from /api/aip-sections, and produces a unified tree where
+   158→// uploaded .md content UPDATES existing information instead of appearing
+   159→// as separate "uploaded" sections:
+   160→//
+   161→//   - If a DB section's code matches a static section code (e.g. GEN_1.2),
+   162→//     the static entry's title is refreshed from the DB (the upload updated
+   163→//     the content; the entry stays in its original location).
+   164→//
+   165→//   - If a DB section's code does NOT match any static section, it is
+   166→//     placed inside the existing group whose subPart matches the DB
+   167→//     section's subPart prefix (e.g. ENR_3.1 -> "ENR 3 - Rutas ATS").
+   168→//     This way an uploaded ENR_3.1.md shows up inside the real
+   169→//     "ENR 3 - Rutas ATS" group rather than a synthetic
+   170→//     "Secciones cargadas" group.
+   171→//
+   172→//   - If no matching group exists inside the part, a new group is created
+   173→//     with a proper human label (e.g. "GEN 3 - Servicios de Tránsito Aéreo")
+   174→//     rather than the generic "Secciones cargadas" label.
+   175→//
+   176→//   - If the part itself does not exist (e.g. a custom part like "AIP" or
+   177→//     "SUP"), a new part is appended with a proper label.
+   178→//
+   179→// No "uploaded" flag is set: uploaded .md content is treated as a normal
+   180→// update to the existing AIP structure, exactly as the user requested:
+   181→// "en lugar de crear una sección se actualice la información donde
+   182→// corresponda".
+   183→
+   184→// Map of known subPart labels per part, used to give newly-created groups
+   185→// a sensible title instead of the old "Secciones cargadas" placeholder.
+   186→const SUBPART_LABELS: Record<string, Record<string, string>> = {
+   187→  GEN: {
+   188→    '1': 'Reglamentos y Requisitos Nacionales',
+   189→    '2': 'Tablas y Códigos',
+   190→    '3': 'Servicios de Tránsito Aéreo',
+   191→    '4': 'Tarifas por Servicios Aeropuertuarios',
+   192→  },
+   193→  ENR: {
+   194→    '1': 'Reglas y Procedimientos Generales',
+   195→    '2': 'Tránsito Aéreo',
+   196→    '3': 'Rutas ATS',
+   197→    '4': 'Radioayudas',
+   198→    '5': 'Zonas Prohibidas, Restringidas y Peligrosas',
+   199→    '6': 'Servicios de Tránsito Aéreo',
+   200→  },
+   201→  AD: {
+   202→    '1': 'Aeródromos - Introducción',
+   203→    '2': 'Aeródromos',
+   204→    '3': 'Heliportos',
+   205→  },
+   206→}
+   207→
+   208→function deriveGroupLabel(partKey: string, subPartPrefix: string): string {
+   209→  const labels = SUBPART_LABELS[partKey]
+   210→  if (labels && labels[subPartPrefix]) {
+   211→    return `${partKey} ${subPartPrefix} - ${labels[subPartPrefix]}`
+   212→  }
+   213→  return `${partKey} ${subPartPrefix}`
+   214→}
+   215→
+   216→function buildMergedTree(dbSections: AipSectionSummary[]): PartNode[] {
+   217→  // Deep clone the static tree so we can mutate safely
+   218→  const tree: PartNode[] = STATIC_SECTION_TREE.map(p => ({
+   219→    ...p,
+   220→    groups: p.groups.map(g => ({
+   221→      ...g,
+   222→      sections: g.sections.map(s => ({ ...s })),
+   223→    })),
+   224→  }))
+   225→
+   226→  // Index existing sections by code for O(1) lookup
+   227→  const existingCodes = new Set<string>()
+   228→  for (const part of tree) {
+   229→    for (const group of part.groups) {
+   230→      for (const sec of group.sections) {
+   231→        existingCodes.add(sec.code)
+   232→      }
+   233→    }
+   234→  }
+   235→
+   236→  // Index parts and groups by their key for quick lookup
+   237→  const partIndex = new Map<string, PartNode>()
+   238→  for (const p of tree) partIndex.set(p.part, p)
+   239→
+   240→  for (const dbSec of dbSections) {
+   241→    // If section code already exists in the static tree, just refresh its
+   242→    // title from the DB (an upload may have updated it). No "uploaded"
+   243→    // flag is set — uploads are treated as normal updates.
+   244→    if (existingCodes.has(dbSec.sectionCode)) {
+   245→      for (const part of tree) {
+   246→        for (const group of part.groups) {
+   247→          for (const sec of group.sections) {
+   248→            if (sec.code === dbSec.sectionCode) {
+   249→              sec.title = dbSec.title
+   250→            }
+   251→          }
+   252→        }
+   253→      }
+   254→      continue
+   255→    }
+   256→
+   257→    // New DB section (uploaded via .md) — merge it into the appropriate
+   258→    // existing group based on its part + subPart, instead of creating a
+   259→    // separate "Secciones cargadas" group.
+   260→    const partKey = (dbSec.part || 'GEN').toUpperCase()
+   261→    let part = partIndex.get(partKey)
+   262→    if (!part) {
+   263→      // Unknown part — create a new one with a proper label
+   264→      part = {
+   265→        part: partKey,
+   266→        label: `${partKey} - Información`,
+   267→        labelEn: 'Information',
+   268→        icon: FileText,
+   269→        groups: [],
+   270→      }
+   271→      tree.push(part)
+   272→      partIndex.set(partKey, part)
+   273→    }
+   274→
+   275→    // Find an existing group whose subPart matches the DB section's
+   276→    // subPart prefix. e.g. DB section ENR_3.1 (subPart "3.1") matches
+   277→    // the existing "ENR 3 - Rutas ATS" group (subPart "3").
+   278→    const dbSubPart = String(dbSec.subPart || '0')
+   279→    const subPartPrefix = dbSubPart.split('.')[0] // "3.1" -> "3"
+   280→
+   281→    let group = part.groups.find(
+   282→      g => g.subPart === subPartPrefix || g.subPart === dbSubPart
+   283→    )
+   284→    if (!group) {
+   285→      // No matching group — create a new one with a proper label
+   286→      group = {
+   287→        subPart: subPartPrefix,
+   288→        label: deriveGroupLabel(partKey, subPartPrefix),
+   289→        sections: [],
+   290→      }
+   291→      part.groups.push(group)
+   292→    }
+   293→
+   294→    group.sections.push({
+   295→      code: dbSec.sectionCode,
+   296→      title: dbSec.title,
+   297→    })
+   298→  }
+   299→
+   300→  // Sort groups within each part by subPart (numeric-aware)
+   301→  for (const part of tree) {
+   302→    part.groups.sort((a, b) => {
+   303→      const na = parseFloat(a.subPart) || 0
+   304→      const nb = parseFloat(b.subPart) || 0
+   305→      return na - nb
+   306→    })
+   307→  }
+   308→
+   309→  return tree
+   310→}
+   311→
+   312→// ─── Main Component ──────────────────────────────────────────────
+   313→
+   314→export function AipPublicationBrowser({ onNavigateAirports, onNavigateHeliports, onNavigateAirways, onNavigateAirspace }: AipPublicationBrowserProps) {
+   315→  const [selectedCode, setSelectedCode] = useState<string | null>(null)
+   316→  const [sectionData, setSectionData] = useState<AipSectionData | null>(null)
+   317→  const [sectionLoading, setSectionLoading] = useState(false)
+   318→  const [lang, setLang] = useState<'es' | 'en'>('es')
+   319→  const [searchQuery, setSearchQuery] = useState('')
+   320→  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(['GEN']))
+   321→  const [dbSections, setDbSections] = useState<AipSectionSummary[]>([])
+   322→  const [treeLoading, setTreeLoading] = useState(true)
+   323→  const [lastSync, setLastSync] = useState<Date | null>(null)
+   324→
+   325→  // Fetch the list of all AIP sections from the DB (metadata only, no content)
+   326→  // This lets uploaded .md files appear in the navigation tree immediately.
+   327→  const refreshTree = useCallback(async () => {
+   328→    setTreeLoading(true)
+   329→    try {
+   330→      const r = await fetch('/api/aip-sections')
+   331→      if (r.ok) {
+   332→        const data: AipSectionSummary[] = await r.json()
+   333→        setDbSections(data)
+   334→        setLastSync(new Date())
+   335→      }
+   336→    } catch {
+   337→      // Non-fatal: fall back to static tree
+   338→    } finally {
+   339→      setTreeLoading(false)
+   340→    }
+   341→  }, [])
+   342→
+   343→  useEffect(() => {
+   344→    refreshTree()
+   345→  }, [refreshTree])
+   346→
+   347→  // Listen for section changes emitted by the Admin panel (upload .md,
+   348→  // create, update, delete). When sections change, refresh the tree so
+   349→  // uploaded content appears immediately in the navigation.
+   350→  useEffect(() => {
+   351→    const unsubscribe = onAipSectionsChanged(() => {
+   352→      refreshTree()
+   353→    })
+   354→    return unsubscribe
+   355→  }, [refreshTree])
+   356→
+   357→  // Build the merged tree (static skeleton + uploaded sections from DB).
+   358→  // Uploaded .md sections are merged into existing groups so the tree
+   359→  // reflects the canonical AIP structure rather than a separate
+   360→  // "uploaded" area.
+   361→  const sectionTree = buildMergedTree(dbSections)
+   362→
+   363→  // Fetch section data
+   364→  const fetchSectionData = useCallback(async (code: string) => {
+   365→    setSectionLoading(true)
+   366→    try {
+   367→      const r = await fetch(`/api/aip-sections/${code}`)
+   368→      const d = r.ok ? await r.json() : null
+   369→      setSectionData(d)
+   370→    } catch {
+   371→      setSectionData(null)
+   372→    } finally {
+   373→      setSectionLoading(false)
+   374→    }
+   375→  }, [])
+   376→
+   377→  useEffect(() => {
+   378→    if (selectedCode) {
+   379→      fetchSectionData(selectedCode)
+   380→    }
+   381→  }, [selectedCode, fetchSectionData])
+   382→
+   383→  const toggleGroup = (part: string) => {
+   384→    setExpandedGroups(prev => {
+   385→      const next = new Set(prev)
+   386→      if (next.has(part)) next.delete(part)
+   387→      else next.add(part)
+   388→      return next
+   389→    })
+   390→  }
+   391→
+   392→  const handleSectionClick = (code: string) => {
+   393→    setSelectedCode(code)
+   394→  }
+   395→
+   396→  const handleAction = (action: string) => {
+   397→    switch (action) {
+   398→      case 'airports': onNavigateAirports?.(); break
+   399→      case 'heliports': onNavigateHeliports?.(); break
+   400→      case 'airways': onNavigateAirways?.(); break
+   401→      case 'airspace': onNavigateAirspace?.(); break
+   402→    }
+   403→  }
+   404→
+   405→  // Filter sections by search
+   406→  const filteredTree = searchQuery
+   407→    ? sectionTree.map(part => ({
+   408→        ...part,
+   409→        groups: part.groups.map(g => ({
+   410→          ...g,
+   411→          sections: g.sections.filter(s =>
+   412→            s.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
+   413→            s.title.toLowerCase().includes(searchQuery.toLowerCase())
+   414→          )
+   415→        })).filter(g => g.sections.length > 0 || g.action)
+   416→      })).filter(p => p.groups.length > 0)
+   417→    : sectionTree
+   418→
+   419→  return (
+   420→    <div className="flex flex-col lg:flex-row gap-4 h-[calc(100vh-10rem)]">
+   421→      {/* Left Sidebar - Section Tree */}
+   422→      <div className="w-full lg:w-80 shrink-0">
+   423→        <Card className="h-full">
+   424→          <CardHeader className="pb-3">
+   425→            <div className="flex items-center justify-between">
+   426→              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+   427→                <BookOpen className="size-4 text-amber-500" />
+   428→                AIP PERÚ
+   429→              </CardTitle>
+   430→              <div className="flex items-center gap-1">
+   431→                <Button
+   432→                  variant="ghost"
+   433→                  size="sm"
+   434→                  onClick={() => refreshTree()}
+   435→                  disabled={treeLoading}
+   436→                  className="h-7 w-7 p-0"
+   437→                  title="Actualizar secciones desde la base de datos"
+   438→                >
+   439→                  <RefreshCw className={`size-3 ${treeLoading ? 'animate-spin' : ''}`} />
+   440→                </Button>
+   441→                <Button
+   442→                  variant="ghost"
+   443→                  size="sm"
+   444→                  onClick={() => setLang(lang === 'es' ? 'en' : 'es')}
+   445→                  className="h-7 gap-1 text-xs"
+   446→                >
+   447→                  <Languages className="size-3" />
+   448→                  {lang === 'es' ? 'EN' : 'ES'}
+   449→                </Button>
+   450→              </div>
+   451→            </div>
+   452→            {lastSync && (
+   453→              <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+   454→                <Clock className="size-2.5" />
+   455→                Actualizado: {lastSync.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+   456→              </p>
+   457→            )}
+   458→            <div className="relative">
+   459→              <Search className="absolute left-2.5 top-2.5 size-3.5 text-muted-foreground" />
+   460→              <Input
+   461→                placeholder="Buscar sección..."
+   462→                value={searchQuery}
+   463→                onChange={(e) => setSearchQuery(e.target.value)}
+   464→                className="h-8 pl-8 text-xs"
+   465→              />
+   466→            </div>
+   467→          </CardHeader>
+   468→          <CardContent className="p-0">
+   469→            <ScrollArea className="h-[calc(100vh-18rem)] lg:h-[calc(100vh-16rem)]">
+   470→              <div className="px-2 pb-2">
+   471→                {filteredTree.map(part => {
+   472→                  const PartIcon = part.icon
+   473→                  const isExpanded = expandedGroups.has(part.part)
+   474→                  return (
+   475→                    <div key={part.part} className="mb-1">
+   476→                      <button
+   477→                        onClick={() => toggleGroup(part.part)}
+   478→                        className="flex items-center gap-2 w-full px-2 py-2 rounded-md hover:bg-muted/50 text-left transition-colors"
+   479→                      >
+   480→                        {isExpanded ? (
+   481→                          <ChevronDown className="size-3.5 text-muted-foreground shrink-0" />
+   482→                        ) : (
+   483→                          <ChevronRight className="size-3.5 text-muted-foreground shrink-0" />
+   484→                        )}
+   485→                        <PartIcon className="size-3.5 text-amber-500 shrink-0" />
+   486→                        <span className="text-xs font-semibold truncate">{part.label}</span>
+   487→                      </button>
+   488→                      {isExpanded && (
+   489→                        <div className="ml-4 border-l border-border/50 pl-2">
+   490→                          {part.groups.map(group => (
+   491→                            <div key={group.subPart}>
+   492→                              <div className="px-2 py-1.5 text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+   493→                                {group.label}
+   494→                              </div>
+   495→                              {group.sections.map(section => (
+   496→                                <button
+   497→                                  key={section.code}
+   498→                                  onClick={() => handleSectionClick(section.code)}
+   499→                                  className={`flex items-center gap-2 w-full px-2 py-1.5 rounded text-left text-xs transition-colors ${
+   500→                                    selectedCode === section.code
+   501→                                      ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400 font-medium'
+   502→                                      : 'hover:bg-muted/50 text-foreground/80'
+   503→                                  }`}
+   504→                                >
+   505→                                  <Hash className="size-3 shrink-0 text-muted-foreground" />
+   506→                                  <span className="truncate flex-1">{section.title}</span>
+   507→                                </button>
+   508→                              ))}
+   509→                              {group.action && (
+   510→                                <button
+   511→                                  onClick={() => handleAction(group.action!)}
+   512→                                  className="flex items-center gap-2 w-full px-2 py-1.5 rounded text-left text-xs text-blue-600 dark:text-blue-400 hover:bg-blue-500/10 transition-colors"
+   513→                                >
+   514→                                  <ArrowRight className="size-3 shrink-0" />
+   515→                                  <span>Ver en la aplicación</span>
+   516→                                </button>
+   517→                              )}
+   518→                            </div>
+   519→                          ))}
+   520→                        </div>
+   521→                      )}
+   522→                    </div>
+   523→                  )
+   524→                })}
+   525→              </div>
+   526→            </ScrollArea>
+   527→          </CardContent>
+   528→        </Card>
+   529→      </div>
+   530→
+   531→      {/* Right Content Panel */}
+   532→      <div className="flex-1 min-w-0">
+   533→        <Card className="h-full">
+   534→          {!selectedCode ? (
+   535→            // Welcome View
+   536→            <div className="flex items-center justify-center h-full">
+   537→              <div className="text-center max-w-md space-y-6 p-8">
+   538→                <div className="mx-auto w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center">
+   539→                  <BookOpen className="size-8 text-amber-500" />
+   540→                </div>
+   541→                <div>
+   542→                  <h2 className="text-xl font-bold">Publicación de Información Aeronáutica</h2>
+   543→                  <p className="text-sm text-muted-foreground mt-2">
+   544→                    Seleccione una sección del panel izquierdo para ver su contenido. La AIP PERÚ contiene información aeronáutica oficial de la República del Perú.
+   545→                  </p>
+   546→                </div>
+   547→                <div className="grid grid-cols-3 gap-3">
+   548→                  {[
+   549→                    { icon: BookOpen, label: 'GEN', desc: 'General' },
+   550→                    { icon: Plane, label: 'ENR', desc: 'En Ruta' },
+   551→                    { icon: Building2, label: 'AD', desc: 'Aeródromos' },
+   552→                  ].map(item => (
+   553→                    <div key={item.label} className="text-center p-3 rounded-lg bg-muted/30">
+   554→                      <item.icon className="size-5 mx-auto text-amber-500 mb-1" />
+   555→                      <div className="text-xs font-semibold">{item.label}</div>
+   556→                      <div className="text-[10px] text-muted-foreground">{item.desc}</div>
+   557→                    </div>
+   558→                  ))}
+   559→                </div>
+   560→                <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+   561→                  <Badge variant="outline" className="text-[10px]">AMDT 33/2025</Badge>
+   562→                  <span>•</span>
+   563→                  <span>30 JUL 2025</span>
+   564→                  <span>•</span>
+   565→                  <span>CORPAC S.A.</span>
+   566→                </div>
+   567→              </div>
+   568→            </div>
+   569→          ) : sectionLoading ? (
+   570→            // Loading
+   571→            <div className="flex items-center justify-center h-full">
+   572→              <div className="text-center">
+   573→                <Loader2 className="size-8 text-amber-500 animate-spin mx-auto mb-3" />
+   574→                <p className="text-sm text-muted-foreground">Cargando sección...</p>
+   575→              </div>
+   576→            </div>
+   577→          ) : sectionData ? (
+   578→            // Section Content
+   579→            <ScrollArea className="h-full">
+   580→              <div className="p-6 max-w-3xl">
+   581→                {/* Header */}
+   582→                <div className="mb-6">
+   583→                  <div className="flex items-center gap-2 mb-2">
+   584→                    <Badge variant="outline" className="text-xs font-mono">
+   585→                      {sectionData.sectionCode}
+   586→                    </Badge>
+   587→                    {sectionData.lastAmendment && (
+   588→                      <Badge variant="secondary" className="text-[10px]">
+   589→                        {sectionData.lastAmendment}
+   590→                      </Badge>
+   591→                    )}
+   592→                    {sectionData.effectiveDate && (
+   593→                      <Badge variant="secondary" className="text-[10px]">
+   594→                        <Clock className="size-3 mr-1" />
+   595→                        {sectionData.effectiveDate}
+   596→                      </Badge>
+   597→                    )}
+   598→                  </div>
+   599→                  <h2 className="text-xl font-bold">
+   600→                    {lang === 'en' && sectionData.titleEn ? sectionData.titleEn : sectionData.title}
+   601→                  </h2>
+   602→                  {lang === 'es' && sectionData.titleEn && (
+   603→                    <p className="text-xs text-muted-foreground mt-1">{sectionData.titleEn}</p>
+   604→                  )}
+   605→                  {lang === 'en' && sectionData.title && (
+   606→                    <p className="text-xs text-muted-foreground mt-1">{sectionData.title}</p>
+   607→                  )}
+   608→                  {sectionData.sourceFile && (
+   609→                    <p className="text-[10px] text-muted-foreground mt-2 flex items-center gap-1">
+   610→                      <FileText className="size-3" />
+   611→                      Fuente: {sectionData.sourceFile}
+   612→                    </p>
+   613→                  )}
+   614→                </div>
+   615→
+   616→                {/* Content rendering logic:
+   617→                    - If the section was updated via a .md upload (sourceFile ends
+   618→                      with .md/.markdown), the uploaded Markdown content is shown,
+   619→                      overriding any specialized view. This makes uploads truly
+   620→                      "update the information where it corresponds".
+   621→                    - Otherwise, specialized views are shown for GEN_1.1, GEN_1.6,
+   622→                      GEN_2.1, GEN_2.2 (these pull from dedicated API endpoints).
+   623→                    - For all other sections, the Markdown/HTML content from the
+   624→                      DB is rendered. */}
+   625→                {(() => {
+   626→                  const isMdUpload = !!sectionData.sourceFile &&
+   627→                    /\.(md|markdown)$/i.test(sectionData.sourceFile)
+   628→                  const specializedCodes = ['GEN_1.1', 'GEN_1.6', 'GEN_2.1', 'GEN_2.2']
+   629→                  const hasSpecializedView = specializedCodes.includes(selectedCode)
+   630→
+   631→                  // Uploaded .md content always wins — it updates the section
+   632→                  if (isMdUpload) {
+   633→                    return (
+   634→                      <div className="prose prose-sm dark:prose-invert max-w-none">
+   635→                        <MarkdownRenderer
+   636→                          content={
+   637→                            lang === 'en' && sectionData.contentEn
+   638→                              ? sectionData.contentEn
+   639→                              : sectionData.content || ''
+   640→                          }
+   641→                        />
+   642→                      </div>
+   643→                    )
+   644→                  }
+   645→
+   646→                  // No upload — show specialized view if applicable
+   647→                  if (hasSpecializedView) {
+   648→                    if (selectedCode === 'GEN_1.1') return <AuthoritiesView lang={lang} />
+   649→                    if (selectedCode === 'GEN_1.6') return <RegulationsView lang={lang} />
+   650→                    if (selectedCode === 'GEN_2.1') return <HolidaysView lang={lang} />
+   651→                    if (selectedCode === 'GEN_2.2') return <AbbreviationsView lang={lang} />
+   652→                  }
+   653→
+   654→                  // Default: render Markdown/HTML content
+   655→                  return (
+   656→                    <div className="prose prose-sm dark:prose-invert max-w-none">
+   657→                      <MarkdownRenderer
+   658→                        content={
+   659→                          lang === 'en' && sectionData.contentEn
+   660→                            ? sectionData.contentEn
+   661→                            : sectionData.content || ''
+   662→                        }
+   663→                      />
+   664→                    </div>
+   665→                  )
+   666→                })()}
+   667→              </div>
+   668→            </ScrollArea>
+   669→          ) : (
+   670→            // Error
+   671→            <div className="flex items-center justify-center h-full">
+   672→              <div className="text-center">
+   673→                <Info className="size-8 text-muted-foreground mx-auto mb-3" />
+   674→                <p className="text-sm text-muted-foreground">No se pudo cargar la sección</p>
+   675→              </div>
+   676→            </div>
+   677→          )}
+   678→        </Card>
+   679→      </div>
+   680→    </div>
+   681→  )
+   682→}
+   683→
+   684→// ─── Authorities View ────────────────────────────────────────────
+   685→
+   686→function AuthoritiesView({ lang }: { lang: 'es' | 'en' }) {
+   687→  const [authorities, setAuthorities] = useState<Record<string, Array<{
+   688→    name: string; nameEn?: string; address?: string; phone?: string; email?: string; aftn?: string
+   689→  }>> | null>(null)
+   690→
+   691→  useEffect(() => {
+   692→    fetch('/api/authorities')
+   693→      .then(r => r.ok ? r.json() : null)
+   694→      .then(d => setAuthorities(d))
+   695→      .catch(() => {})
+   696→  }, [])
+   697→
+   698→  if (!authorities) return <div className="flex justify-center py-8"><Loader2 className="size-6 animate-spin text-amber-500" /></div>
+   699→
+   700→  const categoryIcons: Record<string, React.ComponentType<{className?: string}>> = {
+   701→    'Aviación Civil': Plane,
+   702→    'Meteorología Aeronáutica': Cloud,
+   703→    'Aduanas': Shield,
+   704→    'Sanidad': Heart,
+   705→    'Investigación de Accidentes': AlertCircle,
+   706→  }
+   707→
+   708→  return (
+   709→    <div className="space-y-4">
+   710→      <p className="text-sm text-muted-foreground">
+   711→        {lang === 'en'
+   712→          ? 'Designated authorities responsible for facilitating international air navigation'
+   713→          : 'Autoridades designadas que se encargan de facilitar la navegación aérea internacional'}
+   714→      </p>
+   715→      {Object.entries(authorities).map(([category, auths]) => {
+   716→        const Icon = categoryIcons[category] || Building2
+   717→        return (
+   718→          <div key={category}>
+   719→            <h3 className="text-sm font-semibold flex items-center gap-2 mb-2">
+   720→              <Icon className="size-4 text-amber-500" />
+   721→              {category}
+   722→            </h3>
+   723→            <div className="grid gap-2">
+   724→              {auths.map((auth, i) => (
+   725→                <Card key={i} className="bg-muted/30">
+   726→                  <CardContent className="p-3">
+   727→                    <p className="text-xs font-medium">
+   728→                      {lang === 'en' && auth.nameEn ? auth.nameEn : auth.name}
+   729→                    </p>
+   730→                    <div className="mt-1.5 space-y-0.5">
+   731→                      {auth.address && (
+   732→                        <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+   733→                          <MapPin className="size-3 shrink-0" />{auth.address}
+   734→                        </p>
+   735→                      )}
+   736→                      {auth.phone && (
+   737→                        <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+   738→                          <Phone className="size-3 shrink-0" />{auth.phone}
+   739→                        </p>
+   740→                      )}
+   741→                      {auth.email && (
+   742→                        <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+   743→                          <Mail className="size-3 shrink-0" />{auth.email}
+   744→                        </p>
+   745→                      )}
+   746→                      {auth.aftn && (
+   747→                        <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+   748→                          <Hash className="size-3 shrink-0" />AFTN: {auth.aftn}
+   749→                        </p>
+   750→                      )}
+   751→                    </div>
+   752→                  </CardContent>
+   753→                </Card>
+   754→              ))}
+   755→            </div>
+   756→          </div>
+   757→        )
+   758→      })}
+   759→    </div>
+   760→  )
+   761→}
+   762→
+   763→// ─── Regulations View ────────────────────────────────────────────
+   764→
+   765→function RegulationsView({ lang }: { lang: 'es' | 'en' }) {
+   766→  const [regulations, setRegulations] = useState<Array<{
+   767→    code: string; title: string; titleEn?: string; type: string
+   768→  }>>([])
+   769→  const [filter, setFilter] = useState<string>('all')
+   770→
+   771→  useEffect(() => {
+   772→    fetch('/api/regulations')
+   773→      .then(r => r.ok ? r.json() : [])
+   774→      .then(d => setRegulations(d))
+   775→      .catch(() => {})
+   776→  }, [])
+   777→
+   778→  const types = ['all', ...new Set(regulations.map(r => r.type))]
+   779→  const filtered = filter === 'all' ? regulations : regulations.filter(r => r.type === filter)
+   780→
+   781→  const typeColors: Record<string, string> = {
+   782→    'LEY': 'bg-red-500/10 text-red-600 dark:text-red-400',
+   783→    'REGLAMENTO': 'bg-orange-500/10 text-orange-600 dark:text-orange-400',
+   784→    'RAP': 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
+   785→    'CONVENIO': 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
+   786→  }
+   787→
+   788→  return (
+   789→    <div className="space-y-4">
+   790→      <p className="text-sm text-muted-foreground">
+   791→        {lang === 'en'
+   792→          ? 'Summary of national regulations and international agreements'
+   793→          : 'Resumen de reglamentos nacionales y acuerdos/convenios internacionales'}
+   794→      </p>
+   795→      <div className="flex flex-wrap gap-1.5">
+   796→        {types.map(t => (
+   797→          <Button
+   798→            key={t}
+   799→            variant={filter === t ? 'default' : 'outline'}
+   800→            size="sm"
+   801→            onClick={() => setFilter(t)}
+   802→            className={`h-7 text-[11px] ${filter === t ? 'bg-amber-500 text-white' : ''}`}
+   803→          >
+   804→            {t === 'all' ? 'Todos' : t}
+   805→          </Button>
+   806→        ))}
+   807→      </div>
+   808→      <div className="space-y-1">
+   809→        {filtered.map(reg => (
+   810→          <div
+   811→            key={reg.code}
+   812→            className="flex items-start gap-3 p-2.5 rounded-md hover:bg-muted/30 transition-colors"
+   813→          >
+   814→            <Badge variant="outline" className="text-[10px] font-mono shrink-0 mt-0.5">
+   815→              {reg.code}
+   816→            </Badge>
+   817→            <div className="min-w-0">
+   818→              <p className="text-xs font-medium">
+   819→                {lang === 'en' && reg.titleEn ? reg.titleEn : reg.title}
+   820→              </p>
+   821→              <Badge className={`text-[10px] mt-1 ${typeColors[reg.type] || 'bg-gray-500/10'}`}>
+   822→                {reg.type}
+   823→              </Badge>
+   824→            </div>
+   825→          </div>
+   826→        ))}
+   827→      </div>
+   828→    </div>
+   829→  )
+   830→}
+   831→
+   832→// ─── Holidays View ───────────────────────────────────────────────
+   833→
+   834→function HolidaysView({ lang }: { lang: 'es' | 'en' }) {
+   835→  const [holidays, setHolidays] = useState<Array<{
+   836→    name: string; nameEn?: string; date: string; dateEn?: string; month: number; day: number; isVariable: boolean
+   837→  }>>([])
+   838→
+   839→  useEffect(() => {
+   840→    fetch('/api/holidays')
+   841→      .then(r => r.ok ? r.json() : [])
+   842→      .then(d => setHolidays(d))
+   843→      .catch(() => {})
+   844→  }, [])
+   845→
+   846→  const fixed = holidays.filter(h => !h.isVariable)
+   847→  const variable = holidays.filter(h => h.isVariable)
+   848→  const currentMonth = new Date().getMonth() + 1
+   849→
+   850→  return (
+   851→    <div className="space-y-4">
+   852→      <p className="text-sm text-muted-foreground">
+   853→        {lang === 'en'
+   854→          ? 'Public holidays in Peru - Administrative services may not be available'
+   855→          : 'Días feriados en Perú - Es posible que no se presten algunos servicios administrativos'}
+   856→      </p>
+   857→      <div className="grid gap-2">
+   858→        {fixed.map(h => (
+   859→          <div
+   860→            key={h.name}
+   861→            className={`flex items-center gap-3 p-2.5 rounded-md transition-colors ${
+   862→              h.month === currentMonth ? 'bg-amber-500/10 border border-amber-500/20' : 'bg-muted/30'
+   863→            }`}
+   864→          >
+   865→            <div className="w-12 text-center shrink-0">
+   866→              <Calendar className={`size-4 mx-auto ${h.month === currentMonth ? 'text-amber-500' : 'text-muted-foreground'}`} />
+   867→              <span className="text-[10px] text-muted-foreground">{h.month}/{h.day}</span>
+   868→            </div>
+   869→            <div>
+   870→              <p className="text-xs font-medium">
+   871→                {lang === 'en' && h.nameEn ? h.nameEn : h.name}
+   872→              </p>
+   873→              <p className="text-[11px] text-muted-foreground">
+   874→                {lang === 'en' && h.dateEn ? h.dateEn : h.date}
+   875→              </p>
+   876→            </div>
+   877→            {h.month === currentMonth && (
+   878→              <Badge className="ml-auto text-[10px] bg-amber-500 text-white">Este mes</Badge>
+   879→            )}
+   880→          </div>
+   881→        ))}
+   882→      </div>
+   883→      {variable.length > 0 && (
+   884→        <div>
+   885→          <h4 className="text-xs font-semibold mb-2 flex items-center gap-1.5">
+   886→            <Clock className="size-3.5 text-amber-500" />
+   887→            {lang === 'en' ? 'Variable Date Holidays' : 'Feriados de Fecha Variable'}
+   888→          </h4>
+   889→          <div className="grid gap-2">
+   890→            {variable.map(h => (
+   891→              <div key={h.name} className="flex items-center gap-3 p-2.5 rounded-md bg-muted/30">
+   892→                <Calendar className="size-4 text-muted-foreground shrink-0" />
+   893→                <div>
+   894→                  <p className="text-xs font-medium">
+   895→                    {lang === 'en' && h.nameEn ? h.nameEn : h.name}
+   896→                  </p>
+   897→                  <p className="text-[11px] text-muted-foreground">
+   898→                    {lang === 'en' && h.dateEn ? h.dateEn : h.date}
+   899→                  </p>
+   900→                </div>
+   901→              </div>
+   902→            ))}
+   903→          </div>
+   904→        </div>
+   905→      )}
+   906→    </div>
+   907→  )
+   908→}
+   909→
+   910→// ─── Abbreviations View ──────────────────────────────────────────
+   911→
+   912→function AbbreviationsView({ lang }: { lang: 'es' | 'en' }) {
+   913→  const [abbreviations, setAbbreviations] = useState<Array<{
+   914→    code: string; meaning: string; meaningEn?: string; radioUsage?: string
+   915→  }>>([])
+   916→  const [search, setSearch] = useState('')
+   917→
+   918→  useEffect(() => {
+   919→    const url = search ? `/api/abbreviations?q=${encodeURIComponent(search)}&limit=100` : '/api/abbreviations?limit=100'
+   920→    fetch(url)
+   921→      .then(r => r.ok ? r.json() : [])
+   922→      .then(d => setAbbreviations(d))
+   923→      .catch(() => {})
+   924→  }, [search])
+   925→
+   926→  return (
+   927→    <div className="space-y-4">
+   928→      <p className="text-sm text-muted-foreground">
+   929→        {lang === 'en'
+   930→          ? 'Abbreviations used in AIS publications (ICAO Doc 8400)'
+   931→          : 'Abreviaturas utilizadas en las publicaciones del AIS (Doc. 8400 OACI)'}
+   932→      </p>
+   933→      <div className="relative">
+   934→        <Search className="absolute left-2.5 top-2.5 size-3.5 text-muted-foreground" />
+   935→        <Input
+   936→          placeholder={lang === 'en' ? 'Search abbreviations...' : 'Buscar abreviatura...'}
+   937→          value={search}
+   938→          onChange={(e) => setSearch(e.target.value)}
+   939→          className="h-8 pl-8 text-xs"
+   940→        />
+   941→      </div>
+   942→      <div className="text-xs text-muted-foreground">
+   943→        {abbreviations.length} {lang === 'en' ? 'abbreviations' : 'abreviaturas'}
+   944→      </div>
+   945→      <ScrollArea className="h-[calc(100vh-30rem)]">
+   946→        <div className="space-y-0.5">
+   947→          {abbreviations.map(abbr => (
+   948→            <div
+   949→              key={abbr.code}
+   950→              className="flex items-start gap-3 p-2 rounded hover:bg-muted/30 transition-colors"
+   951→            >
+   952→              <div className="w-16 shrink-0">
+   953→                <span className="text-xs font-mono font-bold text-amber-600 dark:text-amber-400">
+   954→                  {abbr.code}
+   955→                </span>
+   956→                {abbr.radioUsage && (
+   957→                  <span className="text-[9px] text-blue-500 ml-1">{abbr.radioUsage}</span>
+   958→                )}
+   959→              </div>
+   960→              <div className="min-w-0">
+   961→                <p className="text-[11px] leading-tight">
+   962→                  {lang === 'en' && abbr.meaningEn ? abbr.meaningEn : abbr.meaning}
+   963→                </p>
+   964→              </div>
+   965→            </div>
+   966→          ))}
+   967→        </div>
+   968→      </ScrollArea>
+   969→    </div>
+   970→  )
+   971→}
+   972→
+   973→// Aliases for icons used in the component
+   974→const Cloud = Calendar
+   975→const Heart = Phone
+   976→const AlertCircle = Info
+   977→

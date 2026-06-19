@@ -895,3 +895,63 @@ Stage Summary:
   clickable to open the high-resolution viewer (zoom/pan/rotate/download/
   fullscreen), and are properly sized with max-h-[70vh] to prevent
   oversized charts from dominating the page.
+
+---
+Task ID: design-improvement
+Agent: Main Agent
+Task: User requested "mejorar diseño" (improve design) for the AIP PERÚ application
+
+Work Log:
+- Analyzed current home page design with VLM (visual analysis):
+  Identified issues: flat cards lacking depth, weak visual hierarchy,
+  inconsistent spacing, outdated aesthetics, no hover feedback
+- Reviewed existing components: airport-card.tsx, airport-listing.tsx,
+  globals.css to understand the current design system
+- Redesigned AirportCard (src/components/airport-card.tsx):
+  * Added left colored accent bar (amber for international, emerald for national)
+    for instant category recognition
+  * Restructured header: ICAO code as large mono-font primary element,
+    category badge below it, icon in a rounded container on the right
+  * Added subtle gradient overlay on hover (amber/emerald tint)
+  * Improved footer: technical data (elevation, fire category, traffic)
+    separated by dividers with proper icons and tooltips
+  * Added icon rotation animation on hover (plane rotates -45deg)
+  * Better spacing with consistent padding (p-4) and min-height for name
+- Enhanced AirportListing hero section (src/components/airport-listing.tsx):
+  * Added SVG flight grid pattern overlay (subtle opacity 0.07)
+  * Added amber accent bar at top of hero
+  * Added amendment info badge (AMDT 33/2025) with backdrop blur
+  * Added stats row: total/international/national airports with dividers
+  * Improved decorative plane icons with amber color
+  * Added shadow-lg to hero for depth
+  * Widened letter-spacing on "AIP PERÚ" (tracking-[0.3em])
+- Polished section headers (Internacionales/Nacionales):
+  * Gradient divider line (from-border to-transparent) instead of solid
+  * Slightly larger padding on the label badges
+  * Increased spacing between sections (space-y-12)
+- Improved skeleton loading state to match new card layout
+- Verified with Agent Browser:
+  * Desktop (1440x900): cards render with new design, hover effects work
+    (elevation shadow + left border color intensifies + plane icon rotates)
+  * Mobile (375x812): hero section adapts, cards stack vertically,
+    no overflow, touch targets adequate
+  * Click interaction works: clicking SPCL card navigates to detail view
+  * Dev log shows no errors, all API calls return 200
+- VLM verification:
+  * Design rating improved from ~4/10 (basic/boring) to 8/10 (professional/modern)
+  * Confirmed: better visual hierarchy, professional hero section,
+    attractive colored borders, visible hover effects
+  * Mobile responsiveness confirmed: no overflow, proper stacking
+
+Stage Summary:
+- Airport cards completely redesigned with aviation-themed accent bars,
+  better visual hierarchy (ICAO code prominent, name secondary, technical
+  data in divider-separated footer), and interactive hover effects
+  (elevation, gradient overlay, icon rotation)
+- Hero section enhanced with flight-grid SVG pattern, amendment badge,
+  live statistics counters, and amber accent bar for professional feel
+- Section headers polished with gradient dividers
+- Design verified on both desktop and mobile viewports with VLM analysis
+  confirming significant improvement in professionalism and modernity
+- All interactions (click, hover, search, tabs) verified working
+- Lint clean, no runtime errors

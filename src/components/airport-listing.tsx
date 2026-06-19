@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
-import { Search, Plane, MapPin, Globe, Flag } from "lucide-react"
+import { Search, Plane, MapPin, Globe, Flag, Navigation, Clock } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
@@ -55,8 +55,6 @@ export function AirportListing({ onSelectAirport }: AirportListingProps) {
   }, [search, fetchAirports])
 
   // Group airports by category.
-  // Uses isInternationalAirport() which falls back to name-based detection
-  // when the explicit `category` field is null (as is the case for seeded data).
   const internationalAirports = airports.filter(a => isInternationalAirport(a))
   const nationalAirports = airports.filter(a => !isInternationalAirport(a))
 
@@ -87,39 +85,96 @@ export function AirportListing({ onSelectAirport }: AirportListingProps) {
 
   return (
     <div className="space-y-8">
-      {/* Hero Section */}
-      <div className="relative bg-navy rounded-2xl overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-navy-dark via-navy to-navy-light opacity-95" />
-        <div className="absolute inset-0 opacity-5">
-          <div className="absolute top-4 right-8">
-            <Plane className="size-32 text-white rotate-12" />
-          </div>
-          <div className="absolute bottom-4 left-8">
-            <Plane className="size-20 text-white -rotate-45" />
-          </div>
+      {/* Hero Section - Aviation themed with gradient and decorative elements */}
+      <div className="relative bg-navy rounded-2xl overflow-hidden shadow-lg">
+        {/* Background gradient */}
+        <div className="absolute inset-0 bg-gradient-to-br from-navy-dark via-navy to-navy-light" />
+
+        {/* Decorative aviation pattern - subtle flight paths */}
+        <div className="absolute inset-0 opacity-[0.07]" aria-hidden="true">
+          <svg className="w-full h-full" viewBox="0 0 800 300" preserveAspectRatio="xMidYMid slice">
+            <defs>
+              <pattern id="flightGrid" x="0" y="0" width="80" height="80" patternUnits="userSpaceOnUse">
+                <path d="M 0 40 L 80 40 M 40 0 L 40 80" stroke="white" strokeWidth="0.5" fill="none" />
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#flightGrid)" />
+          </svg>
         </div>
-        <div className="relative px-6 py-10 sm:px-10 sm:py-14 text-center">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="h-px w-12 bg-amber-500" />
-            <Plane className="size-6 text-amber-500" />
-            <div className="h-px w-12 bg-amber-500" />
+
+        {/* Decorative planes */}
+        <div className="absolute inset-0 opacity-10" aria-hidden="true">
+          <Plane className="absolute top-6 right-10 size-28 text-amber-400 rotate-[20deg]" strokeWidth={1.2} />
+          <Plane className="absolute bottom-4 left-12 size-16 text-white -rotate-45" strokeWidth={1.2} />
+        </div>
+
+        {/* Amber accent bar at top */}
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500" />
+
+        {/* Content */}
+        <div className="relative px-6 py-10 sm:px-10 sm:py-14">
+          <div className="max-w-3xl mx-auto text-center">
+            {/* Top badge with amendment info */}
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-sm border border-white/15 mb-5">
+              <Clock className="size-3 text-amber-400" />
+              <span className="text-[11px] font-medium text-slate-200 tracking-wide">
+                AMDT 33/2025 · Vigente desde 30 JUL 2025
+              </span>
+            </div>
+
+            {/* Title */}
+            <div className="flex items-center justify-center gap-3 mb-3">
+              <div className="h-px w-10 bg-amber-500/60 hidden sm:block" />
+              <Plane className="size-6 text-amber-500" />
+              <div className="h-px w-10 bg-amber-500/60 hidden sm:block" />
+            </div>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white tracking-tight leading-tight">
+              Publicación de Información Aeronáutica
+            </h1>
+            <div className="mt-2">
+              <span className="text-amber-500 text-xl sm:text-2xl lg:text-3xl font-bold tracking-[0.3em]">
+                AIP PERÚ
+              </span>
+            </div>
+            <p className="mt-4 text-slate-300 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed">
+              Información aeronáutica oficial de la República del Perú.
+              Consulte datos de aeródromos, pistas, servicios y obstáculos.
+            </p>
+
+            {/* Stats row */}
+            <div className="mt-7 flex items-center justify-center gap-6 sm:gap-10">
+              <div className="text-center">
+                <div className="text-2xl sm:text-3xl font-bold text-white tabular-nums">
+                  {airports.length || 32}
+                </div>
+                <div className="text-[10px] uppercase tracking-wider text-slate-400 mt-0.5">
+                  Aeródromos
+                </div>
+              </div>
+              <div className="h-10 w-px bg-white/15" />
+              <div className="text-center">
+                <div className="text-2xl sm:text-3xl font-bold text-amber-400 tabular-nums">
+                  {internationalAirports.length || 11}
+                </div>
+                <div className="text-[10px] uppercase tracking-wider text-slate-400 mt-0.5">
+                  Internacionales
+                </div>
+              </div>
+              <div className="h-10 w-px bg-white/15" />
+              <div className="text-center">
+                <div className="text-2xl sm:text-3xl font-bold text-emerald-400 tabular-nums">
+                  {nationalAirports.length || 21}
+                </div>
+                <div className="text-[10px] uppercase tracking-wider text-slate-400 mt-0.5">
+                  Nacionales
+                </div>
+              </div>
+            </div>
           </div>
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white tracking-tight">
-            Publicación de Información Aeronáutica
-          </h1>
-          <div className="mt-2">
-            <span className="text-amber-500 text-xl sm:text-2xl lg:text-3xl font-bold tracking-widest">
-              AIP PERÚ
-            </span>
-          </div>
-          <p className="mt-4 text-slate-300 text-sm sm:text-base max-w-2xl mx-auto">
-            Información aeronáutica oficial de la República del Perú.
-            Consulte datos de aeródromos, pistas, servicios y obstáculos.
-          </p>
         </div>
       </div>
 
-      {/* Search Section */}
+      {/* Search & Filter Section */}
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
@@ -133,11 +188,11 @@ export function AirportListing({ onSelectAirport }: AirportListingProps) {
             />
           </div>
           <div className="relative">
-            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
             <select
               value={selectedDepartment}
               onChange={(e) => setSelectedDepartment(e.target.value)}
-              className="h-11 pl-10 pr-8 rounded-md border border-input bg-background text-sm appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-ring"
+              className="h-11 pl-10 pr-8 rounded-md border border-input bg-background text-sm appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-ring w-full sm:w-auto"
               suppressHydrationWarning
             >
               <option value="">Todos los departamentos</option>
@@ -151,7 +206,8 @@ export function AirportListing({ onSelectAirport }: AirportListingProps) {
         </div>
 
         <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>
+          <span className="flex items-center gap-1.5">
+            <Navigation className="size-3.5 text-amber-600" />
             {loading
               ? "Buscando..."
               : `${airports.length} aeródromo${airports.length !== 1 ? "s" : ""} encontrado${airports.length !== 1 ? "s" : ""}`}
@@ -176,14 +232,22 @@ export function AirportListing({ onSelectAirport }: AirportListingProps) {
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="rounded-xl border p-6 space-y-3">
-              <Skeleton className="h-6 w-20" />
-              <Skeleton className="h-5 w-3/4" />
-              <Skeleton className="h-4 w-1/2" />
-              <div className="flex gap-4">
-                <Skeleton className="h-4 w-16" />
-                <Skeleton className="h-4 w-16" />
-                <Skeleton className="h-4 w-20" />
+            <div key={i} className="rounded-xl border p-4 space-y-3 border-l-4 border-l-muted">
+              <div className="flex justify-between items-start">
+                <div className="space-y-2">
+                  <Skeleton className="h-6 w-20" />
+                  <Skeleton className="h-4 w-16" />
+                </div>
+                <Skeleton className="size-9 rounded-lg" />
+              </div>
+              <div className="space-y-1.5 pt-2">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-3 w-2/3" />
+              </div>
+              <div className="flex gap-3 pt-2 border-t">
+                <Skeleton className="h-3 w-12" />
+                <Skeleton className="h-3 w-12" />
+                <Skeleton className="h-3 w-12" />
               </div>
             </div>
           ))}
@@ -222,22 +286,22 @@ export function AirportListing({ onSelectAirport }: AirportListingProps) {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="todos" className="mt-4">
-            <div className="space-y-10">
+          <TabsContent value="todos" className="mt-6">
+            <div className="space-y-12">
               {/* Internacional Section */}
               {internationalAirports.length > 0 && (
                 <div>
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                  <div className="flex items-center gap-3 mb-5">
+                    <div className="flex items-center gap-2.5 px-3.5 py-2 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
                       <Globe className="size-4 text-amber-600 dark:text-amber-400" />
-                      <span className="font-semibold text-amber-800 dark:text-amber-300 text-sm tracking-wide">
+                      <span className="font-semibold text-amber-800 dark:text-amber-300 text-sm tracking-wider">
                         AEROPUERTOS INTERNACIONALES
                       </span>
                     </div>
-                    <Badge variant="secondary" className="text-xs">
+                    <Badge variant="secondary" className="text-xs font-medium">
                       {internationalAirports.length}
                     </Badge>
-                    <div className="flex-1 h-px bg-border" />
+                    <div className="flex-1 h-px bg-gradient-to-r from-border to-transparent" />
                   </div>
                   {renderAirportGrid(internationalAirports)}
                 </div>
@@ -246,17 +310,17 @@ export function AirportListing({ onSelectAirport }: AirportListingProps) {
               {/* Nacional Section */}
               {nationalAirports.length > 0 && (
                 <div>
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800">
+                  <div className="flex items-center gap-3 mb-5">
+                    <div className="flex items-center gap-2.5 px-3.5 py-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800">
                       <Flag className="size-4 text-emerald-600 dark:text-emerald-400" />
-                      <span className="font-semibold text-emerald-800 dark:text-emerald-300 text-sm tracking-wide">
+                      <span className="font-semibold text-emerald-800 dark:text-emerald-300 text-sm tracking-wider">
                         AEROPUERTOS NACIONALES
                       </span>
                     </div>
-                    <Badge variant="secondary" className="text-xs">
+                    <Badge variant="secondary" className="text-xs font-medium">
                       {nationalAirports.length}
                     </Badge>
-                    <div className="flex-1 h-px bg-border" />
+                    <div className="flex-1 h-px bg-gradient-to-r from-border to-transparent" />
                   </div>
                   {renderAirportGrid(nationalAirports)}
                 </div>
@@ -264,11 +328,11 @@ export function AirportListing({ onSelectAirport }: AirportListingProps) {
             </div>
           </TabsContent>
 
-          <TabsContent value="internacionales" className="mt-4">
+          <TabsContent value="internacionales" className="mt-6">
             {renderAirportGrid(internationalAirports)}
           </TabsContent>
 
-          <TabsContent value="nacionales" className="mt-4">
+          <TabsContent value="nacionales" className="mt-6">
             {renderAirportGrid(nationalAirports)}
           </TabsContent>
         </Tabs>

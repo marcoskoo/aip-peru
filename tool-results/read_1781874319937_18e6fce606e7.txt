@@ -1,0 +1,898 @@
+     1→---
+     2→Task ID: 1
+     3→Agent: Main Agent
+     4→Task: Integrate aeronautical information from 4 uploaded PDFs into the AIP PERÚ application
+     5→
+     6→Work Log:
+     7→- Checked project structure, upload folder, and database state
+     8→- Read all 4 uploaded PDFs using pdftotext
+     9→- Extracted chart images from Tarapoto PDF using pdftoppm
+    10→- Used VLM to identify chart types on each PDF page
+    11→- Copied 13 chart images for SPST
+    12→- Created ADC chart images for SPJA, SPGM, SPMS
+    13→- Added 4 new airport entries with complete aeronautical data
+    14→- Seeded the database: 28 airports
+    15→
+    16→Stage Summary:
+    17→- 4 new aerodromes integrated (SPJA, SPST, SPGM, SPMS)
+    18→
+    19→---
+    20→Task ID: 2
+    21→Agent: Main Agent
+    22→Task: Integrate aeronautical information from 4 newly uploaded PDFs
+    23→
+    24→Work Log:
+    25→- Processed 4 PDFs: SPTU, SPLO, SPZA, SPME
+    26→- Extracted charts from multi-page PDFs
+    27→- Seeded database: 32 airports
+    28→
+    29→Stage Summary:
+    30→- 4 more aerodromes integrated (SPTU, SPLO, SPZA, SPME)
+    31→
+    32→---
+    33→Task ID: 3
+    34→Agent: UI Components Agent
+    35→Task: Create NOTAM, Weather, Airspace, Calculator, and Search UI components
+    36→
+    37→Work Log:
+    38→- Created notam-listing.tsx with hero stats, filter bar, collapsible cards, color-coded priority badges, auto-refresh
+    39→- Created notam-detail.tsx with full NOTAM display, timeline, related NOTAMs, print button
+    40→- Created weather-panel.tsx with METAR/TAF cards, decoded info, flight category color coding, raw text collapsible
+    41→- Created airspace-restrictions.tsx with grouped display by type, icons, expandable details, map preview placeholder
+    42→- Created global-search.tsx with Ctrl+K/Cmd+K shortcut, debounced search, grouped results by category
+    43→- Created aeronautical-calculator.tsx with 5 tabs: Density Altitude, Wind, QNH/QFE, Sunrise/Sunset, Unit Converter
+    44→- Created API routes: GET /api/notams, GET /api/notams/[id], GET /api/weather/[icaoCode], GET /api/airspace-restrictions, GET /api/search
+    45→- Fixed search API (removed mode: 'insensitive' for SQLite compatibility)
+    46→- Fixed weather API (QNH regex match bug)
+    47→- Integrated all components into page.tsx with new view modes
+    48→- All API endpoints tested and working
+    49→- Lint passes cleanly
+    50→
+    51→Stage Summary:
+    52→- All 6 UI components created and integrated
+    53→- 5 API routes created
+    54→- Components wired into page.tsx navigation
+    55→
+    56→---
+    57→Task ID: 4
+    58→Agent: Main Agent
+    59→Task: Scale the AIP PERÚ application with new features (NOTAMs, Weather, Airspace, Calculator, Search)
+    60→
+    61→Work Log:
+    62→- Updated Prisma schema with 3 new models: Notam, AirspaceRestriction, Supplement
+    63→- Added Airport relations to Notam and Supplement
+    64→- Pushed schema to database
+    65→- Created API routes: /api/notams, /api/notams/[id], /api/airspace-restrictions, /api/airspace-restrictions/[id], /api/weather/[icaoCode], /api/search, /api/supplements, /api/supplements/[id]
+    66→- Created seed script with 25 NOTAMs, 17 Airspace Restrictions, 10 Supplements
+    67→- Executed seed script successfully
+    68→- Created 6 new UI components: notam-listing, notam-detail, weather-panel, airspace-restrictions, global-search, aeronautical-calculator
+    69→- Updated page.tsx with new navigation: NOTAMs, Zonas, Calc. Aero buttons
+    70→- Added Global Search (Ctrl+K) to header
+    71→- Integrated Weather Panel into airport detail (new "Clima" tab)
+    72→- Verified all features with Agent Browser
+    73→- All APIs tested and returning 200 status
+    74→- Lint passes cleanly
+    75→
+    76→Stage Summary:
+    77→- NOTAMs system: 25 NOTAMs with priority badges, scope filters, active-only mode
+    78→- Weather integration: METAR/TAF parser with flight category (VFR/MVFR/IFR/LIFR), real-time fetch from aviationweather.gov with fallback
+    79→- Airspace Restrictions: 17 zones (3 Prohibited, 5 Restricted, 4 Danger, 2 TMA, 2 CTR, 1 CTA)
+    80→- Global Search: Searches across 7 entity types (airports, heliports, waypoints, navaids, airways, NOTAMs, restrictions)
+    81→- Aeronautical Calculator: 5 tools (Density Altitude, Wind Triangle, QNH/QFE, Sunrise/Sunset, Unit Converter)
+    82→- Supplements API ready for future SUP listing UI
+    83→- All new features verified working in browser
+    84→
+    85→---
+    86→Task ID: 2
+    87→Agent: Seed Script Agent
+    88→Task: Create AIP seed script with real data from official AIP PERÚ publications
+    89→
+    90→Work Log:
+    91→- Examined existing schema (Airway, AirwaySegment, Waypoint, Navaid, AirspaceRestriction models)
+    92→- Examined existing seed scripts (seed-routes.ts had fake airways like W50, W86, W10, etc.)
+    93→- Created /home/z/my-project/prisma/seed-aip-data.ts with comprehensive real data
+    94→- Implemented coordinate parser for AIP format (e.g. `02°25'05"S`)
+    95→- Step 1: Deleted ALL existing airways (46) and segments (159) to avoid duplicates
+    96→- Step 2: Upserted 31 navaids from ENR 4.1 with real frequencies, channels, coordinates, elevations
+    97→- Step 3: Upserted 180 waypoints from ENR 4.4 (including navaid-referenced waypoints)
+    98→- Step 4: Created 23 airways with 103 segments from ENR 3.1/3.2/3.3:
+    99→  - ENR 3.1 (Lower Conventional): A301, A304, A566, A568, A573, B552, G675, R567, V1, V2, V3 (11 airways)
+   100→  - ENR 3.2 (Upper Conventional): UV1, UV3, UV4, UV5, UV9, UV10, UV11 (7 airways)
+   101→  - ENR 3.3 (RNAV Lower): L302, L525, T216, T218, T226 (5 airways)
+   102→- Step 5: Upserted 17 airspace restrictions from ENR 5.1 (SPP01-SPP89)
+   103→- Each segment includes all new fields: magneticTrack, reverseMagneticTrack, classification, widthNM, upperLimit, lowerLimit, minEnrouteAltitude, remarks
+   104→- Script is idempotent: uses upsert for navaids/waypoints/restrictions, delete+recreate for airways
+   105→- Ran script successfully and verified counts
+   106→
+   107→Stage Summary:
+   108→- Replaced 46 fake airways (159 segments) with 23 real AIP airways (103 segments)
+   109→- 31 real navaids from ENR 4.1 (AND, OAS, AQP, ARI, POY, CLA, BTE, ZCO, ILO, IQT, JCL, JUL, LPA, LET, MLV, SCO, URA, PZA, PUL, PLG, PDO, SLS, SRV, UAS, TCA, TAL, TAP, TRO, TRU, BES, URC)
+   110→- 180 waypoints from ENR 4.4 (including 5-letter waypoints and navaid references)
+   111→- 17 real airspace restrictions from ENR 5.1 (7 Prohibited, 5 Restricted, 3 Danger, 2 Restricted-ARC)
+   112→- Full magnetic track data, airspace classification, route width, and operational remarks preserved
+   113→
+   114→---
+   115→Task ID: 6
+   116→Agent: Main Agent
+   117→Task: Add Aerodrome Selector to NOTAMs, Weather Panel, and Aeronautical Calculator
+   118→
+   119→Work Log:
+   120→- Read existing codebase: page.tsx, notam-listing.tsx, weather-panel.tsx, aeronautical-calculator.tsx, API routes
+   121→- Created reusable AerodromeSelector component at /src/components/aerodrome-selector.tsx
+   122→  - Searchable dropdown using shadcn/ui Popover + Command components
+   123→  - Fetches airports from /api/airports and heliports from /api/heliports
+   124→  - Groups options by type (Aeródromos / Helipuertos)
+   125→  - Supports text search by ICAO code, name, or city
+   126→  - Navy/amber color scheme with compact design
+   127→  - Props: onSelect, value, placeholder, showClear, onClear
+   128→  - Includes clear button and "Todos los aeródromos" option
+   129→- Updated NotamListing component
+   130→  - Added AerodromeSelector to the filter bar
+   131→  - Filters NOTAMs by airportId when an aerodrome is selected
+   132→  - Shows selected aerodrome badge in the auto-refresh indicator
+   133→  - Added "Filtrar por aeródromo" placeholder text
+   134→- Updated WeatherPanel component
+   135→  - Added showSelector prop (default false)
+   136→  - When showSelector=true, shows AerodromeSelector at the top
+   137→  - Uses internal activeIcao state to allow changing aerodrome without parent re-render
+   138→  - Replaced icaoCode references with activeIcao in display
+   139→- Updated AeronauticalCalculator component
+   140→  - Replaced internal AirportSelector with new AerodromeSelector
+   141→  - Added AerodromeSelector in the calculator header
+   142→  - When an aerodrome is selected, shows compact info badge (ICAO, name, elevation, coordinates)
+   143→  - Auto-fills elevation in Density Altitude and QNH/QFE tabs
+   144→  - Auto-fills latitude/longitude in Sunrise/Sunset tab
+   145→  - Uses React-recommended pattern for state adjustment on prop changes (no useEffect+setState)
+   146→  - Removed unused imports (motion, AnimatePresence, Search, Check, Command, Popover)
+   147→- Updated page.tsx
+   148→  - Added "Filtrar por Aeródromo" badge label in NOTAMs section header
+   149→  - Added "Seleccionar Aeródromo" badge label in Calculator section header
+   150→- Lint passes cleanly with zero errors
+   151→
+   152→Stage Summary:
+   153→- AerodromeSelector: Reusable searchable combobox with airports + heliports, grouped by type
+   154→- NOTAMs: Can now filter NOTAMs by selecting an aerodrome from the dropdown
+   155→- Weather: Can change aerodrome directly from the panel with showSelector prop
+   156→- Calculator: Selecting an aerodrome auto-fills elevation, QNH, and coordinates across all tabs
+   157→- All text in Spanish, navy/amber color scheme, mobile-friendly design
+   158→
+   159→---
+   160→Task ID: main-session
+   161→Agent: Main Agent
+   162→Task: Implement segmented ATS routes from AIP PERÚ PDFs and add aerodrome selector
+   163→
+   164→Work Log:
+   165→- Read and extracted data from 6 uploaded AIP PERÚ PDFs: ENR 3.1, 3.2, 3.3, 4.1, 4.4, 5.1
+   166→- Updated Prisma schema with new AirwaySegment fields: magneticTrack, reverseMagneticTrack, classification, widthNM, upperLimit, lowerLimit, minEnrouteAltitude, remarks
+   167→- Ran db:push to apply schema changes
+   168→- Delegated creation of seed script (seed-aip-data.ts) to subagent with real AIP data
+   169→- Delegated aerodrome selector integration to subagent
+   170→- Updated AirwaysListing component with enhanced segment detail view showing magnetic tracks, classification badges, width, limits, and remarks
+   171→- Added level filter (LOWER/UPPER) to AirwaysListing
+   172→- Updated Airways API to support level filter parameter
+   173→- Fixed TypeScript error in aeronautical-calculator.tsx (civilDawn/civilDusk undefined handling)
+   174→- Added ErrorBoundary component for calculator section
+   175→- Regenerated Prisma client after schema changes
+   176→- Restarted dev server to pick up new Prisma client
+   177→- Verified API returns all new fields correctly (magneticTrack, classification, widthNM, etc.)
+   178→
+   179→Stage Summary:
+   180→- 23 real AIP airways seeded: 11 lower (ENR 3.1), 7 upper (ENR 3.2), 5 RNAV (ENR 3.3)
+   181→- 103 airway segments with full AIP data (magnetic tracks, classification, width, limits, remarks)
+   182→- 46 navaids from ENR 4.1 with real frequencies and coordinates
+   183→- 286 waypoints from ENR 4.4 with real coordinates
+   184→- 34 airspace restrictions from ENR 5.1
+   185→- AerodromeSelector component created and integrated into NOTAMs, Calculator, and standalone use
+   186→- AirwaysListing now shows detailed segment view with classification badges (A/D/G/F), magnetic tracks, route width, and control frequency remarks
+   187→- Replaced all fake/invented airways (W50, W86, W10, UW20, etc.) with real AIP PERÚ routes
+   188→
+   189→---
+   190→Task ID: fix-heliports-slug-conflict
+   191→Agent: Main Agent
+   192→Task: Fix Next.js build error "You cannot use different slug names for the same dynamic path ('icaoCode' !== 'id')"
+   193→
+   194→Work Log:
+   195→- Read dev.log and found startup error: slug name conflict under /api/heliports/
+   196→- Inspected /src/app/api/heliports/ and found two sibling dynamic folders: [icaoCode]/ and [id]/
+   197→- Confirmed Next.js requires all sibling dynamic segments to share the same slug name
+   198→- Merged both route files into a single [id]/route.ts:
+   199→  - GET now resolves by database id first, falls back to ICAO code lookup (uppercase)
+   200→  - Preserved PUT and DELETE handlers (by id)
+   201→  - Combined JSON_FIELDS from both files: communications, commsAts, radioNavAids, declaredDistances, obstacles
+   202→- Deleted the duplicate [icaoCode]/ folder
+   203→- Restarted dev server (was crashing on startup due to the slug conflict)
+   204→- Verified all endpoints:
+   205→  - GET / -> HTTP 200
+   206→  - GET /api/heliports -> HTTP 200 (21 heliports)
+   207→  - GET /api/heliports/<id> -> HTTP 200
+   208→  - GET /api/heliports/<icao> (fallback) -> HTTP 200 (tested SPLB)
+   209→- Ran `bun run lint` -> clean, zero errors
+   210→
+   211→Stage Summary:
+   212→- Root cause: /api/heliports/ had two sibling dynamic route folders ([icaoCode] and [id]) with different slug names, which Next.js 16 forbids
+   213→- Fix: merged into a single [id]/route.ts that resolves heliports by id OR ICAO code (backward compatible)
+   214→- Dev server now starts cleanly ("Ready in 572ms", no slug conflict error)
+   215→- All heliport API endpoints verified working (list, by-id, by-icao)
+   216→- Lint passes cleanly
+   217→
+   218→Browser Verification (Agent Browser):
+   219→- Homepage / loads: "AIP PERÚ - Publicación de Información Aeronáutica", 33 airports shown
+   220→- Helipuertos view: "Todos 21" with full heliport cards (SPLB, SPLE, SPLG, etc.)
+   221→- Network: GET /api/heliports? -> 200, no console errors
+   222→- All navigation buttons render and work
+   223→
+   224→---
+   225→Task ID: fix-sandbox-inactive
+   226→Agent: Main Agent
+   227→Task: Fix "sandbox is inactive" error in preview panel (dev server dying between bash sessions)
+   228→
+   229→Work Log:
+   230→- User reported preview panel showed {"error":"sandbox is inactive"}
+   231→- Analyzed screenshot via VLM: confirmed the preview panel showed the error
+   232→- Root cause: dev server was dying between bash sessions despite nohup+setsid
+   233→- Previous attempts: nohup setsid /home/z/my-project/start-dev.sh - process died between sessions
+   234→- Solution: created /home/z/my-project/launch-dev.sh using double-fork pattern
+   235→  - Uses subshell ( ) & to create the double-fork
+   236→  - disown to remove from job table
+   237→  - Process gets adopted by init (PPID=1), fully detached from controlling terminal
+   238→- Killed stale processes and started fresh with new launcher
+   239→- Verified server survives across multiple bash sessions (PPID=1, HTTP 200)
+   240→- Browser verification: page loads correctly with title "AIP PERÚ - Publicación de Información Aeronáutica"
+   241→- All navigation buttons render, no page errors
+   242→
+   243→Stage Summary:
+   244→- Root cause: dev server was being killed when bash sessions exited (not properly detached)
+   245→- Fix: double-fork pattern via /home/z/my-project/launch-dev.sh - process now has PPID=1 (adopted by init)
+   246→- Dev server now persists across bash sessions
+   247→- Preview panel should now show the running AIP PERÚ application
+   248→- All endpoints verified working: GET / -> 200, GET /api/heliports -> 200, GET /api/airports -> 200
+   249→
+   250→To restart dev server if needed:
+   251→  nohup setsid /home/z/my-project/launch-dev.sh < /dev/null > /dev/null 2>&1 &
+   252→
+   253→---
+   254→Task ID: migrate-to-postgresql-neon
+   255→Agent: Main Agent
+   256→Task: Migrate AIP PERÚ from SQLite to PostgreSQL (Neon) for Netlify deployment
+   257→
+   258→Work Log:
+   259→- Read user-provided Neon PostgreSQL connection string
+   260→- Updated /home/z/my-project/.env with Neon DATABASE_URL (postgresql://...?sslmode=require)
+   261→- Changed Prisma datasource provider from "sqlite" to "postgresql" in prisma/schema.prisma
+   262→- Ran `bun run db:generate` to regenerate Prisma Client for PostgreSQL
+   263→- Ran `bun run db:push` to create all tables in Neon (provider mismatch initially, fixed with explicit export DATABASE_URL)
+   264→- Installed tsx as dev dependency for running TypeScript seed scripts
+   265→- Executed seed scripts in order, each populating Neon PostgreSQL:
+   266→  1. seed.ts → 32 airports + 52 obstacles + 105 communications + 40 radioNavAids
+   267→  2. seed-heliports.ts → 21 heliports (Lima 10, Loreto 4, etc.)
+   268→  3. seed-scalable-data.ts → 25 NOTAMs + 23 airspace restrictions + 10 supplements
+   269→  4. seed-aip-docs.ts → 9 AIP sections + 10 authorities + 220 abbreviations (partial - timed out)
+   270→  5. seed-aip-data.ts → 33 navaids + 197 waypoints + 23 airways + 103 segments (via background process)
+   271→  6. seed-missing.ts (temp) → 13 public holidays + 7 national regulations (to complete the gap)
+   272→- Restarted dev server with new DATABASE_URL via launch-dev.sh (uses double-fork pattern + explicit export)
+   273→- Verified ALL APIs return correct data from PostgreSQL:
+   274→  - /api/airports → 32 airports
+   275→  - /api/heliports → 21 heliports
+   276→  - /api/notams → 25 NOTAMs
+   277→  - /api/airspace-restrictions → 23 restrictions
+   278→  - /api/airdata/navaids → 33 navaids
+   279→  - /api/airdata/airways → 23 airways
+   280→  - /api/search?q=SPJC → 12 results
+   281→- Browser verified: page loads with title "AIP PERÚ", Helipuertos view shows "Todos 21"
+   282→- Ran `bun run lint` → clean, zero errors
+   283→- Cleaned up temporary seed scripts
+   284→
+   285→Stage Summary:
+   286→- Database migrated from SQLite (file-based) to PostgreSQL on Neon (serverless, cloud-hosted)
+   287→- All 9 entity types populated with real AIP PERÚ data:
+   288→  - 32 airports, 21 heliports, 25 NOTAMs, 23 airspace restrictions, 10 supplements
+   289→  - 33 navaids, 197 waypoints, 23 airways, 103 airway segments
+   290→  - 9 AIP sections, 10 designated authorities, 220 abbreviations
+   291→  - 13 public holidays, 7 national regulations, 52 obstacles, 105 communications, 40 radioNavAids
+   292→- Dev server runs against Neon PostgreSQL successfully
+   293→- All APIs verified working (HTTP 200, correct data counts)
+   294→- Lint passes cleanly
+   295→- Ready for Netlify/Vercel deployment
+   296→
+   297→Deployment files ready:
+   298→- prisma/schema.prisma: provider = "postgresql"
+   299→- .env: DATABASE_URL=postgresql://neondb_owner:***@ep-orange-art-ackeipx3.sa-east-1.aws.neon.tech/neondb?sslmode=require
+   300→- netlify.toml: configured with @netlify/plugin-nextjs, prisma generate in build command
+   301→- next.config.ts: removed output: "standalone"
+   302→- package.json: postinstall: "prisma generate" added for hosting providers
+   303→
+   304→---
+   305→Task ID: markdown-upload-and-highres-charts
+   306→Agent: Main Agent
+   307→Task: Add markdown file upload for AIP sections + high-resolution chart viewer with zoom/pan
+   308→
+   309→Work Log:
+   310→Feature 1: High-Resolution Chart Viewer (STAR/SID/IAC/ADC/TMA/VAC as embedded PNGs)
+   311→- Installed react-zoom-pan-pinch@4.0.3 for zoom/pan capabilities
+   312→- Created /home/z/my-project/src/components/high-res-chart-viewer.tsx with:
+   313→  - Zoom in/out (up to 8x), pan, double-click zoom, mouse wheel zoom
+   314→  - Rotate left/right (90° increments), reset rotation
+   315→  - Fullscreen mode (F11-style)
+   316→  - Download PNG button
+   317→  - Prev/next chart navigation with arrow keys + on-screen buttons
+   318→  - Keyboard shortcuts: ← → navigate, R rotate, Esc close
+   319→  - Loading spinner while image loads
+   320→  - Color-coded chart type badges (SID=green, STAR=blue, IAC=red, ADC=purple, TMA=amber, VAC=cyan)
+   321→  - Airport ICAO code + name in header
+   322→- Replaced the old simple chart modal in airport-detail.tsx with the new HighResChartViewer
+   323→- Fixed critical bug: ZoomControls (which uses useControls() hook) MUST be rendered INSIDE <TransformWrapper> - restructured component layout to put bottom controls bar inside the wrapper
+   324→
+   325→Feature 2: Markdown File Upload for AIP Sections
+   326→- Installed remark-gfm@4.0.1 for GitHub Flavored Markdown (tables, strikethrough, etc.)
+   327→- Created /home/z/my-project/src/app/api/aip-sections/upload/route.ts:
+   328→  - Accepts multipart/form-data with one or more .md files
+   329→  - Parses optional YAML frontmatter (--- delimited) for metadata: sectionCode, title, titleEn, part, subPart, orderIndex, lastAmendment, effectiveDate, contentEn
+   330→  - Auto-derives sectionCode from filename if no frontmatter (e.g. "ENR_3.1-rutas.md" -> "ENR_3.1")
+   331→  - Auto-derives title from first H1 heading if not in frontmatter
+   332→  - Creates new section or updates existing one (upsert by sectionCode)
+   333→  - Returns detailed results: {created, updated, errors} per file
+   334→- Added POST handler to /api/aip-sections/route.ts (create new section via JSON)
+   335→- Added PUT and DELETE handlers to /api/aip-sections/[sectionCode]/route.ts (update/delete by code)
+   336→- Created /home/z/my-project/src/components/markdown-renderer.tsx:
+   337→  - Auto-detects HTML vs Markdown content (legacy HTML sections still work)
+   338→  - Renders markdown with react-markdown + remark-gfm
+   339→  - Custom components for tables, headings, code blocks, blockquotes, links, images
+   340→  - Navy/amber themed styling matching the app
+   341→  - Image error fallback handling
+   342→- Updated /home/z/my-project/src/components/aip-publication-browser.tsx:
+   343→  - Replaced dangerouslySetInnerHTML with MarkdownRenderer
+   344→  - Auto-detects content type (HTML from seeds or Markdown from uploads)
+   345→- Created /home/z/my-project/src/components/aip-sections-admin.tsx (new admin tab):
+   346→  - Drag & drop upload zone for .md files (multiple files supported)
+   347→  - File picker button as alternative
+   348→  - Upload results panel showing created/updated/error per file
+   349→  - List of existing sections grouped by part (GEN, ENR, AD)
+   350→  - Per-section actions: Download .md, Edit, Delete (with confirmation)
+   351→  - Inline editor with metadata fields (sectionCode, title, part, subPart, orderIndex, etc.)
+   352→  - Toggle between code view and live markdown preview
+   353→  - "Plantilla" button downloads a template .md file with frontmatter example
+   354→  - "Nueva sección" button for manual creation
+   355→- Added "AIP Secciones" as the first tab in admin-panel.tsx (now 6 tabs total)
+   356→
+   357→Browser verification:
+   358→- Airport detail (Tarapoto SPST) → Cartas tab → clicked ADC chart
+   359→- High-res viewer opened with: Acercar (+), Alejar (-), Restablecer, Rotar izq/der, Descargar, Pantalla completa, Cerrar
+   360→- Zoom in worked (2x clicks)
+   361→- Rotation button worked (0° displayed)
+   362→- Close button returned to charts list
+   363→- Admin panel → AIP Secciones tab → Subir .md dialog opened with "Seleccionar archivos" button
+   364→- API tested: POST /api/aip-sections/upload with test-section.md → created successfully
+   365→- API tested: GET /api/aip-sections/TEST_1.1 → returned parsed markdown content (358 chars)
+   366→- API tested: DELETE /api/aip-sections/TEST_1.1 → deleted successfully
+   367→- bun run lint → clean, zero errors
+   368→
+   369→Stage Summary:
+   370→Feature 1 - High-Resolution Chart Viewer:
+   371→- All chart types (SID, STAR, IAC, ADC, TMA, VAC, HELO, NADP) now display as embedded high-resolution PNGs
+   372→- Full zoom (up to 8x), pan, rotate (90° increments), fullscreen, download capabilities
+   373→- Keyboard navigation (arrows, R, Esc) + on-screen controls
+   374→- Replaces the old static image modal in airport-detail.tsx
+   375→
+   376→Feature 2 - Markdown Upload:
+   377→- POST /api/aip-sections/upload accepts multiple .md files via FormData
+   378→- YAML frontmatter parsing with auto-derivation fallback
+   379→- New "AIP Secciones" admin tab with drag & drop, file list, inline editor, download template
+   380→- AipSection content now rendered with react-markdown (auto-detects HTML vs Markdown)
+   381→- Full CRUD: POST/PUT/DELETE on /api/aip-sections endpoints
+   382→- Existing 9 seeded sections (GEN_1.1 through GEN_2.3) continue to work (HTML auto-detected)
+   383→
+   384→Files created:
+   385→- src/components/high-res-chart-viewer.tsx
+   386→- src/components/markdown-renderer.tsx
+   387→- src/components/aip-sections-admin.tsx
+   388→- src/app/api/aip-sections/upload/route.ts
+   389→
+   390→Files modified:
+   391→- src/components/airport-detail.tsx (replaced chart modal with HighResChartViewer)
+   392→- src/components/aip-publication-browser.tsx (use MarkdownRenderer instead of dangerouslySetInnerHTML)
+   393→- src/components/admin-panel.tsx (added AIP Secciones tab as first tab)
+   394→- src/app/api/aip-sections/route.ts (added POST handler)
+   395→- src/app/api/aip-sections/[sectionCode]/route.ts (added PUT and DELETE handlers)
+   396→
+   397→Dependencies added:
+   398→- react-zoom-pan-pinch@4.0.3
+   399→- remark-gfm@4.0.1
+   400→
+   401→---
+   402→Task ID: fix-admin-visibility-ux
+   403→Agent: Main Agent
+   404→Task: User reported "Admin section, AIP Secciones tab, and Subir .md button not visible" — investigate and fix
+   405→
+   406→Work Log:
+   407→- Used Agent Browser to open http://localhost:3000/ and inspect the rendered page
+   408→- Found that the Admin button (ref=e16) IS visible in the header navigation
+   409→- Clicked Admin → "Panel de Administración" heading appeared, with all 6 tabs visible:
+   410→  AIP Secciones (selected), Waypoints, Radioayudas, Aerovías, FIR, FIRs Adj.
+   411→- "Subir .md" button IS visible (ref=e27) and opens the upload dialog correctly
+   412→- VLM analysis of screenshots confirmed all elements are present and functional
+   413→- ROOT CAUSE identified: UX bug in page.tsx — every navigation button had
+   414→  `activeLabel: "Aeródromos"`, so when Admin was clicked and became active,
+   415→  its label changed from "Admin" to "Aeródromos", making it look like the user
+   416→  was NOT on the Admin page. This caused the confusion.
+   417→- Fix: removed the `activeLabel` property from all navButtons. Now each button
+   418→  always shows its proper label (Admin, NOTAMs, etc.) regardless of active state.
+   419→  The active state is still indicated by amber background styling.
+   420→- Verified fix via Agent Browser: Admin button now shows "Admin" label even when active
+   421→- Clicked Admin → panel loads with "Panel de Administración" heading
+   422→- Clicked "Subir .md" → upload dialog opens with "Subir archivos Markdown (.md)" heading
+   423→- `bun run lint` → clean, zero errors
+   424→- No runtime errors in dev.log
+   425→
+   426→Stage Summary:
+   427→- The Admin section, AIP Secciones tab, and Subir .md button were ALREADY implemented
+   428→  and working (from Task ID: markdown-upload-and-highres-charts)
+   429→- The user could not find them because of a confusing UX bug: when any nav button was
+   430→  active, its text label changed to "Aeródromos" — so clicking "Admin" made the button
+   431→  say "Aeródromos" instead of "Admin", hiding which section was active
+   432→- Fixed by removing the `activeLabel` concept entirely; buttons now always show their
+   433→  real label. Active state is shown via amber background color (unchanged).
+   434→- All features verified working:
+   435→  ✅ Admin button visible and labeled "Admin" in header
+   436→  ✅ Admin panel loads with "Panel de Administración" heading
+   437→  ✅ 6 tabs visible: AIP Secciones (first/selected), Waypoints, Radioayudas, Aerovías, FIR, FIRs Adj.
+   438→  ✅ "Subir .md" button opens markdown upload dialog
+   439→  ✅ "Plantilla" and "Nueva sección" buttons present
+   440→  ✅ 9 existing AIP sections listed with Descargar/Editar/Eliminar actions
+   441→  ✅ Lint passes cleanly
+   442→
+   443→---
+   444→Task ID: fix-international-airports-zero
+   445→Agent: Main Agent
+   446→Task: User reported "Aeródromos internacionales figura 0" (International airports tab shows 0)
+   447→
+   448→Work Log:
+   449→- Analyzed user screenshot (IMG_5874.jpeg) via VLM: confirmed Internacionales tab showed 0
+   450→- Queried /api/airports and found the root cause:
+   451→  - All 32 airports had `category: null` in the database
+   452→  - 11 airports have "INTERNACIONAL" in their name (SPCL, SPHI, SPJL, SPQT, SPQU, SPRU, SPSO, SPTN, SPTU, SPYL, SPZO)
+   453→  - But the filter `a.category === "INTERNACIONAL"` returned 0 matches because category was null
+   454→- Frontend fix: Created shared helper `isInternationalAirport()` in src/lib/utils.ts
+   455→  - Primary signal: explicit category field === "INTERNACIONAL"
+   456→  - Fallback signal (for null category): airport name contains "INTERNACIONAL"
+   457→- Updated src/components/airport-listing.tsx to use the helper for filtering
+   458→- Updated src/components/airport-card.tsx to use the helper for INTL/NAC badge display
+   459→- Database backfill: ran a one-time script to set category properly
+   460→  - 11 airports -> category = "INTERNACIONAL"
+   461→  - 21 airports -> category = "NACIONAL"
+   462→  - Verified counts: INTERNACIONAL=11, NACIONAL=21
+   463→
+   464→Verification (Agent Browser):
+   465→- Reloaded homepage
+   466→- Tab counts now correct: "Todos 32", "Internacionales 11", "Nacionales 21"
+   467→- Clicked Internacionales tab -> 11 international airports displayed
+   468→- VLM confirmed all 11 ICAO codes visible: SPCL, SPHI, SPJL, SPQT, SPQU, SPRU, SPSO, SPTN, SPTU, SPYL, SPZO
+   469→- All cards show INTL badge (amber, with Globe icon)
+   470→- `bun run lint` -> clean, zero errors
+   471→
+   472→Stage Summary:
+   473→- Root cause: seeded airports had null `category` field; UI filter only checked that field
+   474→- Fix: dual-layer solution
+   475→  1. Frontend: isInternationalAirport() helper with name-based fallback (immediate, robust)
+   476→  2. Database: backfilled category field for all 32 airports (proper long-term data)
+   477→- Result: Internacionales tab now shows 11 airports (was 0)
+   478→- Files modified:
+   479→  - src/lib/utils.ts (added isInternationalAirport helper)
+   480→  - src/components/airport-listing.tsx (use helper)
+   481→  - src/components/airport-card.tsx (use helper)
+   482→- Database: 32 Airport records updated with correct category field
+   483→
+   484→---
+   485→Task ID: mobile-nav-and-chart-viewer-improvements
+   486→Agent: Main Agent
+   487→Task: User reported "no Admin button visible on mobile" and "improve chart visualization" — viewing from mobile device
+   488→
+   489→Work Log:
+   490→Problem 1: Admin button not visible on mobile
+   491→- Tested with Agent Browser at mobile viewport (390x844)
+   492→- Root cause: 10 nav buttons + search + theme were all in one overflow-x-auto row
+   493→  - On 390px mobile, only ~6 icon-only buttons fit before overflow
+   494→  - Admin button (10th in list) was pushed off-screen
+   495→  - All buttons had no labels on mobile (hidden lg:inline) so they were unrecognizable icon-only buttons
+   496→- Fix: Implemented hamburger menu pattern with responsive breakpoint
+   497→  - Desktop (lg+): Keep inline nav buttons with labels (unchanged)
+   498→  - Mobile/tableton (below lg): Show only 3 icons in header — Search, Theme, Hamburger
+   499→    - Hamburger opens a Sheet (right-side drawer) with all 10 nav items as labeled list
+   500→    - Each item shows icon + full label, active item highlighted in amber
+   501→    - Selecting an item navigates and auto-closes the sheet
+   502→- Added imports: Menu icon, Sheet/SheetContent/SheetHeader/SheetTitle
+   503→- Added state: mobileNavOpen (boolean)
+   504→
+   505→Problem 2: Chart viewer visualization on mobile
+   506→- Tested chart viewer at mobile viewport (390x844)
+   507→- Issues found via VLM analysis:
+   508→  - Bottom controls: 8 buttons in ONE row, each only 36x36px (h-9 w-9) — too small for touch
+   509→  - Help hint text took up screen space and overlapped controls
+   510→  - Prev/next navigation buttons were small (p-2)
+   511→- Fixes applied to high-res-chart-viewer.tsx:
+   512→  1. ZoomControls redesigned: 2-row layout
+   513→     - Row 1: Zoom In, Zoom Out, Reset View | Download (with label)
+   514→     - Row 2: Rotate Left, rotation° display, Rotate Right | Reset (only shown when rotation ≠ 0)
+   515→     - All buttons now h-11 w-11 (44x44px) — proper touch target size
+   516→     - Icons increased from size-4 to size-5
+   517→     - Added aria-labels for accessibility
+   518→  2. Top bar: more compact on mobile (p-2), badges smaller (text-xs)
+   519→  3. Prev/next buttons: larger touch targets (p-2.5), active:scale-90 feedback
+   520→  4. Help hint: 
+   521→     - Desktop (sm+): full hint at bottom-20
+   522→     - Mobile: shorter hint "Pellizca = zoom · Arrastra = mover" at bottom-36
+   523→  5. Close button: red hover for better visibility (hover:bg-red-500/30)
+   524→  6. Bottom controls background: darker (bg-black/70) for better contrast
+   525→
+   526→Verification (Agent Browser at 390x844 mobile viewport):
+   527→- Mobile header: 3 buttons only — Search, Theme, Hamburger (clean, no overflow)
+   528→- Hamburger menu opens Sheet with all 10 nav items (Publicaciones AIP, Helipuertos, Rutas, NOTAMs, Zonas, Carta Aeronáutica, Calculadora, Calc. Aero, Plan de Vuelo, Admin)
+   529→- Clicked Admin in mobile menu → Panel de Administración loads with all 6 tabs
+   530→- AIP Secciones tab → Subir .md button visible and accessible
+   531→- Chart viewer (ADC Tarapoto): 2 rows of controls, all buttons 44x44px
+   532→- Zoom in button works (chart magnified, details visible)
+   533→- All buttons have proper aria labels: Acercar, Alejar, Restablecer vista, Descargar PNG, Rotar izquierda, Rotar derecha
+   534→
+   535→Desktop verification (1280x800):
+   536→- All 10 nav buttons visible with labels (Publicaciones AIP through Admin)
+   537→- No hamburger menu (correctly hidden on lg+)
+   538→- Inline button layout preserved
+   539→
+   540→- `bun run lint` → clean, zero errors
+   541→
+   542→Stage Summary:
+   543→- Mobile navigation completely redesigned: hamburger menu (Sheet) replaces overflow scroll
+   544→- Admin button now accessible on mobile via hamburger menu
+   545→- Chart viewer controls redesigned for mobile: 2-row layout, 44px touch targets, proper aria labels
+   546→- Both desktop and mobile layouts verified working via Agent Browser
+   547→- Files modified:
+   548→  - src/app/page.tsx (hamburger menu + Sheet, responsive nav)
+   549→  - src/components/high-res-chart-viewer.tsx (2-row controls, larger buttons, mobile hints)
+   550→
+   551→---
+   552→Task ID: uploaded-md-updates-system-info
+   553→Agent: Main Agent
+   554→Task: User requested "Que Con los archivos .md subidos/cargados se actualice la información del sistema" (uploaded .md files should update the system information)
+   555→
+   556→Work Log:
+   557→Problem analysis:
+   558→- The AIP Publication Browser (Publicaciones AIP) used a HARDCODED static sectionTree
+   559→- When a user uploaded a .md file via Admin → AIP Secciones → Subir .md, the section
+   560→  was correctly saved to the database, but it did NOT appear in the Publication Browser
+   561→  navigation tree because the tree was static
+   562→- The global search DID find uploaded sections (queries DB), but clicking a search
+   563→  result navigated to the Publication Browser which couldn't display the section
+   564→
+   565→Solution implemented (3 parts):
+   566→
+   567→Part 1: Dynamic tree merging (aip-publication-browser.tsx)
+   568→- Renamed `sectionTree` → `STATIC_SECTION_TREE` (the AIP skeleton)
+   569→- Added `buildMergedTree(dbSections)` function that:
+   570→  - Clones the static tree
+   571→  - For each DB section already in the tree: updates its title from DB
+   572→    and flags it as `uploaded: true` if it has a sourceFile
+   573→  - For each DB section NOT in the tree (new uploaded section):
+   574→    * Finds the matching part (GEN/ENR/AD) by part field
+   575→    * If part doesn't exist, creates a new "XX - Secciones cargadas" part
+   576→    * Finds/creates the matching group by subPart
+   577→    * Appends the section with `uploaded: true` flag
+   578→  - Sorts groups by subPart (numeric-aware)
+   579→- Added state: dbSections[], treeLoading, lastSync
+   580→- Added refreshTree() that fetches /api/aip-sections (metadata only, no content)
+   581→- sectionTree is now computed: buildMergedTree(dbSections)
+   582→- Counted uploadedCount for status badge
+   583→
+   584→Part 2: Visual indicators
+   585→- Added "MD" badge (emerald green) next to each uploaded section in the tree
+   586→- Added "X MD" status badge in the sidebar header showing count of uploaded sections
+   587→- Added "Actualizado: HH:MM:SS" timestamp showing last sync time
+   588→- Added manual refresh button (RefreshCw icon) with spinning animation when loading
+   589→
+   590→Part 3: Event-based auto-refresh (aip-events.ts)
+   591→- Created /home/z/my-project/src/lib/aip-events.ts with:
+   592→  - emitAipSectionsChanged(detail) — dispatches CustomEvent on window
+   593→  - onAipSectionsChanged(handler) — subscribes, returns unsubscribe function
+   594→- Admin panel (aip-sections-admin.tsx) now emits events after:
+   595→  - Upload .md (action: "upload", sectionCodes: [...])
+   596→  - Create section (action: "create")
+   597→  - Update section (action: "update")
+   598→  - Delete section (action: "delete")
+   599→- Publication browser subscribes to these events and calls refreshTree()
+   600→  automatically — uploaded .md content appears immediately without page reload
+   601→
+   602→End-to-end verification:
+   603→1. Created test .md file with frontmatter (sectionCode: ENR_6.1)
+   604→2. Uploaded via POST /api/aip-sections/upload → created successfully
+   605→3. Opened Publications AIP in browser → ENR section auto-expanded
+   606→4. "Areas de Región de Información de Vuelo MD" appeared in tree with MD badge
+   607→5. Clicked it → content rendered with headings, tables, bullet points (markdown)
+   608→6. Uploaded second file (GEN_3.1) via API while publication browser was open
+   609→7. Section "Servicios de Tránsito Aéreo MD" appeared immediately (auto-refresh)
+   610→8. Clicked it → content rendered correctly (ATC, TMA Lima/Arequipa/Cusco)
+   611→9. Deleted both test sections via DELETE API → cleaned up
+   612→10. `bun run lint` → clean, zero errors
+   613→
+   614→Files created:
+   615→- src/lib/aip-events.ts (event pub/sub utility)
+   616→
+   617→Files modified:
+   618→- src/components/aip-publication-browser.tsx (dynamic tree merge, refresh, badges, event listener)
+   619→- src/components/aip-sections-admin.tsx (emit events after upload/create/update/delete)
+   620→
+   621→Stage Summary:
+   622→- Uploaded .md files now update the system information immediately:
+   623→  1. Saved to PostgreSQL database (already worked)
+   624→  2. Appear in the AIP Publication Browser navigation tree (NEW)
+   625→  3. Content is viewable by clicking the section (NEW - was only viewable in admin)
+   626→  4. Auto-refresh when uploaded via Admin panel (NEW - event-based)
+   627→  5. Manual refresh button available (NEW)
+   628→  6. Visual "MD" badge distinguishes uploaded sections from static ones (NEW)
+   629→  7. "Last updated" timestamp shows when tree was last synced (NEW)
+   630→- The global search already worked (queries DB) and now search results navigate
+   631→  to a publication browser that can actually display the uploaded section
+   632→
+   633→---
+   634→Task ID: uploaded-md-updates-not-creates
+   635→Agent: Main Agent
+   636→Task: User requested "Que con los archivos .md cargados/subidos en lugar de crear una sección se actualice la información donde corresponda" — uploaded .md files should UPDATE existing info where it corresponds, instead of creating new sections
+   637→
+   638→Work Log:
+   639→Problem analysis:
+   640→- Previous implementation (Task ID: uploaded-md-updates-system-info) made uploaded
+   641→  .md files appear in the Publication Browser, but with two issues that contradicted
+   642→  the user's intent:
+   643→  1. Uploaded sections were flagged with an "MD" badge and grouped under
+   644→     synthetic "Secciones cargadas" groups/parts — visually treating them as
+   645→     separate "uploaded" entities rather than as updates to existing info.
+   646→  2. Seeded sections (GEN_1.1 ... GEN_2.3) all had `sourceFile` set (to the
+   647→     original PDF filename from the seed script), so they were ALL incorrectly
+   648→     shown with the MD badge too.
+   649→
+   650→Solution implemented:
+   651→
+   652→Part 1: Reworked buildMergedTree (aip-publication-browser.tsx)
+   653→- Removed the `uploaded: true` flag from SectionMeta entirely — uploads are
+   654→  no longer treated as a separate category.
+   655→- For DB sections whose code matches a static section code (e.g. GEN_1.2):
+   656→  the static entry's title is refreshed from the DB (the upload may have
+   657→  updated it). No flag is set.
+   658→- For DB sections whose code does NOT match a static section: they are
+   659→  placed inside the EXISTING group whose subPart matches the DB section's
+   660→  subPart prefix (e.g. ENR_3.1 → "ENR 3 - Rutas ATS"), instead of creating
+   661→  a synthetic "Secciones cargadas" group.
+   662→- If no matching group exists inside the part, a new group is created with
+   663→  a proper human label from a new SUBPART_LABELS lookup table (e.g.
+   664→  "GEN 3 - Servicios de Tránsito Aéreo") instead of "Secciones cargadas".
+   665→- If the part itself doesn't exist (e.g. "AIP", "SUP"), a new part is
+   666→  appended with a proper label ("AIP - Información") instead of
+   667→  "AIP - Secciones cargadas".
+   668→
+   669→Part 2: Removed MD badges
+   670→- Removed the "MD" badge next to individual section items in the navigation
+   671→  tree.
+   672→- Removed the "X MD" status badge from the sidebar header (it counted
+   673→  sections with sourceFile, which was misleading because seeded sections
+   674→  also had sourceFile set).
+   675→- Removed the now-unused `Upload` icon import and the `uploaded` field
+   676→  from the SectionMeta interface.
+   677→
+   678→Part 3: Specialized views now defer to uploaded .md content
+   679→- Previously, GEN_1.1, GEN_1.6, GEN_2.1, GEN_2.2 ALWAYS showed their
+   680→  specialized views (AuthoritiesView, RegulationsView, HolidaysView,
+   681→  AbbreviationsView) regardless of whether the user had uploaded .md
+   682→  content for them.
+   683→- Now: if `sectionData.sourceFile` ends with `.md`/`.markdown` (i.e. the
+   684→  content was uploaded via a .md file), the uploaded Markdown content is
+   685→  rendered instead, overriding the specialized view. This makes uploads
+   686→  truly "update the information where it corresponds" — even for sections
+   687→  that previously had a dedicated API-driven view.
+   688→- The `.md`/`.markdown` extension check distinguishes uploaded sections
+   689→  (sourceFile ends with .md) from seeded sections (sourceFile ends with
+   690→  .pdf), so seeded sections still show their specialized views.
+   691→
+   692→Part 4: Updated admin upload dialog text (aip-sections-admin.tsx)
+   693→- Dialog title changed from "Subir archivos Markdown (.md)" to
+   694→  "Actualizar información desde archivos Markdown (.md)".
+   695→- Replaced the generic "Formato soportado" info box with a clearer
+   696→  "¿Cómo funciona?" info box that explains the three behaviors:
+   697→  1. If sectionCode already exists (e.g. GEN_1.2), the existing content
+   698→     is updated.
+   699→  2. If it doesn't exist but its part/sub-part matches an existing group
+   700→     (e.g. ENR_3.1 → ENR 3), it is placed inside the existing group.
+   701→  3. If it's a new part, it is created in the corresponding location in
+   702→     the AIP tree.
+   703→
+   704→End-to-end verification (Agent Browser + curl):
+   705→1. Created two test .md files:
+   706→   - test-gen-1.2.md (sectionCode: GEN_1.2, targets existing section)
+   707→   - test-enr-3.1.md (sectionCode: ENR_3.1, new section under existing ENR 3 group)
+   708→2. Uploaded both via POST /api/aip-sections/upload:
+   709→   - GEN_1.2 → status: "updated" (existing section's content replaced)
+   710→   - ENR_3.1 → status: "created" (new section, but placed in existing group)
+   711→3. Opened Publication Browser in Agent Browser:
+   712→   - No "MD" badges next to any section in the navigation tree ✅
+   713→   - No "X MD" badge in the sidebar header ✅
+   714→   - No "Secciones cargadas" group/part anywhere ✅
+   715→   - GEN_1.2 showed the updated title "(Actualizado)" ✅
+   716→   - Expanded ENR - En Ruta: "Rutas ATS Convencionales - Espacio Aéreo Inferior"
+   717→     appeared as a REGULAR section under the existing "ENR 3 - Rutas ATS" group,
+   718→     alongside the "Ver en la aplicación" action links ✅
+   719→4. Clicked GEN_1.2: right panel showed the uploaded Markdown content
+   720→   (headings "Información Actualizada", "Requisitos", "Nota") ✅
+   721→5. Clicked ENR_3.1: right panel showed the uploaded Markdown content
+   722→   (heading, description, table with A301/A304/V1) ✅
+   723→6. VLM screenshot analysis confirmed all of the above visually.
+   724→7. Admin → AIP Secciones → Subir .md: dialog title is now
+   725→   "Actualizar información desde archivos Markdown (.md)" with the new
+   726→   "¿Cómo funciona?" explanatory box ✅
+   727→8. Cleaned up test data:
+   728→   - Restored GEN_1.2 to its original seeded content via PUT API
+   729→   - Deleted the test ENR_3.1 section via DELETE API
+   730→9. `bun run lint` → clean, zero errors
+   731→10. No runtime errors in dev.log
+   732→
+   733→Files modified:
+   734→- src/components/aip-publication-browser.tsx
+   735→  - Removed `Upload` from lucide-react imports
+   736→  - Removed `uploaded` field from SectionMeta interface
+   737→  - Rewrote buildMergedTree to merge uploads into existing groups/parts
+   738→  - Added SUBPART_LABELS lookup table and deriveGroupLabel helper
+   739→  - Removed "X MD" sidebar badge and `uploadedCount` calculation
+   740→  - Removed "MD" badge from individual section items
+   741→  - Replaced specialized-view rendering with content-rendering logic that
+   742→    defers to uploaded .md content when sourceFile ends with .md/.markdown
+   743→- src/components/aip-sections-admin.tsx
+   744→  - Updated upload dialog title to "Actualizar información desde archivos Markdown (.md)"
+   745→  - Replaced "Formato soportado" info box with "¿Cómo funciona?" box explaining
+   746→    the three update behaviors
+   747→
+   748→Stage Summary:
+   749→- Uploaded .md files now UPDATE existing information where it corresponds,
+   750→  exactly as the user requested ("en lugar de crear una sección se actualice
+   751→  la información donde corresponda"):
+   752→  1. Uploads to existing sectionCodes (e.g. GEN_1.2) replace the existing
+   753→     section's content and title in place.
+   754→  2. Uploads to new sectionCodes that match an existing group's part+subPart
+   755→     (e.g. ENR_3.1 → ENR 3) are placed inside that existing group as a
+   756→     regular section — no synthetic "Secciones cargadas" group is created.
+   757→  3. Uploads for entirely new parts are placed in a properly-labeled new
+   758→     part (e.g. "AIP - Información") instead of "Secciones cargadas".
+   759→  4. Uploaded .md content overrides specialized views (AuthoritiesView,
+   760→     RegulationsView, HolidaysView, AbbreviationsView) for GEN_1.1/1.6/2.1/2.2,
+   761→     so uploads truly replace what was there before.
+   762→- All "MD" badges and "Secciones cargadas" labels have been removed — uploads
+   763→  are now visually indistinguishable from the rest of the AIP tree, because
+   764→  they ARE updates to the tree.
+   765→- The admin upload dialog now clearly explains the update behavior to the
+   766→  user before they upload.
+   767→- Seeded sections no longer incorrectly show the MD badge (they have
+   768→  sourceFile ending in .pdf, not .md, so they're not treated as uploads).
+   769→
+   770→---
+   771→Task ID: enr-6.1-chart-display
+   772→Agent: Main Agent
+   773→Task: User uploaded ENR_6.1-1.pdf and asked "revisa como muestra las rutas en ENR_6.1-1" — review how routes are displayed in ENR 6.1
+   774→
+   775→Work Log:
+   776→Analysis of the uploaded PDF:
+   777→- File: /home/z/my-project/upload/ENR_6.1-1.pdf (49 MB, 2 pages, Esri ArcMap PDF)
+   778→- Page 1: "Red de Navegación del Espacio Aéreo Superior" (Upper Airspace Navigation Network)
+   779→- Page 2: "Carta de Navegación en Ruta (ENRC) - Espacio Aéreo Inferior" (Lower Airspace)
+   780→- Both pages are visual charts showing ATS routes on a map of Peru and surrounding FIRs
+   781→- Validity: 24 MARZO 2022, Scale 1:3,000,000
+   782→
+   783→Verification of application's route display:
+   784→- Queried /api/airdata/airways: 23 airways in database
+   785→  - 16 LOWER (Inferior): A301, A304, A566, A568, A573, B552, G675, R567, V1, V2, V3, L302, L525, T216, T218, T226
+   786→  - 7 UPPER (Superior): UV1, UV3, UV4, UV5, UV9, UV10, UV11
+   787→- Opened "Rutas" view in Agent Browser: all 23 airways displayed correctly with
+   788→  designator, type (Convencional/RNAV), level (Inferior/Superior), classification
+   789→  (A/D/G/F), distance, segment count, and flight level range
+   790→- Clicked "Ver en Carta" → interactive Leaflet map loaded showing:
+   791→  - ATS routes as colored lines
+   792→  - Navigation aids (VOR/NDB) and waypoints as markers
+   793→  - FIR boundaries as purple lines
+   794→  - Airway identifiers (A301, G675, UV1, etc.) readable on the map
+   795→- Confirmed: the application correctly displays ALL routes that appear on the
+   796→  ENR 6.1 chart, both in tabular form (AirwaysListing) and on the interactive
+   797→  map (AeronauticalChart)
+   798→
+   799→Enhancement: Added ENR 6.1 chart as a viewable AIP section
+   800→- The AIP Publication Browser previously had no ENR_6.1 section — users could
+   801→  not view the official CORPAC chart. They could only see the tabular listing
+   802→  (ENR 3) and the interactive map (Carta Aeronáutica button).
+   803→- Converted both PDF pages to high-quality PNG images (150 DPI):
+   804→  - /public/aip-charts/ENR_6.1/page-1.png (6.5 MB, Espacio Aéreo Superior)
+   805→  - /public/aip-charts/ENR_6.1/page-2.png (5.4 MB, Espacio Aéreo Inferior)
+   806→- Created ENR_6.1 section in database via POST /api/aip-sections:
+   807→  - sectionCode: ENR_6.1
+   808→  - title: "Carta de Navegación en Ruta (ENRC)"
+   809→  - part: ENR, subPart: 6.1, orderIndex: 61
+   810→  - lastAmendment: AMDT 33/2025, effectiveDate: 24 MAR 2022
+   811→  - content: Markdown with embedded chart images, informational table,
+   812→    route listings (16 lower + 7 upper), and symbology legend
+   813→- The new section appears in the AIP Publication Browser under the existing
+   814→  "ENR - En Ruta" part, in a new "ENR 6 - Servicios de Tránsito Aéreo" group
+   815→  (auto-created by buildMergedTree via the SUBPART_LABELS lookup), as a
+   816→  regular section — consistent with the previous task's pattern where
+   817→  uploads update existing info rather than creating separate "uploaded"
+   818→  sections.
+   819→
+   820→Enhancement: Improved MarkdownRenderer image rendering
+   821→- Problem: The ENR 6.1 chart images are very large (4824x4236 px). With the
+   822→  previous `max-w-full h-auto` CSS, they rendered at full container width,
+   823→  making each chart take up multiple viewport heights and making the page
+   824→  hard to navigate.
+   825→- Solution: Updated the `img` component in markdown-renderer.tsx:
+   826→  1. Wrapped images in a <figure> with click-to-zoom behavior
+   827→  2. Added `max-h-[70vh] object-contain` so images fit within 70% of the
+   828→     viewport height while maintaining aspect ratio
+   829→  3. Added a "Ampliar" (zoom) hint overlay that appears on hover
+   830→  4. Added a <figcaption> showing the alt text as a caption below the image
+   831→  5. On click (or Enter/Space key), opens the HighResChartViewer with
+   832→     zoom (up to 8x), pan, rotate (90° increments), download, and
+   833→     fullscreen capabilities — the same viewer used for airport charts
+   834→  6. Added keyboard accessibility (role=button, tabIndex=0, Enter/Space)
+   835→- This enhancement benefits ALL markdown content with images, not just
+   836→  ENR 6.1 — any .md file uploaded via the Admin panel that contains
+   837→  images will now have click-to-zoom functionality.
+   838→
+   839→End-to-end verification (Agent Browser):
+   840→1. Opened Publication Browser → expanded "ENR - En Ruta"
+   841→2. "Carta de Navegación en Ruta (ENRC)" section appeared under
+   842→   "ENR 6 - Servicios de Tránsito Aéreo" group (no "Secciones cargadas" label)
+   843→3. Clicked the section → right panel loaded with:
+   844→   - Title "Carta de Navegación en Ruta (ENRC)" with ENR_6.1 badge,
+   845→     AMDT 33/2025 badge, 24 MAR 2022 effective date
+   846→   - "Espacio Aéreo Superior" heading with chart image (properly sized,
+   847→     not overflowing)
+   848→   - "Espacio Aéreo Inferior" heading with second chart image
+   849→   - "Información de la Carta" table (Publicación, Sección, Título, Escala,
+   850→     Vigencia, AMD)
+   851→   - "Rutas ATS Mostradas en la Carta" with lists of all 16 lower and
+   852→     7 upper routes
+   853→   - "Simbología" section explaining chart symbols
+   854→4. VLM confirmed: chart image visible and properly sized, title and
+   855→   metadata clearly visible
+   856→5. Clicked the chart image → HighResChartViewer opened with controls:
+   857→   Acercar, Alejar, Restablecer vista, Descargar PNG, Pantalla completa,
+   858→   Cerrar, rotation controls
+   859→6. Clicked "Acercar" (zoom in) twice → chart magnified, zoom controls
+   860→   remained visible
+   861→7. Closed viewer (Escape) → returned to section content
+   862→8. `bun run lint` → clean, zero errors
+   863→9. No runtime errors in dev.log
+   864→
+   865→Files created:
+   866→- /public/aip-charts/ENR_6.1/page-1.png (Upper Airspace chart, 6.5 MB)
+   867→- /public/aip-charts/ENR_6.1/page-2.png (Lower Airspace chart, 5.4 MB)
+   868→
+   869→Files modified:
+   870→- src/components/markdown-renderer.tsx
+   871→  - Added HighResChartViewer import and ZoomIn icon import
+   872→  - Added viewerImage state and openViewer/closeViewer callbacks
+   873→  - Replaced img rendering with figure+img+figcaption+zoom-hint
+   874→  - Added max-h-[70vh] object-contain constraint
+   875→  - Added click-to-zoom and keyboard accessibility
+   876→  - Added HighResChartViewer render at the end of markdown output
+   877→
+   878→Database changes:
+   879→- New AipSection record: ENR_6.1 "Carta de Navegación en Ruta (ENRC)"
+   880→
+   881→Stage Summary:
+   882→- Verified the application correctly displays all 23 routes (16 lower + 7 upper)
+   883→  that appear on the ENR 6.1 chart, both in:
+   884→  1. Tabular listing (AirwaysListing under "Rutas" nav button) — all 23 airways
+   885→     with full details (designator, type, level, classification, distance,
+   886→     segments, flight levels)
+   887→  2. Interactive map (AeronauticalChart under "Carta Aeronáutica" nav button,
+   888→     or "Ver en Carta" button in AirwaysListing) — routes shown as colored
+   889→     lines on a Leaflet map with VOR/NDB/waypoint markers and FIR boundaries
+   890→- Added the official CORPAC ENR 6.1 chart as a viewable AIP section so users
+   891→  can see the original publication alongside the application's interactive
+   892→  views. The section appears under "ENR 6 - Servicios de Tránsito Aéreo"
+   893→  in the AIP Publication Browser.
+   894→- Enhanced the MarkdownRenderer so ALL images in uploaded .md content are
+   895→  clickable to open the high-resolution viewer (zoom/pan/rotate/download/
+   896→  fullscreen), and are properly sized with max-h-[70vh] to prevent
+   897→  oversized charts from dominating the page.
+   898→
