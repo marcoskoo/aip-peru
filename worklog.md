@@ -1154,3 +1154,81 @@ Stage Summary:
     nativo, escalado automático, sin gestión de servidores
 - No se requiere migrar datos: la BD Neon ya está siendo usada en
   desarrollo con el schema actual.
+
+---
+Task ID: zai-deploy-fix
+Agent: Main Agent
+Task: "no se da el deploy" — el deploy en Z.ai fallaba con error genérico
+
+Work Log:
+- Analizado screenshot del usuario: la URL era aippe.space-z.ai
+  (NO es Netlify, es la plataforma Z.ai). El error era genérico:
+  "Sorry, there was a problem deploying the code."
+- Diagnóstico: en la tarea anterior (netlify-deploy-prep) habíamos:
+  * Quitado output: "standalone" de next.config.ts (por Netlify)
+  * Cambiado build script a "prisma generate && next build" (sin cp)
+  * Cambiado start script a "next start"
+  Pero Z.ai requiere modo standalone (server.js autocontenido).
+- Verificado build local: `bun run build` funciona, genera 22 páginas
+  estáticas + 30 rutas dinámicas, sin errores.
+- Reactivado output: "standalone" en next.config.ts.
+- Restaurado build script con cp:
+    "prisma generate && next build && cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/"
+- Verificados artefactos standalone:
+  * .next/standalone/server.js ✓ (usa process.env.PORT || 3000)
+  * .next/standalone/.next/static/ ✓ (assets copiados)
+  * .next/standalone/public/ ✓ (charts, logo, data copiados)
+  * .next/standalone/node_modules/.prisma/client/ ✓ con binarios:
+    - libquery_engine-rhel-openssl-3.0.x.so.node
+    - libquery_engine-debian-openssl-3.0.x.so.node
+
+- Problema adicional encontrado al probar el servidor de producción:
+  Las API routes fallaban con:
+    "Error validating datasource `db`: the URL must start with the
+     protocol `postgresql://` or `postgres://`."
+  Causa: el modo standalone NO carga .env automáticamente. Además,
+  el OS tenía una variable DATABASE_URL stale (file:/.../custom.db
+  de SQLite local) que sobreescribía el .env.
+
+- Solución: creado start.js (wrapper de producción):
+  * Carga .env con dotenv config({ override: true })
+  * override:true asegura que el .env tenga prioridad sobre variables
+    stale del OS
+  * Valida que DATABASE_URL sea PostgreSQL antes de iniciar
+  * Si no es válida, muestra error claro y hace exit(1)
+  * Luego require('./.next/standalone/server.js')
+
+- Instalado dotenv@17.4.2 como dependencia (no devDependency).
+- Cambiado start script: "next start" → "node start.js"
+
+- Verificación completa del servidor de producción (PORT=3458):
+  * GET /                    → HTTP 200 (home page) ✓
+  * GET /api/airports        → HTTP 200 (con BD PostgreSQL) ✓
+  * GET /api/aip-sections    → HTTP 200 (con BD PostgreSQL) ✓
+  * GET /charts/SPJC/adc.png → HTTP 200 (asset estático) ✓
+  * GET /api/airports/SPCL   → HTTP 200 (con BD PostgreSQL) ✓
+  * Agent Browser: página carga completa con hero + lista aeropuertos
+  * VLM confirmó: sin errores visibles, estructura correcta
+
+- .gitignore actualizado: excluidos screenshots de verificación
+  (*-verify*.png, screenshot*.png, etc.) que se generan durante
+  el desarrollo pero no deben subirse al repo.
+
+Archivos modificados:
+- next.config.ts (reactivado output: "standalone")
+- package.json (build con cp, start con node start.js, +dotenv dep)
+- .gitignore (excluidos screenshots)
+
+Archivos creados:
+- start.js (wrapper de producción que carga .env con override)
+
+Stage Summary:
+- El deploy de Z.ai debería funcionar ahora. La secuencia es:
+  1. bun run build → genera .next/standalone/server.js + copia assets
+  2. bun run start → ejecuta start.js → carga .env → inicia server.js
+- El servidor standalone es autocontenido: incluye node_modules
+  mínimos, binarios de Prisma para Linux, static y public.
+- El wrapper start.js garantiza que DATABASE_URL del .env tenga
+  prioridad sobre cualquier variable stale del OS.
+- Verificado end-to-end: home, API routes, assets estáticos, todo
+  responde HTTP 200 en producción local.
