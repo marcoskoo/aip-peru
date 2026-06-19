@@ -44,6 +44,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
+import { emitAipSectionsChanged } from "@/lib/aip-events";
 
 interface AipSection {
   id: string;
@@ -173,6 +174,12 @@ export function AipSectionsTab() {
           toast.warning(`${created} creadas, ${updated} actualizadas, ${errors} con error`);
         }
         fetchSections();
+        // Notify other components (e.g. AIP Publication Browser) that the
+        // set of sections has changed so they can refresh their view.
+        emitAipSectionsChanged({
+          action: "upload",
+          sectionCodes: (data.results || []).map((r: UploadResultItem) => r.sectionCode).filter(Boolean),
+        });
       } else {
         toast.error(data.error || "Error al subir archivos");
       }
@@ -215,6 +222,10 @@ export function AipSectionsTab() {
         setIsEditorOpen(false);
         setSelectedSection(null);
         fetchSections();
+        emitAipSectionsChanged({
+          action: isUpdate ? "update" : "create",
+          sectionCodes: section.sectionCode ? [section.sectionCode] : [],
+        });
       } else {
         const data = await res.json();
         toast.error(data.error || "Error al guardar");
@@ -233,6 +244,10 @@ export function AipSectionsTab() {
         toast.success(`Sección ${section.sectionCode} eliminada`);
         setDeleteTarget(null);
         fetchSections();
+        emitAipSectionsChanged({
+          action: "delete",
+          sectionCodes: [section.sectionCode],
+        });
       } else {
         const data = await res.json();
         toast.error(data.error || "Error al eliminar");

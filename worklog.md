@@ -547,3 +547,85 @@ Stage Summary:
 - Files modified:
   - src/app/page.tsx (hamburger menu + Sheet, responsive nav)
   - src/components/high-res-chart-viewer.tsx (2-row controls, larger buttons, mobile hints)
+
+---
+Task ID: uploaded-md-updates-system-info
+Agent: Main Agent
+Task: User requested "Que Con los archivos .md subidos/cargados se actualice la información del sistema" (uploaded .md files should update the system information)
+
+Work Log:
+Problem analysis:
+- The AIP Publication Browser (Publicaciones AIP) used a HARDCODED static sectionTree
+- When a user uploaded a .md file via Admin → AIP Secciones → Subir .md, the section
+  was correctly saved to the database, but it did NOT appear in the Publication Browser
+  navigation tree because the tree was static
+- The global search DID find uploaded sections (queries DB), but clicking a search
+  result navigated to the Publication Browser which couldn't display the section
+
+Solution implemented (3 parts):
+
+Part 1: Dynamic tree merging (aip-publication-browser.tsx)
+- Renamed `sectionTree` → `STATIC_SECTION_TREE` (the AIP skeleton)
+- Added `buildMergedTree(dbSections)` function that:
+  - Clones the static tree
+  - For each DB section already in the tree: updates its title from DB
+    and flags it as `uploaded: true` if it has a sourceFile
+  - For each DB section NOT in the tree (new uploaded section):
+    * Finds the matching part (GEN/ENR/AD) by part field
+    * If part doesn't exist, creates a new "XX - Secciones cargadas" part
+    * Finds/creates the matching group by subPart
+    * Appends the section with `uploaded: true` flag
+  - Sorts groups by subPart (numeric-aware)
+- Added state: dbSections[], treeLoading, lastSync
+- Added refreshTree() that fetches /api/aip-sections (metadata only, no content)
+- sectionTree is now computed: buildMergedTree(dbSections)
+- Counted uploadedCount for status badge
+
+Part 2: Visual indicators
+- Added "MD" badge (emerald green) next to each uploaded section in the tree
+- Added "X MD" status badge in the sidebar header showing count of uploaded sections
+- Added "Actualizado: HH:MM:SS" timestamp showing last sync time
+- Added manual refresh button (RefreshCw icon) with spinning animation when loading
+
+Part 3: Event-based auto-refresh (aip-events.ts)
+- Created /home/z/my-project/src/lib/aip-events.ts with:
+  - emitAipSectionsChanged(detail) — dispatches CustomEvent on window
+  - onAipSectionsChanged(handler) — subscribes, returns unsubscribe function
+- Admin panel (aip-sections-admin.tsx) now emits events after:
+  - Upload .md (action: "upload", sectionCodes: [...])
+  - Create section (action: "create")
+  - Update section (action: "update")
+  - Delete section (action: "delete")
+- Publication browser subscribes to these events and calls refreshTree()
+  automatically — uploaded .md content appears immediately without page reload
+
+End-to-end verification:
+1. Created test .md file with frontmatter (sectionCode: ENR_6.1)
+2. Uploaded via POST /api/aip-sections/upload → created successfully
+3. Opened Publications AIP in browser → ENR section auto-expanded
+4. "Areas de Región de Información de Vuelo MD" appeared in tree with MD badge
+5. Clicked it → content rendered with headings, tables, bullet points (markdown)
+6. Uploaded second file (GEN_3.1) via API while publication browser was open
+7. Section "Servicios de Tránsito Aéreo MD" appeared immediately (auto-refresh)
+8. Clicked it → content rendered correctly (ATC, TMA Lima/Arequipa/Cusco)
+9. Deleted both test sections via DELETE API → cleaned up
+10. `bun run lint` → clean, zero errors
+
+Files created:
+- src/lib/aip-events.ts (event pub/sub utility)
+
+Files modified:
+- src/components/aip-publication-browser.tsx (dynamic tree merge, refresh, badges, event listener)
+- src/components/aip-sections-admin.tsx (emit events after upload/create/update/delete)
+
+Stage Summary:
+- Uploaded .md files now update the system information immediately:
+  1. Saved to PostgreSQL database (already worked)
+  2. Appear in the AIP Publication Browser navigation tree (NEW)
+  3. Content is viewable by clicking the section (NEW - was only viewable in admin)
+  4. Auto-refresh when uploaded via Admin panel (NEW - event-based)
+  5. Manual refresh button available (NEW)
+  6. Visual "MD" badge distinguishes uploaded sections from static ones (NEW)
+  7. "Last updated" timestamp shows when tree was last synced (NEW)
+- The global search already worked (queries DB) and now search results navigate
+  to a publication browser that can actually display the uploaded section

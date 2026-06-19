@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import {
   BookOpen, FileText, Search, ChevronRight, ChevronDown, Globe, Plane,
   Building2, Shield, Clock, Phone, Mail, MapPin, Calendar,
-  ArrowRight, Languages, BookMarked, Scale, Hash, Info, Loader2
+  ArrowRight, Languages, BookMarked, Scale, Hash, Info, Loader2, RefreshCw, Upload
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { MarkdownRenderer } from '@/components/markdown-renderer'
+import { onAipSectionsChanged } from '@/lib/aip-events'
 
 // ─── Types ────────────────────────────────────────────────────────
 
@@ -36,9 +37,46 @@ interface AipSectionData {
   effectiveDate?: string
 }
 
-// ─── Section Tree ────────────────────────────────────────────────
+// Lightweight summary returned by GET /api/aip-sections (no content body)
+interface AipSectionSummary {
+  id: string
+  sectionCode: string
+  title: string
+  titleEn?: string | null
+  part: string
+  subPart: string
+  orderIndex: number
+  lastAmendment?: string | null
+  effectiveDate?: string | null
+  sourceFile?: string | null
+}
 
-const sectionTree = [
+interface SectionMeta {
+  code: string
+  title: string
+  // true if this section came from an uploaded .md file (not in the static tree)
+  uploaded?: boolean
+}
+
+interface PartNode {
+  part: string
+  label: string
+  labelEn: string
+  icon: React.ComponentType<{ className?: string }>
+  groups: {
+    subPart: string
+    label: string
+    sections: SectionMeta[]
+    action?: 'airports' | 'heliports' | 'airways' | 'airspace'
+  }[]
+}
+
+// ─── Section Tree (static skeleton) ─────────────────────────────
+// This is the AIP structure skeleton. Sections uploaded via .md files are
+// dynamically merged into this tree at runtime (see buildMergedTree below)
+// so that uploaded content appears in the navigation immediately.
+
+const STATIC_SECTION_TREE: PartNode[] = [
   {
     part: 'GEN',
     label: 'GEN - General',
@@ -115,6 +153,108 @@ const sectionTree = [
   }
 ]
 
+// ─── Merge logic: combine static tree with DB sections ─────────
+//
+// buildMergedTree takes the static AIP skeleton and the list of sections
+// fetched from /api/aip-sections, and produces a tree where:
+//   - Static sections keep their hardcoded titles (but get updated title
+//     if the DB has a newer one from an uploaded .md file)
+//   - DB sections whose code is NOT in the static tree are appended:
+//       * to an existing group (same part + subPart) if one exists
+//       * to a new "[part] [subPart] - Secciones cargadas" group otherwise
+//       * to a brand-new "[part] - Secciones cargadas" part if the part
+//         itself doesn't exist (e.g. a custom part like "SUP")
+// Each appended section is flagged with `uploaded: true` so the UI can
+// show a distinct badge for content that came from a .md upload.
+
+function buildMergedTree(dbSections: AipSectionSummary[]): PartNode[] {
+  // Deep clone the static tree so we can mutate safely
+  const tree: PartNode[] = STATIC_SECTION_TREE.map(p => ({
+    ...p,
+    groups: p.groups.map(g => ({
+      ...g,
+      sections: g.sections.map(s => ({ ...s })),
+    })),
+  }))
+
+  // Index existing sections by code for O(1) lookup
+  const existingCodes = new Set<string>()
+  for (const part of tree) {
+    for (const group of part.groups) {
+      for (const sec of group.sections) {
+        existingCodes.add(sec.code)
+      }
+    }
+  }
+
+  // Index parts and groups by their key for quick lookup
+  const partIndex = new Map<string, PartNode>()
+  for (const p of tree) partIndex.set(p.part, p)
+
+  for (const dbSec of dbSections) {
+    // Skip sections already in the static tree (title is already set there,
+    // but we update the title to the DB value in case an upload changed it)
+    if (existingCodes.has(dbSec.sectionCode)) {
+      for (const part of tree) {
+        for (const group of part.groups) {
+          for (const sec of group.sections) {
+            if (sec.code === dbSec.sectionCode) {
+              sec.title = dbSec.title
+              sec.uploaded = !!dbSec.sourceFile
+            }
+          }
+        }
+      }
+      continue
+    }
+
+    // This is a new section from the DB (uploaded via .md) — merge it in
+    const partKey = (dbSec.part || 'GEN').toUpperCase()
+    let part = partIndex.get(partKey)
+    if (!part) {
+      // Create a new part node for unknown parts (e.g. "SUP" for supplements)
+      part = {
+        part: partKey,
+        label: `${partKey} - Secciones cargadas`,
+        labelEn: 'Uploaded sections',
+        icon: FileText,
+        groups: [],
+      }
+      tree.push(part)
+      partIndex.set(partKey, part)
+    }
+
+    // Find or create the group (by subPart)
+    const subPartKey = String(dbSec.subPart || '0')
+    let group = part.groups.find(g => g.subPart === subPartKey)
+    if (!group) {
+      group = {
+        subPart: subPartKey,
+        label: `${partKey} ${subPartKey} - Secciones cargadas`,
+        sections: [],
+      }
+      part.groups.push(group)
+    }
+
+    group.sections.push({
+      code: dbSec.sectionCode,
+      title: dbSec.title,
+      uploaded: true,
+    })
+  }
+
+  // Sort groups within each part by subPart (numeric-aware)
+  for (const part of tree) {
+    part.groups.sort((a, b) => {
+      const na = parseFloat(a.subPart) || 0
+      const nb = parseFloat(b.subPart) || 0
+      return na - nb
+    })
+  }
+
+  return tree
+}
+
 // ─── Main Component ──────────────────────────────────────────────
 
 export function AipPublicationBrowser({ onNavigateAirports, onNavigateHeliports, onNavigateAirways, onNavigateAirspace }: AipPublicationBrowserProps) {
@@ -124,6 +264,47 @@ export function AipPublicationBrowser({ onNavigateAirports, onNavigateHeliports,
   const [lang, setLang] = useState<'es' | 'en'>('es')
   const [searchQuery, setSearchQuery] = useState('')
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(['GEN']))
+  const [dbSections, setDbSections] = useState<AipSectionSummary[]>([])
+  const [treeLoading, setTreeLoading] = useState(true)
+  const [lastSync, setLastSync] = useState<Date | null>(null)
+
+  // Fetch the list of all AIP sections from the DB (metadata only, no content)
+  // This lets uploaded .md files appear in the navigation tree immediately.
+  const refreshTree = useCallback(async () => {
+    setTreeLoading(true)
+    try {
+      const r = await fetch('/api/aip-sections')
+      if (r.ok) {
+        const data: AipSectionSummary[] = await r.json()
+        setDbSections(data)
+        setLastSync(new Date())
+      }
+    } catch {
+      // Non-fatal: fall back to static tree
+    } finally {
+      setTreeLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    refreshTree()
+  }, [refreshTree])
+
+  // Listen for section changes emitted by the Admin panel (upload .md,
+  // create, update, delete). When sections change, refresh the tree so
+  // uploaded content appears immediately in the navigation.
+  useEffect(() => {
+    const unsubscribe = onAipSectionsChanged(() => {
+      refreshTree()
+    })
+    return unsubscribe
+  }, [refreshTree])
+
+  // Build the merged tree (static skeleton + uploaded sections from DB)
+  const sectionTree = buildMergedTree(dbSections)
+
+  // Count uploaded sections for the status badge
+  const uploadedCount = dbSections.filter(s => s.sourceFile).length
 
   // Fetch section data
   const fetchSectionData = useCallback(async (code: string) => {
@@ -192,16 +373,40 @@ export function AipPublicationBrowser({ onNavigateAirports, onNavigateHeliports,
                 <BookOpen className="size-4 text-amber-500" />
                 AIP PERÚ
               </CardTitle>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setLang(lang === 'es' ? 'en' : 'es')}
-                className="h-7 gap-1 text-xs"
-              >
-                <Languages className="size-3" />
-                {lang === 'es' ? 'EN' : 'ES'}
-              </Button>
+              <div className="flex items-center gap-1">
+                {uploadedCount > 0 && (
+                  <Badge variant="outline" className="text-[10px] gap-1 text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-700">
+                    <Upload className="size-2.5" />
+                    {uploadedCount} MD
+                  </Badge>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => refreshTree()}
+                  disabled={treeLoading}
+                  className="h-7 w-7 p-0"
+                  title="Actualizar secciones desde la base de datos"
+                >
+                  <RefreshCw className={`size-3 ${treeLoading ? 'animate-spin' : ''}`} />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setLang(lang === 'es' ? 'en' : 'es')}
+                  className="h-7 gap-1 text-xs"
+                >
+                  <Languages className="size-3" />
+                  {lang === 'es' ? 'EN' : 'ES'}
+                </Button>
+              </div>
             </div>
+            {lastSync && (
+              <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                <Clock className="size-2.5" />
+                Actualizado: {lastSync.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+              </p>
+            )}
             <div className="relative">
               <Search className="absolute left-2.5 top-2.5 size-3.5 text-muted-foreground" />
               <Input
@@ -250,7 +455,12 @@ export function AipPublicationBrowser({ onNavigateAirports, onNavigateHeliports,
                                   }`}
                                 >
                                   <Hash className="size-3 shrink-0 text-muted-foreground" />
-                                  <span className="truncate">{section.title}</span>
+                                  <span className="truncate flex-1">{section.title}</span>
+                                  {section.uploaded && (
+                                    <Badge className="text-[9px] px-1 py-0 h-4 bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800 shrink-0">
+                                      MD
+                                    </Badge>
+                                  )}
                                 </button>
                               ))}
                               {group.action && (

@@ -1,0 +1,691 @@
+     1→     1→'use client'
+     2→     2→
+     3→     3→import { useState, useEffect, useCallback } from 'react'
+     4→     4→import {
+     5→     5→  BookOpen, FileText, Search, ChevronRight, ChevronDown, Globe, Plane,
+     6→     6→  Building2, Shield, Clock, Phone, Mail, MapPin, Calendar,
+     7→     7→  ArrowRight, Languages, BookMarked, Scale, Hash, Info, Loader2
+     8→     8→} from 'lucide-react'
+     9→     9→import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+    10→    10→import { Button } from '@/components/ui/button'
+    11→    11→import { Input } from '@/components/ui/input'
+    12→    12→import { Badge } from '@/components/ui/badge'
+    13→    13→import { ScrollArea } from '@/components/ui/scroll-area'
+    14→    14→import { MarkdownRenderer } from '@/components/markdown-renderer'
+    15→    15→
+    16→    16→// ─── Types ────────────────────────────────────────────────────────
+    17→    17→
+    18→    18→interface AipPublicationBrowserProps {
+    19→    19→  onNavigateAirports?: () => void
+    20→    20→  onNavigateHeliports?: () => void
+    21→    21→  onNavigateAirways?: () => void
+    22→    22→  onNavigateAirspace?: () => void
+    23→    23→}
+    24→    24→
+    25→    25→interface AipSectionData {
+    26→    26→  sectionCode: string
+    27→    27→  title: string
+    28→    28→  titleEn: string
+    29→    29→  part: string
+    30→    30→  subPart: string
+    31→    31→  orderIndex: number
+    32→    32→  content?: string
+    33→    33→  contentEn?: string
+    34→    34→  sourceFile?: string
+    35→    35→  lastAmendment?: string
+    36→    36→  effectiveDate?: string
+    37→    37→}
+    38→    38→
+    39→    39→// ─── Section Tree ────────────────────────────────────────────────
+    40→    40→
+    41→    41→const sectionTree = [
+    42→    42→  {
+    43→    43→    part: 'GEN',
+    44→    44→    label: 'GEN - General',
+    45→    45→    labelEn: 'General',
+    46→    46→    icon: BookOpen,
+    47→    47→    groups: [
+    48→    48→      {
+    49→    49→        subPart: '1',
+    50→    50→        label: 'GEN 1 - Reglamentos y Requisitos Nacionales',
+    51→    51→        sections: [
+    52→    52→          { code: 'GEN_1.1', title: 'Autoridades Designadas' },
+    53→    53→          { code: 'GEN_1.2', title: 'Entrada, Tránsito y Salida de Aeronaves' },
+    54→    54→          { code: 'GEN_1.4', title: 'Entrada, Tránsito y Salida de Mercancías' },
+    55→    55→          { code: 'GEN_1.5', title: 'Instrumentos, Equipos y Documentos de Vuelo' },
+    56→    56→          { code: 'GEN_1.6', title: 'Resumen de Reglamentos Nacionales' },
+    57→    57→          { code: 'GEN_1.7', title: 'Diferencias respecto de las Normas OACI' },
+    58→    58→        ]
+    59→    59→      },
+    60→    60→      {
+    61→    61→        subPart: '2',
+    62→    62→        label: 'GEN 2 - Tablas y Códigos',
+    63→    63→        sections: [
+    64→    64→          { code: 'GEN_2.1', title: 'Sistema de Medidas, Marcas, Días Feriados' },
+    65→    65→          { code: 'GEN_2.2', title: 'Abreviaturas' },
+    66→    66→          { code: 'GEN_2.3', title: 'Símbolos Cartográficos' },
+    67→    67→        ]
+    68→    68→      }
+    69→    69→    ]
+    70→    70→  },
+    71→    71→  {
+    72→    72→    part: 'ENR',
+    73→    73→    label: 'ENR - En Ruta',
+    74→    74→    labelEn: 'En Route',
+    75→    75→    icon: Plane,
+    76→    76→    groups: [
+    77→    77→      {
+    78→    78→        subPart: '3',
+    79→    79→        label: 'ENR 3 - Rutas ATS',
+    80→    80→        sections: [],
+    81→    81→        action: 'airways' as const
+    82→    82→      },
+    83→    83→      {
+    84→    84→        subPart: '4',
+    85→    85→        label: 'ENR 4 - Radioayudas',
+    86→    86→        sections: [],
+    87→    87→      },
+    88→    88→      {
+    89→    89→        subPart: '5',
+    90→    90→        label: 'ENR 5 - Zonas Prohibidas, Restringidas y Peligrosas',
+    91→    91→        sections: [],
+    92→    92→        action: 'airspace' as const
+    93→    93→      }
+    94→    94→    ]
+    95→    95→  },
+    96→    96→  {
+    97→    97→    part: 'AD',
+    98→    98→    label: 'AD - Aeródromos',
+    99→    99→    labelEn: 'Aerodromes',
+   100→   100→    icon: Building2,
+   101→   101→    groups: [
+   102→   102→      {
+   103→   103→        subPart: '2',
+   104→   104→        label: 'AD 2 - Aeródromos',
+   105→   105→        sections: [],
+   106→   106→        action: 'airports' as const
+   107→   107→      },
+   108→   108→      {
+   109→   109→        subPart: '3',
+   110→   110→        label: 'AD 3 - Heliportos',
+   111→   111→        sections: [],
+   112→   112→        action: 'heliports' as const
+   113→   113→      }
+   114→   114→    ]
+   115→   115→  }
+   116→   116→]
+   117→   117→
+   118→   118→// ─── Main Component ──────────────────────────────────────────────
+   119→   119→
+   120→   120→export function AipPublicationBrowser({ onNavigateAirports, onNavigateHeliports, onNavigateAirways, onNavigateAirspace }: AipPublicationBrowserProps) {
+   121→   121→  const [selectedCode, setSelectedCode] = useState<string | null>(null)
+   122→   122→  const [sectionData, setSectionData] = useState<AipSectionData | null>(null)
+   123→   123→  const [sectionLoading, setSectionLoading] = useState(false)
+   124→   124→  const [lang, setLang] = useState<'es' | 'en'>('es')
+   125→   125→  const [searchQuery, setSearchQuery] = useState('')
+   126→   126→  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(['GEN']))
+   127→   127→
+   128→   128→  // Fetch section data
+   129→   129→  const fetchSectionData = useCallback(async (code: string) => {
+   130→   130→    setSectionLoading(true)
+   131→   131→    try {
+   132→   132→      const r = await fetch(`/api/aip-sections/${code}`)
+   133→   133→      const d = r.ok ? await r.json() : null
+   134→   134→      setSectionData(d)
+   135→   135→    } catch {
+   136→   136→      setSectionData(null)
+   137→   137→    } finally {
+   138→   138→      setSectionLoading(false)
+   139→   139→    }
+   140→   140→  }, [])
+   141→   141→
+   142→   142→  useEffect(() => {
+   143→   143→    if (selectedCode) {
+   144→   144→      fetchSectionData(selectedCode)
+   145→   145→    }
+   146→   146→  }, [selectedCode, fetchSectionData])
+   147→   147→
+   148→   148→  const toggleGroup = (part: string) => {
+   149→   149→    setExpandedGroups(prev => {
+   150→   150→      const next = new Set(prev)
+   151→   151→      if (next.has(part)) next.delete(part)
+   152→   152→      else next.add(part)
+   153→   153→      return next
+   154→   154→    })
+   155→   155→  }
+   156→   156→
+   157→   157→  const handleSectionClick = (code: string) => {
+   158→   158→    setSelectedCode(code)
+   159→   159→  }
+   160→   160→
+   161→   161→  const handleAction = (action: string) => {
+   162→   162→    switch (action) {
+   163→   163→      case 'airports': onNavigateAirports?.(); break
+   164→   164→      case 'heliports': onNavigateHeliports?.(); break
+   165→   165→      case 'airways': onNavigateAirways?.(); break
+   166→   166→      case 'airspace': onNavigateAirspace?.(); break
+   167→   167→    }
+   168→   168→  }
+   169→   169→
+   170→   170→  // Filter sections by search
+   171→   171→  const filteredTree = searchQuery
+   172→   172→    ? sectionTree.map(part => ({
+   173→   173→        ...part,
+   174→   174→        groups: part.groups.map(g => ({
+   175→   175→          ...g,
+   176→   176→          sections: g.sections.filter(s =>
+   177→   177→            s.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
+   178→   178→            s.title.toLowerCase().includes(searchQuery.toLowerCase())
+   179→   179→          )
+   180→   180→        })).filter(g => g.sections.length > 0 || g.action)
+   181→   181→      })).filter(p => p.groups.length > 0)
+   182→   182→    : sectionTree
+   183→   183→
+   184→   184→  return (
+   185→   185→    <div className="flex flex-col lg:flex-row gap-4 h-[calc(100vh-10rem)]">
+   186→   186→      {/* Left Sidebar - Section Tree */}
+   187→   187→      <div className="w-full lg:w-80 shrink-0">
+   188→   188→        <Card className="h-full">
+   189→   189→          <CardHeader className="pb-3">
+   190→   190→            <div className="flex items-center justify-between">
+   191→   191→              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+   192→   192→                <BookOpen className="size-4 text-amber-500" />
+   193→   193→                AIP PERÚ
+   194→   194→              </CardTitle>
+   195→   195→              <Button
+   196→   196→                variant="ghost"
+   197→   197→                size="sm"
+   198→   198→                onClick={() => setLang(lang === 'es' ? 'en' : 'es')}
+   199→   199→                className="h-7 gap-1 text-xs"
+   200→   200→              >
+   201→   201→                <Languages className="size-3" />
+   202→   202→                {lang === 'es' ? 'EN' : 'ES'}
+   203→   203→              </Button>
+   204→   204→            </div>
+   205→   205→            <div className="relative">
+   206→   206→              <Search className="absolute left-2.5 top-2.5 size-3.5 text-muted-foreground" />
+   207→   207→              <Input
+   208→   208→                placeholder="Buscar sección..."
+   209→   209→                value={searchQuery}
+   210→   210→                onChange={(e) => setSearchQuery(e.target.value)}
+   211→   211→                className="h-8 pl-8 text-xs"
+   212→   212→              />
+   213→   213→            </div>
+   214→   214→          </CardHeader>
+   215→   215→          <CardContent className="p-0">
+   216→   216→            <ScrollArea className="h-[calc(100vh-18rem)] lg:h-[calc(100vh-16rem)]">
+   217→   217→              <div className="px-2 pb-2">
+   218→   218→                {filteredTree.map(part => {
+   219→   219→                  const PartIcon = part.icon
+   220→   220→                  const isExpanded = expandedGroups.has(part.part)
+   221→   221→                  return (
+   222→   222→                    <div key={part.part} className="mb-1">
+   223→   223→                      <button
+   224→   224→                        onClick={() => toggleGroup(part.part)}
+   225→   225→                        className="flex items-center gap-2 w-full px-2 py-2 rounded-md hover:bg-muted/50 text-left transition-colors"
+   226→   226→                      >
+   227→   227→                        {isExpanded ? (
+   228→   228→                          <ChevronDown className="size-3.5 text-muted-foreground shrink-0" />
+   229→   229→                        ) : (
+   230→   230→                          <ChevronRight className="size-3.5 text-muted-foreground shrink-0" />
+   231→   231→                        )}
+   232→   232→                        <PartIcon className="size-3.5 text-amber-500 shrink-0" />
+   233→   233→                        <span className="text-xs font-semibold truncate">{part.label}</span>
+   234→   234→                      </button>
+   235→   235→                      {isExpanded && (
+   236→   236→                        <div className="ml-4 border-l border-border/50 pl-2">
+   237→   237→                          {part.groups.map(group => (
+   238→   238→                            <div key={group.subPart}>
+   239→   239→                              <div className="px-2 py-1.5 text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+   240→   240→                                {group.label}
+   241→   241→                              </div>
+   242→   242→                              {group.sections.map(section => (
+   243→   243→                                <button
+   244→   244→                                  key={section.code}
+   245→   245→                                  onClick={() => handleSectionClick(section.code)}
+   246→   246→                                  className={`flex items-center gap-2 w-full px-2 py-1.5 rounded text-left text-xs transition-colors ${
+   247→   247→                                    selectedCode === section.code
+   248→   248→                                      ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400 font-medium'
+   249→   249→                                      : 'hover:bg-muted/50 text-foreground/80'
+   250→   250→                                  }`}
+   251→   251→                                >
+   252→   252→                                  <Hash className="size-3 shrink-0 text-muted-foreground" />
+   253→   253→                                  <span className="truncate">{section.title}</span>
+   254→   254→                                </button>
+   255→   255→                              ))}
+   256→   256→                              {group.action && (
+   257→   257→                                <button
+   258→   258→                                  onClick={() => handleAction(group.action!)}
+   259→   259→                                  className="flex items-center gap-2 w-full px-2 py-1.5 rounded text-left text-xs text-blue-600 dark:text-blue-400 hover:bg-blue-500/10 transition-colors"
+   260→   260→                                >
+   261→   261→                                  <ArrowRight className="size-3 shrink-0" />
+   262→   262→                                  <span>Ver en la aplicación</span>
+   263→   263→                                </button>
+   264→   264→                              )}
+   265→   265→                            </div>
+   266→   266→                          ))}
+   267→   267→                        </div>
+   268→   268→                      )}
+   269→   269→                    </div>
+   270→   270→                  )
+   271→   271→                })}
+   272→   272→              </div>
+   273→   273→            </ScrollArea>
+   274→   274→          </CardContent>
+   275→   275→        </Card>
+   276→   276→      </div>
+   277→   277→
+   278→   278→      {/* Right Content Panel */}
+   279→   279→      <div className="flex-1 min-w-0">
+   280→   280→        <Card className="h-full">
+   281→   281→          {!selectedCode ? (
+   282→   282→            // Welcome View
+   283→   283→            <div className="flex items-center justify-center h-full">
+   284→   284→              <div className="text-center max-w-md space-y-6 p-8">
+   285→   285→                <div className="mx-auto w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center">
+   286→   286→                  <BookOpen className="size-8 text-amber-500" />
+   287→   287→                </div>
+   288→   288→                <div>
+   289→   289→                  <h2 className="text-xl font-bold">Publicación de Información Aeronáutica</h2>
+   290→   290→                  <p className="text-sm text-muted-foreground mt-2">
+   291→   291→                    Seleccione una sección del panel izquierdo para ver su contenido. La AIP PERÚ contiene información aeronáutica oficial de la República del Perú.
+   292→   292→                  </p>
+   293→   293→                </div>
+   294→   294→                <div className="grid grid-cols-3 gap-3">
+   295→   295→                  {[
+   296→   296→                    { icon: BookOpen, label: 'GEN', desc: 'General' },
+   297→   297→                    { icon: Plane, label: 'ENR', desc: 'En Ruta' },
+   298→   298→                    { icon: Building2, label: 'AD', desc: 'Aeródromos' },
+   299→   299→                  ].map(item => (
+   300→   300→                    <div key={item.label} className="text-center p-3 rounded-lg bg-muted/30">
+   301→   301→                      <item.icon className="size-5 mx-auto text-amber-500 mb-1" />
+   302→   302→                      <div className="text-xs font-semibold">{item.label}</div>
+   303→   303→                      <div className="text-[10px] text-muted-foreground">{item.desc}</div>
+   304→   304→                    </div>
+   305→   305→                  ))}
+   306→   306→                </div>
+   307→   307→                <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+   308→   308→                  <Badge variant="outline" className="text-[10px]">AMDT 33/2025</Badge>
+   309→   309→                  <span>•</span>
+   310→   310→                  <span>30 JUL 2025</span>
+   311→   311→                  <span>•</span>
+   312→   312→                  <span>CORPAC S.A.</span>
+   313→   313→                </div>
+   314→   314→              </div>
+   315→   315→            </div>
+   316→   316→          ) : sectionLoading ? (
+   317→   317→            // Loading
+   318→   318→            <div className="flex items-center justify-center h-full">
+   319→   319→              <div className="text-center">
+   320→   320→                <Loader2 className="size-8 text-amber-500 animate-spin mx-auto mb-3" />
+   321→   321→                <p className="text-sm text-muted-foreground">Cargando sección...</p>
+   322→   322→              </div>
+   323→   323→            </div>
+   324→   324→          ) : sectionData ? (
+   325→   325→            // Section Content
+   326→   326→            <ScrollArea className="h-full">
+   327→   327→              <div className="p-6 max-w-3xl">
+   328→   328→                {/* Header */}
+   329→   329→                <div className="mb-6">
+   330→   330→                  <div className="flex items-center gap-2 mb-2">
+   331→   331→                    <Badge variant="outline" className="text-xs font-mono">
+   332→   332→                      {sectionData.sectionCode}
+   333→   333→                    </Badge>
+   334→   334→                    {sectionData.lastAmendment && (
+   335→   335→                      <Badge variant="secondary" className="text-[10px]">
+   336→   336→                        {sectionData.lastAmendment}
+   337→   337→                      </Badge>
+   338→   338→                    )}
+   339→   339→                    {sectionData.effectiveDate && (
+   340→   340→                      <Badge variant="secondary" className="text-[10px]">
+   341→   341→                        <Clock className="size-3 mr-1" />
+   342→   342→                        {sectionData.effectiveDate}
+   343→   343→                      </Badge>
+   344→   344→                    )}
+   345→   345→                  </div>
+   346→   346→                  <h2 className="text-xl font-bold">
+   347→   347→                    {lang === 'en' && sectionData.titleEn ? sectionData.titleEn : sectionData.title}
+   348→   348→                  </h2>
+   349→   349→                  {lang === 'es' && sectionData.titleEn && (
+   350→   350→                    <p className="text-xs text-muted-foreground mt-1">{sectionData.titleEn}</p>
+   351→   351→                  )}
+   352→   352→                  {lang === 'en' && sectionData.title && (
+   353→   353→                    <p className="text-xs text-muted-foreground mt-1">{sectionData.title}</p>
+   354→   354→                  )}
+   355→   355→                  {sectionData.sourceFile && (
+   356→   356→                    <p className="text-[10px] text-muted-foreground mt-2 flex items-center gap-1">
+   357→   357→                      <FileText className="size-3" />
+   358→   358→                      Fuente: {sectionData.sourceFile}
+   359→   359→                    </p>
+   360→   360→                  )}
+   361→   361→                </div>
+   362→   362→
+   363→   363→                {/* Specialized Views */}
+   364→   364→                {selectedCode === 'GEN_1.1' && <AuthoritiesView lang={lang} />}
+   365→   365→                {selectedCode === 'GEN_1.6' && <RegulationsView lang={lang} />}
+   366→   366→                {selectedCode === 'GEN_2.1' && <HolidaysView lang={lang} />}
+   367→   367→                {selectedCode === 'GEN_2.2' && <AbbreviationsView lang={lang} />}
+   368→   368→
+   369→   369→                {/* Generic Content - Markdown or HTML (auto-detected) */}
+   370→   370→                {!['GEN_1.1', 'GEN_1.6', 'GEN_2.1', 'GEN_2.2'].includes(selectedCode) && (
+   371→   371→                  <div className="prose prose-sm dark:prose-invert max-w-none">
+   372→   372→                    <MarkdownRenderer
+   373→   373→                      content={
+   374→   374→                        lang === 'en' && sectionData.contentEn
+   375→   375→                          ? sectionData.contentEn
+   376→   376→                          : sectionData.content || ''
+   377→   377→                      }
+   378→   378→                    />
+   379→   379→                  </div>
+   380→   380→                )}
+   381→   381→              </div>
+   382→   382→            </ScrollArea>
+   383→   383→          ) : (
+   384→   384→            // Error
+   385→   385→            <div className="flex items-center justify-center h-full">
+   386→   386→              <div className="text-center">
+   387→   387→                <Info className="size-8 text-muted-foreground mx-auto mb-3" />
+   388→   388→                <p className="text-sm text-muted-foreground">No se pudo cargar la sección</p>
+   389→   389→              </div>
+   390→   390→            </div>
+   391→   391→          )}
+   392→   392→        </Card>
+   393→   393→      </div>
+   394→   394→    </div>
+   395→   395→  )
+   396→   396→}
+   397→   397→
+   398→   398→// ─── Authorities View ────────────────────────────────────────────
+   399→   399→
+   400→   400→function AuthoritiesView({ lang }: { lang: 'es' | 'en' }) {
+   401→   401→  const [authorities, setAuthorities] = useState<Record<string, Array<{
+   402→   402→    name: string; nameEn?: string; address?: string; phone?: string; email?: string; aftn?: string
+   403→   403→  }>> | null>(null)
+   404→   404→
+   405→   405→  useEffect(() => {
+   406→   406→    fetch('/api/authorities')
+   407→   407→      .then(r => r.ok ? r.json() : null)
+   408→   408→      .then(d => setAuthorities(d))
+   409→   409→      .catch(() => {})
+   410→   410→  }, [])
+   411→   411→
+   412→   412→  if (!authorities) return <div className="flex justify-center py-8"><Loader2 className="size-6 animate-spin text-amber-500" /></div>
+   413→   413→
+   414→   414→  const categoryIcons: Record<string, React.ComponentType<{className?: string}>> = {
+   415→   415→    'Aviación Civil': Plane,
+   416→   416→    'Meteorología Aeronáutica': Cloud,
+   417→   417→    'Aduanas': Shield,
+   418→   418→    'Sanidad': Heart,
+   419→   419→    'Investigación de Accidentes': AlertCircle,
+   420→   420→  }
+   421→   421→
+   422→   422→  return (
+   423→   423→    <div className="space-y-4">
+   424→   424→      <p className="text-sm text-muted-foreground">
+   425→   425→        {lang === 'en'
+   426→   426→          ? 'Designated authorities responsible for facilitating international air navigation'
+   427→   427→          : 'Autoridades designadas que se encargan de facilitar la navegación aérea internacional'}
+   428→   428→      </p>
+   429→   429→      {Object.entries(authorities).map(([category, auths]) => {
+   430→   430→        const Icon = categoryIcons[category] || Building2
+   431→   431→        return (
+   432→   432→          <div key={category}>
+   433→   433→            <h3 className="text-sm font-semibold flex items-center gap-2 mb-2">
+   434→   434→              <Icon className="size-4 text-amber-500" />
+   435→   435→              {category}
+   436→   436→            </h3>
+   437→   437→            <div className="grid gap-2">
+   438→   438→              {auths.map((auth, i) => (
+   439→   439→                <Card key={i} className="bg-muted/30">
+   440→   440→                  <CardContent className="p-3">
+   441→   441→                    <p className="text-xs font-medium">
+   442→   442→                      {lang === 'en' && auth.nameEn ? auth.nameEn : auth.name}
+   443→   443→                    </p>
+   444→   444→                    <div className="mt-1.5 space-y-0.5">
+   445→   445→                      {auth.address && (
+   446→   446→                        <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+   447→   447→                          <MapPin className="size-3 shrink-0" />{auth.address}
+   448→   448→                        </p>
+   449→   449→                      )}
+   450→   450→                      {auth.phone && (
+   451→   451→                        <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+   452→   452→                          <Phone className="size-3 shrink-0" />{auth.phone}
+   453→   453→                        </p>
+   454→   454→                      )}
+   455→   455→                      {auth.email && (
+   456→   456→                        <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+   457→   457→                          <Mail className="size-3 shrink-0" />{auth.email}
+   458→   458→                        </p>
+   459→   459→                      )}
+   460→   460→                      {auth.aftn && (
+   461→   461→                        <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+   462→   462→                          <Hash className="size-3 shrink-0" />AFTN: {auth.aftn}
+   463→   463→                        </p>
+   464→   464→                      )}
+   465→   465→                    </div>
+   466→   466→                  </CardContent>
+   467→   467→                </Card>
+   468→   468→              ))}
+   469→   469→            </div>
+   470→   470→          </div>
+   471→   471→        )
+   472→   472→      })}
+   473→   473→    </div>
+   474→   474→  )
+   475→   475→}
+   476→   476→
+   477→   477→// ─── Regulations View ────────────────────────────────────────────
+   478→   478→
+   479→   479→function RegulationsView({ lang }: { lang: 'es' | 'en' }) {
+   480→   480→  const [regulations, setRegulations] = useState<Array<{
+   481→   481→    code: string; title: string; titleEn?: string; type: string
+   482→   482→  }>>([])
+   483→   483→  const [filter, setFilter] = useState<string>('all')
+   484→   484→
+   485→   485→  useEffect(() => {
+   486→   486→    fetch('/api/regulations')
+   487→   487→      .then(r => r.ok ? r.json() : [])
+   488→   488→      .then(d => setRegulations(d))
+   489→   489→      .catch(() => {})
+   490→   490→  }, [])
+   491→   491→
+   492→   492→  const types = ['all', ...new Set(regulations.map(r => r.type))]
+   493→   493→  const filtered = filter === 'all' ? regulations : regulations.filter(r => r.type === filter)
+   494→   494→
+   495→   495→  const typeColors: Record<string, string> = {
+   496→   496→    'LEY': 'bg-red-500/10 text-red-600 dark:text-red-400',
+   497→   497→    'REGLAMENTO': 'bg-orange-500/10 text-orange-600 dark:text-orange-400',
+   498→   498→    'RAP': 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
+   499→   499→    'CONVENIO': 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
+   500→   500→  }
+   501→   501→
+   502→   502→  return (
+   503→   503→    <div className="space-y-4">
+   504→   504→      <p className="text-sm text-muted-foreground">
+   505→   505→        {lang === 'en'
+   506→   506→          ? 'Summary of national regulations and international agreements'
+   507→   507→          : 'Resumen de reglamentos nacionales y acuerdos/convenios internacionales'}
+   508→   508→      </p>
+   509→   509→      <div className="flex flex-wrap gap-1.5">
+   510→   510→        {types.map(t => (
+   511→   511→          <Button
+   512→   512→            key={t}
+   513→   513→            variant={filter === t ? 'default' : 'outline'}
+   514→   514→            size="sm"
+   515→   515→            onClick={() => setFilter(t)}
+   516→   516→            className={`h-7 text-[11px] ${filter === t ? 'bg-amber-500 text-white' : ''}`}
+   517→   517→          >
+   518→   518→            {t === 'all' ? 'Todos' : t}
+   519→   519→          </Button>
+   520→   520→        ))}
+   521→   521→      </div>
+   522→   522→      <div className="space-y-1">
+   523→   523→        {filtered.map(reg => (
+   524→   524→          <div
+   525→   525→            key={reg.code}
+   526→   526→            className="flex items-start gap-3 p-2.5 rounded-md hover:bg-muted/30 transition-colors"
+   527→   527→          >
+   528→   528→            <Badge variant="outline" className="text-[10px] font-mono shrink-0 mt-0.5">
+   529→   529→              {reg.code}
+   530→   530→            </Badge>
+   531→   531→            <div className="min-w-0">
+   532→   532→              <p className="text-xs font-medium">
+   533→   533→                {lang === 'en' && reg.titleEn ? reg.titleEn : reg.title}
+   534→   534→              </p>
+   535→   535→              <Badge className={`text-[10px] mt-1 ${typeColors[reg.type] || 'bg-gray-500/10'}`}>
+   536→   536→                {reg.type}
+   537→   537→              </Badge>
+   538→   538→            </div>
+   539→   539→          </div>
+   540→   540→        ))}
+   541→   541→      </div>
+   542→   542→    </div>
+   543→   543→  )
+   544→   544→}
+   545→   545→
+   546→   546→// ─── Holidays View ───────────────────────────────────────────────
+   547→   547→
+   548→   548→function HolidaysView({ lang }: { lang: 'es' | 'en' }) {
+   549→   549→  const [holidays, setHolidays] = useState<Array<{
+   550→   550→    name: string; nameEn?: string; date: string; dateEn?: string; month: number; day: number; isVariable: boolean
+   551→   551→  }>>([])
+   552→   552→
+   553→   553→  useEffect(() => {
+   554→   554→    fetch('/api/holidays')
+   555→   555→      .then(r => r.ok ? r.json() : [])
+   556→   556→      .then(d => setHolidays(d))
+   557→   557→      .catch(() => {})
+   558→   558→  }, [])
+   559→   559→
+   560→   560→  const fixed = holidays.filter(h => !h.isVariable)
+   561→   561→  const variable = holidays.filter(h => h.isVariable)
+   562→   562→  const currentMonth = new Date().getMonth() + 1
+   563→   563→
+   564→   564→  return (
+   565→   565→    <div className="space-y-4">
+   566→   566→      <p className="text-sm text-muted-foreground">
+   567→   567→        {lang === 'en'
+   568→   568→          ? 'Public holidays in Peru - Administrative services may not be available'
+   569→   569→          : 'Días feriados en Perú - Es posible que no se presten algunos servicios administrativos'}
+   570→   570→      </p>
+   571→   571→      <div className="grid gap-2">
+   572→   572→        {fixed.map(h => (
+   573→   573→          <div
+   574→   574→            key={h.name}
+   575→   575→            className={`flex items-center gap-3 p-2.5 rounded-md transition-colors ${
+   576→   576→              h.month === currentMonth ? 'bg-amber-500/10 border border-amber-500/20' : 'bg-muted/30'
+   577→   577→            }`}
+   578→   578→          >
+   579→   579→            <div className="w-12 text-center shrink-0">
+   580→   580→              <Calendar className={`size-4 mx-auto ${h.month === currentMonth ? 'text-amber-500' : 'text-muted-foreground'}`} />
+   581→   581→              <span className="text-[10px] text-muted-foreground">{h.month}/{h.day}</span>
+   582→   582→            </div>
+   583→   583→            <div>
+   584→   584→              <p className="text-xs font-medium">
+   585→   585→                {lang === 'en' && h.nameEn ? h.nameEn : h.name}
+   586→   586→              </p>
+   587→   587→              <p className="text-[11px] text-muted-foreground">
+   588→   588→                {lang === 'en' && h.dateEn ? h.dateEn : h.date}
+   589→   589→              </p>
+   590→   590→            </div>
+   591→   591→            {h.month === currentMonth && (
+   592→   592→              <Badge className="ml-auto text-[10px] bg-amber-500 text-white">Este mes</Badge>
+   593→   593→            )}
+   594→   594→          </div>
+   595→   595→        ))}
+   596→   596→      </div>
+   597→   597→      {variable.length > 0 && (
+   598→   598→        <div>
+   599→   599→          <h4 className="text-xs font-semibold mb-2 flex items-center gap-1.5">
+   600→   600→            <Clock className="size-3.5 text-amber-500" />
+   601→   601→            {lang === 'en' ? 'Variable Date Holidays' : 'Feriados de Fecha Variable'}
+   602→   602→          </h4>
+   603→   603→          <div className="grid gap-2">
+   604→   604→            {variable.map(h => (
+   605→   605→              <div key={h.name} className="flex items-center gap-3 p-2.5 rounded-md bg-muted/30">
+   606→   606→                <Calendar className="size-4 text-muted-foreground shrink-0" />
+   607→   607→                <div>
+   608→   608→                  <p className="text-xs font-medium">
+   609→   609→                    {lang === 'en' && h.nameEn ? h.nameEn : h.name}
+   610→   610→                  </p>
+   611→   611→                  <p className="text-[11px] text-muted-foreground">
+   612→   612→                    {lang === 'en' && h.dateEn ? h.dateEn : h.date}
+   613→   613→                  </p>
+   614→   614→                </div>
+   615→   615→              </div>
+   616→   616→            ))}
+   617→   617→          </div>
+   618→   618→        </div>
+   619→   619→      )}
+   620→   620→    </div>
+   621→   621→  )
+   622→   622→}
+   623→   623→
+   624→   624→// ─── Abbreviations View ──────────────────────────────────────────
+   625→   625→
+   626→   626→function AbbreviationsView({ lang }: { lang: 'es' | 'en' }) {
+   627→   627→  const [abbreviations, setAbbreviations] = useState<Array<{
+   628→   628→    code: string; meaning: string; meaningEn?: string; radioUsage?: string
+   629→   629→  }>>([])
+   630→   630→  const [search, setSearch] = useState('')
+   631→   631→
+   632→   632→  useEffect(() => {
+   633→   633→    const url = search ? `/api/abbreviations?q=${encodeURIComponent(search)}&limit=100` : '/api/abbreviations?limit=100'
+   634→   634→    fetch(url)
+   635→   635→      .then(r => r.ok ? r.json() : [])
+   636→   636→      .then(d => setAbbreviations(d))
+   637→   637→      .catch(() => {})
+   638→   638→  }, [search])
+   639→   639→
+   640→   640→  return (
+   641→   641→    <div className="space-y-4">
+   642→   642→      <p className="text-sm text-muted-foreground">
+   643→   643→        {lang === 'en'
+   644→   644→          ? 'Abbreviations used in AIS publications (ICAO Doc 8400)'
+   645→   645→          : 'Abreviaturas utilizadas en las publicaciones del AIS (Doc. 8400 OACI)'}
+   646→   646→      </p>
+   647→   647→      <div className="relative">
+   648→   648→        <Search className="absolute left-2.5 top-2.5 size-3.5 text-muted-foreground" />
+   649→   649→        <Input
+   650→   650→          placeholder={lang === 'en' ? 'Search abbreviations...' : 'Buscar abreviatura...'}
+   651→   651→          value={search}
+   652→   652→          onChange={(e) => setSearch(e.target.value)}
+   653→   653→          className="h-8 pl-8 text-xs"
+   654→   654→        />
+   655→   655→      </div>
+   656→   656→      <div className="text-xs text-muted-foreground">
+   657→   657→        {abbreviations.length} {lang === 'en' ? 'abbreviations' : 'abreviaturas'}
+   658→   658→      </div>
+   659→   659→      <ScrollArea className="h-[calc(100vh-30rem)]">
+   660→   660→        <div className="space-y-0.5">
+   661→   661→          {abbreviations.map(abbr => (
+   662→   662→            <div
+   663→   663→              key={abbr.code}
+   664→   664→              className="flex items-start gap-3 p-2 rounded hover:bg-muted/30 transition-colors"
+   665→   665→            >
+   666→   666→              <div className="w-16 shrink-0">
+   667→   667→                <span className="text-xs font-mono font-bold text-amber-600 dark:text-amber-400">
+   668→   668→                  {abbr.code}
+   669→   669→                </span>
+   670→   670→                {abbr.radioUsage && (
+   671→   671→                  <span className="text-[9px] text-blue-500 ml-1">{abbr.radioUsage}</span>
+   672→   672→                )}
+   673→   673→              </div>
+   674→   674→              <div className="min-w-0">
+   675→   675→                <p className="text-[11px] leading-tight">
+   676→   676→                  {lang === 'en' && abbr.meaningEn ? abbr.meaningEn : abbr.meaning}
+   677→   677→                </p>
+   678→   678→              </div>
+   679→   679→            </div>
+   680→   680→          ))}
+   681→   681→        </div>
+   682→   682→      </ScrollArea>
+   683→   683→    </div>
+   684→   684→  )
+   685→   685→}
+   686→   686→
+   687→   687→// Aliases for icons used in the component
+   688→   688→const Cloud = Calendar
+   689→   689→const Heart = Phone
+   690→   690→const AlertCircle = Info
+   691→   691→
