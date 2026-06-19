@@ -955,3 +955,108 @@ Stage Summary:
   confirming significant improvement in professionalism and modernity
 - All interactions (click, hover, search, tabs) verified working
 - Lint clean, no runtime errors
+
+---
+Task ID: chart-viewer-fix
+Agent: Main Agent
+Task: User reported "mejorar vista de las cartas, no se puede visualizar la parte de abajo de las hojas" — fix chart viewer so the bottom of chart sheets is visible
+
+Work Log:
+Root cause analysis (HighResChartViewer):
+- The chart viewer's <img> had `max-w-none` (no max-width constraint) and
+  `maxHeight: "none"` for rotation 0/180. This caused the image to render
+  at its full natural size (e.g. 2339x1654 for ADC, 1653x2339 for IAC).
+- With `initialScale={1}` and `centerOnInit`, the full-size image was
+  centered in the viewport. Since it was much larger than the container,
+  the top and bottom (or left and right) were clipped by `overflow-hidden`.
+- Users could pan to see different parts, but the initial view showed only
+  the middle portion — the bottom of the chart was not visible.
+
+Fix applied (src/components/high-res-chart-viewer.tsx):
+1. Changed <img> style from `max-w-none` to:
+   - `maxWidth: "100%"` and `maxHeight: "100%"` for rotation 0/180
+   - `maxWidth: "100vh"` and `maxHeight: "100vw"` for rotation 90/270
+   - `width: "auto"` and `height: "auto"` to maintain aspect ratio
+   This makes the browser fit the entire chart within the container at
+   scale 1. No setTransform is used — this avoids the double-scaling
+   conflict between CSS constraints and the transform scale.
+2. Removed the ChartImage component's useControls()/setTransform logic
+   that was causing double-scaling (CSS fitted the image to 981x694,
+   then setTransform applied an additional 0.405 scale, making it tiny).
+3. Changed the "Ajustar a pantalla" button to call `resetTransform()`
+   directly (resets to scale 1, which is the CSS-fitted view).
+4. Added `min-h-0` to flex containers for proper height calculation.
+5. Changed the image area container to use `relative` + `absolute inset-0`
+   for reliable height inheritance.
+6. Reduced `minScale` from 0.5 to 0.2 for more zoom-out range.
+
+Fix applied (src/components/markdown-renderer.tsx):
+- Increased chart image max-height from `max-h-[70vh]` to `max-h-[85vh]`
+  so charts in the publication browser (e.g. ENR 6.1) are larger and
+  more legible.
+- Changed `w-full max-h-[70vh] object-contain` to
+  `w-full h-auto max-h-[85vh] object-contain` for better aspect-ratio
+  handling.
+- Wrapped images in a bordered container with `rounded-xl overflow-hidden`
+  and `border-2` for a more professional chart-card appearance.
+- Added hover effect: border turns amber on hover, shadow increases.
+- Made the "Ampliar carta" zoom hint badge ALWAYS visible (not just on
+  hover) so users know they can click to open the full-screen viewer.
+- Added "Haga clic para ampliar" text in the figcaption.
+- Added `bg-slate-50 dark:bg-slate-900` background to images so chart
+  boundaries are clearly visible.
+
+End-to-end verification (Agent Browser + VLM):
+1. Airport chart viewer (ADC landscape, 2339x1654):
+   - Image displayed at 981x694, fully visible (top:61, bottom:755)
+   - Transform: matrix(1,0,0,1,0,0) — scale 1, no double-scaling
+   - No overlap with bottom controls bar (bar starts at y:755)
+   - VLM confirmed: chart complete, bottom visible, controls accessible
+2. Airport chart viewer (IAC portrait, 1653x2339):
+   - Image displayed at 490x694, fully visible
+   - VLM: 9/10, full chart visible top to bottom, approach profile and
+     scales at the bottom are visible
+3. Zoom controls test:
+   - Zoom in (2x clicks): chart enlarged ✓
+   - "Ajustar a pantalla" (resetTransform): chart returned to fit ✓
+4. ENR 6.1 publication browser charts (4660x4271):
+   - Displayed at 757x694 in viewer, fully visible
+   - VLM confirmed: full chart visible including bottom
+   - "Ampliar carta" badge visible on chart images
+   - All zoom controls visible and functional
+5. Mobile (375x812) test:
+   - ADC chart displayed at 375x265, fully visible and centered
+   - VLM confirmed: chart complete, centered, controls accessible
+   - Pinch-to-zoom available via TransformWrapper pinch config
+6. `bun run lint` → clean, zero errors
+7. No runtime errors in dev.log
+
+Files modified:
+- src/components/high-res-chart-viewer.tsx
+  - Removed setTransform-based fitting logic (caused double-scaling)
+  - Changed img CSS to maxWidth/maxHeight: 100% (pure CSS fit-to-screen)
+  - Simplified ChartImage component (removed containerRef, fitCounter props)
+  - Changed "Ajustar a pantalla" button to use resetTransform()
+  - Removed fitCounter state and handleFitToScreen callback
+  - Added min-h-0 to flex containers, absolute positioning for image area
+  - Reduced minScale from 0.5 to 0.2
+- src/components/markdown-renderer.tsx
+  - Increased max-h from 70vh to 85vh for larger chart display
+  - Added professional border container with hover effects
+  - Made "Ampliar carta" badge always visible
+  - Added "Haga clic para ampliar" caption hint
+  - Added background color to images for clear boundaries
+
+Stage Summary:
+- Chart viewer now shows the FULL chart (including the bottom) by default,
+  fitted to the screen via CSS. Users can zoom in (up to 8x) to inspect
+  details, and "Ajustar a pantalla" resets to the fitted view.
+- Both airport charts (ADC, SID, STAR, IAC, etc.) and ENR 6.1 publication
+  charts are fully visible — the bottom of every chart sheet is now
+  visible without needing to pan.
+- ENR 6.1 charts in the publication browser are larger (85vh vs 70vh)
+  with a professional bordered card appearance and a prominent
+  "Ampliar carta" badge indicating click-to-zoom functionality.
+- Verified on desktop (1440x900) and mobile (375x812), portrait and
+  landscape charts, zoom in/out, fit-to-screen, and ENR 6.1 publication
+  browser charts.

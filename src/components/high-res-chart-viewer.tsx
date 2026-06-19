@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   TransformWrapper,
   TransformComponent,
@@ -47,6 +47,7 @@ const TYPE_COLORS: Record<string, string> = {
   VAC: "bg-cyan-600",
   HELO: "bg-orange-600",
   NADP: "bg-slate-600",
+  ENRC: "bg-indigo-600",
 };
 
 /**
@@ -97,9 +98,9 @@ function ZoomControls({
           variant="ghost"
           size="sm"
           onClick={() => resetTransform()}
-          className="text-white hover:bg-white/20 h-11 w-11 p-0"
-          title="Restablecer vista (R)"
-          aria-label="Restablecer vista"
+          className="text-amber-400 hover:bg-white/20 h-11 w-11 p-0"
+          title="Ajustar a pantalla (F)"
+          aria-label="Ajustar a pantalla"
         >
           <RefreshCw className="size-5" />
         </Button>
@@ -163,6 +164,63 @@ function ZoomControls({
   );
 }
 
+/**
+ * ChartImage — rendered INSIDE <TransformWrapper>.
+ *
+ * Uses pure CSS (max-width/max-height: 100%) to fit the entire chart within
+ * the viewport at scale 1. This ensures the user can see the FULL chart
+ * (including the bottom) by default. The "Ajustar a pantalla" button calls
+ * resetTransform() to return to scale 1 (the CSS-fitted view).
+ *
+ * No setTransform is used for fitting — this avoids double-scaling conflicts
+ * between CSS constraints and the transform scale.
+ */
+function ChartImage({
+  src,
+  alt,
+  rotation,
+  onLoaded,
+}: {
+  src: string;
+  alt: string;
+  rotation: number;
+  onLoaded: () => void;
+}) {
+  const imgRef = useRef<HTMLImageElement>(null);
+  const isRotated = rotation === 90 || rotation === 270;
+
+  const handleLoad = () => {
+    onLoaded();
+  };
+
+  return (
+    <TransformComponent
+      wrapperClass="!w-full !h-full !cursor-grab active:!cursor-grabbing"
+      contentClass="!w-full !h-full flex items-center justify-center"
+    >
+      <img
+        ref={imgRef}
+        src={src}
+        alt={alt}
+        onLoad={handleLoad}
+        className="select-none pointer-events-none"
+        style={{
+          transform: `rotate(${rotation}deg)`,
+          transition: "transform 0.3s ease",
+          // Fit image within container via CSS — at scale 1 the full chart
+          // is visible (including the bottom). Zooming in scales the
+          // transformed content div, enlarging the image for detail inspection.
+          maxWidth: isRotated ? "100vh" : "100%",
+          maxHeight: isRotated ? "100vw" : "100%",
+          width: "auto",
+          height: "auto",
+        }}
+        draggable={false}
+      />
+    </TransformComponent>
+  );
+}
+
 export function HighResChartViewer({
   charts,
   initialIndex = 0,
@@ -177,6 +235,7 @@ export function HighResChartViewer({
   const [imageLoaded, setImageLoaded] = useState(false);
   const [lastInitialIndex, setLastInitialIndex] = useState(initialIndex);
   const [wasOpen, setWasOpen] = useState(isOpen);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Sync internal state with prop changes (React 19 pattern - no useEffect+setState)
   if (isOpen && (!wasOpen || lastInitialIndex !== initialIndex)) {
@@ -336,7 +395,7 @@ export function HighResChartViewer({
       <TransformWrapper
         key={`${currentChart.url}-${currentIndex}`}
         initialScale={1}
-        minScale={0.5}
+        minScale={0.2}
         maxScale={8}
         centerOnInit
         centerZoomedOut
@@ -344,10 +403,13 @@ export function HighResChartViewer({
         wheel={{ step: 0.1 }}
         pinch={{ step: 5 }}
         panning={{ velocityDisabled: true }}
-        className="flex-1 flex flex-col"
+        className="flex-1 flex flex-col min-h-0"
       >
-        {/* Image area */}
-        <div className="flex-1 flex relative overflow-hidden">
+        {/* Image area — uses absolute positioning so children can use h-full reliably */}
+        <div
+          ref={containerRef}
+          className="flex-1 relative overflow-hidden min-h-0"
+        >
           {/* Prev button */}
           {charts.length > 1 && (
             <button
@@ -360,33 +422,22 @@ export function HighResChartViewer({
             </button>
           )}
 
-          <div className="w-full h-full flex items-center justify-center relative">
-            {!imageLoaded && (
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="flex flex-col items-center gap-3">
-                  <div className="size-10 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                  <p className="text-white/60 text-sm">Cargando carta...</p>
-                </div>
+          {!imageLoaded && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="flex flex-col items-center gap-3">
+                <div className="size-10 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                <p className="text-white/60 text-sm">Cargando carta...</p>
               </div>
-            )}
-            <TransformComponent
-              wrapperClass="!w-full !h-full !cursor-grab active:!cursor-grabbing"
-              contentClass="!w-full !h-full flex items-center justify-center"
-            >
-              <img
-                src={currentChart.url}
-                alt={`${currentChart.type} - ${currentChart.name}`}
-                onLoad={() => setImageLoaded(true)}
-                className="max-w-none select-none pointer-events-none"
-                style={{
-                  transform: `rotate(${rotation}deg)`,
-                  transition: "transform 0.3s ease",
-                  maxHeight: rotation === 90 || rotation === 270 ? "100vw" : "none",
-                  maxWidth: rotation === 90 || rotation === 270 ? "100vh" : "none",
-                }}
-                draggable={false}
-              />
-            </TransformComponent>
+            </div>
+          )}
+
+          <div className="absolute inset-0 flex items-center justify-center">
+            <ChartImage
+              src={currentChart.url}
+              alt={`${currentChart.type} - ${currentChart.name}`}
+              rotation={rotation}
+              onLoaded={() => setImageLoaded(true)}
+            />
           </div>
 
           {/* Next button */}

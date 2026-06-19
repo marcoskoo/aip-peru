@@ -170,7 +170,7 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
             }
             return (
               <figure
-                className="my-4 relative group cursor-zoom-in"
+                className="my-6 relative group cursor-zoom-in"
                 onClick={() => openViewer(srcStr, alt || "")}
                 role="button"
                 tabIndex={0}
@@ -182,22 +182,24 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
                 }}
                 aria-label={`Ampliar imagen: ${alt || ""}`}
               >
-                <img
-                  src={src}
-                  alt={alt || ""}
-                  className="w-full max-h-[70vh] object-contain rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm transition-shadow group-hover:shadow-md"
-                  onError={() =>
-                    setImageError((prev) => new Set(prev).add(srcStr))
-                  }
-                />
-                {/* Zoom hint overlay */}
-                <div className="absolute top-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded-md flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                  <ZoomIn className="size-3" />
-                  <span>Ampliar</span>
+                <div className="relative rounded-xl overflow-hidden border-2 border-slate-200 dark:border-slate-700 shadow-md transition-all group-hover:shadow-xl group-hover:border-amber-400 dark:group-hover:border-amber-600">
+                  <img
+                    src={src}
+                    alt={alt || ""}
+                    className="w-full h-auto max-h-[85vh] object-contain bg-slate-50 dark:bg-slate-900"
+                    onError={() =>
+                      setImageError((prev) => new Set(prev).add(srcStr))
+                    }
+                  />
+                  {/* Zoom hint overlay - always visible so users know they can click */}
+                  <div className="absolute top-3 right-3 bg-black/70 text-white text-xs px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 backdrop-blur-sm pointer-events-none transition-all group-hover:bg-amber-500 group-hover:scale-105">
+                    <ZoomIn className="size-3.5" />
+                    <span className="font-medium">Ampliar carta</span>
+                  </div>
                 </div>
                 {alt && (
-                  <figcaption className="text-xs text-muted-foreground italic mt-1.5 text-center">
-                    {alt}
+                  <figcaption className="text-xs text-muted-foreground italic mt-2 text-center">
+                    {alt} — <span className="text-amber-600 dark:text-amber-400 font-medium">Haga clic para ampliar</span>
                   </figcaption>
                 )}
               </figure>
