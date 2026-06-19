@@ -1,0 +1,901 @@
+     1→     1→'use client'
+     2→     2→
+     3→     3→import { useState, useEffect, useCallback } from 'react'
+     4→     4→import {
+     5→     5→  BookOpen, FileText, Search, ChevronRight, ChevronDown, Globe, Plane,
+     6→     6→  Building2, Shield, Clock, Phone, Mail, MapPin, Calendar,
+     7→     7→  ArrowRight, Languages, BookMarked, Scale, Hash, Info, Loader2, RefreshCw, Upload
+     8→     8→} from 'lucide-react'
+     9→     9→import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+    10→    10→import { Button } from '@/components/ui/button'
+    11→    11→import { Input } from '@/components/ui/input'
+    12→    12→import { Badge } from '@/components/ui/badge'
+    13→    13→import { ScrollArea } from '@/components/ui/scroll-area'
+    14→    14→import { MarkdownRenderer } from '@/components/markdown-renderer'
+    15→    15→import { onAipSectionsChanged } from '@/lib/aip-events'
+    16→    16→
+    17→    17→// ─── Types ────────────────────────────────────────────────────────
+    18→    18→
+    19→    19→interface AipPublicationBrowserProps {
+    20→    20→  onNavigateAirports?: () => void
+    21→    21→  onNavigateHeliports?: () => void
+    22→    22→  onNavigateAirways?: () => void
+    23→    23→  onNavigateAirspace?: () => void
+    24→    24→}
+    25→    25→
+    26→    26→interface AipSectionData {
+    27→    27→  sectionCode: string
+    28→    28→  title: string
+    29→    29→  titleEn: string
+    30→    30→  part: string
+    31→    31→  subPart: string
+    32→    32→  orderIndex: number
+    33→    33→  content?: string
+    34→    34→  contentEn?: string
+    35→    35→  sourceFile?: string
+    36→    36→  lastAmendment?: string
+    37→    37→  effectiveDate?: string
+    38→    38→}
+    39→    39→
+    40→    40→// Lightweight summary returned by GET /api/aip-sections (no content body)
+    41→    41→interface AipSectionSummary {
+    42→    42→  id: string
+    43→    43→  sectionCode: string
+    44→    44→  title: string
+    45→    45→  titleEn?: string | null
+    46→    46→  part: string
+    47→    47→  subPart: string
+    48→    48→  orderIndex: number
+    49→    49→  lastAmendment?: string | null
+    50→    50→  effectiveDate?: string | null
+    51→    51→  sourceFile?: string | null
+    52→    52→}
+    53→    53→
+    54→    54→interface SectionMeta {
+    55→    55→  code: string
+    56→    56→  title: string
+    57→    57→  // true if this section came from an uploaded .md file (not in the static tree)
+    58→    58→  uploaded?: boolean
+    59→    59→}
+    60→    60→
+    61→    61→interface PartNode {
+    62→    62→  part: string
+    63→    63→  label: string
+    64→    64→  labelEn: string
+    65→    65→  icon: React.ComponentType<{ className?: string }>
+    66→    66→  groups: {
+    67→    67→    subPart: string
+    68→    68→    label: string
+    69→    69→    sections: SectionMeta[]
+    70→    70→    action?: 'airports' | 'heliports' | 'airways' | 'airspace'
+    71→    71→  }[]
+    72→    72→}
+    73→    73→
+    74→    74→// ─── Section Tree (static skeleton) ─────────────────────────────
+    75→    75→// This is the AIP structure skeleton. Sections uploaded via .md files are
+    76→    76→// dynamically merged into this tree at runtime (see buildMergedTree below)
+    77→    77→// so that uploaded content appears in the navigation immediately.
+    78→    78→
+    79→    79→const STATIC_SECTION_TREE: PartNode[] = [
+    80→    80→  {
+    81→    81→    part: 'GEN',
+    82→    82→    label: 'GEN - General',
+    83→    83→    labelEn: 'General',
+    84→    84→    icon: BookOpen,
+    85→    85→    groups: [
+    86→    86→      {
+    87→    87→        subPart: '1',
+    88→    88→        label: 'GEN 1 - Reglamentos y Requisitos Nacionales',
+    89→    89→        sections: [
+    90→    90→          { code: 'GEN_1.1', title: 'Autoridades Designadas' },
+    91→    91→          { code: 'GEN_1.2', title: 'Entrada, Tránsito y Salida de Aeronaves' },
+    92→    92→          { code: 'GEN_1.4', title: 'Entrada, Tránsito y Salida de Mercancías' },
+    93→    93→          { code: 'GEN_1.5', title: 'Instrumentos, Equipos y Documentos de Vuelo' },
+    94→    94→          { code: 'GEN_1.6', title: 'Resumen de Reglamentos Nacionales' },
+    95→    95→          { code: 'GEN_1.7', title: 'Diferencias respecto de las Normas OACI' },
+    96→    96→        ]
+    97→    97→      },
+    98→    98→      {
+    99→    99→        subPart: '2',
+   100→   100→        label: 'GEN 2 - Tablas y Códigos',
+   101→   101→        sections: [
+   102→   102→          { code: 'GEN_2.1', title: 'Sistema de Medidas, Marcas, Días Feriados' },
+   103→   103→          { code: 'GEN_2.2', title: 'Abreviaturas' },
+   104→   104→          { code: 'GEN_2.3', title: 'Símbolos Cartográficos' },
+   105→   105→        ]
+   106→   106→      }
+   107→   107→    ]
+   108→   108→  },
+   109→   109→  {
+   110→   110→    part: 'ENR',
+   111→   111→    label: 'ENR - En Ruta',
+   112→   112→    labelEn: 'En Route',
+   113→   113→    icon: Plane,
+   114→   114→    groups: [
+   115→   115→      {
+   116→   116→        subPart: '3',
+   117→   117→        label: 'ENR 3 - Rutas ATS',
+   118→   118→        sections: [],
+   119→   119→        action: 'airways' as const
+   120→   120→      },
+   121→   121→      {
+   122→   122→        subPart: '4',
+   123→   123→        label: 'ENR 4 - Radioayudas',
+   124→   124→        sections: [],
+   125→   125→      },
+   126→   126→      {
+   127→   127→        subPart: '5',
+   128→   128→        label: 'ENR 5 - Zonas Prohibidas, Restringidas y Peligrosas',
+   129→   129→        sections: [],
+   130→   130→        action: 'airspace' as const
+   131→   131→      }
+   132→   132→    ]
+   133→   133→  },
+   134→   134→  {
+   135→   135→    part: 'AD',
+   136→   136→    label: 'AD - Aeródromos',
+   137→   137→    labelEn: 'Aerodromes',
+   138→   138→    icon: Building2,
+   139→   139→    groups: [
+   140→   140→      {
+   141→   141→        subPart: '2',
+   142→   142→        label: 'AD 2 - Aeródromos',
+   143→   143→        sections: [],
+   144→   144→        action: 'airports' as const
+   145→   145→      },
+   146→   146→      {
+   147→   147→        subPart: '3',
+   148→   148→        label: 'AD 3 - Heliportos',
+   149→   149→        sections: [],
+   150→   150→        action: 'heliports' as const
+   151→   151→      }
+   152→   152→    ]
+   153→   153→  }
+   154→   154→]
+   155→   155→
+   156→   156→// ─── Merge logic: combine static tree with DB sections ─────────
+   157→   157→//
+   158→   158→// buildMergedTree takes the static AIP skeleton and the list of sections
+   159→   159→// fetched from /api/aip-sections, and produces a tree where:
+   160→   160→//   - Static sections keep their hardcoded titles (but get updated title
+   161→   161→//     if the DB has a newer one from an uploaded .md file)
+   162→   162→//   - DB sections whose code is NOT in the static tree are appended:
+   163→   163→//       * to an existing group (same part + subPart) if one exists
+   164→   164→//       * to a new "[part] [subPart] - Secciones cargadas" group otherwise
+   165→   165→//       * to a brand-new "[part] - Secciones cargadas" part if the part
+   166→   166→//         itself doesn't exist (e.g. a custom part like "SUP")
+   167→   167→// Each appended section is flagged with `uploaded: true` so the UI can
+   168→   168→// show a distinct badge for content that came from a .md upload.
+   169→   169→
+   170→   170→function buildMergedTree(dbSections: AipSectionSummary[]): PartNode[] {
+   171→   171→  // Deep clone the static tree so we can mutate safely
+   172→   172→  const tree: PartNode[] = STATIC_SECTION_TREE.map(p => ({
+   173→   173→    ...p,
+   174→   174→    groups: p.groups.map(g => ({
+   175→   175→      ...g,
+   176→   176→      sections: g.sections.map(s => ({ ...s })),
+   177→   177→    })),
+   178→   178→  }))
+   179→   179→
+   180→   180→  // Index existing sections by code for O(1) lookup
+   181→   181→  const existingCodes = new Set<string>()
+   182→   182→  for (const part of tree) {
+   183→   183→    for (const group of part.groups) {
+   184→   184→      for (const sec of group.sections) {
+   185→   185→        existingCodes.add(sec.code)
+   186→   186→      }
+   187→   187→    }
+   188→   188→  }
+   189→   189→
+   190→   190→  // Index parts and groups by their key for quick lookup
+   191→   191→  const partIndex = new Map<string, PartNode>()
+   192→   192→  for (const p of tree) partIndex.set(p.part, p)
+   193→   193→
+   194→   194→  for (const dbSec of dbSections) {
+   195→   195→    // Skip sections already in the static tree (title is already set there,
+   196→   196→    // but we update the title to the DB value in case an upload changed it)
+   197→   197→    if (existingCodes.has(dbSec.sectionCode)) {
+   198→   198→      for (const part of tree) {
+   199→   199→        for (const group of part.groups) {
+   200→   200→          for (const sec of group.sections) {
+   201→   201→            if (sec.code === dbSec.sectionCode) {
+   202→   202→              sec.title = dbSec.title
+   203→   203→              sec.uploaded = !!dbSec.sourceFile
+   204→   204→            }
+   205→   205→          }
+   206→   206→        }
+   207→   207→      }
+   208→   208→      continue
+   209→   209→    }
+   210→   210→
+   211→   211→    // This is a new section from the DB (uploaded via .md) — merge it in
+   212→   212→    const partKey = (dbSec.part || 'GEN').toUpperCase()
+   213→   213→    let part = partIndex.get(partKey)
+   214→   214→    if (!part) {
+   215→   215→      // Create a new part node for unknown parts (e.g. "SUP" for supplements)
+   216→   216→      part = {
+   217→   217→        part: partKey,
+   218→   218→        label: `${partKey} - Secciones cargadas`,
+   219→   219→        labelEn: 'Uploaded sections',
+   220→   220→        icon: FileText,
+   221→   221→        groups: [],
+   222→   222→      }
+   223→   223→      tree.push(part)
+   224→   224→      partIndex.set(partKey, part)
+   225→   225→    }
+   226→   226→
+   227→   227→    // Find or create the group (by subPart)
+   228→   228→    const subPartKey = String(dbSec.subPart || '0')
+   229→   229→    let group = part.groups.find(g => g.subPart === subPartKey)
+   230→   230→    if (!group) {
+   231→   231→      group = {
+   232→   232→        subPart: subPartKey,
+   233→   233→        label: `${partKey} ${subPartKey} - Secciones cargadas`,
+   234→   234→        sections: [],
+   235→   235→      }
+   236→   236→      part.groups.push(group)
+   237→   237→    }
+   238→   238→
+   239→   239→    group.sections.push({
+   240→   240→      code: dbSec.sectionCode,
+   241→   241→      title: dbSec.title,
+   242→   242→      uploaded: true,
+   243→   243→    })
+   244→   244→  }
+   245→   245→
+   246→   246→  // Sort groups within each part by subPart (numeric-aware)
+   247→   247→  for (const part of tree) {
+   248→   248→    part.groups.sort((a, b) => {
+   249→   249→      const na = parseFloat(a.subPart) || 0
+   250→   250→      const nb = parseFloat(b.subPart) || 0
+   251→   251→      return na - nb
+   252→   252→    })
+   253→   253→  }
+   254→   254→
+   255→   255→  return tree
+   256→   256→}
+   257→   257→
+   258→   258→// ─── Main Component ──────────────────────────────────────────────
+   259→   259→
+   260→   260→export function AipPublicationBrowser({ onNavigateAirports, onNavigateHeliports, onNavigateAirways, onNavigateAirspace }: AipPublicationBrowserProps) {
+   261→   261→  const [selectedCode, setSelectedCode] = useState<string | null>(null)
+   262→   262→  const [sectionData, setSectionData] = useState<AipSectionData | null>(null)
+   263→   263→  const [sectionLoading, setSectionLoading] = useState(false)
+   264→   264→  const [lang, setLang] = useState<'es' | 'en'>('es')
+   265→   265→  const [searchQuery, setSearchQuery] = useState('')
+   266→   266→  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(['GEN']))
+   267→   267→  const [dbSections, setDbSections] = useState<AipSectionSummary[]>([])
+   268→   268→  const [treeLoading, setTreeLoading] = useState(true)
+   269→   269→  const [lastSync, setLastSync] = useState<Date | null>(null)
+   270→   270→
+   271→   271→  // Fetch the list of all AIP sections from the DB (metadata only, no content)
+   272→   272→  // This lets uploaded .md files appear in the navigation tree immediately.
+   273→   273→  const refreshTree = useCallback(async () => {
+   274→   274→    setTreeLoading(true)
+   275→   275→    try {
+   276→   276→      const r = await fetch('/api/aip-sections')
+   277→   277→      if (r.ok) {
+   278→   278→        const data: AipSectionSummary[] = await r.json()
+   279→   279→        setDbSections(data)
+   280→   280→        setLastSync(new Date())
+   281→   281→      }
+   282→   282→    } catch {
+   283→   283→      // Non-fatal: fall back to static tree
+   284→   284→    } finally {
+   285→   285→      setTreeLoading(false)
+   286→   286→    }
+   287→   287→  }, [])
+   288→   288→
+   289→   289→  useEffect(() => {
+   290→   290→    refreshTree()
+   291→   291→  }, [refreshTree])
+   292→   292→
+   293→   293→  // Listen for section changes emitted by the Admin panel (upload .md,
+   294→   294→  // create, update, delete). When sections change, refresh the tree so
+   295→   295→  // uploaded content appears immediately in the navigation.
+   296→   296→  useEffect(() => {
+   297→   297→    const unsubscribe = onAipSectionsChanged(() => {
+   298→   298→      refreshTree()
+   299→   299→    })
+   300→   300→    return unsubscribe
+   301→   301→  }, [refreshTree])
+   302→   302→
+   303→   303→  // Build the merged tree (static skeleton + uploaded sections from DB)
+   304→   304→  const sectionTree = buildMergedTree(dbSections)
+   305→   305→
+   306→   306→  // Count uploaded sections for the status badge
+   307→   307→  const uploadedCount = dbSections.filter(s => s.sourceFile).length
+   308→   308→
+   309→   309→  // Fetch section data
+   310→   310→  const fetchSectionData = useCallback(async (code: string) => {
+   311→   311→    setSectionLoading(true)
+   312→   312→    try {
+   313→   313→      const r = await fetch(`/api/aip-sections/${code}`)
+   314→   314→      const d = r.ok ? await r.json() : null
+   315→   315→      setSectionData(d)
+   316→   316→    } catch {
+   317→   317→      setSectionData(null)
+   318→   318→    } finally {
+   319→   319→      setSectionLoading(false)
+   320→   320→    }
+   321→   321→  }, [])
+   322→   322→
+   323→   323→  useEffect(() => {
+   324→   324→    if (selectedCode) {
+   325→   325→      fetchSectionData(selectedCode)
+   326→   326→    }
+   327→   327→  }, [selectedCode, fetchSectionData])
+   328→   328→
+   329→   329→  const toggleGroup = (part: string) => {
+   330→   330→    setExpandedGroups(prev => {
+   331→   331→      const next = new Set(prev)
+   332→   332→      if (next.has(part)) next.delete(part)
+   333→   333→      else next.add(part)
+   334→   334→      return next
+   335→   335→    })
+   336→   336→  }
+   337→   337→
+   338→   338→  const handleSectionClick = (code: string) => {
+   339→   339→    setSelectedCode(code)
+   340→   340→  }
+   341→   341→
+   342→   342→  const handleAction = (action: string) => {
+   343→   343→    switch (action) {
+   344→   344→      case 'airports': onNavigateAirports?.(); break
+   345→   345→      case 'heliports': onNavigateHeliports?.(); break
+   346→   346→      case 'airways': onNavigateAirways?.(); break
+   347→   347→      case 'airspace': onNavigateAirspace?.(); break
+   348→   348→    }
+   349→   349→  }
+   350→   350→
+   351→   351→  // Filter sections by search
+   352→   352→  const filteredTree = searchQuery
+   353→   353→    ? sectionTree.map(part => ({
+   354→   354→        ...part,
+   355→   355→        groups: part.groups.map(g => ({
+   356→   356→          ...g,
+   357→   357→          sections: g.sections.filter(s =>
+   358→   358→            s.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
+   359→   359→            s.title.toLowerCase().includes(searchQuery.toLowerCase())
+   360→   360→          )
+   361→   361→        })).filter(g => g.sections.length > 0 || g.action)
+   362→   362→      })).filter(p => p.groups.length > 0)
+   363→   363→    : sectionTree
+   364→   364→
+   365→   365→  return (
+   366→   366→    <div className="flex flex-col lg:flex-row gap-4 h-[calc(100vh-10rem)]">
+   367→   367→      {/* Left Sidebar - Section Tree */}
+   368→   368→      <div className="w-full lg:w-80 shrink-0">
+   369→   369→        <Card className="h-full">
+   370→   370→          <CardHeader className="pb-3">
+   371→   371→            <div className="flex items-center justify-between">
+   372→   372→              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+   373→   373→                <BookOpen className="size-4 text-amber-500" />
+   374→   374→                AIP PERÚ
+   375→   375→              </CardTitle>
+   376→   376→              <div className="flex items-center gap-1">
+   377→   377→                {uploadedCount > 0 && (
+   378→   378→                  <Badge variant="outline" className="text-[10px] gap-1 text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-700">
+   379→   379→                    <Upload className="size-2.5" />
+   380→   380→                    {uploadedCount} MD
+   381→   381→                  </Badge>
+   382→   382→                )}
+   383→   383→                <Button
+   384→   384→                  variant="ghost"
+   385→   385→                  size="sm"
+   386→   386→                  onClick={() => refreshTree()}
+   387→   387→                  disabled={treeLoading}
+   388→   388→                  className="h-7 w-7 p-0"
+   389→   389→                  title="Actualizar secciones desde la base de datos"
+   390→   390→                >
+   391→   391→                  <RefreshCw className={`size-3 ${treeLoading ? 'animate-spin' : ''}`} />
+   392→   392→                </Button>
+   393→   393→                <Button
+   394→   394→                  variant="ghost"
+   395→   395→                  size="sm"
+   396→   396→                  onClick={() => setLang(lang === 'es' ? 'en' : 'es')}
+   397→   397→                  className="h-7 gap-1 text-xs"
+   398→   398→                >
+   399→   399→                  <Languages className="size-3" />
+   400→   400→                  {lang === 'es' ? 'EN' : 'ES'}
+   401→   401→                </Button>
+   402→   402→              </div>
+   403→   403→            </div>
+   404→   404→            {lastSync && (
+   405→   405→              <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+   406→   406→                <Clock className="size-2.5" />
+   407→   407→                Actualizado: {lastSync.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+   408→   408→              </p>
+   409→   409→            )}
+   410→   410→            <div className="relative">
+   411→   411→              <Search className="absolute left-2.5 top-2.5 size-3.5 text-muted-foreground" />
+   412→   412→              <Input
+   413→   413→                placeholder="Buscar sección..."
+   414→   414→                value={searchQuery}
+   415→   415→                onChange={(e) => setSearchQuery(e.target.value)}
+   416→   416→                className="h-8 pl-8 text-xs"
+   417→   417→              />
+   418→   418→            </div>
+   419→   419→          </CardHeader>
+   420→   420→          <CardContent className="p-0">
+   421→   421→            <ScrollArea className="h-[calc(100vh-18rem)] lg:h-[calc(100vh-16rem)]">
+   422→   422→              <div className="px-2 pb-2">
+   423→   423→                {filteredTree.map(part => {
+   424→   424→                  const PartIcon = part.icon
+   425→   425→                  const isExpanded = expandedGroups.has(part.part)
+   426→   426→                  return (
+   427→   427→                    <div key={part.part} className="mb-1">
+   428→   428→                      <button
+   429→   429→                        onClick={() => toggleGroup(part.part)}
+   430→   430→                        className="flex items-center gap-2 w-full px-2 py-2 rounded-md hover:bg-muted/50 text-left transition-colors"
+   431→   431→                      >
+   432→   432→                        {isExpanded ? (
+   433→   433→                          <ChevronDown className="size-3.5 text-muted-foreground shrink-0" />
+   434→   434→                        ) : (
+   435→   435→                          <ChevronRight className="size-3.5 text-muted-foreground shrink-0" />
+   436→   436→                        )}
+   437→   437→                        <PartIcon className="size-3.5 text-amber-500 shrink-0" />
+   438→   438→                        <span className="text-xs font-semibold truncate">{part.label}</span>
+   439→   439→                      </button>
+   440→   440→                      {isExpanded && (
+   441→   441→                        <div className="ml-4 border-l border-border/50 pl-2">
+   442→   442→                          {part.groups.map(group => (
+   443→   443→                            <div key={group.subPart}>
+   444→   444→                              <div className="px-2 py-1.5 text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+   445→   445→                                {group.label}
+   446→   446→                              </div>
+   447→   447→                              {group.sections.map(section => (
+   448→   448→                                <button
+   449→   449→                                  key={section.code}
+   450→   450→                                  onClick={() => handleSectionClick(section.code)}
+   451→   451→                                  className={`flex items-center gap-2 w-full px-2 py-1.5 rounded text-left text-xs transition-colors ${
+   452→   452→                                    selectedCode === section.code
+   453→   453→                                      ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400 font-medium'
+   454→   454→                                      : 'hover:bg-muted/50 text-foreground/80'
+   455→   455→                                  }`}
+   456→   456→                                >
+   457→   457→                                  <Hash className="size-3 shrink-0 text-muted-foreground" />
+   458→   458→                                  <span className="truncate flex-1">{section.title}</span>
+   459→   459→                                  {section.uploaded && (
+   460→   460→                                    <Badge className="text-[9px] px-1 py-0 h-4 bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800 shrink-0">
+   461→   461→                                      MD
+   462→   462→                                    </Badge>
+   463→   463→                                  )}
+   464→   464→                                </button>
+   465→   465→                              ))}
+   466→   466→                              {group.action && (
+   467→   467→                                <button
+   468→   468→                                  onClick={() => handleAction(group.action!)}
+   469→   469→                                  className="flex items-center gap-2 w-full px-2 py-1.5 rounded text-left text-xs text-blue-600 dark:text-blue-400 hover:bg-blue-500/10 transition-colors"
+   470→   470→                                >
+   471→   471→                                  <ArrowRight className="size-3 shrink-0" />
+   472→   472→                                  <span>Ver en la aplicación</span>
+   473→   473→                                </button>
+   474→   474→                              )}
+   475→   475→                            </div>
+   476→   476→                          ))}
+   477→   477→                        </div>
+   478→   478→                      )}
+   479→   479→                    </div>
+   480→   480→                  )
+   481→   481→                })}
+   482→   482→              </div>
+   483→   483→            </ScrollArea>
+   484→   484→          </CardContent>
+   485→   485→        </Card>
+   486→   486→      </div>
+   487→   487→
+   488→   488→      {/* Right Content Panel */}
+   489→   489→      <div className="flex-1 min-w-0">
+   490→   490→        <Card className="h-full">
+   491→   491→          {!selectedCode ? (
+   492→   492→            // Welcome View
+   493→   493→            <div className="flex items-center justify-center h-full">
+   494→   494→              <div className="text-center max-w-md space-y-6 p-8">
+   495→   495→                <div className="mx-auto w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center">
+   496→   496→                  <BookOpen className="size-8 text-amber-500" />
+   497→   497→                </div>
+   498→   498→                <div>
+   499→   499→                  <h2 className="text-xl font-bold">Publicación de Información Aeronáutica</h2>
+   500→   500→                  <p className="text-sm text-muted-foreground mt-2">
+   501→   501→                    Seleccione una sección del panel izquierdo para ver su contenido. La AIP PERÚ contiene información aeronáutica oficial de la República del Perú.
+   502→   502→                  </p>
+   503→   503→                </div>
+   504→   504→                <div className="grid grid-cols-3 gap-3">
+   505→   505→                  {[
+   506→   506→                    { icon: BookOpen, label: 'GEN', desc: 'General' },
+   507→   507→                    { icon: Plane, label: 'ENR', desc: 'En Ruta' },
+   508→   508→                    { icon: Building2, label: 'AD', desc: 'Aeródromos' },
+   509→   509→                  ].map(item => (
+   510→   510→                    <div key={item.label} className="text-center p-3 rounded-lg bg-muted/30">
+   511→   511→                      <item.icon className="size-5 mx-auto text-amber-500 mb-1" />
+   512→   512→                      <div className="text-xs font-semibold">{item.label}</div>
+   513→   513→                      <div className="text-[10px] text-muted-foreground">{item.desc}</div>
+   514→   514→                    </div>
+   515→   515→                  ))}
+   516→   516→                </div>
+   517→   517→                <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+   518→   518→                  <Badge variant="outline" className="text-[10px]">AMDT 33/2025</Badge>
+   519→   519→                  <span>•</span>
+   520→   520→                  <span>30 JUL 2025</span>
+   521→   521→                  <span>•</span>
+   522→   522→                  <span>CORPAC S.A.</span>
+   523→   523→                </div>
+   524→   524→              </div>
+   525→   525→            </div>
+   526→   526→          ) : sectionLoading ? (
+   527→   527→            // Loading
+   528→   528→            <div className="flex items-center justify-center h-full">
+   529→   529→              <div className="text-center">
+   530→   530→                <Loader2 className="size-8 text-amber-500 animate-spin mx-auto mb-3" />
+   531→   531→                <p className="text-sm text-muted-foreground">Cargando sección...</p>
+   532→   532→              </div>
+   533→   533→            </div>
+   534→   534→          ) : sectionData ? (
+   535→   535→            // Section Content
+   536→   536→            <ScrollArea className="h-full">
+   537→   537→              <div className="p-6 max-w-3xl">
+   538→   538→                {/* Header */}
+   539→   539→                <div className="mb-6">
+   540→   540→                  <div className="flex items-center gap-2 mb-2">
+   541→   541→                    <Badge variant="outline" className="text-xs font-mono">
+   542→   542→                      {sectionData.sectionCode}
+   543→   543→                    </Badge>
+   544→   544→                    {sectionData.lastAmendment && (
+   545→   545→                      <Badge variant="secondary" className="text-[10px]">
+   546→   546→                        {sectionData.lastAmendment}
+   547→   547→                      </Badge>
+   548→   548→                    )}
+   549→   549→                    {sectionData.effectiveDate && (
+   550→   550→                      <Badge variant="secondary" className="text-[10px]">
+   551→   551→                        <Clock className="size-3 mr-1" />
+   552→   552→                        {sectionData.effectiveDate}
+   553→   553→                      </Badge>
+   554→   554→                    )}
+   555→   555→                  </div>
+   556→   556→                  <h2 className="text-xl font-bold">
+   557→   557→                    {lang === 'en' && sectionData.titleEn ? sectionData.titleEn : sectionData.title}
+   558→   558→                  </h2>
+   559→   559→                  {lang === 'es' && sectionData.titleEn && (
+   560→   560→                    <p className="text-xs text-muted-foreground mt-1">{sectionData.titleEn}</p>
+   561→   561→                  )}
+   562→   562→                  {lang === 'en' && sectionData.title && (
+   563→   563→                    <p className="text-xs text-muted-foreground mt-1">{sectionData.title}</p>
+   564→   564→                  )}
+   565→   565→                  {sectionData.sourceFile && (
+   566→   566→                    <p className="text-[10px] text-muted-foreground mt-2 flex items-center gap-1">
+   567→   567→                      <FileText className="size-3" />
+   568→   568→                      Fuente: {sectionData.sourceFile}
+   569→   569→                    </p>
+   570→   570→                  )}
+   571→   571→                </div>
+   572→   572→
+   573→   573→                {/* Specialized Views */}
+   574→   574→                {selectedCode === 'GEN_1.1' && <AuthoritiesView lang={lang} />}
+   575→   575→                {selectedCode === 'GEN_1.6' && <RegulationsView lang={lang} />}
+   576→   576→                {selectedCode === 'GEN_2.1' && <HolidaysView lang={lang} />}
+   577→   577→                {selectedCode === 'GEN_2.2' && <AbbreviationsView lang={lang} />}
+   578→   578→
+   579→   579→                {/* Generic Content - Markdown or HTML (auto-detected) */}
+   580→   580→                {!['GEN_1.1', 'GEN_1.6', 'GEN_2.1', 'GEN_2.2'].includes(selectedCode) && (
+   581→   581→                  <div className="prose prose-sm dark:prose-invert max-w-none">
+   582→   582→                    <MarkdownRenderer
+   583→   583→                      content={
+   584→   584→                        lang === 'en' && sectionData.contentEn
+   585→   585→                          ? sectionData.contentEn
+   586→   586→                          : sectionData.content || ''
+   587→   587→                      }
+   588→   588→                    />
+   589→   589→                  </div>
+   590→   590→                )}
+   591→   591→              </div>
+   592→   592→            </ScrollArea>
+   593→   593→          ) : (
+   594→   594→            // Error
+   595→   595→            <div className="flex items-center justify-center h-full">
+   596→   596→              <div className="text-center">
+   597→   597→                <Info className="size-8 text-muted-foreground mx-auto mb-3" />
+   598→   598→                <p className="text-sm text-muted-foreground">No se pudo cargar la sección</p>
+   599→   599→              </div>
+   600→   600→            </div>
+   601→   601→          )}
+   602→   602→        </Card>
+   603→   603→      </div>
+   604→   604→    </div>
+   605→   605→  )
+   606→   606→}
+   607→   607→
+   608→   608→// ─── Authorities View ────────────────────────────────────────────
+   609→   609→
+   610→   610→function AuthoritiesView({ lang }: { lang: 'es' | 'en' }) {
+   611→   611→  const [authorities, setAuthorities] = useState<Record<string, Array<{
+   612→   612→    name: string; nameEn?: string; address?: string; phone?: string; email?: string; aftn?: string
+   613→   613→  }>> | null>(null)
+   614→   614→
+   615→   615→  useEffect(() => {
+   616→   616→    fetch('/api/authorities')
+   617→   617→      .then(r => r.ok ? r.json() : null)
+   618→   618→      .then(d => setAuthorities(d))
+   619→   619→      .catch(() => {})
+   620→   620→  }, [])
+   621→   621→
+   622→   622→  if (!authorities) return <div className="flex justify-center py-8"><Loader2 className="size-6 animate-spin text-amber-500" /></div>
+   623→   623→
+   624→   624→  const categoryIcons: Record<string, React.ComponentType<{className?: string}>> = {
+   625→   625→    'Aviación Civil': Plane,
+   626→   626→    'Meteorología Aeronáutica': Cloud,
+   627→   627→    'Aduanas': Shield,
+   628→   628→    'Sanidad': Heart,
+   629→   629→    'Investigación de Accidentes': AlertCircle,
+   630→   630→  }
+   631→   631→
+   632→   632→  return (
+   633→   633→    <div className="space-y-4">
+   634→   634→      <p className="text-sm text-muted-foreground">
+   635→   635→        {lang === 'en'
+   636→   636→          ? 'Designated authorities responsible for facilitating international air navigation'
+   637→   637→          : 'Autoridades designadas que se encargan de facilitar la navegación aérea internacional'}
+   638→   638→      </p>
+   639→   639→      {Object.entries(authorities).map(([category, auths]) => {
+   640→   640→        const Icon = categoryIcons[category] || Building2
+   641→   641→        return (
+   642→   642→          <div key={category}>
+   643→   643→            <h3 className="text-sm font-semibold flex items-center gap-2 mb-2">
+   644→   644→              <Icon className="size-4 text-amber-500" />
+   645→   645→              {category}
+   646→   646→            </h3>
+   647→   647→            <div className="grid gap-2">
+   648→   648→              {auths.map((auth, i) => (
+   649→   649→                <Card key={i} className="bg-muted/30">
+   650→   650→                  <CardContent className="p-3">
+   651→   651→                    <p className="text-xs font-medium">
+   652→   652→                      {lang === 'en' && auth.nameEn ? auth.nameEn : auth.name}
+   653→   653→                    </p>
+   654→   654→                    <div className="mt-1.5 space-y-0.5">
+   655→   655→                      {auth.address && (
+   656→   656→                        <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+   657→   657→                          <MapPin className="size-3 shrink-0" />{auth.address}
+   658→   658→                        </p>
+   659→   659→                      )}
+   660→   660→                      {auth.phone && (
+   661→   661→                        <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+   662→   662→                          <Phone className="size-3 shrink-0" />{auth.phone}
+   663→   663→                        </p>
+   664→   664→                      )}
+   665→   665→                      {auth.email && (
+   666→   666→                        <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+   667→   667→                          <Mail className="size-3 shrink-0" />{auth.email}
+   668→   668→                        </p>
+   669→   669→                      )}
+   670→   670→                      {auth.aftn && (
+   671→   671→                        <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+   672→   672→                          <Hash className="size-3 shrink-0" />AFTN: {auth.aftn}
+   673→   673→                        </p>
+   674→   674→                      )}
+   675→   675→                    </div>
+   676→   676→                  </CardContent>
+   677→   677→                </Card>
+   678→   678→              ))}
+   679→   679→            </div>
+   680→   680→          </div>
+   681→   681→        )
+   682→   682→      })}
+   683→   683→    </div>
+   684→   684→  )
+   685→   685→}
+   686→   686→
+   687→   687→// ─── Regulations View ────────────────────────────────────────────
+   688→   688→
+   689→   689→function RegulationsView({ lang }: { lang: 'es' | 'en' }) {
+   690→   690→  const [regulations, setRegulations] = useState<Array<{
+   691→   691→    code: string; title: string; titleEn?: string; type: string
+   692→   692→  }>>([])
+   693→   693→  const [filter, setFilter] = useState<string>('all')
+   694→   694→
+   695→   695→  useEffect(() => {
+   696→   696→    fetch('/api/regulations')
+   697→   697→      .then(r => r.ok ? r.json() : [])
+   698→   698→      .then(d => setRegulations(d))
+   699→   699→      .catch(() => {})
+   700→   700→  }, [])
+   701→   701→
+   702→   702→  const types = ['all', ...new Set(regulations.map(r => r.type))]
+   703→   703→  const filtered = filter === 'all' ? regulations : regulations.filter(r => r.type === filter)
+   704→   704→
+   705→   705→  const typeColors: Record<string, string> = {
+   706→   706→    'LEY': 'bg-red-500/10 text-red-600 dark:text-red-400',
+   707→   707→    'REGLAMENTO': 'bg-orange-500/10 text-orange-600 dark:text-orange-400',
+   708→   708→    'RAP': 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
+   709→   709→    'CONVENIO': 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
+   710→   710→  }
+   711→   711→
+   712→   712→  return (
+   713→   713→    <div className="space-y-4">
+   714→   714→      <p className="text-sm text-muted-foreground">
+   715→   715→        {lang === 'en'
+   716→   716→          ? 'Summary of national regulations and international agreements'
+   717→   717→          : 'Resumen de reglamentos nacionales y acuerdos/convenios internacionales'}
+   718→   718→      </p>
+   719→   719→      <div className="flex flex-wrap gap-1.5">
+   720→   720→        {types.map(t => (
+   721→   721→          <Button
+   722→   722→            key={t}
+   723→   723→            variant={filter === t ? 'default' : 'outline'}
+   724→   724→            size="sm"
+   725→   725→            onClick={() => setFilter(t)}
+   726→   726→            className={`h-7 text-[11px] ${filter === t ? 'bg-amber-500 text-white' : ''}`}
+   727→   727→          >
+   728→   728→            {t === 'all' ? 'Todos' : t}
+   729→   729→          </Button>
+   730→   730→        ))}
+   731→   731→      </div>
+   732→   732→      <div className="space-y-1">
+   733→   733→        {filtered.map(reg => (
+   734→   734→          <div
+   735→   735→            key={reg.code}
+   736→   736→            className="flex items-start gap-3 p-2.5 rounded-md hover:bg-muted/30 transition-colors"
+   737→   737→          >
+   738→   738→            <Badge variant="outline" className="text-[10px] font-mono shrink-0 mt-0.5">
+   739→   739→              {reg.code}
+   740→   740→            </Badge>
+   741→   741→            <div className="min-w-0">
+   742→   742→              <p className="text-xs font-medium">
+   743→   743→                {lang === 'en' && reg.titleEn ? reg.titleEn : reg.title}
+   744→   744→              </p>
+   745→   745→              <Badge className={`text-[10px] mt-1 ${typeColors[reg.type] || 'bg-gray-500/10'}`}>
+   746→   746→                {reg.type}
+   747→   747→              </Badge>
+   748→   748→            </div>
+   749→   749→          </div>
+   750→   750→        ))}
+   751→   751→      </div>
+   752→   752→    </div>
+   753→   753→  )
+   754→   754→}
+   755→   755→
+   756→   756→// ─── Holidays View ───────────────────────────────────────────────
+   757→   757→
+   758→   758→function HolidaysView({ lang }: { lang: 'es' | 'en' }) {
+   759→   759→  const [holidays, setHolidays] = useState<Array<{
+   760→   760→    name: string; nameEn?: string; date: string; dateEn?: string; month: number; day: number; isVariable: boolean
+   761→   761→  }>>([])
+   762→   762→
+   763→   763→  useEffect(() => {
+   764→   764→    fetch('/api/holidays')
+   765→   765→      .then(r => r.ok ? r.json() : [])
+   766→   766→      .then(d => setHolidays(d))
+   767→   767→      .catch(() => {})
+   768→   768→  }, [])
+   769→   769→
+   770→   770→  const fixed = holidays.filter(h => !h.isVariable)
+   771→   771→  const variable = holidays.filter(h => h.isVariable)
+   772→   772→  const currentMonth = new Date().getMonth() + 1
+   773→   773→
+   774→   774→  return (
+   775→   775→    <div className="space-y-4">
+   776→   776→      <p className="text-sm text-muted-foreground">
+   777→   777→        {lang === 'en'
+   778→   778→          ? 'Public holidays in Peru - Administrative services may not be available'
+   779→   779→          : 'Días feriados en Perú - Es posible que no se presten algunos servicios administrativos'}
+   780→   780→      </p>
+   781→   781→      <div className="grid gap-2">
+   782→   782→        {fixed.map(h => (
+   783→   783→          <div
+   784→   784→            key={h.name}
+   785→   785→            className={`flex items-center gap-3 p-2.5 rounded-md transition-colors ${
+   786→   786→              h.month === currentMonth ? 'bg-amber-500/10 border border-amber-500/20' : 'bg-muted/30'
+   787→   787→            }`}
+   788→   788→          >
+   789→   789→            <div className="w-12 text-center shrink-0">
+   790→   790→              <Calendar className={`size-4 mx-auto ${h.month === currentMonth ? 'text-amber-500' : 'text-muted-foreground'}`} />
+   791→   791→              <span className="text-[10px] text-muted-foreground">{h.month}/{h.day}</span>
+   792→   792→            </div>
+   793→   793→            <div>
+   794→   794→              <p className="text-xs font-medium">
+   795→   795→                {lang === 'en' && h.nameEn ? h.nameEn : h.name}
+   796→   796→              </p>
+   797→   797→              <p className="text-[11px] text-muted-foreground">
+   798→   798→                {lang === 'en' && h.dateEn ? h.dateEn : h.date}
+   799→   799→              </p>
+   800→   800→            </div>
+   801→   801→            {h.month === currentMonth && (
+   802→   802→              <Badge className="ml-auto text-[10px] bg-amber-500 text-white">Este mes</Badge>
+   803→   803→            )}
+   804→   804→          </div>
+   805→   805→        ))}
+   806→   806→      </div>
+   807→   807→      {variable.length > 0 && (
+   808→   808→        <div>
+   809→   809→          <h4 className="text-xs font-semibold mb-2 flex items-center gap-1.5">
+   810→   810→            <Clock className="size-3.5 text-amber-500" />
+   811→   811→            {lang === 'en' ? 'Variable Date Holidays' : 'Feriados de Fecha Variable'}
+   812→   812→          </h4>
+   813→   813→          <div className="grid gap-2">
+   814→   814→            {variable.map(h => (
+   815→   815→              <div key={h.name} className="flex items-center gap-3 p-2.5 rounded-md bg-muted/30">
+   816→   816→                <Calendar className="size-4 text-muted-foreground shrink-0" />
+   817→   817→                <div>
+   818→   818→                  <p className="text-xs font-medium">
+   819→   819→                    {lang === 'en' && h.nameEn ? h.nameEn : h.name}
+   820→   820→                  </p>
+   821→   821→                  <p className="text-[11px] text-muted-foreground">
+   822→   822→                    {lang === 'en' && h.dateEn ? h.dateEn : h.date}
+   823→   823→                  </p>
+   824→   824→                </div>
+   825→   825→              </div>
+   826→   826→            ))}
+   827→   827→          </div>
+   828→   828→        </div>
+   829→   829→      )}
+   830→   830→    </div>
+   831→   831→  )
+   832→   832→}
+   833→   833→
+   834→   834→// ─── Abbreviations View ──────────────────────────────────────────
+   835→   835→
+   836→   836→function AbbreviationsView({ lang }: { lang: 'es' | 'en' }) {
+   837→   837→  const [abbreviations, setAbbreviations] = useState<Array<{
+   838→   838→    code: string; meaning: string; meaningEn?: string; radioUsage?: string
+   839→   839→  }>>([])
+   840→   840→  const [search, setSearch] = useState('')
+   841→   841→
+   842→   842→  useEffect(() => {
+   843→   843→    const url = search ? `/api/abbreviations?q=${encodeURIComponent(search)}&limit=100` : '/api/abbreviations?limit=100'
+   844→   844→    fetch(url)
+   845→   845→      .then(r => r.ok ? r.json() : [])
+   846→   846→      .then(d => setAbbreviations(d))
+   847→   847→      .catch(() => {})
+   848→   848→  }, [search])
+   849→   849→
+   850→   850→  return (
+   851→   851→    <div className="space-y-4">
+   852→   852→      <p className="text-sm text-muted-foreground">
+   853→   853→        {lang === 'en'
+   854→   854→          ? 'Abbreviations used in AIS publications (ICAO Doc 8400)'
+   855→   855→          : 'Abreviaturas utilizadas en las publicaciones del AIS (Doc. 8400 OACI)'}
+   856→   856→      </p>
+   857→   857→      <div className="relative">
+   858→   858→        <Search className="absolute left-2.5 top-2.5 size-3.5 text-muted-foreground" />
+   859→   859→        <Input
+   860→   860→          placeholder={lang === 'en' ? 'Search abbreviations...' : 'Buscar abreviatura...'}
+   861→   861→          value={search}
+   862→   862→          onChange={(e) => setSearch(e.target.value)}
+   863→   863→          className="h-8 pl-8 text-xs"
+   864→   864→        />
+   865→   865→      </div>
+   866→   866→      <div className="text-xs text-muted-foreground">
+   867→   867→        {abbreviations.length} {lang === 'en' ? 'abbreviations' : 'abreviaturas'}
+   868→   868→      </div>
+   869→   869→      <ScrollArea className="h-[calc(100vh-30rem)]">
+   870→   870→        <div className="space-y-0.5">
+   871→   871→          {abbreviations.map(abbr => (
+   872→   872→            <div
+   873→   873→              key={abbr.code}
+   874→   874→              className="flex items-start gap-3 p-2 rounded hover:bg-muted/30 transition-colors"
+   875→   875→            >
+   876→   876→              <div className="w-16 shrink-0">
+   877→   877→                <span className="text-xs font-mono font-bold text-amber-600 dark:text-amber-400">
+   878→   878→                  {abbr.code}
+   879→   879→                </span>
+   880→   880→                {abbr.radioUsage && (
+   881→   881→                  <span className="text-[9px] text-blue-500 ml-1">{abbr.radioUsage}</span>
+   882→   882→                )}
+   883→   883→              </div>
+   884→   884→              <div className="min-w-0">
+   885→   885→                <p className="text-[11px] leading-tight">
+   886→   886→                  {lang === 'en' && abbr.meaningEn ? abbr.meaningEn : abbr.meaning}
+   887→   887→                </p>
+   888→   888→              </div>
+   889→   889→            </div>
+   890→   890→          ))}
+   891→   891→        </div>
+   892→   892→      </ScrollArea>
+   893→   893→    </div>
+   894→   894→  )
+   895→   895→}
+   896→   896→
+   897→   897→// Aliases for icons used in the component
+   898→   898→const Cloud = Calendar
+   899→   899→const Heart = Phone
+   900→   900→const AlertCircle = Info
+   901→   901→

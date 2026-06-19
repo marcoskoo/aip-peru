@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import {
   BookOpen, FileText, Search, ChevronRight, ChevronDown, Globe, Plane,
   Building2, Shield, Clock, Phone, Mail, MapPin, Calendar,
-  ArrowRight, Languages, BookMarked, Scale, Hash, Info, Loader2, RefreshCw, Upload
+  ArrowRight, Languages, BookMarked, Scale, Hash, Info, Loader2, RefreshCw
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -54,8 +54,6 @@ interface AipSectionSummary {
 interface SectionMeta {
   code: string
   title: string
-  // true if this section came from an uploaded .md file (not in the static tree)
-  uploaded?: boolean
 }
 
 interface PartNode {
@@ -156,16 +154,64 @@ const STATIC_SECTION_TREE: PartNode[] = [
 // ─── Merge logic: combine static tree with DB sections ─────────
 //
 // buildMergedTree takes the static AIP skeleton and the list of sections
-// fetched from /api/aip-sections, and produces a tree where:
-//   - Static sections keep their hardcoded titles (but get updated title
-//     if the DB has a newer one from an uploaded .md file)
-//   - DB sections whose code is NOT in the static tree are appended:
-//       * to an existing group (same part + subPart) if one exists
-//       * to a new "[part] [subPart] - Secciones cargadas" group otherwise
-//       * to a brand-new "[part] - Secciones cargadas" part if the part
-//         itself doesn't exist (e.g. a custom part like "SUP")
-// Each appended section is flagged with `uploaded: true` so the UI can
-// show a distinct badge for content that came from a .md upload.
+// fetched from /api/aip-sections, and produces a unified tree where
+// uploaded .md content UPDATES existing information instead of appearing
+// as separate "uploaded" sections:
+//
+//   - If a DB section's code matches a static section code (e.g. GEN_1.2),
+//     the static entry's title is refreshed from the DB (the upload updated
+//     the content; the entry stays in its original location).
+//
+//   - If a DB section's code does NOT match any static section, it is
+//     placed inside the existing group whose subPart matches the DB
+//     section's subPart prefix (e.g. ENR_3.1 -> "ENR 3 - Rutas ATS").
+//     This way an uploaded ENR_3.1.md shows up inside the real
+//     "ENR 3 - Rutas ATS" group rather than a synthetic
+//     "Secciones cargadas" group.
+//
+//   - If no matching group exists inside the part, a new group is created
+//     with a proper human label (e.g. "GEN 3 - Servicios de Tránsito Aéreo")
+//     rather than the generic "Secciones cargadas" label.
+//
+//   - If the part itself does not exist (e.g. a custom part like "AIP" or
+//     "SUP"), a new part is appended with a proper label.
+//
+// No "uploaded" flag is set: uploaded .md content is treated as a normal
+// update to the existing AIP structure, exactly as the user requested:
+// "en lugar de crear una sección se actualice la información donde
+// corresponda".
+
+// Map of known subPart labels per part, used to give newly-created groups
+// a sensible title instead of the old "Secciones cargadas" placeholder.
+const SUBPART_LABELS: Record<string, Record<string, string>> = {
+  GEN: {
+    '1': 'Reglamentos y Requisitos Nacionales',
+    '2': 'Tablas y Códigos',
+    '3': 'Servicios de Tránsito Aéreo',
+    '4': 'Tarifas por Servicios Aeropuertuarios',
+  },
+  ENR: {
+    '1': 'Reglas y Procedimientos Generales',
+    '2': 'Tránsito Aéreo',
+    '3': 'Rutas ATS',
+    '4': 'Radioayudas',
+    '5': 'Zonas Prohibidas, Restringidas y Peligrosas',
+    '6': 'Servicios de Tránsito Aéreo',
+  },
+  AD: {
+    '1': 'Aeródromos - Introducción',
+    '2': 'Aeródromos',
+    '3': 'Heliportos',
+  },
+}
+
+function deriveGroupLabel(partKey: string, subPartPrefix: string): string {
+  const labels = SUBPART_LABELS[partKey]
+  if (labels && labels[subPartPrefix]) {
+    return `${partKey} ${subPartPrefix} - ${labels[subPartPrefix]}`
+  }
+  return `${partKey} ${subPartPrefix}`
+}
 
 function buildMergedTree(dbSections: AipSectionSummary[]): PartNode[] {
   // Deep clone the static tree so we can mutate safely
@@ -192,15 +238,15 @@ function buildMergedTree(dbSections: AipSectionSummary[]): PartNode[] {
   for (const p of tree) partIndex.set(p.part, p)
 
   for (const dbSec of dbSections) {
-    // Skip sections already in the static tree (title is already set there,
-    // but we update the title to the DB value in case an upload changed it)
+    // If section code already exists in the static tree, just refresh its
+    // title from the DB (an upload may have updated it). No "uploaded"
+    // flag is set — uploads are treated as normal updates.
     if (existingCodes.has(dbSec.sectionCode)) {
       for (const part of tree) {
         for (const group of part.groups) {
           for (const sec of group.sections) {
             if (sec.code === dbSec.sectionCode) {
               sec.title = dbSec.title
-              sec.uploaded = !!dbSec.sourceFile
             }
           }
         }
@@ -208,15 +254,17 @@ function buildMergedTree(dbSections: AipSectionSummary[]): PartNode[] {
       continue
     }
 
-    // This is a new section from the DB (uploaded via .md) — merge it in
+    // New DB section (uploaded via .md) — merge it into the appropriate
+    // existing group based on its part + subPart, instead of creating a
+    // separate "Secciones cargadas" group.
     const partKey = (dbSec.part || 'GEN').toUpperCase()
     let part = partIndex.get(partKey)
     if (!part) {
-      // Create a new part node for unknown parts (e.g. "SUP" for supplements)
+      // Unknown part — create a new one with a proper label
       part = {
         part: partKey,
-        label: `${partKey} - Secciones cargadas`,
-        labelEn: 'Uploaded sections',
+        label: `${partKey} - Información`,
+        labelEn: 'Information',
         icon: FileText,
         groups: [],
       }
@@ -224,13 +272,20 @@ function buildMergedTree(dbSections: AipSectionSummary[]): PartNode[] {
       partIndex.set(partKey, part)
     }
 
-    // Find or create the group (by subPart)
-    const subPartKey = String(dbSec.subPart || '0')
-    let group = part.groups.find(g => g.subPart === subPartKey)
+    // Find an existing group whose subPart matches the DB section's
+    // subPart prefix. e.g. DB section ENR_3.1 (subPart "3.1") matches
+    // the existing "ENR 3 - Rutas ATS" group (subPart "3").
+    const dbSubPart = String(dbSec.subPart || '0')
+    const subPartPrefix = dbSubPart.split('.')[0] // "3.1" -> "3"
+
+    let group = part.groups.find(
+      g => g.subPart === subPartPrefix || g.subPart === dbSubPart
+    )
     if (!group) {
+      // No matching group — create a new one with a proper label
       group = {
-        subPart: subPartKey,
-        label: `${partKey} ${subPartKey} - Secciones cargadas`,
+        subPart: subPartPrefix,
+        label: deriveGroupLabel(partKey, subPartPrefix),
         sections: [],
       }
       part.groups.push(group)
@@ -239,7 +294,6 @@ function buildMergedTree(dbSections: AipSectionSummary[]): PartNode[] {
     group.sections.push({
       code: dbSec.sectionCode,
       title: dbSec.title,
-      uploaded: true,
     })
   }
 
@@ -300,11 +354,11 @@ export function AipPublicationBrowser({ onNavigateAirports, onNavigateHeliports,
     return unsubscribe
   }, [refreshTree])
 
-  // Build the merged tree (static skeleton + uploaded sections from DB)
+  // Build the merged tree (static skeleton + uploaded sections from DB).
+  // Uploaded .md sections are merged into existing groups so the tree
+  // reflects the canonical AIP structure rather than a separate
+  // "uploaded" area.
   const sectionTree = buildMergedTree(dbSections)
-
-  // Count uploaded sections for the status badge
-  const uploadedCount = dbSections.filter(s => s.sourceFile).length
 
   // Fetch section data
   const fetchSectionData = useCallback(async (code: string) => {
@@ -374,12 +428,6 @@ export function AipPublicationBrowser({ onNavigateAirports, onNavigateHeliports,
                 AIP PERÚ
               </CardTitle>
               <div className="flex items-center gap-1">
-                {uploadedCount > 0 && (
-                  <Badge variant="outline" className="text-[10px] gap-1 text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-700">
-                    <Upload className="size-2.5" />
-                    {uploadedCount} MD
-                  </Badge>
-                )}
                 <Button
                   variant="ghost"
                   size="sm"
@@ -456,11 +504,6 @@ export function AipPublicationBrowser({ onNavigateAirports, onNavigateHeliports,
                                 >
                                   <Hash className="size-3 shrink-0 text-muted-foreground" />
                                   <span className="truncate flex-1">{section.title}</span>
-                                  {section.uploaded && (
-                                    <Badge className="text-[9px] px-1 py-0 h-4 bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800 shrink-0">
-                                      MD
-                                    </Badge>
-                                  )}
                                 </button>
                               ))}
                               {group.action && (
@@ -570,24 +613,57 @@ export function AipPublicationBrowser({ onNavigateAirports, onNavigateHeliports,
                   )}
                 </div>
 
-                {/* Specialized Views */}
-                {selectedCode === 'GEN_1.1' && <AuthoritiesView lang={lang} />}
-                {selectedCode === 'GEN_1.6' && <RegulationsView lang={lang} />}
-                {selectedCode === 'GEN_2.1' && <HolidaysView lang={lang} />}
-                {selectedCode === 'GEN_2.2' && <AbbreviationsView lang={lang} />}
+                {/* Content rendering logic:
+                    - If the section was updated via a .md upload (sourceFile ends
+                      with .md/.markdown), the uploaded Markdown content is shown,
+                      overriding any specialized view. This makes uploads truly
+                      "update the information where it corresponds".
+                    - Otherwise, specialized views are shown for GEN_1.1, GEN_1.6,
+                      GEN_2.1, GEN_2.2 (these pull from dedicated API endpoints).
+                    - For all other sections, the Markdown/HTML content from the
+                      DB is rendered. */}
+                {(() => {
+                  const isMdUpload = !!sectionData.sourceFile &&
+                    /\.(md|markdown)$/i.test(sectionData.sourceFile)
+                  const specializedCodes = ['GEN_1.1', 'GEN_1.6', 'GEN_2.1', 'GEN_2.2']
+                  const hasSpecializedView = specializedCodes.includes(selectedCode)
 
-                {/* Generic Content - Markdown or HTML (auto-detected) */}
-                {!['GEN_1.1', 'GEN_1.6', 'GEN_2.1', 'GEN_2.2'].includes(selectedCode) && (
-                  <div className="prose prose-sm dark:prose-invert max-w-none">
-                    <MarkdownRenderer
-                      content={
-                        lang === 'en' && sectionData.contentEn
-                          ? sectionData.contentEn
-                          : sectionData.content || ''
-                      }
-                    />
-                  </div>
-                )}
+                  // Uploaded .md content always wins — it updates the section
+                  if (isMdUpload) {
+                    return (
+                      <div className="prose prose-sm dark:prose-invert max-w-none">
+                        <MarkdownRenderer
+                          content={
+                            lang === 'en' && sectionData.contentEn
+                              ? sectionData.contentEn
+                              : sectionData.content || ''
+                          }
+                        />
+                      </div>
+                    )
+                  }
+
+                  // No upload — show specialized view if applicable
+                  if (hasSpecializedView) {
+                    if (selectedCode === 'GEN_1.1') return <AuthoritiesView lang={lang} />
+                    if (selectedCode === 'GEN_1.6') return <RegulationsView lang={lang} />
+                    if (selectedCode === 'GEN_2.1') return <HolidaysView lang={lang} />
+                    if (selectedCode === 'GEN_2.2') return <AbbreviationsView lang={lang} />
+                  }
+
+                  // Default: render Markdown/HTML content
+                  return (
+                    <div className="prose prose-sm dark:prose-invert max-w-none">
+                      <MarkdownRenderer
+                        content={
+                          lang === 'en' && sectionData.contentEn
+                            ? sectionData.contentEn
+                            : sectionData.content || ''
+                        }
+                      />
+                    </div>
+                  )
+                })()}
               </div>
             </ScrollArea>
           ) : (

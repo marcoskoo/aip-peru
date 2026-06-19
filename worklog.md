@@ -629,3 +629,140 @@ Stage Summary:
   7. "Last updated" timestamp shows when tree was last synced (NEW)
 - The global search already worked (queries DB) and now search results navigate
   to a publication browser that can actually display the uploaded section
+
+---
+Task ID: uploaded-md-updates-not-creates
+Agent: Main Agent
+Task: User requested "Que con los archivos .md cargados/subidos en lugar de crear una sección se actualice la información donde corresponda" — uploaded .md files should UPDATE existing info where it corresponds, instead of creating new sections
+
+Work Log:
+Problem analysis:
+- Previous implementation (Task ID: uploaded-md-updates-system-info) made uploaded
+  .md files appear in the Publication Browser, but with two issues that contradicted
+  the user's intent:
+  1. Uploaded sections were flagged with an "MD" badge and grouped under
+     synthetic "Secciones cargadas" groups/parts — visually treating them as
+     separate "uploaded" entities rather than as updates to existing info.
+  2. Seeded sections (GEN_1.1 ... GEN_2.3) all had `sourceFile` set (to the
+     original PDF filename from the seed script), so they were ALL incorrectly
+     shown with the MD badge too.
+
+Solution implemented:
+
+Part 1: Reworked buildMergedTree (aip-publication-browser.tsx)
+- Removed the `uploaded: true` flag from SectionMeta entirely — uploads are
+  no longer treated as a separate category.
+- For DB sections whose code matches a static section code (e.g. GEN_1.2):
+  the static entry's title is refreshed from the DB (the upload may have
+  updated it). No flag is set.
+- For DB sections whose code does NOT match a static section: they are
+  placed inside the EXISTING group whose subPart matches the DB section's
+  subPart prefix (e.g. ENR_3.1 → "ENR 3 - Rutas ATS"), instead of creating
+  a synthetic "Secciones cargadas" group.
+- If no matching group exists inside the part, a new group is created with
+  a proper human label from a new SUBPART_LABELS lookup table (e.g.
+  "GEN 3 - Servicios de Tránsito Aéreo") instead of "Secciones cargadas".
+- If the part itself doesn't exist (e.g. "AIP", "SUP"), a new part is
+  appended with a proper label ("AIP - Información") instead of
+  "AIP - Secciones cargadas".
+
+Part 2: Removed MD badges
+- Removed the "MD" badge next to individual section items in the navigation
+  tree.
+- Removed the "X MD" status badge from the sidebar header (it counted
+  sections with sourceFile, which was misleading because seeded sections
+  also had sourceFile set).
+- Removed the now-unused `Upload` icon import and the `uploaded` field
+  from the SectionMeta interface.
+
+Part 3: Specialized views now defer to uploaded .md content
+- Previously, GEN_1.1, GEN_1.6, GEN_2.1, GEN_2.2 ALWAYS showed their
+  specialized views (AuthoritiesView, RegulationsView, HolidaysView,
+  AbbreviationsView) regardless of whether the user had uploaded .md
+  content for them.
+- Now: if `sectionData.sourceFile` ends with `.md`/`.markdown` (i.e. the
+  content was uploaded via a .md file), the uploaded Markdown content is
+  rendered instead, overriding the specialized view. This makes uploads
+  truly "update the information where it corresponds" — even for sections
+  that previously had a dedicated API-driven view.
+- The `.md`/`.markdown` extension check distinguishes uploaded sections
+  (sourceFile ends with .md) from seeded sections (sourceFile ends with
+  .pdf), so seeded sections still show their specialized views.
+
+Part 4: Updated admin upload dialog text (aip-sections-admin.tsx)
+- Dialog title changed from "Subir archivos Markdown (.md)" to
+  "Actualizar información desde archivos Markdown (.md)".
+- Replaced the generic "Formato soportado" info box with a clearer
+  "¿Cómo funciona?" info box that explains the three behaviors:
+  1. If sectionCode already exists (e.g. GEN_1.2), the existing content
+     is updated.
+  2. If it doesn't exist but its part/sub-part matches an existing group
+     (e.g. ENR_3.1 → ENR 3), it is placed inside the existing group.
+  3. If it's a new part, it is created in the corresponding location in
+     the AIP tree.
+
+End-to-end verification (Agent Browser + curl):
+1. Created two test .md files:
+   - test-gen-1.2.md (sectionCode: GEN_1.2, targets existing section)
+   - test-enr-3.1.md (sectionCode: ENR_3.1, new section under existing ENR 3 group)
+2. Uploaded both via POST /api/aip-sections/upload:
+   - GEN_1.2 → status: "updated" (existing section's content replaced)
+   - ENR_3.1 → status: "created" (new section, but placed in existing group)
+3. Opened Publication Browser in Agent Browser:
+   - No "MD" badges next to any section in the navigation tree ✅
+   - No "X MD" badge in the sidebar header ✅
+   - No "Secciones cargadas" group/part anywhere ✅
+   - GEN_1.2 showed the updated title "(Actualizado)" ✅
+   - Expanded ENR - En Ruta: "Rutas ATS Convencionales - Espacio Aéreo Inferior"
+     appeared as a REGULAR section under the existing "ENR 3 - Rutas ATS" group,
+     alongside the "Ver en la aplicación" action links ✅
+4. Clicked GEN_1.2: right panel showed the uploaded Markdown content
+   (headings "Información Actualizada", "Requisitos", "Nota") ✅
+5. Clicked ENR_3.1: right panel showed the uploaded Markdown content
+   (heading, description, table with A301/A304/V1) ✅
+6. VLM screenshot analysis confirmed all of the above visually.
+7. Admin → AIP Secciones → Subir .md: dialog title is now
+   "Actualizar información desde archivos Markdown (.md)" with the new
+   "¿Cómo funciona?" explanatory box ✅
+8. Cleaned up test data:
+   - Restored GEN_1.2 to its original seeded content via PUT API
+   - Deleted the test ENR_3.1 section via DELETE API
+9. `bun run lint` → clean, zero errors
+10. No runtime errors in dev.log
+
+Files modified:
+- src/components/aip-publication-browser.tsx
+  - Removed `Upload` from lucide-react imports
+  - Removed `uploaded` field from SectionMeta interface
+  - Rewrote buildMergedTree to merge uploads into existing groups/parts
+  - Added SUBPART_LABELS lookup table and deriveGroupLabel helper
+  - Removed "X MD" sidebar badge and `uploadedCount` calculation
+  - Removed "MD" badge from individual section items
+  - Replaced specialized-view rendering with content-rendering logic that
+    defers to uploaded .md content when sourceFile ends with .md/.markdown
+- src/components/aip-sections-admin.tsx
+  - Updated upload dialog title to "Actualizar información desde archivos Markdown (.md)"
+  - Replaced "Formato soportado" info box with "¿Cómo funciona?" box explaining
+    the three update behaviors
+
+Stage Summary:
+- Uploaded .md files now UPDATE existing information where it corresponds,
+  exactly as the user requested ("en lugar de crear una sección se actualice
+  la información donde corresponda"):
+  1. Uploads to existing sectionCodes (e.g. GEN_1.2) replace the existing
+     section's content and title in place.
+  2. Uploads to new sectionCodes that match an existing group's part+subPart
+     (e.g. ENR_3.1 → ENR 3) are placed inside that existing group as a
+     regular section — no synthetic "Secciones cargadas" group is created.
+  3. Uploads for entirely new parts are placed in a properly-labeled new
+     part (e.g. "AIP - Información") instead of "Secciones cargadas".
+  4. Uploaded .md content overrides specialized views (AuthoritiesView,
+     RegulationsView, HolidaysView, AbbreviationsView) for GEN_1.1/1.6/2.1/2.2,
+     so uploads truly replace what was there before.
+- All "MD" badges and "Secciones cargadas" labels have been removed — uploads
+  are now visually indistinguishable from the rest of the AIP tree, because
+  they ARE updates to the tree.
+- The admin upload dialog now clearly explains the update behavior to the
+  user before they upload.
+- Seeded sections no longer incorrectly show the MD badge (they have
+  sourceFile ending in .pdf, not .md, so they're not treated as uploads).

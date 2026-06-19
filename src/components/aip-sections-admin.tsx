@@ -467,19 +467,27 @@ export function AipSectionsTab() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Upload className="size-5" />
-              Subir archivos Markdown (.md)
+              Actualizar información desde archivos Markdown (.md)
             </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4">
             {/* Info about frontmatter */}
-            <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-3 text-xs">
-              <p className="font-semibold mb-1 text-amber-900 dark:text-amber-200">
-                Formato soportado:
+            <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-3 text-xs space-y-2">
+              <p className="font-semibold text-amber-900 dark:text-amber-200">
+                ¿Cómo funciona?
               </p>
               <p className="text-amber-800 dark:text-amber-300">
-                Cada archivo puede incluir <strong>frontmatter YAML</strong> al inicio (entre <code className="bg-amber-100 dark:bg-amber-900 px-1 rounded">---</code>) con los campos:{" "}
-                <code>sectionCode</code>, <code>title</code>, <code>part</code>, <code>subPart</code>, etc.
+                Cada archivo <strong>actualiza la información donde corresponde</strong> según su
+                <code className="bg-amber-100 dark:bg-amber-900 px-1 rounded mx-1">sectionCode</code>:
+              </p>
+              <ul className="text-amber-800 dark:text-amber-300 list-disc pl-5 space-y-0.5">
+                <li>Si el <code>sectionCode</code> ya existe (ej. <code>GEN_1.2</code>), se <strong>actualiza</strong> el contenido existente.</li>
+                <li>Si no existe pero su parte/sub-parte coincide (ej. <code>ENR_3.1</code> → ENR 3), se ubica dentro del grupo existente.</li>
+                <li>Si es una parte nueva, se crea en la ubicación correspondiente del árbol AIP.</li>
+              </ul>
+              <p className="text-amber-800 dark:text-amber-300 mt-1">
+                Cada archivo puede incluir <strong>frontmatter YAML</strong> al inicio (entre <code className="bg-amber-100 dark:bg-amber-900 px-1 rounded">---</code>) con: <code>sectionCode</code>, <code>title</code>, <code>part</code>, <code>subPart</code>, etc.
                 Si no se incluye, se deriva del nombre del archivo.
               </p>
             </div>
