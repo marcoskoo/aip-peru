@@ -1060,3 +1060,97 @@ Stage Summary:
 - Verified on desktop (1440x900) and mobile (375x812), portrait and
   landscape charts, zoom in/out, fit-to-screen, and ENR 6.1 publication
   browser charts.
+
+---
+Task ID: netlify-deploy-prep
+Agent: Main Agent
+Task: "continuar para publicación en netlify" — preparar el proyecto AIP PERÚ para despliegue en Netlify
+
+Work Log:
+- Revisión del estado actual: el proyecto ya usaba PostgreSQL (Neon)
+  en lugar de SQLite, lo cual es serverless-friendly. Ya existía un
+  netlify.toml mínimo y next.config.ts con notas sobre Netlify.
+- Instalado @netlify/plugin-nextjs@5.15.12 como devDependency
+  (no estaba instalado previamente):
+    bun add -d @netlify/plugin-nextjs
+- Actualizado prisma/schema.prisma:
+  * Agregados binaryTargets = ["native", "rhel-openssl-3.0.x",
+    "debian-openssl-3.0.x"] para que los binarios del query engine
+    de Prisma funcionen en el runtime Amazon Linux 2 de Netlify
+    Functions. Sin esto, las funciones serverless fallarían con
+    "Prisma couldn't find the Query Engine".
+  * Verificado con `bun run db:generate` → OK.
+- Reescrito netlify.toml con configuración completa:
+  * [build] command + publish directory
+  * [build.environment] NODE_VERSION=20, NPM_FLAGS=--legacy-peer-deps,
+    NEXT_TELEMETRY_DISABLED, PRISMA_GENERATE_DATAMODEL_PATH
+  * [[plugins]] package="@netlify/plugin-nextjs"
+  * [functions] node_bundler="esbuild", included_files para
+    node_modules/.prisma y @prisma/client (garantiza que los binarios
+    se incluyan en el bundle de cada función serverless)
+  * [[headers]] de seguridad (X-Frame-Options, X-Content-Type-Options,
+    Referrer-Policy, Permissions-Policy)
+  * Cache headers de 1 año (immutable) para /charts/*, /aip-charts/*,
+    /_next/static/*
+- Marcado el route /api/airports/[icaoCode]/charts como
+  `export const dynamic = 'force-dynamic'` para que se ejecute como
+  serverless function en Netlify (no se intentará prerenderizar).
+- Corregido .gitignore: agregada excepción `!.env.example` para que
+  el template de variables de entorno sí se suba al repositorio.
+- Creado .env.example con:
+  * DATABASE_URL (PostgreSQL con sslmode=require)
+  * NEXTAUTH_SECRET, NEXTAUTH_URL (opcionales, solo si se usa auth)
+- Creado DEPLOY.md con guía paso a paso (9 secciones):
+  1. Requisitos previos
+  2. Preparar base de datos Neon
+  3. Configurar Netlify (variables de entorno, deploy)
+  4. Configuración técnica incluida
+  5. Límites del plan Starter
+  6. Solución de problemas (Prisma engine, connection pool, etc.)
+  7. Dominio personalizado
+  8. Monitoreo
+  9. Rollback
+- Verificaciones realizadas:
+  * `bun run lint` → 0 errores
+  * `bun run db:generate` → OK con nuevos binaryTargets
+  * Dev server compila correctamente tras los cambios
+  * Agent Browser: home page carga sin errores (HTTP 200)
+  * Agent Browser: navegación a "Publicaciones AIP" funciona
+  * VLM confirmó: home page renderiza correctamente con hero,
+    lista de aeropuertos (internacionales/nacionales) y navegación
+  * VLM confirmó: vista de Publicaciones AIP muestra secciones
+    GEN/ENR/AD sin errores visibles
+  * No hay errores de runtime en dev.log tras las interacciones
+  * Solo se usa process.env.NODE_ENV y DATABASE_URL (vía Prisma) -
+    no se requieren API keys externas para que el deploy funcione
+
+Archivos modificados:
+- prisma/schema.prisma (agregados binaryTargets)
+- netlify.toml (configuración completa)
+- src/app/api/airports/[icaoCode]/charts/route.ts (dynamic = force-dynamic)
+- .gitignore (excepción para .env.example)
+- package.json (agregado @netlify/plugin-nexts devDependency)
+
+Archivos creados:
+- .env.example (template de variables de entorno)
+- DEPLOY.md (guía completa de deployment)
+
+Stage Summary:
+- El proyecto está listo para desplegar en Netlify. Pasos finales que
+  el usuario debe hacer en el dashboard de Netlify:
+  1. Conectar el repositorio Git
+  2. Configurar variables de entorno:
+     - DATABASE_URL (connection string de Neon)
+     - NEXTAUTH_URL (URL canónica del sitio Netlify)
+     - NEXTAUTH_SECRET (openssl rand -base64 32)
+  3. Trigger deploy (Netlify detecta Next.js automáticamente y usa
+     el netlify.toml)
+- Configuración técnica garantizada:
+  * Plugin oficial @netlify/plugin-nextjs maneja App Router + API routes
+  * Prisma binaries incluidos en cada serverless function
+  * Cache agresivo para assets estáticos (charts, _next/static)
+  * Headers de seguridad configurados
+  * PostgreSQL (Neon) es serverless-friendly: connection pooling
+    nativo, escalado automático, sin gestión de servidores
+- No se requiere migrar datos: la BD Neon ya está siendo usada en
+  desarrollo con el schema actual.
