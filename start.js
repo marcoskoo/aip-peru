@@ -3,30 +3,49 @@
  *
  * Next.js standalone mode generates .next/standalone/server.js but does NOT
  * load .env files automatically. This wrapper loads environment variables
- * from .env before starting the standalone server, so DATABASE_URL and
- * other secrets are available to Prisma and the API routes.
+ * from .env (if present) before starting the standalone server.
  *
- * Important: We use override: true so the .env file takes precedence over
- * any stale DATABASE_URL that might exist in the OS environment (e.g.
- * a local SQLite path from a previous dev setup).
+ * If .env doesn't exist (e.g. on Z.ai deploy where secrets are injected
+ * via the platform's environment variables), it falls back to whatever
+ * DATABASE_URL the OS provides.
  *
  * Usage:  node start.js   (or via `bun run start`)
  */
 const { config } = require('dotenv');
 const { resolve } = require('path');
+const { existsSync } = require('fs');
 
-// Load .env from the project root with override=true so the file's values
-// always win over any pre-existing OS environment variables.
-config({ path: resolve(__dirname, '.env'), override: true });
+// Try to load .env from several locations, with override=true so the
+// file's values always win over any pre-existing OS environment variables
+// (e.g. a stale SQLite DATABASE_URL from a dev setup).
+const envPaths = [
+  resolve(__dirname, '.env'),
+  resolve(__dirname, '.next/standalone/.env'),
+];
 
-// Safety check: make sure DATABASE_URL is a valid PostgreSQL connection string
+let loaded = false;
+for (const p of envPaths) {
+  if (existsSync(p)) {
+    config({ path: p, override: true });
+    loaded = true;
+    console.log(`[start.js] Loaded env from ${p}`);
+    break;
+  }
+}
+
+if (!loaded) {
+  console.log('[start.js] No .env file found — relying on OS environment variables.');
+}
+
+// Log DATABASE_URL status (without revealing the actual value)
 const dbUrl = process.env.DATABASE_URL || '';
-if (!dbUrl.startsWith('postgresql://') && !dbUrl.startsWith('postgres://')) {
-  console.error('[start.js] ERROR: DATABASE_URL is not a valid PostgreSQL URL.');
-  console.error('[start.js] Current value:', dbUrl ? dbUrl.substring(0, 40) + '...' : '(empty)');
-  console.error('[start.js] Make sure .env exists in the project root with:');
-  console.error('[start.js]   DATABASE_URL=postgresql://USER:PASS@HOST:5432/DB?sslmode=require');
-  process.exit(1);
+if (dbUrl.startsWith('postgresql://') || dbUrl.startsWith('postgres://')) {
+  console.log('[start.js] DATABASE_URL is a valid PostgreSQL connection string ✓');
+} else if (dbUrl) {
+  console.warn('[start.js] WARNING: DATABASE_URL is not PostgreSQL:', dbUrl.substring(0, 30) + '...');
+} else {
+  console.warn('[start.js] WARNING: DATABASE_URL is not set. API routes will fail.');
+  console.warn('[start.js] Set DATABASE_URL in .env or as an environment variable.');
 }
 
 // Start the Next.js standalone server
