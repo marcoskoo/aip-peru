@@ -480,3 +480,70 @@ Stage Summary:
   - src/components/airport-listing.tsx (use helper)
   - src/components/airport-card.tsx (use helper)
 - Database: 32 Airport records updated with correct category field
+
+---
+Task ID: mobile-nav-and-chart-viewer-improvements
+Agent: Main Agent
+Task: User reported "no Admin button visible on mobile" and "improve chart visualization" — viewing from mobile device
+
+Work Log:
+Problem 1: Admin button not visible on mobile
+- Tested with Agent Browser at mobile viewport (390x844)
+- Root cause: 10 nav buttons + search + theme were all in one overflow-x-auto row
+  - On 390px mobile, only ~6 icon-only buttons fit before overflow
+  - Admin button (10th in list) was pushed off-screen
+  - All buttons had no labels on mobile (hidden lg:inline) so they were unrecognizable icon-only buttons
+- Fix: Implemented hamburger menu pattern with responsive breakpoint
+  - Desktop (lg+): Keep inline nav buttons with labels (unchanged)
+  - Mobile/tableton (below lg): Show only 3 icons in header — Search, Theme, Hamburger
+    - Hamburger opens a Sheet (right-side drawer) with all 10 nav items as labeled list
+    - Each item shows icon + full label, active item highlighted in amber
+    - Selecting an item navigates and auto-closes the sheet
+- Added imports: Menu icon, Sheet/SheetContent/SheetHeader/SheetTitle
+- Added state: mobileNavOpen (boolean)
+
+Problem 2: Chart viewer visualization on mobile
+- Tested chart viewer at mobile viewport (390x844)
+- Issues found via VLM analysis:
+  - Bottom controls: 8 buttons in ONE row, each only 36x36px (h-9 w-9) — too small for touch
+  - Help hint text took up screen space and overlapped controls
+  - Prev/next navigation buttons were small (p-2)
+- Fixes applied to high-res-chart-viewer.tsx:
+  1. ZoomControls redesigned: 2-row layout
+     - Row 1: Zoom In, Zoom Out, Reset View | Download (with label)
+     - Row 2: Rotate Left, rotation° display, Rotate Right | Reset (only shown when rotation ≠ 0)
+     - All buttons now h-11 w-11 (44x44px) — proper touch target size
+     - Icons increased from size-4 to size-5
+     - Added aria-labels for accessibility
+  2. Top bar: more compact on mobile (p-2), badges smaller (text-xs)
+  3. Prev/next buttons: larger touch targets (p-2.5), active:scale-90 feedback
+  4. Help hint: 
+     - Desktop (sm+): full hint at bottom-20
+     - Mobile: shorter hint "Pellizca = zoom · Arrastra = mover" at bottom-36
+  5. Close button: red hover for better visibility (hover:bg-red-500/30)
+  6. Bottom controls background: darker (bg-black/70) for better contrast
+
+Verification (Agent Browser at 390x844 mobile viewport):
+- Mobile header: 3 buttons only — Search, Theme, Hamburger (clean, no overflow)
+- Hamburger menu opens Sheet with all 10 nav items (Publicaciones AIP, Helipuertos, Rutas, NOTAMs, Zonas, Carta Aeronáutica, Calculadora, Calc. Aero, Plan de Vuelo, Admin)
+- Clicked Admin in mobile menu → Panel de Administración loads with all 6 tabs
+- AIP Secciones tab → Subir .md button visible and accessible
+- Chart viewer (ADC Tarapoto): 2 rows of controls, all buttons 44x44px
+- Zoom in button works (chart magnified, details visible)
+- All buttons have proper aria labels: Acercar, Alejar, Restablecer vista, Descargar PNG, Rotar izquierda, Rotar derecha
+
+Desktop verification (1280x800):
+- All 10 nav buttons visible with labels (Publicaciones AIP through Admin)
+- No hamburger menu (correctly hidden on lg+)
+- Inline button layout preserved
+
+- `bun run lint` → clean, zero errors
+
+Stage Summary:
+- Mobile navigation completely redesigned: hamburger menu (Sheet) replaces overflow scroll
+- Admin button now accessible on mobile via hamburger menu
+- Chart viewer controls redesigned for mobile: 2-row layout, 44px touch targets, proper aria labels
+- Both desktop and mobile layouts verified working via Agent Browser
+- Files modified:
+  - src/app/page.tsx (hamburger menu + Sheet, responsive nav)
+  - src/components/high-res-chart-viewer.tsx (2-row controls, larger buttons, mobile hints)

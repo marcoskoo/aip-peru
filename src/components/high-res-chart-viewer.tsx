@@ -70,79 +70,95 @@ function ZoomControls({
   const { zoomIn, zoomOut, resetTransform } = useControls();
 
   return (
-    <div className="flex items-center gap-1 flex-wrap justify-center">
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => zoomIn(0.3)}
-        className="text-white hover:bg-white/20 h-9 w-9 p-0"
-        title="Acercar (+)"
-      >
-        <ZoomIn className="size-4" />
-      </Button>
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => zoomOut(0.3)}
-        className="text-white hover:bg-white/20 h-9 w-9 p-0"
-        title="Alejar (-)"
-      >
-        <ZoomOut className="size-4" />
-      </Button>
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => resetTransform()}
-        className="text-white hover:bg-white/20 h-9 w-9 p-0"
-        title="Restablecer vista (R)"
-      >
-        <RefreshCw className="size-4" />
-      </Button>
-      <div className="w-px h-6 bg-white/20 mx-1" />
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={onRotateLeft}
-        className="text-white hover:bg-white/20 h-9 w-9 p-0"
-        title="Rotar izquierda"
-      >
-        <RotateCcw className="size-4" />
-      </Button>
-      <span className="text-white/70 text-xs font-mono w-12 text-center">
-        {rotation}°
-      </span>
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={onRotateRight}
-        className="text-white hover:bg-white/20 h-9 w-9 p-0"
-        title="Rotar derecha"
-      >
-        <RotateCw className="size-4" />
-      </Button>
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={onResetRotation}
-        className="text-white hover:bg-white/20 h-9 px-2 text-xs"
-        title="Reset rotación"
-      >
-        0°
-      </Button>
-      <div className="w-px h-6 bg-white/20 mx-1" />
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={onDownload}
-        className="text-white hover:bg-white/20 h-9 px-3 text-xs gap-1.5"
-        title="Descargar PNG"
-      >
-        <Download className="size-3.5" />
-        <span className="hidden sm:inline">Descargar</span>
-      </Button>
-      <span className="text-white/50 text-xs ml-2 hidden md:inline truncate max-w-[300px]">
+    <div className="flex flex-col gap-2 w-full">
+      {/* Row 1: Zoom + Download (primary actions) */}
+      <div className="flex items-center gap-2 justify-center">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => zoomIn(0.3)}
+          className="text-white hover:bg-white/20 h-11 w-11 p-0"
+          title="Acercar (+)"
+          aria-label="Acercar"
+        >
+          <ZoomIn className="size-5" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => zoomOut(0.3)}
+          className="text-white hover:bg-white/20 h-11 w-11 p-0"
+          title="Alejar (-)"
+          aria-label="Alejar"
+        >
+          <ZoomOut className="size-5" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => resetTransform()}
+          className="text-white hover:bg-white/20 h-11 w-11 p-0"
+          title="Restablecer vista (R)"
+          aria-label="Restablecer vista"
+        >
+          <RefreshCw className="size-5" />
+        </Button>
+        <div className="w-px h-8 bg-white/20 mx-0.5" />
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onDownload}
+          className="text-white hover:bg-white/20 h-11 px-4 text-sm gap-2 font-medium"
+          title="Descargar PNG"
+          aria-label="Descargar PNG"
+        >
+          <Download className="size-4" />
+          <span>Descargar</span>
+        </Button>
+      </div>
+      {/* Row 2: Rotation controls */}
+      <div className="flex items-center gap-2 justify-center">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onRotateLeft}
+          className="text-white hover:bg-white/20 h-11 w-11 p-0"
+          title="Rotar izquierda"
+          aria-label="Rotar izquierda"
+        >
+          <RotateCcw className="size-5" />
+        </Button>
+        <span className="text-white text-sm font-mono w-14 text-center bg-white/10 rounded-md h-11 flex items-center justify-center">
+          {rotation}°
+        </span>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onRotateRight}
+          className="text-white hover:bg-white/20 h-11 w-11 p-0"
+          title="Rotar derecha"
+          aria-label="Rotar derecha"
+        >
+          <RotateCw className="size-5" />
+        </Button>
+        {rotation !== 0 && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onResetRotation}
+            className="text-amber-400 hover:bg-white/20 h-11 px-3 text-xs gap-1.5 font-medium"
+            title="Reset rotación"
+            aria-label="Reset rotación"
+          >
+            <RefreshCw className="size-3.5" />
+            <span>Reset</span>
+          </Button>
+        )}
+      </div>
+      {/* Chart name (hidden on mobile to save space) */}
+      <p className="text-white/50 text-xs text-center hidden md:block truncate max-w-[400px] mx-auto">
         {chartName}
-      </span>
+      </p>
     </div>
   );
 }
@@ -266,31 +282,26 @@ export function HighResChartViewer({
   return (
     <div className="fixed inset-0 z-50 bg-black/95 flex flex-col">
       {/* Top bar */}
-      <div className="flex items-center justify-between p-3 bg-black/60 backdrop-blur-sm border-b border-white/10 gap-2">
-        <div className="flex items-center gap-3 min-w-0">
+      <div className="flex items-center justify-between p-2 sm:p-3 bg-black/60 backdrop-blur-sm border-b border-white/10 gap-2">
+        <div className="flex items-center gap-2 min-w-0">
           {airportIcao && (
-            <Badge className="bg-navy text-white font-bold tracking-wider shrink-0">
+            <Badge className="bg-navy text-white font-bold tracking-wider shrink-0 text-xs sm:text-sm">
               {airportIcao}
             </Badge>
           )}
           <Badge
             className={`${
               TYPE_COLORS[currentChart.type] || "bg-slate-600"
-            } text-white font-bold shrink-0`}
+            } text-white font-bold shrink-0 text-xs sm:text-sm`}
           >
             {currentChart.type}
           </Badge>
-          <div className="text-white text-sm font-medium truncate hidden sm:block">
+          <div className="text-white text-xs sm:text-sm font-medium truncate hidden sm:block">
             {currentChart.name}
           </div>
-          {airportName && (
-            <div className="text-white/40 text-xs truncate hidden lg:block">
-              · {airportName}
-            </div>
-          )}
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
           <span className="text-white/50 text-xs hidden sm:inline">
             {currentIndex + 1} / {charts.length}
           </span>
@@ -298,8 +309,9 @@ export function HighResChartViewer({
             variant="ghost"
             size="sm"
             onClick={toggleFullscreen}
-            className="text-white hover:bg-white/20 h-9 w-9 p-0"
+            className="text-white hover:bg-white/20 h-9 w-9 sm:h-9 sm:w-9 p-0"
             title={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
+            aria-label={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
           >
             {isFullscreen ? (
               <Minimize2 className="size-4" />
@@ -311,10 +323,11 @@ export function HighResChartViewer({
             variant="ghost"
             size="sm"
             onClick={onClose}
-            className="text-white hover:bg-white/20 h-9 w-9 p-0"
+            className="text-white hover:bg-red-500/30 hover:text-white h-9 w-9 sm:h-9 sm:w-9 p-0"
             title="Cerrar (Esc)"
+            aria-label="Cerrar"
           >
-            <X className="size-4" />
+            <X className="size-5" />
           </Button>
         </div>
       </div>
@@ -339,11 +352,11 @@ export function HighResChartViewer({
           {charts.length > 1 && (
             <button
               onClick={goPrev}
-              className="absolute left-2 top-1/2 -translate-y-1/2 z-10 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-colors"
+              className="absolute left-1 sm:left-2 top-1/2 -translate-y-1/2 z-10 bg-black/60 hover:bg-black/80 text-white p-2.5 sm:p-2 rounded-full transition-colors active:scale-90"
               title="Anterior (←)"
               aria-label="Carta anterior"
             >
-              <ChevronLeft className="size-6" />
+              <ChevronLeft className="size-5 sm:size-6" />
             </button>
           )}
 
@@ -380,17 +393,17 @@ export function HighResChartViewer({
           {charts.length > 1 && (
             <button
               onClick={goNext}
-              className="absolute right-2 top-1/2 -translate-y-1/2 z-10 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-colors"
+              className="absolute right-1 sm:right-2 top-1/2 -translate-y-1/2 z-10 bg-black/60 hover:bg-black/80 text-white p-2.5 sm:p-2 rounded-full transition-colors active:scale-90"
               title="Siguiente (→)"
               aria-label="Carta siguiente"
             >
-              <ChevronRight className="size-6" />
+              <ChevronRight className="size-5 sm:size-6" />
             </button>
           )}
         </div>
 
         {/* Bottom controls bar - INSIDE TransformWrapper so useControls() works */}
-        <div className="p-3 bg-black/60 backdrop-blur-sm border-t border-white/10 flex items-center justify-center">
+        <div className="p-2 sm:p-3 bg-black/70 backdrop-blur-sm border-t border-white/10">
           <ZoomControls
             onRotateLeft={rotateLeft}
             onRotateRight={rotateRight}
@@ -402,9 +415,13 @@ export function HighResChartViewer({
         </div>
       </TransformWrapper>
 
-      {/* Help hint */}
-      <div className="absolute bottom-20 left-1/2 -translate-x-1/2 bg-black/70 text-white/60 text-xs px-3 py-1.5 rounded-full backdrop-blur-sm pointer-events-none">
+      {/* Help hint - hidden on mobile (small screens), shown on sm+ */}
+      <div className="absolute bottom-24 sm:bottom-20 left-1/2 -translate-x-1/2 bg-black/70 text-white/60 text-xs px-3 py-1.5 rounded-full backdrop-blur-sm pointer-events-none hidden sm:block">
         Rueda = zoom · Arrastra = mover · Doble click = zoom rápido · ← → = navegar · R = rotar
+      </div>
+      {/* Mobile help hint - shorter, positioned above controls */}
+      <div className="absolute bottom-36 left-1/2 -translate-x-1/2 bg-black/70 text-white/60 text-[10px] px-3 py-1 rounded-full backdrop-blur-sm pointer-events-none sm:hidden">
+        Pellizca = zoom · Arrastra = mover
       </div>
     </div>
   );

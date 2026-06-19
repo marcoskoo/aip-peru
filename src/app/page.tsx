@@ -2,11 +2,12 @@
 
 import { useState, useCallback, Suspense } from "react"
 import dynamic from "next/dynamic"
-import { Moon, Sun, Plane, Map, FileText, Route, Settings, Crosshair, Navigation2, AlertTriangle, Shield, Calculator, Search, BookOpen } from "lucide-react"
+import { Moon, Sun, Plane, Map, FileText, Route, Settings, Crosshair, Navigation2, AlertTriangle, Shield, Calculator, Search, BookOpen, Menu, X } from "lucide-react"
 import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { AirportListing } from "@/components/airport-listing"
 import { AirportDetailView } from "@/components/airport-detail"
 import { HeliportListing } from "@/components/heliport-listing"
@@ -104,6 +105,7 @@ export default function Home() {
   const [viewMode, setViewMode] = useState<ViewMode>("airports")
   const [flightPlanRoute, setFlightPlanRoute] = useState<RoutePoint[] | undefined>(undefined)
   const [flightPlanSummary, setFlightPlanSummary] = useState<RouteSummary | undefined>(undefined)
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const { theme, setTheme } = useTheme()
 
   const handleSelectAirport = (airport: Airport) => {
@@ -205,14 +207,39 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Global Search */}
+            {/* Desktop search (sm and up) */}
             {!selectedAirport && !selectedHeliport && (
               <div className="hidden sm:block flex-1 max-w-xs">
                 <GlobalSearch onSelectResult={handleSearchResult} />
               </div>
             )}
 
-            <div className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto">
+            {/* Desktop navigation buttons (lg and up) — hidden on mobile/tablet */}
+            {!selectedAirport && !selectedHeliport && (
+              <div className="hidden lg:flex items-center gap-1.5">
+                {navButtons.map(({ mode, icon: Icon, label }) => (
+                  <Button
+                    key={mode}
+                    variant={viewMode === mode ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() =>
+                      setViewMode(viewMode === mode ? "airports" : mode)
+                    }
+                    className={
+                      viewMode === mode
+                        ? "bg-amber-500 text-navy hover:bg-amber-600 gap-1 text-xs shrink-0"
+                        : "text-white hover:bg-navy-light hover:text-amber-400 gap-1 text-xs shrink-0"
+                    }
+                  >
+                    <Icon className="size-3.5" />
+                    <span>{label}</span>
+                  </Button>
+                ))}
+              </div>
+            )}
+
+            {/* Right-side action icons (always visible) */}
+            <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
               {selectedAirport && (
                 <Badge className="hidden sm:inline-flex bg-navy-light text-amber-400 border border-amber-500/30 text-xs tracking-wider">
                   {selectedAirport.icaoCode}
@@ -224,61 +251,87 @@ export default function Home() {
                 </Badge>
               )}
 
-              {/* Navigation buttons (shown when no airport/heliport selected) */}
-              {!selectedAirport && !selectedHeliport && (
-                <>
-                  {navButtons.map(({ mode, icon: Icon, label }) => (
-                    <Button
-                      key={mode}
-                      variant={viewMode === mode ? "default" : "ghost"}
-                      size="sm"
-                      onClick={() =>
-                        setViewMode(viewMode === mode ? "airports" : mode)
-                      }
-                      className={
-                        viewMode === mode
-                          ? "bg-amber-500 text-navy hover:bg-amber-600 gap-1 text-xs shrink-0"
-                          : "text-white hover:bg-navy-light hover:text-amber-400 gap-1 text-xs shrink-0"
-                      }
-                    >
-                      <Icon className="size-3.5" />
-                      <span className="hidden lg:inline">
-                        {label}
-                      </span>
-                    </Button>
-                  ))}
-                </>
-              )}
-
-              {/* Mobile search button */}
+              {/* Mobile search trigger */}
               {!selectedAirport && !selectedHeliport && (
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="sm:hidden text-white hover:bg-navy-light hover:text-amber-400 shrink-0"
+                  className="sm:hidden text-white hover:bg-navy-light hover:text-amber-400"
                   onClick={() => {
                     const event = new KeyboardEvent('keydown', { key: 'k', metaKey: true, ctrlKey: true })
                     document.dispatchEvent(event)
                   }}
                 >
                   <Search className="size-4" />
+                  <span className="sr-only">Buscar</span>
                 </Button>
               )}
 
+              {/* Theme toggle */}
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                className="text-white hover:bg-navy-light hover:text-amber-400 shrink-0"
+                className="text-white hover:bg-navy-light hover:text-amber-400"
               >
                 <Sun className="size-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
                 <Moon className="absolute size-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
                 <span className="sr-only">Cambiar tema</span>
               </Button>
+
+              {/* Mobile hamburger menu (below lg) */}
+              {!selectedAirport && !selectedHeliport && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="lg:hidden text-white hover:bg-navy-light hover:text-amber-400"
+                  onClick={() => setMobileNavOpen(true)}
+                >
+                  <Menu className="size-5" />
+                  <span className="sr-only">Abrir menú de navegación</span>
+                </Button>
+              )}
             </div>
           </div>
         </div>
       </header>
+
+      {/* Mobile navigation sheet */}
+      <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
+        <SheetContent side="right" className="w-[300px] sm:w-[340px] bg-navy text-white border-amber-500/20 p-0">
+          <SheetHeader className="px-5 pt-5 pb-3 border-b border-white/10">
+            <SheetTitle className="text-white text-left flex items-center gap-2.5">
+              <Plane className="size-5 text-amber-500" />
+              <span className="font-bold">AIP <span className="text-amber-500">PERÚ</span></span>
+            </SheetTitle>
+          </SheetHeader>
+          <nav className="flex flex-col gap-1 p-3 overflow-y-auto">
+            <p className="px-3 pt-2 pb-1 text-xs font-semibold uppercase tracking-wider text-white/40">
+              Navegación
+            </p>
+            {navButtons.map(({ mode, icon: Icon, label }) => {
+              const active = viewMode === mode
+              return (
+                <button
+                  key={mode}
+                  onClick={() => {
+                    setViewMode(viewMode === mode ? "airports" : mode)
+                    setMobileNavOpen(false)
+                  }}
+                  className={`flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-colors text-left ${
+                    active
+                      ? "bg-amber-500 text-navy"
+                      : "text-white hover:bg-navy-light hover:text-amber-400"
+                  }`}
+                >
+                  <Icon className="size-5 shrink-0" />
+                  <span>{label}</span>
+                </button>
+              )
+            })}
+          </nav>
+        </SheetContent>
+      </Sheet>
 
       {/* Main Content */}
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
