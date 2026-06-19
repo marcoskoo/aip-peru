@@ -57,3 +57,20 @@ prompt
 server.log
 # Skills directory
 /skills/
+# Screenshots de verificación
+*-verify*.png
+*-screenshot*.png
+verify-*.png
+mobile-*.png
+e2e-*.png
+chart-*.png
+screenshot*.png
+admin-*.png
+publications-*.png
+flight-plan-*.png
+intl-*.png
+desktop-*.png
+main-page.png
+aip-home-*.png
+gen-*.png
+test_*.png

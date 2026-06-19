@@ -1,7 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* Netlify: NO usar output: "standalone" - el plugin @netlify/plugin-nextjs maneja el build */
+  // Z.ai deploy requiere output: "standalone" para generar .next/standalone/server.js
+  // (server autocontenido con todas las dependencias)
+  output: "standalone",
   typescript: {
     ignoreBuildErrors: true,
   },
