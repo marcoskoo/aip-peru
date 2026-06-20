@@ -1350,3 +1350,60 @@ Stage Summary:
 - Si se desea intentar deploy en el futuro, se debe investigar
   primero cómo Z.ai maneja el build/start y configurar las variables
   de entorno correctamente en el dashboard de la plataforma.
+
+---
+Task ID: fix-web-not-loading
+Agent: Main Agent
+Task: "Revisar código, la web no carga" — diagnosticar y reparar
+
+Work Log:
+- Diagnóstico inicial:
+  * Dev server estaba CAÍDO (no había proceso next dev corriendo)
+  * dev.log no existía
+  * curl a localhost:3000 devolvía HTTP 000 (connection refused)
+  * Causa raíz: el .env se había sobreescribido a SQLite:
+      DATABASE_URL=file:/home/z/my-project/db/custom.db
+    (antes era PostgreSQL de Neon)
+  * Probablemente algún script o comando lo sobreescribió
+
+- Problema adicional encontrado:
+  * src/app/api/aip-sections/upload/route.ts estaba ELIMINADO
+    del working tree (aunque sí estaba en git HEAD)
+  * Varios archivos tenían permisos cambiados (644 → 755):
+    aip-sections-admin.tsx, high-res-chart-viewer.tsx,
+    markdown-renderer.tsx, aip-events.ts
+
+- Reparaciones aplicadas:
+  1. Restaurado .env con PostgreSQL Neon:
+     DATABASE_URL=postgresql://neondb_owner:...@ep-orange-art...neondb?sslmode=require
+  2. Restaurado src/app/api/aip-sections/upload/route.ts desde HEAD
+  3. Restaurados permisos 644 en los 4 archivos modificados
+  4. Reiniciado dev server con bash launch-dev.sh
+
+- Verificación completa:
+  * Dev server: HTTP 200 ✓
+  * /api/airports: HTTP 200 ✓ (BD PostgreSQL conectada)
+  * /api/aip-sections: HTTP 200 ✓
+  * /api/heliports: HTTP 200 ✓
+  * /api/notams: HTTP 200 ✓
+  * Agent Browser: página carga completa sin errores de consola
+  * VLM: "página carga correctamente con todo el contenido
+    (hero, aeropuertos internacionales y nacionales), no hay
+    errores visibles"
+  * bun run lint: 0 errores
+
+Archivos modificados (working tree, no commiteados):
+- .env (restaurado a PostgreSQL - NO se commitea, está en .gitignore)
+- src/app/api/aip-sections/upload/route.ts (restaurado desde HEAD)
+- src/components/*.tsx, src/lib/aip-events.ts (permisos restaurados)
+
+Stage Summary:
+- La web vuelve a cargar correctamente.
+- El problema NO era el código, sino:
+  1. .env sobreescribido a SQLite (probablemente por algún script
+     de prisma que se ejecutó accidentalmente)
+  2. Dev server caído
+  3. Un archivo fuente eliminado del working tree
+- Todo restaurado a estado estable. No se requiere commit nuevo
+  porque los cambios son solo en archivos ignorados (.env) o
+  restauraciones desde HEAD.
