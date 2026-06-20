@@ -1290,3 +1290,63 @@ Stage Summary:
   2. Intentar redeploy después de que los cambios se propaguen
   3. Si persiste, pedir el log de build de Z.ai (no el error
      genérico) para diagnóstico preciso
+
+---
+Task ID: revert-stable
+Agent: Main Agent
+Task: "Volver a la versión estable" — restaurar el proyecto al estado anterior a los cambios de Netlify
+
+Work Log:
+- Analizado historial de commits para identificar la última versión estable:
+  * bfd1563 (design-improvement) — verificado 8/10 por VLM
+  * e0750b3 (chart-viewer-fix) — verificado, cartas completas visibles
+  * 5458519 (netlify-deploy-prep) — inicio de problemas
+  * 95ea704 (security fix .env) — bueno mantener
+  * dd9d7c1, 38684b4 (fixes para Z.ai) — no resolvieron el deploy
+- Restaurado config files al estado de e0750b3:
+  * package.json: "build": "prisma generate && next build" (sin cp)
+  * package.json: "start": "next start -p 3000" (original)
+  * next.config.ts: sin output standalone (estado original)
+  * prisma/schema.prisma: sin binaryTargets (innecesario para Z.ai)
+- Eliminados artefactos de Netlify:
+  * start.js (wrapper innecesario)
+  * .env.example (template de netlify)
+  * DEPLOY.md (guía de netlify)
+  * netlify.toml (ya eliminado en commit anterior)
+- Mantenido:
+  * Seguridad: .env sigue excluido del tracking (commit 95ea704)
+  * Todas las mejoras de diseño (airport-card, airport-listing)
+  * Chart viewer fix (high-res-chart-viewer, markdown-renderer)
+  * PostgreSQL (Neon) como base de datos
+  * Todas las funcionalidades de la app
+
+- Restaurado src/ completo desde HEAD (el upload route se había
+  borrado accidentalmente durante limpiezas previos)
+
+- Verificación completa:
+  * Dev server: HTTP 200 ✓
+  * API /api/airports: HTTP 200 ✓
+  * API /api/aip-sections: HTTP 200 ✓
+  * bun run lint: 0 errores ✓
+  * Agent Browser: home, navegación, publicaciones AIP funcionan ✓
+  * VLM: "página completa, sin errores evidentes" ✓
+
+Archivos modificados:
+- package.json (build/start scripts restaurados)
+- next.config.ts (sin output standalone)
+- prisma/schema.prisma (sin binaryTargets)
+
+Archivos eliminados:
+- start.js
+- .env.example
+- DEPLOY.md
+
+Stage Summary:
+- Proyecto restaurado a la versión estable pre-Netlify.
+- La app funciona correctamente en modo desarrollo (dev server).
+- Todas las funcionalidades verificadas: aeropuertos, helipuertos,
+  rutas, NOTAMs, publicaciones AIP, calculadora, plan de vuelo,
+  carta aeronáutica.
+- Si se desea intentar deploy en el futuro, se debe investigar
+  primero cómo Z.ai maneja el build/start y configurar las variables
+  de entorno correctamente en el dashboard de la plataforma.
