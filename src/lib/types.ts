@@ -52,12 +52,12 @@ export interface AirportDetail extends Airport {
   taxiwayData?: { ancho?: string; superficie?: string; resistencia?: string } | { nombre?: string; ancho?: string; superficie?: string; resistencia?: string }[] | string;
   checkpointData?: { altimetro?: string; ins?: string; vordme?: string } | string;
   platformRemarks?: string;
-  surfaceGuidance?: string;
+  surfaceGuidance?: string | Record<string, unknown>;
   runwaySigns?: string;
   taxiwaySigns?: string;
   stopBars?: string;
   guidanceRemarks?: string;
-  metOffice?: string;
+  metOffice?: string | Record<string, unknown>;
   metHours?: string;
   metForecastOffice?: string;
   metValidity?: string;

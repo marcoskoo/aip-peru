@@ -75,10 +75,24 @@ function InfoRow({
   icon: Icon,
 }: {
   label: string
-  value?: string | null
+  value?: string | Record<string, unknown> | unknown[] | null
   icon?: React.ComponentType<{ className?: string }>
 }) {
   if (!value || value === "NIL" || value === "NO AVBL") return null
+
+  // Si el valor es un objeto o array, usar JsonInfoDisplay
+  if (typeof value === "object") {
+    return (
+      <div className="py-2">
+        <div className="flex items-center gap-2 mb-1">
+          {Icon && <Icon className="size-4 text-amber-600 shrink-0" />}
+          <p className="text-xs text-muted-foreground">{label}</p>
+        </div>
+        <JsonInfoDisplay data={value} />
+      </div>
+    )
+  }
+
   return (
     <div className="flex items-start gap-3 py-2">
       {Icon && <Icon className="size-4 text-amber-600 mt-0.5 shrink-0" />}
