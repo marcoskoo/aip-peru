@@ -1407,3 +1407,49 @@ Stage Summary:
 - Todo restaurado a estado estable. No se requiere commit nuevo
   porque los cambios son solo en archivos ignorados (.env) o
   restauraciones desde HEAD.
+
+---
+Task ID: fix-web-not-loading-2
+Agent: Main Agent
+Task: "no carga" — la web no carga nuevamente
+
+Work Log:
+- Diagnóstico: dev server estaba caído (HTTP 000)
+- Causa raíz: el .env se había sobreescribido otra vez a SQLite:
+    DATABASE_URL=file:/home/z/my-project/db/custom.db
+  en lugar del PostgreSQL de Neon
+- Investigación del origen del problema:
+  * .zscripts/build.sh línea 87 ejecuta:
+    DATABASE_URL="file:$BUILD_DIR/db/custom.db" bun run db:push
+    (esto es del script de build de la plataforma Z.ai, no nuestro)
+  * .zscripts/start.sh línea 68:
+    export DATABASE_URL="${DATABASE_URL:-$DEFAULT_PACKAGED_DATABASE_URL}"
+    (defaultea a SQLite si no hay DATABASE_URL del entorno)
+  * Estos scripts son de la plataforma Z.ai y manejan el deploy
+    empaquetado. No debemos modificarlos.
+  * El .env del proyecto se sobreescribe cuando se ejecuta
+    db:push o algún comando similar que crea un .env temporal.
+
+- Reparación:
+  1. Restaurado .env con PostgreSQL Neon:
+     DATABASE_URL=postgresql://neondb_owner:...@ep-orange-art...neondb?sslmode=require
+  2. Matar dev server: pkill -f "next dev"
+  3. Limpiar .next: rm -rf .next
+  4. Reiniciar: bash launch-dev.sh
+
+- Verificación:
+  * HTTP /: 200 ✓
+  * HTTP /api/airports: 200 ✓
+  * Agent Browser: sin errores de consola
+  * VLM: "página carga correctamente, hero + 11 internacionales
+    + 21 nacionales, sin errores visibles"
+
+Stage Summary:
+- El problema recurrente es que el .env se sobreescribe a SQLite.
+- Esto probablemente ocurre cuando se ejecutan comandos de build
+  o db:push que crean un .env temporal.
+- Solución permanente: launch-dev.sh SIEMPRE exporta DATABASE_URL
+  de PostgreSQL, lo que sobreescribe cualquier .env incorrecto.
+- Si la web no carga de nuevo, ejecutar:
+    bash launch-dev.sh
+  (este script ya tiene la DATABASE_URL correcta hardcodeada)
