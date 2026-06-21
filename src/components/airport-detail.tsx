@@ -36,6 +36,9 @@ import {
   Eye,
   Cog,
   Volume2,
+  FileText,
+  Download,
+  ExternalLink,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -176,13 +179,32 @@ interface ChartsResponse {
   grouped: Record<string, ChartData[]>
 }
 
+interface DocumentData {
+  type: string
+  code: string
+  name: string
+  description: string
+  file: string
+  category: string
+  url: string
+}
+
+interface DocumentsResponse {
+  icaoCode: string
+  totalDocuments: number
+  documents: DocumentData[]
+  grouped: Record<string, DocumentData[]>
+}
+
 export function AirportDetailView({ airport, onBack }: AirportDetailProps) {
   const [detail, setDetail] = useState<AirportDetail | null>(null)
   const [obstacles, setObstacles] = useState<Obstacle[]>([])
   const [chartsData, setChartsData] = useState<ChartsResponse | null>(null)
+  const [documentsData, setDocumentsData] = useState<DocumentsResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [obstaclesLoading, setObstaclesLoading] = useState(true)
   const [chartsLoading, setChartsLoading] = useState(true)
+  const [documentsLoading, setDocumentsLoading] = useState(true)
   const [selectedChart, setSelectedChart] = useState<ChartData | null>(null)
   const [chartFilter, setChartFilter] = useState<string>("all")
 
@@ -242,6 +264,26 @@ export function AirportDetailView({ airport, onBack }: AirportDetailProps) {
       }
     }
     fetchCharts()
+  }, [airport.icaoCode])
+
+  useEffect(() => {
+    async function fetchDocuments() {
+      setDocumentsLoading(true)
+      try {
+        const response = await fetch(
+          `/api/airports/${airport.icaoCode}/documents`
+        )
+        if (response.ok) {
+          const data = await response.json()
+          setDocumentsData(data)
+        }
+      } catch {
+        // Will show empty state
+      } finally {
+        setDocumentsLoading(false)
+      }
+    }
+    fetchDocuments()
   }, [airport.icaoCode])
 
   const chartTypes = ["SID", "STAR", "IAC", "ADC", "TMA", "VAC", "HELO", "NADP"]
@@ -826,6 +868,95 @@ export function AirportDetailView({ airport, onBack }: AirportDetailProps) {
         </TabsContent>
         {/* Cartas Tab */}
         <TabsContent value="cartas" className="mt-4">
+          {/* Documentos Oficiales (PDF) */}
+          {documentsLoading ? (
+            <Card className="mb-4">
+              <CardHeader className="pb-3">
+                <Skeleton className="h-6 w-48" />
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <Skeleton key={i} className="h-16 w-full" />
+                ))}
+              </CardContent>
+            </Card>
+          ) : documentsData && documentsData.totalDocuments > 0 ? (
+            <Card className="mb-6 border-amber-200 dark:border-amber-900/50 bg-amber-50/40 dark:bg-amber-950/10">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <FileText className="size-5 text-amber-600" />
+                  Documentos Oficiales AIP (PDF)
+                  <Badge variant="secondary" className="ml-1">
+                    {documentsData.totalDocuments}
+                  </Badge>
+                </CardTitle>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Documentos PDF oficiales de la publicación AIP para {airport.icaoCode}. Descarga directa.
+                </p>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {documentsData.documents.map((doc) => {
+                    const TypeIcon =
+                      chartTypeLabels[doc.type]?.icon || FileText
+                    return (
+                      <a
+                        key={doc.code}
+                        href={doc.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        download
+                        className="group flex items-start gap-3 p-3 rounded-lg border border-amber-200/70 dark:border-amber-900/40 bg-white dark:bg-slate-900 hover:ring-2 hover:ring-amber-400 transition-all"
+                      >
+                        <div className="shrink-0 mt-0.5">
+                          <div className="size-10 rounded-md bg-amber-100 dark:bg-amber-950/40 flex items-center justify-center">
+                            <TypeIcon className="size-5 text-amber-700 dark:text-amber-400" />
+                          </div>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <Badge
+                              variant="outline"
+                              className={`text-[10px] font-bold px-1.5 py-0 ${
+                                doc.type === "SID"
+                                  ? "border-green-500 text-green-700 dark:text-green-400"
+                                  : doc.type === "STAR"
+                                  ? "border-blue-500 text-blue-700 dark:text-blue-400"
+                                  : doc.type === "IAC"
+                                  ? "border-red-500 text-red-700 dark:text-red-400"
+                                  : doc.type === "VAC"
+                                  ? "border-cyan-500 text-cyan-700 dark:text-cyan-400"
+                                  : doc.type === "HELO"
+                                  ? "border-orange-500 text-orange-700 dark:text-orange-400"
+                                  : "border-purple-500 text-purple-700 dark:text-purple-400"
+                              }`}
+                            >
+                              {doc.type}
+                            </Badge>
+                            <span className="text-[10px] text-muted-foreground uppercase tracking-wide">
+                              {doc.category}
+                            </span>
+                          </div>
+                          <p className="text-sm font-medium leading-tight line-clamp-2">
+                            {doc.name}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                            {doc.description}
+                          </p>
+                        </div>
+                        <div className="shrink-0 self-center flex flex-col gap-1">
+                          <Download className="size-4 text-muted-foreground group-hover:text-amber-600 transition-colors" />
+                          <ExternalLink className="size-3 text-muted-foreground/60 group-hover:text-amber-600/80 transition-colors" />
+                        </div>
+                      </a>
+                    )
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          ) : null}
+
+          {/* Charts (imágenes) */}
           {chartsLoading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {Array.from({ length: 6 }).map((_, i) => (

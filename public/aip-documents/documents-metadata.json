@@ -1,0 +1,63 @@
+[
+  {
+    "icaoCode": "SPJC",
+    "documents": [
+      {
+        "type": "AD",
+        "code": "AD_2_SPJC",
+        "name": "AD 2 SPJC - Lima (Jorge Chávez)",
+        "description": "Hoja de información del aeródromo SPJC - Lima / Jorge Chávez International",
+        "file": "AD_2_SPJC-LIMA.pdf",
+        "category": "Aeródromo"
+      },
+      {
+        "type": "VAC",
+        "code": "AD_2_SPJC-23",
+        "name": "AD 2 SPJC 23 - Carta de Aproximación Visual (VAC)",
+        "description": "Carta de aproximación visual del aeródromo SPJC",
+        "file": "AD_2_SPJC-23-VAC.pdf",
+        "category": "Aproximación Visual"
+      },
+      {
+        "type": "HELO",
+        "code": "AD_2_SPJC-25",
+        "name": "AD 2 SPJC 25 - Circuito de Salida para Helicópteros",
+        "description": "Procedimiento de salida para helicópteros en SPJC",
+        "file": "AD_2_SPJC-25-HELO-SALIDA.pdf",
+        "category": "Helicópteros"
+      },
+      {
+        "type": "HELO",
+        "code": "AD_2_SPJC-26",
+        "name": "AD 2 SPJC 26 - Circuito de Entrada para Helicópteros",
+        "description": "Procedimiento de entrada para helicópteros en SPJC",
+        "file": "AD_2_SPJC-26-HELO-ENTRADA.pdf",
+        "category": "Helicópteros"
+      },
+      {
+        "type": "SID",
+        "code": "AD_2_SPJC-SID",
+        "name": "Cartas de Salidas Normalizadas (SID) - AD SPJC",
+        "description": "Cartas de Salidas Normalizadas por Instrumentos (SID) del aeródromo SPJC",
+        "file": "AD_2_SPJC-SID.pdf",
+        "category": "Salidas (SID)"
+      },
+      {
+        "type": "STAR",
+        "code": "AD_2_SPJC-STAR",
+        "name": "Cartas de Llegadas Normalizadas (STAR) - AD SPJC",
+        "description": "Cartas de Llegadas Normalizadas por Instrumentos (STAR) del aeródromo SPJC",
+        "file": "AD_2_SPJC-STAR.pdf",
+        "category": "Llegadas (STAR)"
+      },
+      {
+        "type": "IAC",
+        "code": "AD_2_SPJC-IAC",
+        "name": "Cartas de Aproximación por Instrumentos (IAC) - AD SPJC",
+        "description": "Cartas de Aproximación por Instrumentos (IAC) del aeródromo SPJC",
+        "file": "AD_2_SPJC-IAC.pdf",
+        "category": "Aproximación por Instrumentos"
+      }
+    ]
+  }
+]
