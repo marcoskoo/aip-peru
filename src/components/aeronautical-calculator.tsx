@@ -41,9 +41,10 @@ function dmsToDecimal(dms: string | null | undefined): number | null {
 
 function parseElevationFt(elevation?: string): number {
   if (!elevation) return 0
-  const ftMatch = elevation.match(/(\d+)\s*ft/)
-  const mMatch = elevation.match(/(\d+)\s*m/)
-  if (ftMatch) return parseFloat(ftMatch[1])
+  // Regex must support decimals so "9015.2 ft" is captured as 9015.2 (not "2")
+  const ftMatch = elevation.match(/(\d+(?:\.\d+)?)\s*ft/i)
+  const mMatch = elevation.match(/(\d+(?:\.\d+)?)\s*m\b/i)
+  if (ftMatch) return Math.round(parseFloat(ftMatch[1]))
   if (mMatch) return Math.round(parseFloat(mMatch[1]) * 3.28084)
   return 0
 }
@@ -75,17 +76,13 @@ function aerodromeOptionToData(opt: AerodromeOption): AerodromeData {
 // ─── Tab 1: Density Altitude ─────────────────────────────────────
 
 function DensityAltitudeTab({ selectedAerodrome }: { selectedAerodrome: AerodromeData | null }) {
-  const [pressureAltitude, setPressureAltitude] = useState("")
+  // Initialize elevation from aerodrome (component is remounted via key when aerodrome changes)
+  const [pressureAltitude, setPressureAltitude] = useState(() =>
+    selectedAerodrome && selectedAerodrome.elevationFt > 0
+      ? String(selectedAerodrome.elevationFt)
+      : ""
+  )
   const [temperature, setTemperature] = useState("")
-  const [prevAerodromeIcao, setPrevAerodromeIcao] = useState<string | null>(null)
-
-  // Auto-fill elevation when aerodrome changes (React-recommended pattern)
-  if (selectedAerodrome?.icaoCode !== prevAerodromeIcao) {
-    setPrevAerodromeIcao(selectedAerodrome?.icaoCode ?? null)
-    if (selectedAerodrome && selectedAerodrome.elevationFt > 0) {
-      setPressureAltitude(String(selectedAerodrome.elevationFt))
-    }
-  }
 
   const result = useMemo(() => {
     const pa = parseFloat(pressureAltitude)
@@ -317,17 +314,13 @@ function WindTab() {
 // ─── Tab 3: QNH / QFE ────────────────────────────────────────────
 
 function QnhQfeTab({ selectedAerodrome }: { selectedAerodrome: AerodromeData | null }) {
+  // Initialize elevation from aerodrome (component is remounted via key when aerodrome changes)
   const [qnh, setQnh] = useState("")
-  const [elevation, setElevation] = useState("")
-  const [prevAerodromeIcao, setPrevAerodromeIcao] = useState<string | null>(null)
-
-  // Auto-fill elevation when aerodrome changes (React-recommended pattern)
-  if (selectedAerodrome?.icaoCode !== prevAerodromeIcao) {
-    setPrevAerodromeIcao(selectedAerodrome?.icaoCode ?? null)
-    if (selectedAerodrome && selectedAerodrome.elevationFt > 0) {
-      setElevation(String(selectedAerodrome.elevationFt))
-    }
-  }
+  const [elevation, setElevation] = useState(() =>
+    selectedAerodrome && selectedAerodrome.elevationFt > 0
+      ? String(selectedAerodrome.elevationFt)
+      : ""
+  )
 
   const result = useMemo(() => {
     const q = parseFloat(qnh)
@@ -422,19 +415,18 @@ function QnhQfeTab({ selectedAerodrome }: { selectedAerodrome: AerodromeData | n
 // ─── Tab 4: Sunrise / Sunset ─────────────────────────────────────
 
 function SunriseSunsetTab({ selectedAerodrome }: { selectedAerodrome: AerodromeData | null }) {
-  const [latitude, setLatitude] = useState("-12.0")
-  const [longitude, setLongitude] = useState("-77.0")
+  // Initialize coordinates from aerodrome (component is remounted via key when aerodrome changes)
+  const [latitude, setLatitude] = useState(() =>
+    selectedAerodrome && selectedAerodrome.latitude !== null
+      ? String(Math.round(selectedAerodrome.latitude * 100) / 100)
+      : "-12.0"
+  )
+  const [longitude, setLongitude] = useState(() =>
+    selectedAerodrome && selectedAerodrome.longitude !== null
+      ? String(Math.round(selectedAerodrome.longitude * 100) / 100)
+      : "-77.0"
+  )
   const [date, setDate] = useState(new Date().toISOString().split("T")[0])
-  const [prevAerodromeIcao, setPrevAerodromeIcao] = useState<string | null>(null)
-
-  // Auto-fill coordinates when aerodrome changes (React-recommended pattern)
-  if (selectedAerodrome?.icaoCode !== prevAerodromeIcao) {
-    setPrevAerodromeIcao(selectedAerodrome?.icaoCode ?? null)
-    if (selectedAerodrome && selectedAerodrome.latitude !== null && selectedAerodrome.longitude !== null) {
-      setLatitude(String(Math.round(selectedAerodrome.latitude * 100) / 100))
-      setLongitude(String(Math.round(selectedAerodrome.longitude * 100) / 100))
-    }
-  }
 
   const result = useMemo(() => {
     const lat = parseFloat(latitude)
@@ -890,16 +882,16 @@ export function AeronauticalCalculator() {
         </TabsList>
 
         <TabsContent value="density" className="mt-4">
-          <DensityAltitudeTab selectedAerodrome={selectedAerodrome} />
+          <DensityAltitudeTab key={selectedAerodrome?.icaoCode ?? 'none'} selectedAerodrome={selectedAerodrome} />
         </TabsContent>
         <TabsContent value="wind" className="mt-4">
           <WindTab />
         </TabsContent>
         <TabsContent value="qnh" className="mt-4">
-          <QnhQfeTab selectedAerodrome={selectedAerodrome} />
+          <QnhQfeTab key={selectedAerodrome?.icaoCode ?? 'none'} selectedAerodrome={selectedAerodrome} />
         </TabsContent>
         <TabsContent value="sunrise" className="mt-4">
-          <SunriseSunsetTab selectedAerodrome={selectedAerodrome} />
+          <SunriseSunsetTab key={selectedAerodrome?.icaoCode ?? 'none'} selectedAerodrome={selectedAerodrome} />
         </TabsContent>
         <TabsContent value="converter" className="mt-4">
           <UnitConverterTab />
