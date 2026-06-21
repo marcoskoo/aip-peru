@@ -11,6 +11,8 @@ import {
   Info,
   ChevronDown,
   AlertTriangle,
+  Download,
+  Loader2,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -36,7 +38,12 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { useToast } from "@/hooks/use-toast"
 import type { RoutePoint, RouteSummary, ICAOFlightPlan } from "@/lib/types"
+import {
+  downloadFplHtml,
+  isFlightPlanValid as isPlanValidPure,
+} from "@/lib/fpl-generator"
 
 interface FlightPlanProps {
   initialRoute?: RoutePoint[]
@@ -179,6 +186,8 @@ export function FlightPlan({ initialRoute, initialSummary }: FlightPlanProps) {
     buildInitialPlan(initialRoute, initialSummary)
   )
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [isDownloading, setIsDownloading] = useState(false)
+  const { toast } = useToast()
 
   const updateField = useCallback(
     (field: keyof ICAOFlightPlan, value: string) => {
@@ -272,6 +281,45 @@ export function FlightPlan({ initialRoute, initialSummary }: FlightPlanProps) {
     setErrors({})
   }, [])
 
+  // Validación pura (sin side-effects) para habilitar el botón Descargar FPL
+  const isFormComplete = useMemo(() => isPlanValidPure(plan), [plan])
+
+  const handleDownloadFpl = useCallback(async () => {
+    if (!isFormComplete) {
+      toast({
+        title: "Plan incompleto",
+        description:
+          "Complete todos los campos requeridos antes de descargar el FPL.",
+        variant: "destructive",
+      })
+      // Marcar errores para guiar al usuario
+      validate()
+      return
+    }
+
+    setIsDownloading(true)
+    try {
+      await downloadFplHtml(plan)
+      toast({
+        title: "FPL generado",
+        description:
+          "Se ha descargado el formato FPL oficial CORPAC con los datos del plan de vuelo.",
+      })
+    } catch (err) {
+      console.error("[FPL] Error generando FPL:", err)
+      toast({
+        title: "Error al generar FPL",
+        description:
+          err instanceof Error
+            ? err.message
+            : "No se pudo generar el archivo FPL.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsDownloading(false)
+    }
+  }, [isFormComplete, plan, toast, validate])
+
   const hasErrors = Object.keys(errors).length > 0
 
   // ── Fill Mode ──────────────────────────────────────────────────────────
@@ -285,6 +333,27 @@ export function FlightPlan({ initialRoute, initialSummary }: FlightPlanProps) {
         >
           <Eye className="size-4 mr-1.5" />
           Vista Previa
+        </Button>
+        <Button
+          onClick={handleDownloadFpl}
+          disabled={!isFormComplete || isDownloading}
+          className={
+            isFormComplete && !isDownloading
+              ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+              : ""
+          }
+          title={
+            isFormComplete
+              ? "Descargar formato FPL oficial CORPAC con los datos del plan"
+              : "Complete los campos requeridos para habilitar la descarga"
+          }
+        >
+          {isDownloading ? (
+            <Loader2 className="size-4 mr-1.5 animate-spin" />
+          ) : (
+            <Download className="size-4 mr-1.5" />
+          )}
+          {isDownloading ? "Generando..." : "Descargar FPL"}
         </Button>
         <Button variant="outline" onClick={handleClear}>
           <RotateCcw className="size-4 mr-1.5" />
@@ -300,6 +369,15 @@ export function FlightPlan({ initialRoute, initialSummary }: FlightPlanProps) {
           <Badge variant="destructive" className="flex items-center gap-1 px-3 py-1">
             <AlertTriangle className="size-3" />
             {Object.keys(errors).length} error(es)
+          </Badge>
+        )}
+        {isFormComplete && !hasErrors && (
+          <Badge
+            variant="outline"
+            className="flex items-center gap-1 px-3 py-1 border-emerald-500/50 text-emerald-600 dark:text-emerald-400"
+          >
+            <Download className="size-3" />
+            FPL listo para descargar
           </Badge>
         )}
       </div>
@@ -1200,6 +1278,19 @@ export function FlightPlan({ initialRoute, initialSummary }: FlightPlanProps) {
         >
           <Printer className="size-4 mr-1.5" />
           Imprimir
+        </Button>
+        <Button
+          onClick={handleDownloadFpl}
+          disabled={isDownloading}
+          className="bg-emerald-600 hover:bg-emerald-700 text-white"
+          title="Descargar formato FPL oficial CORPAC con los datos del plan"
+        >
+          {isDownloading ? (
+            <Loader2 className="size-4 mr-1.5 animate-spin" />
+          ) : (
+            <Download className="size-4 mr-1.5" />
+          )}
+          {isDownloading ? "Generando..." : "Descargar FPL"}
         </Button>
       </div>
 

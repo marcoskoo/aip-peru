@@ -1453,3 +1453,64 @@ Stage Summary:
 - Si la web no carga de nuevo, ejecutar:
     bash launch-dev.sh
   (este script ya tiene la DATABASE_URL correcta hardcodeada)
+
+---
+Task ID: FPL-DOWNLOAD-1
+Agent: main (Z.ai Code)
+Task: Implementar botón "Descargar FPL" que se active al completar el formato de plan de vuelo, y al dar click llene los casilleros del formato FPL.png (HTML) con los datos del plan y lo descargue.
+
+Work Log:
+- Leído el archivo subido `/home/z/my-project/upload/fpl_editable.html` (416KB, plantilla FPL oficial CORPAC con PNG embebido en base64 y campos input/textarea/select superpuestos)
+- Identificados todos los campos del formulario FPL:
+  - Texto: ac_id, num_a, ac_tp, eq_c, eq_s, dep, dep_t, spd, lvl, ruta, dst, eet_h, eet_m, alt1, alt2, otros, end_h, end_m, pob, d_n, d_c, d_col, color_a, obs, pic, filed, esp
+  - Selects: sel_r (I/V/Y/Z), sel_t (S/N/G/M/X), sel_w (H/M/L)
+  - Checkboxes (divs .sq con clase "on"): sq_uhf, sq_vhf, sq_elt, sq_s, sq_p, sq_d, sq_m, sq_j, sq_jj, sq_ll, sq_ff, sq_uu, sq_vv, sq_cub
+- Revisado el componente `src/components/flight-plan.tsx` (1595 líneas) que tiene:
+  - Modo "fill" con 4 secciones (General, Equipo, Ruta, Adicional)
+  - Modo "preview" con formato ICAO oficial
+  - Hook `useToast` disponible en `src/hooks/use-toast.ts`
+- Copiado el HTML a `public/fpl-template.html` (425KB) para servir como recurso estático
+- Creado `src/lib/fpl-generator.ts` (350+ líneas) con:
+  - Función `planToFplData(plan)` que mapea ICAOFlightPlan → FplFillData
+  - Función `buildFillScript(data)` que genera un script JS que rellena los campos del template
+  - Función `generateFplHtml(plan)` que carga el template, inyecta el script y devuelve el HTML
+  - Función `downloadFplHtml(plan)` que crea un Blob y lo descarga como `FPL_{acid}_{dep}_{dst}_{fecha}.html`
+  - Función `isFlightPlanValid(plan)` que valida sin side-effects para habilitar el botón
+  - Mapeo detallado de:
+    - emergencyRadio (U/V/E) → sq_uhf/sq_vhf/sq_elt
+    - survivalEquipment (POLAR/DESERT/MARITIME/JUNGLE) → sq_s/sq_p/sq_d/sq_m
+    - jackets (LIGHT/FLUO/V/U) → sq_jj/sq_ll/sq_ff/sq_vv/sq_uu
+    - dinghies ("2 8 C ORANGE") → d_n/d_c/sq_cub/d_col
+    - totalEET (HHMM) → eet_h + eet_m
+    - endurance (HHMM) → end_h + end_m
+- Modificado `src/components/flight-plan.tsx`:
+  - Imports: Download, Loader2 de lucide-react; useToast de hooks; downloadFplHtml, isFlightPlanValid de fpl-generator
+  - Estado `isDownloading` para feedback visual durante la generación
+  - `isFormComplete` derivado con useMemo que llama a isFlightPlanValid
+  - `handleDownloadFpl` async con try/catch, toast de éxito/error, validación previa
+  - Botón "Descargar FPL" en fill mode (verde esmeralda cuando habilitado, deshabilitado si form incompleto)
+  - Botón "Descargar FPL" en preview mode (siempre habilitado en verde esmeralda)
+  - Badge "FPL listo para descargar" cuando el formulario está completo
+- Verificación con Agent Browser:
+  - Página carga correctamente (HTTP 200, sin errores JS)
+  - Botón "Descargar FPL" aparece deshabilitado cuando el form está vacío
+  - Botón se habilita después de completar: aircraftIdentification (OB1234), typeOfAircraft (B738), departureAerodrome (SPJC), estimatedOffBlockTime (1430), destinationAerodrome (SPZO), totalEET (0230)
+  - Al hacer click: se muestra toast "FPL generado - Se ha descargado el formato FPL oficial CORPAC con los datos del plan de vuelo"
+  - En modo preview: el botón también funciona correctamente
+  - Verificado vía eval que el HTML generado incluye el script de relleno con todos los valores del plan (ac_id="OB1234", dep="SPJC", dep_t="1430", dst="SPZO", eet_h="02", eet_m="30", ruta="LIM1A...", squares=["sq_vhf","sq_s","sq_jj","sq_ll","sq_vv","sq_uu","sq_ff","sq_cub"], etc.)
+- `bun run lint` pasa sin errores
+
+Stage Summary:
+- Feature "Descargar FPL" implementada y verificada end-to-end
+- Archivos creados:
+  - `public/fpl-template.html` (425KB) — plantilla FPL oficial CORPAC con PNG embebido
+  - `src/lib/fpl-generator.ts` (350+ líneas) — lógica de mapeo y generación de HTML
+- Archivos modificados:
+  - `src/components/flight-plan.tsx` — botones Descargar FPL en fill y preview mode, estado isDownloading, validación isFormComplete, toast notifications
+- Comportamiento:
+  1. Usuario llena los campos requeridos del plan de vuelo (F7, F9, F13, F16)
+  2. El botón "Descargar FPL" se habilita automáticamente (verde esmeralda) cuando el form es válido
+  3. Al hacer click, se descarga un archivo HTML `FPL_{acid}_{dep}_{dst}_{fecha}.html`
+  4. El HTML descargado contiene el formato FPL oficial CORPAC con todos los casilleros rellenados automáticamente con los datos del plan de vuelo
+  5. Toast de éxito confirma la operación
+- El archivo descargado es autocontenido (incluye el PNG base64 embebido) y se puede abrir/imprimir/PDF en cualquier navegador
