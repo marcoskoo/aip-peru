@@ -1514,3 +1514,40 @@ Stage Summary:
   4. El HTML descargado contiene el formato FPL oficial CORPAC con todos los casilleros rellenados automáticamente con los datos del plan de vuelo
   5. Toast de éxito confirma la operación
 - El archivo descargado es autocontenido (incluye el PNG base64 embebido) y se puede abrir/imprimir/PDF en cualquier navegador
+
+---
+Task ID: FPL-FIX-1
+Agent: main (Z.ai Code)
+Task: Corregir que el texto del FPL descargado queda fuera de los casilleros/recuadros del formato plan de vuelo.
+
+Work Log:
+- Analizada la causa raíz del problema:
+  - La plantilla FPL (`public/fpl-template.html`) usa unidades `vw` (viewport width) para `font-size` en todos los campos: `font-size:1.5vw`, `font-size:1.3vw`, etc.
+  - Las unidades `vw` escalan según el ancho de la ventana del navegador, NO según el ancho del contenedor `.fpl` (que tiene `max-width:900px`)
+  - Cuando el usuario abre el HTML descargado en una ventana ancha (ej: 1920px), `1.5vw` = 28.8px, pero la imagen PNG del formato FPL solo tiene 900px de ancho → el texto se desborda fuera de los casilleros
+  - Identificadas 37 instancias de `vw` en `font-size`: 36 en estilos inline de inputs/textareas/selects + 1 en la regla CSS `.sq.on::after`
+- Aplicada corrección con **container queries** (CSS moderno, soportado en todos los navegadores desde 2023):
+  1. Agregado `container-type:inline-size;` a la regla `.fpl{` → establece el contenedor como contexto de query
+  2. Reemplazadas todas las unidades `vw` con `cqw` (container query width) en contextos de `font-size`
+  - Comando usado: `sed -i 's/\.fpl{/\.fpl{container-type:inline-size;/'` y `sed -i -E '/font-size/ s/([0-9.]+)vw/\1cqw/g'`
+  - El segundo sed solo actúa en líneas con `font-size` para no corromper el base64 del PNG embebido
+- Resultado del fix:
+  - `1.5cqw` = 1.5% del ancho del contenedor (900px) = 13.5px (igual a lo que el diseñador original pretendía)
+  - El texto escala proporcionalmente con el contenedor, no con la ventana
+  - Funciona correctamente en cualquier ancho de ventana (móvil, tablet, desktop, impresión)
+- Verificación con Agent Browser:
+  - Abierta la plantilla en viewport 1920x1080: container=900px, ac_id font-size=13.5px (antes sería 28.8px), dep font-size=13.5px ✓
+  - Abierta en viewport 600x800: container=568px, font-size=8.52px (escala proporcional) ✓
+  - Llenados 18 campos con valores de prueba → **0 overflows** (todos los textos caben dentro de los casilleros)
+  - Verificado que el HTML descargado tiene: `container-type:inline-size` ✓, `1.5cqw` en ac_id ✓, 0 `vw` en font-size ✓
+  - Test end-to-end: navegué al plan de vuelo, llené campos requeridos, botón "Descargar FPL" se habilitó, hice click, toast "FPL generado" apareció ✓
+- `bun run lint` pasa sin errores
+- No hay errores en dev.log
+
+Stage Summary:
+- Problema resuelto: el texto ahora se renderiza dentro de los casilleros del formato FPL en cualquier tamaño de ventana
+- Archivo modificado: `public/fpl-template.html`
+  - Agregado `container-type:inline-size;` a la regla `.fpl{`
+  - Reemplazadas 37 unidades `vw` → `cqw` en propiedades `font-size`
+- El fix aplica tanto al template servido en `/fpl-template.html` como a los archivos HTML descargados vía "Descargar FPL" (ya que el generador carga este template)
+- Técnica usada: CSS Container Queries (`container-type` + `cqw` units), soportada en Chrome 105+, Firefox 110+, Safari 16+
