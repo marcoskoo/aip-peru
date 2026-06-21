@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* Netlify: NO usar output: "standalone" - el plugin @netlify/plugin-nextjs maneja el build */
+  /* Vercel: build nativo de Next.js, no necesita output: "standalone" */
   typescript: {
     ignoreBuildErrors: true,
   },

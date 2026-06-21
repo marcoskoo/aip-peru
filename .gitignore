@@ -57,6 +57,15 @@ prompt
 server.log
 # Skills directory
 /skills/
+
+# Upload artifacts (not part of the project)
+/upload/
+
+# Agent context
+/agent-ctx/
+/.zscripts/
+/examples/
+
 # Screenshots de verificación
 *-verify*.png
 *-screenshot*.png
