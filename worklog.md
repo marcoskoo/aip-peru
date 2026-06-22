@@ -1746,3 +1746,45 @@ Stage Summary:
 - El archivo public/fpl-template.html (168499 bytes) ahora tiene coordenadas precisas basadas en los casilleros reales detectados
 - No se requirió cambiar el generador (src/lib/fpl-generator.ts) ni el componente (src/components/flight-plan.tsx), solo el template HTML
 - Verificación visual confirmó que TODOS los datos del FPL descargado están dentro de los casilleros verdes/rojos correspondientes
+
+---
+Task ID: FPL-FONT-SIZE-ADJUST
+Agent: main
+Task: Ajustar SOLO los textos señalados con flechas por el usuario (MRD01, S, C172, L, 2100, SPJC, SPSD, SPRU, 06, 002, N) y aumentar el tamaño del texto para que no se vea muy pequeño dentro del casillero.
+
+Work Log:
+- Analizada la imagen del usuario (upload/pasted_image_1782160998087.png) con VLM para identificar los 11 campos señalados con flechas
+- Identificados los campos en public/fpl-template.html:
+  * ac_id (MRD01) - Aircraft Identification (F7)
+  * sel_t (S) - Tipo de vuelo (F8b)
+  * ac_tp (C172) - Tipo de aeronave (F9b)
+  * sel_w (L) - Categoría de estela (F9c)
+  * dep_t (2100) - EOBT (F13b)
+  * dst (SPJC) - Aeródromo destino (F16a)
+  * alt1 (SPSD) - Alternativa 1 (F16c)
+  * alt2 (SPRU) - Alternativa 2 (F16d)
+  * end_h (06) - Endurance horas (F19 E/)
+  * pob (002) - Personas a bordo (F19 P/)
+  * pic (N) - Piloto al mando (F19 N/)
+- Aumentado font-size de los 11 campos en public/fpl-template.html:
+  * ac_id: 1.6cqw → 2.1cqw
+  * sel_t: 1.3cqw → 2.3cqw
+  * ac_tp: 1.3cqw → 2.0cqw
+  * sel_w: 1.3cqw → 2.0cqw
+  * dep_t: 1.5cqw → 2.1cqw
+  * dst: 1.5cqw → 2.1cqw
+  * alt1: 1.3cqw → 2.0cqw
+  * alt2: 1.3cqw → 2.0cqw
+  * end_h: 1.2cqw → 2.0cqw (añadido text-align:center)
+  * pob: 1.2cqw → 2.1cqw (añadido text-align:center)
+  * pic: 1.2cqw → 2.0cqw
+- Verificado visualmente con Agent Browser: cargué el template con los valores del usuario (MRD01, S, C172, L, 2100, SPJC, SPSD, SPRU, 06, 002, N)
+- Verificado con VLM que todos los textos caben dentro de los casilleros sin desbordarse y se ven MEJOR que antes
+- Lint pasa sin errores
+- Dev server funcionando correctamente (HTTP 200)
+
+Stage Summary:
+- Solo se modificaron los 11 campos señalados por el usuario, sin tocar otros campos
+- Aumento promedio del font-size: ~50% (de 1.2-1.6cqw a 2.0-2.3cqw)
+- Los campos end_h y pob ahora tienen text-align:center para mejor centrado
+- El FPL descargado desde la aplicación principal usará automáticamente estos nuevos tamaños ya que fpl-generator.ts carga el template desde /fpl-template.html
