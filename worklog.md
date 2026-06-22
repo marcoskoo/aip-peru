@@ -1916,3 +1916,65 @@ Stage Summary:
 - fpl-generator.ts actualizado para push sq_n al array de squares cuando hay balsas
 - Archivos modificados: public/fpl-template.html, src/lib/fpl-generator.ts
 - Cambios aplicados automáticamente al descargar el FPL desde la aplicación principal
+
+---
+Task ID: FPL-FIELD-POSITIONS-FIX
+Agent: main
+Task: Mover 3 textos a sus casilleros correctos según flechas del usuario (imagen 2223.png): 1) SDE2FG/SBZPCHIRWYZ (equipment) debe ir a EQUIPO, 2) BH2 (aircraft ID) debe ir a IDENTIFICACIÓN AERONAVE, 3) M. KOO (pilot) debe ir a PILOTO AL MANDO.
+
+Work Log:
+- Analizada la imagen del usuario (upload/2223.png) con VLM para identificar los textos mal ubicados y las flechas
+- Detectadas las líneas de la cuadrícula del formulario FPL base (public/fpl-template.html) con Python/PIL:
+  * Row 1 (IDENTIFICACIÓN AERONAVE): 22.9% a 29.2%
+  * Row 2 (N°/TIPO/ESTELA/EQUIPO): 29.2% a 38.6%
+  * Row A (COLOR Y MARCAS): 78.4% a 80.3%
+  * Row N (OBSERVACIONES): 80.3% a 83.3%
+  * Row C (PILOTO AL MANDO): 83.3% a 86.7%
+  * Row FILED BY: 86.7%+
+- Creada página de prueba con valores distintivos (AAAAAAA, BBBBBBB, CCCCCCC, etc.) para identificar dónde renderiza cada campo
+- VLM confirmó los problemas:
+  * eq_c (BBBBBBB) renderizaba en IDENTIFICACIÓN AERONAVE (top:25.08%) → DEBE estar en EQUIPO
+  * eq_s (CCCCCCC) renderizaba en EQUIPO (correcto pero posición límite)
+  * ac_id (AAAAAAA) estaba OCULTO detrás de eq_c (overlapping)
+  * pic (PPPPPPP) renderizaba en fila A/COLOR (top:80.5%) → DEBE estar en C/PILOTO
+  * color_a (DDDDDDD) renderizaba en fila D/CUBIERTA (top:74.76%) → DEBE estar en A/COLOR
+  * obs (OOOOOOO) renderizaba en N/OBSERVACIONES (correcto)
+  * filed renderizaba en C/PILOTO → DEBE estar en FILED BY
+- Corregidas las posiciones en public/fpl-template.html:
+  * eq_c: top:25.08% → 29.37% (EQUIPO row), left:30.42% → 36.0% (EQUIPO field start), width:17.92% → 20.0%
+  * eq_s: top:28.25% → 29.37% (EQUIPO row), left:48.54% → 56.0%, width:39.17% → 16.0%
+  * color_a: top:74.76% → 78.5% (A/COLOR row), left:41.04% → 14.0%, width:17.29% → 80.0%
+  * pic: top:80.5% → 84.0% (C/PILOTO row), height:2.22% → 2.5%
+  * obs: top:81.59% → 80.5% (N/OBS row), height:1.9% → 2.5%
+  * filed: top:84.76% → 87.5% (FILED BY row), height:2.22% → 2.5%
+- Verificación con valores distintivos (AAAAAAA, BBBBBBB, etc.):
+  * AAAAAAA (ac_id) → IDENTIFICACIÓN AERONAVE ✓
+  * BBBBBBB (eq_c) → EQUIPO ✓
+  * CCCCCCC (eq_s) → EQUIPO ✓
+  * DDDDDDD (color_a) → A/COLOR ✓
+  * OOOOOOO (obs) → N/OBS ✓
+  * PPPPPPP (pic) → C/PILOTO ✓
+  * FFFFFFF (filed) → PRESENTADO POR ✓
+- Verificación con datos reales del usuario (BH2, SBZPCHIRWYZ, M. KOO):
+  * BH2 → IDENTIFICACIÓN AERONAVE ✓
+  * SBZPCHIRWYZ → EQUIPO ✓
+  * M. KOO → PILOTO AL MANDO ✓
+  * ROJO/BLANCO → COLOR ✓
+  * NINGUNA → OBSERVACIONES ✓
+- Test end-to-end en app principal: formulario llenado y "Descargar FPL" ejecutado sin errores
+- bun run lint: 0 errores ✓
+- Dev server: HTTP 200, sin errores nuevos ✓
+
+Stage Summary:
+- 6 campos reposicionados a sus filas correctas en public/fpl-template.html:
+  * eq_c: movido de IDENTIFICACIÓN row a EQUIPO row
+  * eq_s: ajustado a EQUIPO row
+  * color_a: movido de DINGHIES row a A/COLOR row
+  * pic: movido de N/OBS row a C/PILOTO row
+  * obs: centrado en N/OBS row
+  * filed: movido de C/PILOTO row a FILED BY row
+- eq_c también ajustado horizontalmente (left:30.42% → 36.0%) para estar dentro del campo EQUIPO
+- ac_id ya no está oculto (eq_c ya no se superpone)
+- Todos los textos ahora aparecen en sus casilleros correctos
+- Sin cambios en fpl-generator.ts (el mapeo de datos ya era correcto)
+- Verificado con VLM usando tanto valores distintivos como datos reales del usuario
