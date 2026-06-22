@@ -1978,3 +1978,34 @@ Stage Summary:
 - Todos los textos ahora aparecen en sus casilleros correctos
 - Sin cambios en fpl-generator.ts (el mapeo de datos ya era correcto)
 - Verificado con VLM usando tanto valores distintivos como datos reales del usuario
+
+---
+Task ID: FPL-FIELD-POSITIONING-FIX
+Agent: Main Agent
+Task: Ajustar posiciones de tres campos de texto en el template FPL (SDE2FG/SBZPCHIRWYZ, BH2, M. KOO) según imagen 2223.PNG del usuario
+
+Work Log:
+- Analicé la imagen 2223.PNG subida por el usuario con VLM para identificar las posiciones correctas
+- Extraje la imagen PNG base del formulario (480x630px) embebida en fpl-template.html
+- Analicé la estructura del formulario píxel por píxel con Python/PIL para encontrar:
+  * Campo 10 (EQUIPMENT): span x=234-419 (48.75%-87.29%), y=184-195 (29.21%-30.95%)
+  * Separador '/' impreso en el formulario: x=345-347 (71.88%-72.29%)
+  * Fila N/ (PILOTO AL MANDO): y=535-546 (84.92%-86.67%)
+  * Fila C/ (PRESENTADO POR): y=546-557 (86.67%-88.41%)
+- Ajusté las posiciones CSS de tres campos en public/fpl-template.html:
+  * eq_c (nav/comm equipment): left 36.0%→49.5%, width 20.0%→21.5% (ahora ANTES del '/')
+  * eq_s (transponder): left 56.0%→72.5%, width 16.0%→14.5% (ahora DESPUÉS del '/')
+  * pic (pilot name): top 84.0%→85.2%, width 41.67%→41.0%, height 2.5%→1.4% (ahora en fila N/)
+- Verificación visual con Agent Browser + VLM:
+  * SBZPCHIRWYZ visible en parte IZQUIERDA del campo 10, antes del '/' ✓
+  * BH2 visible en parte DERECHA del campo 10, después del '/' ✓
+  * Separador '/' visible entre ambos ✓
+  * M. KOO dentro del campo pic (rectángulo verde) en fila N/ (Row B) ✓
+- Lint pasó sin errores, dev server corriendo sin errores runtime
+
+Stage Summary:
+- Campo 10 (EQUIPMENT) ahora correctamente dividido por '/':
+  * eq_c (equipos navegación/comunicación como SBZPCHIRWYZ) → ANTES del '/' (left:49.5%, width:21.5%)
+  * eq_s (transponder como BH2) → DESPUÉS del '/' (left:72.5%, width:14.5%)
+- Campo pic (M. KOO - piloto al mando) movido a la fila N/ PILOTO AL MANDO (top:85.2%)
+- El usuario aclaró: "el casillero 10 está dividido en dos secciones, la primera antes del '/' corresponde a los equipos de navegación y comunicaciones (SBZPCHIRWYZ), y la segunda parte después del '/' es BH2"
