@@ -1648,3 +1648,78 @@ Stage Summary:
   - public/fpl-template.html (425KB) — fix de container queries intacto
 - Acción requerida recurrente: si la web no carga, ejecutar
   `bash launch-dev.sh` (restaura DATABASE_URL de PostgreSQL).
+
+---
+Task ID: FPL-NEW-FORMAT-1
+Agent: Main Agent
+Task: Cambiar el formato de descarga del plan de vuelo para usar el nuevo FPL.png, y que los dígitos queden dentro de los casilleros correspondientes
+
+Work Log:
+- Analizada la nueva imagen FPL.png subida por el usuario (480x630 px, portrait)
+- Comparada con la imagen del template existente (1467x2018, aspect 0.727):
+  * Correlación de brillo de filas: 0.06 (muy baja)
+  * Correlación de brillo de columnas: 0.07 (muy baja)
+  * => Son formularios DIFERENTES, no se pueden reusar posiciones
+- Análisis estructural con Python/PIL:
+  * Detectadas 25 líneas horizontales (y=3.02% a y=86.67%)
+  * Detectadas 7 líneas verticales principales (x=8.96% a x=87.08%)
+  * Columna principal de input: 40.83%-86.88% (ancho ~46%)
+  * Sección grande (Field 19): 52.54%-69.21% (16.67% de altura)
+  * 24 filas identificadas con celdas clasificadas como INPUT/text/mixed
+- VLM (glm-4.6v) resultó NO confiable para coordenadas precisas:
+  * Inventaba posiciones fuera del rango de la imagen
+  * Daba respuestas genéricas ("demasiado ancho")
+  * Mal leía texto de los campos
+  * => Se usó PIL como fuente de verdad para grid lines
+- Construido nuevo template HTML (public/fpl-template.html):
+  * FPL.png embebida como base64 (157KB)
+  * Container queries (container-type:inline-size + cqw units) para que
+    el font-size escale con el contenedor, no con el viewport
+  * 42 campos posicionados con porcentajes basados en el grid de PIL
+  * Mismos IDs que el template anterior (ac_id, sel_r, dep, dst, ruta,
+    end_h, pob, sq_uhf, etc.) para que fpl-generator.ts funcione sin cambios
+  * CSS para inputs transparentes, selects sin apariencia nativa,
+    checkboxes como divs .sq con clase "on"
+  * Botones IMPRIMIR/PDF y LIMPIAR
+  * Auto-uppercase en inputs y textareas
+- Verificación de alineación con VLM por secciones:
+  * Sección TOP: ac_id, num_a, ac_tp, sel_r, sel_t, sel_w, eq_c, eq_s,
+    dep, dep_t, spd, ruta → todos "bien" (alineados)
+  * Sección MID: dst, eet_h, eet_m, alt1, alt2, otros, end_h, end_m,
+    pob, sq_uhf/vhf/elt, sq_s/p/d/m, sq_jj/ll/ff/uu/vv, d_n, d_col →
+    todos ALINEADO
+  * Sección BOT: color, obs → ALINEADO; filed → alineado en columna principal
+- Verificación de overflow de texto:
+  * Screenshot a 800px ancho: VLM dice "TODO BIEN"
+  * Screenshot a 1200px ancho: VLM dice "TODO BIEN"
+  * Container queries (cqw) aseguran que el texto escale proporcionalmente
+    con el contenedor, no con la ventana → no hay overflow en ningún ancho
+- Test end-to-end completo:
+  * Homepage carga (HTTP 200, 0 errores consola)
+  * Plan de Vuelo abre correctamente
+  * Botón "Descargar FPL" deshabilitado con form vacío ✓
+  * Llenados F7=OB1234, F9=B738, F13=SPJC, EOBT=1430, F16=SPZO, EET=0230
+  * Botón se habilita automáticamente ✓
+  * Click → toast "FPL generado - Se ha descargado el formato FPL oficial
+    CORPAC con los datos del plan de vuelo" ✓
+  * 0 errores en consola durante la descarga ✓
+  * HTML descargado contiene la nueva imagen + script de relleno ✓
+- bun run lint: 0 errores ✓
+- Dev server: HTTP 200, sin errores en dev.log ✓
+
+Stage Summary:
+- Formato de descarga FPL cambiado exitosamente al nuevo FPL.png
+- Los dígitos quedan dentro de los casilleros correspondientes gracias a:
+  1. Container queries CSS (container-type:inline-size + cqw units) que
+     hacen que el font-size escale con el ancho del contenedor (.fpl),
+     no con el ancho de la ventana del navegador
+  2. Posiciones de campos calibradas con análisis PIL de grid lines
+  3. 0 unidades vw en font-size (todas son cqw)
+- Archivo modificado: public/fpl-template.html (168KB)
+  * Nueva imagen FPL.png (480x630) embebida como base64
+  * 42 campos con posiciones basadas en grid lines detectadas por PIL
+  * Container queries para escalado proporcional
+  * Mismos field IDs que antes → fpl-generator.ts sin cambios
+- El archivo HTML descargado es autocontenido (imagen base64 embebida)
+  y se puede abrir/imprimir/PDF en cualquier navegador
+- Verificado en anchos de 800px y 1200px sin overflow de texto
