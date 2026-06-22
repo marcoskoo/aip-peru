@@ -39,7 +39,7 @@ import type { ICAOFlightPlan } from "@/lib/types"
  *   - sq_ff   : Chalecos V/U/Radio (F19 J/)
  *   - sq_uu   : Chalecos UHF (F19 J/)
  *   - sq_vv   : Chalecos VHF (F19 J/)
- *   - d_n     : Balsas - número (F19 D/)
+ *   - sq_n    : Balsas - indicador N (F19 D/) [checkbox]
  *   - d_c     : Balsas - capacidad (F19 D/)
  *   - sq_cub  : Balsas - cubierta (F19 D/)
  *   - d_col   : Balsas - color (F19 D/)
@@ -71,7 +71,6 @@ interface FplFillData {
   end_h: string
   end_m: string
   pob: string
-  d_n: string
   d_c: string
   d_col: string
   color_a: string
@@ -129,14 +128,14 @@ export function planToFplData(plan: ICAOFlightPlan): FplFillData {
   if (jackets.includes("FLUO") || jackets.includes("FLUORESCENT"))
     squares.push("sq_ff")
 
-  // Balsas (dinghies): formato "2 8 C ORANGE" → número, capacidad, cubierta, color
+  // Balsas (dinghies): formato "2 8 C ORANGE" → indicador N, capacidad, cubierta, color
   const dinghiesStr = (plan.dinghies || "").trim()
-  let d_n = ""
   let d_c = ""
   let d_col = ""
   if (dinghiesStr) {
     const parts = dinghiesStr.split(/\s+/)
-    if (parts.length >= 1) d_n = parts[0]
+    // Marcar el checkbox N (indica que hay balsas)
+    squares.push("sq_n")
     if (parts.length >= 2) d_c = parts[1]
     // Cubierta: "C" si aparece en el string
     if (dinghiesStr.toUpperCase().includes("C")) squares.push("sq_cub")
@@ -169,7 +168,6 @@ export function planToFplData(plan: ICAOFlightPlan): FplFillData {
     end_h,
     end_m,
     pob: plan.personsOnBoard || "",
-    d_n,
     d_c,
     d_col,
     color_a: plan.aircraftColorAndMarkings || "",
@@ -226,7 +224,6 @@ function buildFillScript(data: FplFillData): string {
     ["end_h", data.end_h],
     ["end_m", data.end_m],
     ["pob", data.pob],
-    ["d_n", data.d_n],
     ["d_c", data.d_c],
     ["d_col", data.d_col],
     ["color_a", data.color_a],

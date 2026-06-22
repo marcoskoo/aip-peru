@@ -1849,3 +1849,70 @@ Stage Summary:
   * Misma fuente (Courier New monospace) y mismo color (#000) en todo el formulario
 - Sin errores de lint, sin errores de runtime, servidor HTTP 200
 - Aplicación lista para uso del usuario
+
+---
+Task ID: FPL-XMARK-AND-BIGGER-FONT
+Agent: main
+Task: 1) Hacer la letra de los textos MÁS GRANDE pero que encajen en los casilleros. 2) Cuando se haga click en los recuadros de INFORMACIÓN SUPLEMENTARIA, marcarlos con una X grande y en negrita (dos líneas diagonales de esquina a esquina). 3) Aplicar X-mark a: U/V/E, S/P/D/M/J, J/L/F/U/V, D/C, N. 4) Auto-marcar: S→P/D/M/J, J→L/F/U/V, D→C.
+
+Work Log:
+- Analizado PDF del usuario (upload/10f8cf52-ce86-47e3-b097-9157da4f8e17 (1).pdf) con VLM para identificar la disposición de los recuadros en la sección INFORMACIÓN SUPLEMENTARIA
+- Identificados los grupos de checkboxes: U/V/E (radio), S/P/D/M/J (survival), J/L/F/U/V (jackets), D/C (dinghies covered), N (dinghies indicator)
+- Examinado public/fpl-template.html (91 líneas, ~169KB con imagen base64):
+  * 13 checkboxes existentes: sq_uhf, sq_vhf, sq_elt, sq_s, sq_p, sq_d, sq_m, sq_jj, sq_ll, sq_ff, sq_uu, sq_vv, sq_cub
+  * d_n era un input de texto (número de balsas) → convertido a checkbox sq_n
+  * Font-size estaba en 1.5cqw (uniforme)
+- EDIT 1: Aumentado font-size de 1.5cqw → 2.0cqw en TODOS los campos (43 ocurrencias reemplazadas, +33% tamaño)
+- EDIT 2: Cambiado el CSS de .sq.on::after (que mostraba '✓') por dos pseudo-elementos ::before y ::after que dibujan una X grande y en negrita:
+  * width:145% (la línea cruza todo el recuadro de esquina a esquina)
+  * height:0.55cqw (línea gruesa proporcional al contenedor)
+  * background:#000 (negro sólido)
+  * ::before rotado 45deg (diagonal de sup-izq a inf-der)
+  * ::after rotado -45deg (diagonal de sup-der a inf-izq)
+- EDIT 3: Convertido d_n (input text en left:7.08%,top:74.76%) → sq_n (div .sq checkbox) para el recuadro N
+- EDIT 4: Actualizada función tap(el) en el <script> del template con lógica de auto-marcado:
+  * sq_s clickeado → marca automáticamente sq_p, sq_d, sq_m, sq_jj
+  * sq_jj clickeado → marca automáticamente sq_ll, sq_ff, sq_uu, sq_vv
+  * sq_d clickeado → marca automáticamente sq_cub
+  * Implementado con un mapa autoMap y un loop que respeta casillas ya marcadas
+- EDIT 5 (en src/lib/fpl-generator.ts):
+  * Eliminado d_n de la interfaz FplFillData
+  * Actualizado planToFplData(): cuando hay balsas, push 'sq_n' al array de squares (en vez de setear d_n)
+  * Eliminada la entrada ["d_n", data.d_n] del buildFillScript()
+  * Actualizado comentario de documentación: d_n → sq_n
+- Verificación visual con Agent Browser + VLM (glm-4.6v):
+  * Renderizado template con datos de prueba (OB2134, C172, SPSD, SPJC, etc.) y clicks simulados en sq_s, sq_jj, sq_d, sq_n, sq_uhf, sq_vhf
+  * VLM confirmó los 10 puntos de verificación:
+    1. ✓ Las X se ven grandes y en negrita (dos líneas diagonales)
+    2. ✓ El tamaño de letra es MÁS GRANDE y cabe en los casilleros
+    3. ✓ S marcado con X
+    4. ✓ P, D, M, J auto-marcados con X
+    5. ✓ J marcado con X
+    6. ✓ L, F, U, V auto-marcados con X
+    7. ✓ D marcado con X
+    8. ✓ C (CUBIERTA) auto-marcado con X
+    9. ✓ N marcado con X
+    10. ✓ UHF y VHF marcados con X
+  * VLM confirmó que NO hay overflow de texto en ningún casillero
+- Test end-to-end en app principal:
+  * Navegado a http://localhost:3000/
+  * Clic en "Abrir menú de navegación" → "Plan de Vuelo"
+  * Llenado formulario completo (ac_id=OB2134, dep=SPSD, dst=SPJC, ac_tp=C172, etc.)
+  * Sección 4: dinghies="2 8 C ORANGE", survival="POLAR", jackets="LIGHT"
+  * Botón "Descargar FPL" se habilitó automáticamente ✓
+  * Click en descargar → sin errores en consola ✓
+- bun run lint: 0 errores ✓
+- Dev server: HTTP 200, sin errores nuevos (solo errores prisma preexistentes de conexión PostgreSQL Neon)
+
+Stage Summary:
+- Font-size aumentado de 1.5cqw → 2.0cqw en los 43 campos (33% más grande, aún caben en casilleros)
+- Checkboxes muestran X grande y en negrita (dos líneas diagonales de esquina a esquina) en lugar de ✓
+- 14 checkboxes con X-mark behavior: sq_uhf, sq_vhf, sq_elt, sq_s, sq_p, sq_d, sq_m, sq_jj, sq_ll, sq_ff, sq_uu, sq_vv, sq_cub, sq_n
+- Auto-marcado implementado:
+  * sq_s → sq_p, sq_d, sq_m, sq_jj
+  * sq_jj → sq_ll, sq_ff, sq_uu, sq_vv
+  * sq_d → sq_cub
+- d_n (input text) convertido a sq_n (checkbox) para el recuadro N
+- fpl-generator.ts actualizado para push sq_n al array de squares cuando hay balsas
+- Archivos modificados: public/fpl-template.html, src/lib/fpl-generator.ts
+- Cambios aplicados automáticamente al descargar el FPL desde la aplicación principal
