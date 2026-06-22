@@ -1723,3 +1723,26 @@ Stage Summary:
 - El archivo HTML descargado es autocontenido (imagen base64 embebida)
   y se puede abrir/imprimir/PDF en cualquier navegador
 - Verificado en anchos de 800px y 1200px sin overflow de texto
+
+---
+Task ID: FPL-ALIGN-FIX
+Agent: main
+Task: Corregir la alineación de los datos del plan de vuelo FPL para que queden dentro de los casilleros correspondientes (el usuario reportó que el texto estaba fuera de los casilleros).
+
+Work Log:
+- Analizado el screenshot del problema (upload/pasted_image_1782158985985.png) que mostraba datos desalineados
+- Verificado que la imagen base embebida en public/fpl-template.html ES exactamente FPL.png (mismo MD5: 0d9470dccbd8a432fa32a130c6664615, 480x630px)
+- Usado OpenCV para detectar automáticamente las posiciones EXACTAS de los 47 casilleros del formulario FPL mediante detección de contornos
+- Mapeado manualmente cada casillero detectado a su campo ICAO correspondiente (ac_id, sel_r, sel_t, num_a, ac_tp, sel_w, eq_c, eq_s, dep, dep_t, spd, lvl, ruta, dst, eet_h, eet_m, alt1, alt2, otros, end_h, end_m, pob, sq_uhf, sq_vhf, sq_elt, sq_s, sq_p, sq_d, sq_m, sq_jj, sq_ll, sq_ff, sq_uu, sq_vv, d_n, d_c, sq_cub, d_col, color_a, pic, obs, filed)
+- Actualizado las coordenadas (left%, top%, width%, height%) de los 42 inputs/selects/textareas/divs del template HTML con las coordenadas reales detectadas
+- Generado archivo de prueba con datos de ejemplo y verificado con Agent Browser
+- Verificado end-to-end: llené el formulario en la aplicación real (http://localhost:3000/), descargué el FPL, y confirmé que TODOS los datos (OB1234, B738, I, S, M, SPJC, 1430, N0450, FL350, SPZO, 0115, SPCL, SPUR, etc.) están DENTRO de sus casilleros correspondientes
+- Lint pasa sin errores (bun run lint: 0 errores)
+- Dev server funcionando correctamente (HTTP 200)
+
+Stage Summary:
+- El problema era que el template public/fpl-template.html tenía coordenadas (left/top/width/height en %) INCORRECTAS para los inputs, no coincidían con los casilleros reales de la imagen FPL.png base
+- Solución: detección automática de casilleros con OpenCV + mapeo manual a campos ICAO + actualización de coordenadas en el template
+- El archivo public/fpl-template.html (168499 bytes) ahora tiene coordenadas precisas basadas en los casilleros reales detectados
+- No se requirió cambiar el generador (src/lib/fpl-generator.ts) ni el componente (src/components/flight-plan.tsx), solo el template HTML
+- Verificación visual confirmó que TODOS los datos del FPL descargado están dentro de los casilleros verdes/rojos correspondientes
