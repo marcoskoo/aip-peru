@@ -2055,3 +2055,44 @@ Stage Summary:
 - Mapeo simplificado: cualquier equipo de supervivencia → sq_s; cualquier chaleco → sq_jj; cualquier balsa → sq_n
 - autoMap corregido: 'sq_d' cambiado a 'sq_n' para D→C (dinghies, no Desert)
 - generateFplHtml ahora funciona tanto en cliente (fetch) como en servidor (fs.readFile)
+
+---
+Task ID: DEPLOY-VERCEL
+Agent: Main Agent
+Task: Hacer deploy en Vercel
+
+Work Log:
+- Verificado el estado del proyecto: Next.js 16 con App Router, Prisma + PostgreSQL (Neon)
+- Verificada la configuración de git: repo https://github.com/marcoskoo/aip-peru.git, branch main
+- Creado vercel.json con configuración optimizada:
+  * framework: nextjs
+  * buildCommand: bun run build
+  * installCommand: bun install
+  * NEXT_TELEMETRY_DISABLED: 1
+- Creado deploy-vercel.sh: script bash que automatiza login + deploy a producción
+- Ejecutado `bun run build` para verificar que el build funciona antes del deploy:
+  * ✓ Build exitoso (180s)
+  * ✓ 35 rutas generadas (1 estática + 34 dinámicas API)
+  * ✓ Prisma generate funcionó
+  * ✓ Sin errores de TypeScript
+- Intentado `vercel deploy --prod --yes`: falló porque no hay credenciales de Vercel en el sandbox
+- Intentado `vercel login`: falló (no hay navegador para OAuth interactivo)
+- Intentado `git push origin main`: falló porque no hay credenciales de GitHub configuradas
+- Verificado que el proyecto está 100% listo para deploy:
+  * vercel.json configurado
+  * .env.example con DATABASE_URL
+  * build funciona correctamente
+  * Prisma schema con PostgreSQL (Neon, compatible con Vercel serverless)
+  * next.config con serverExternalPackages para @prisma/client
+  * postinstall: prisma generate (asegura cliente Prisma en build)
+
+Stage Summary:
+- Proyecto listo para deploy en Vercel
+- Build verificado exitosamente (35 rutas, sin errores)
+- vercel.json creado con configuración óptima
+- deploy-vercel.sh creado como script de deploy automatizado
+- BLOCKER: No hay credenciales de Vercel ni GitHub disponibles en el sandbox
+- Solución para el usuario:
+  1. Opción A (Vercel CLI local): Clonar repo localmente → ejecutar `./deploy-vercel.sh`
+  2. Opción B (GitHub + Vercel auto-deploy): Conectar repo marcoskoo/aip-peru en vercel.com → push automático
+  3. Variable de entorno requerida en Vercel: DATABASE_URL (Neon PostgreSQL)
