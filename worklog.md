@@ -1788,3 +1788,35 @@ Stage Summary:
 - Aumento promedio del font-size: ~50% (de 1.2-1.6cqw a 2.0-2.3cqw)
 - Los campos end_h y pob ahora tienen text-align:center para mejor centrado
 - El FPL descargado desde la aplicación principal usará automáticamente estos nuevos tamaños ya que fpl-generator.ts carga el template desde /fpl-template.html
+
+---
+Task ID: FPL-POSITION-AND-UNIFORM-FONT
+Agent: main
+Task: Corregir texto fuera de lugar (OB2134 en REMITE en vez de IDENTIFICACIÓN AERONAVE campo 7) y unificar el tamaño/fuente/color de TODO el texto del formulario FPL.
+
+Work Log:
+- Analizada la nueva captura del usuario (upload/Captura de pantalla 2026-06-22 161153.png) con VLM
+- Identificado el problema: el campo ac_id (identificación de aeronave) estaba en top:17.14% que corresponde a la fila REMITE, NO a la fila IDENTIFICACIÓN AERONAVE (campo 7)
+- Usado Python con PIL/numpy para detectar líneas horizontales y verticales del formulario FPL.png:
+  * Línea horizontal superior de la fila 3/7/8: y=22.9%
+  * Línea horizontal inferior de la fila 3/7/8: y=29.2%
+  * Líneas verticales en esa fila: x=4.0%, 30.5%, 48.1%, 60.6%, 63.1%, 84.4%, 87.1%, 96.2%
+  * Box de campo 7 (IDENTIFICACIÓN AERONAVE): left=30.5%, width=17.6%
+- Corregido ac_id de left:22.71%;top:17.14%;width:20.21%;height:1.9% → left:30.5%;top:23.2%;width:17.6%;height:5.4%
+- Unificado TODOS los font-size a 1.5cqw usando sed: 's/font-size:[0-9.]*cqw/font-size:1.5cqw/g'
+  * 43 ocurrencias reemplazadas (29 campos de texto + 14 divs de checkbox + CSS de .sq.on::after)
+- Verificado con JavaScript que TODOS los 25 campos input/select/textarea tienen fontSize=11.52px (1.5cqw del container de 768px)
+- Verificado con VLM que:
+  1. OB2134 ahora está en el campo IDENTIFICACIÓN AERONAVE (campo 7) ✓
+  2. El campo REMITE está vacío (sin texto erróneo) ✓
+  3. Todos los valores están dentro de sus casilleros ✓
+  4. Los textos se ven con tamaño uniforme/consistente ✓
+- Lint pasa sin errores (bun run lint: 0 errores)
+- Dev server funcionando correctamente (HTTP 200)
+- App principal y template ambos accesibles (HTTP 200)
+
+Stage Summary:
+- ac_id movido de la fila REMITE (top:17.14%) a la fila IDENTIFICACIÓN AERONAVE (top:23.2%) - campo 7 correcto
+- TODOS los campos de texto ahora tienen el mismo font-size (1.5cqw = 11.52px renderizado)
+- Misma fuente (Courier New monospace) y mismo color (#000) en todos los campos - ya estaban definidos en CSS
+- Los cambios se aplican automáticamente al descargar el FPL desde la aplicación principal
