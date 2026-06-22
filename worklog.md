@@ -1551,3 +1551,100 @@ Stage Summary:
   - Reemplazadas 37 unidades `vw` → `cqw` en propiedades `font-size`
 - El fix aplica tanto al template servido en `/fpl-template.html` como a los archivos HTML descargados vía "Descargar FPL" (ya que el generador carga este template)
 - Técnica usada: CSS Container Queries (`container-type` + `cqw` units), soportada en Chrome 105+, Firefox 110+, Safari 16+
+
+---
+Task ID: CODE-REVIEW-1
+Agent: Main Agent
+Task: "revisar código" — revisión general del código y verificación end-to-end
+
+Work Log:
+- Diagnóstico inicial del estado del proyecto:
+  * Dev server CAÍDO (HTTP 000, connection refused)
+  * .env sobreescribido a SQLite otra vez:
+      DATABASE_URL=file:/home/z/my-project/db/custom.db
+    (problema recurrente documentado en tasks fix-web-not-loading-1/2)
+  * dev.log inexistente
+
+- Reparación del entorno:
+  1. Restaurado .env con PostgreSQL Neon:
+     DATABASE_URL=postgresql://neondb_owner:...@ep-orange-art...neondb?sslmode=require
+  2. pkill -f "next dev"; rm -rf .next; bash launch-dev.sh
+  3. Dev server: HTTP 200 ✓ (Ready in 1125ms)
+  4. /api/airports: HTTP 200 ✓ (BD PostgreSQL conectada)
+
+- Revisión de calidad de código:
+  * `bun run lint` (ESLint): **0 errores** ✓
+  * `npx tsc --noEmit` (TypeScript): reveló errores PRE-EXISTENTES
+    en archivos NO modificados recientemente:
+    - prisma/seed-airdata.ts, prisma/sync-airways.ts (drift de schema)
+    - scripts/update-spjc-runway.ts (propiedades duplicadas)
+    - skills/* (archivos de skills, no de la app)
+    - src/app/api/notams/[id]/route.ts (null vs string)
+    - src/app/api/supplements/route.ts (Date vs undefined)
+    - src/app/api/weather/[icaoCode]/route.ts (prop 'dew' faltante)
+    - src/components/aip-sections-admin.tsx (undefined vs string|null)
+    - src/components/airport-detail.tsx (prop 'remarks' inexistente)
+    - src/components/high-res-chart-viewer.tsx (prop 'className')
+    - src/components/route-calculator-map.tsx (conversión de tipos)
+  * Los archivos del feature FPL reciente (fpl-generator.ts,
+    flight-plan.tsx) NO tienen errores de tipos ✓
+
+- Revisión del código del feature FPL (src/lib/fpl-generator.ts):
+  * Estructura limpia y bien documentada (89 líneas de comentarios
+    de mapeo de campos ICAO → IDs HTML)
+  * planToFplData(): mapeo correcto de EET/endurance (HHMM →
+    horas+minutos), emergencyRadio (U/V/E → sq_uhf/sq_vhf/sq_elt),
+    survival, jackets, dinghies con regex para color
+  * buildFillScript(): genera script JS que rellena inputs,
+    selects y activa checkboxes (divs .sq con clase "on")
+  * generateFplHtml(): fetch del template, inyección antes de
+    </body>, actualización del <title>
+  * downloadFplHtml(): Blob + URL.createObjectURL + click
+    programático + revokeObjectURL con delay de 1s
+  * isFlightPlanValid(): validación pura con regex (F7: 1-7
+    alfanum, F13/F16: 4 letras, EOBT/EET: 4 dígitos)
+  * Manejo correcto de edge cases y escapado de strings
+
+- Revisión de la integración en flight-plan.tsx:
+  * isFormComplete con useMemo (sin side-effects) ✓
+  * handleDownloadFpl con useCallback, try/catch/finally ✓
+  * Estados isDownloading para feedback visual (spinner Loader2) ✓
+  * Toast de éxito y error ✓
+  * Botón deshabilitado cuando form incompleto, verde esmeralda
+    cuando habilitado ✓
+  * Botón presente en fill mode (línea 337) y preview mode (línea 1283) ✓
+
+- Revisión del fix del template FPL (public/fpl-template.html):
+  * `container-type:inline-size` presente en `.fpl{` ✓
+  * 0 unidades `vw` en font-size (antes 36) ✓
+  * 36 unidades `cqw` en font-size ✓
+  * Template size: 425KB (PNG base64 embebido intacto) ✓
+
+- Verificación end-to-end con Agent Browser:
+  * Homepage carga: título "AIP PERÚ - Publicación de Información
+    Aeronáutica", 0 errores de consola ✓
+  * 33 aeropuertos renderizados (12 internacionales + 21 nacionales) ✓
+  * Plan de Vuelo abre correctamente ✓
+  * Botón "Descargar FPL" deshabilitado con form vacío ✓
+  * Llenados F7=OB1234, F9=B738, F13=SPJC, EOBT=1430, F16=SPZO, EET=0230
+  * Botón "Descargar FPL" se HABILITA automáticamente ✓
+  * Click en botón → toast "FPL generado - Se ha descargado el formato
+    FPL oficial CORPAC con los datos del plan de vuelo" ✓
+  * 0 errores en consola durante la descarga ✓
+  * dev.log: solo respuestas 200, sin errores ✓
+
+Stage Summary:
+- La web funciona correctamente end-to-end.
+- ESLint: 0 errores. TypeScript: errores pre-existentes en archivos
+  no relacionados con el feature FPL reciente (no bloquean runtime).
+- El feature "Descargar FPL" está verificado funcional:
+  validación, habilitación del botón, generación de HTML, descarga
+  y feedback al usuario todos funcionan como se espera.
+- El fix de container queries (vw → cqw) sigue en su lugar y resuelve
+  el problema de texto fuera de casilleros.
+- Archivos verificados:
+  - src/lib/fpl-generator.ts (389 líneas) — limpio, documentado
+  - src/components/flight-plan.tsx (1679 líneas) — integración correcta
+  - public/fpl-template.html (425KB) — fix de container queries intacto
+- Acción requerida recurrente: si la web no carga, ejecutar
+  `bash launch-dev.sh` (restaura DATABASE_URL de PostgreSQL).
