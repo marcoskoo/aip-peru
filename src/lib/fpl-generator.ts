@@ -108,38 +108,33 @@ export function planToFplData(plan: ICAOFlightPlan): FplFillData {
   if (emergencyRadio.includes("V")) squares.push("sq_vhf")
   if (emergencyRadio.includes("E")) squares.push("sq_elt")
 
-  // Equipo de supervivencia: POLAR, DESERT, MARITIME, JUNGLE
-  const survival = (plan.survivalEquipment || "").toUpperCase()
-  if (survival.includes("POLAR")) squares.push("sq_s")
-  if (survival.includes("DESERT")) squares.push("sq_p")
-  if (survival.includes("MARITIME")) squares.push("sq_d")
-  if (survival.includes("JUNGLE")) squares.push("sq_m")
+  // Equipo de supervivencia: S marca todos (P, D, M, J) por cascada
+  // Si se especifica cualquier equipo de supervivencia, se marca S
+  // y el auto-marking del template marca automáticamente P, D, M, J
+  const survival = (plan.survivalEquipment || "").toUpperCase().trim()
+  if (survival) {
+    squares.push("sq_s")
+  }
 
-  // Chalecos: LIGHT, FLUO + V/U/Radio
-  // Formato típico: "LIGHT/FLUO/V" o "LIGHT FLUO V U"
-  const jackets = (plan.jackets || "").toUpperCase()
-  if (jackets.includes("LIGHT")) squares.push("sq_jj")
-  if (jackets.includes("FLUO") || jackets.includes("FLUORESCENT"))
-    squares.push("sq_ll")
-  // Radio en chalecos: V, U
-  if (jackets.includes("V")) squares.push("sq_vv")
-  if (jackets.includes("U")) squares.push("sq_uu")
-  // Force/Fluorescent color flag
-  if (jackets.includes("FLUO") || jackets.includes("FLUORESCENT"))
-    squares.push("sq_ff")
+  // Chalecos: J marca todos (L, F, U, V) por cascada
+  // Si se especifica cualquier chaleco, se marca J
+  // y el auto-marking del template marca automáticamente L, F, U, V
+  const jackets = (plan.jackets || "").toUpperCase().trim()
+  if (jackets) {
+    squares.push("sq_jj")
+  }
 
-  // Balsas (dinghies): formato "2 8 C ORANGE" → indicador N, capacidad, cubierta, color
+  // Balsas (dinghies): formato "2 8 C ORANGE" → indicador D/N, capacidad, cubierta, color
+  // Al marcar N (balsas presentes), el auto-marking marca automáticamente C (cubierta)
   const dinghiesStr = (plan.dinghies || "").trim()
   let d_c = ""
   let d_col = ""
   if (dinghiesStr) {
     const parts = dinghiesStr.split(/\s+/)
-    // Marcar el checkbox N (indica que hay balsas)
+    // Marcar el checkbox N (indica que hay balsas) — cascada automática a C (cubierta)
     squares.push("sq_n")
     if (parts.length >= 2) d_c = parts[1]
-    // Cubierta: "C" si aparece en el string
-    if (dinghiesStr.toUpperCase().includes("C")) squares.push("sq_cub")
-    // Color: todo lo que queda después del número, capacidad y "C"
+    // Color
     const colMatch = dinghiesStr.match(
       /\b(ORANGE|YELLOW|RED|BLUE|GREEN|WHITE|BLACK|RED-ORANGE)\b/i
     )
@@ -266,9 +261,29 @@ function buildFillScript(data: FplFillData): string {
     el.value = v;
     try { el.dispatchEvent(new Event('change', {bubbles:true})); } catch(e){}
   }
+  function applyCascade(id){
+    var autoMap = {
+      'sq_s':  ['sq_p','sq_d','sq_m','sq_jj'],
+      'sq_jj': ['sq_ll','sq_ff','sq_uu','sq_vv'],
+      'sq_n':  ['sq_cub']
+    };
+    var targets = autoMap[id];
+    if(!targets) return;
+    for(var i=0;i<targets.length;i++){
+      var t = document.getElementById(targets[i]);
+      if(t && !t.classList.contains('on')){
+        t.classList.add('on');
+        applyCascade(targets[i]);
+      }
+    }
+  }
   function tap(el){
     if(!el) return;
-    if(!el.classList.contains('on')) el.classList.add('on');
+    var id = el.id;
+    if(!el.classList.contains('on')){
+      el.classList.add('on');
+      applyCascade(id);
+    }
   }
   var squares = ${squaresArr};
   for(var i=0;i<squares.length;i++){ tap(document.getElementById(squares[i])); }
@@ -283,17 +298,29 @@ ${selectLines}
 /**
  * Carga la plantilla FPL desde /public/fpl-template.html, inyecta el script
  * de relleno con los datos del plan y devuelve el HTML listo para descargar.
+ *
+ * Funciona tanto en cliente (fetch relativo) como en servidor (fs.readFileSync).
  */
 export async function generateFplHtml(plan: ICAOFlightPlan): Promise<string> {
   const data = planToFplData(plan)
   const fillScript = buildFillScript(data)
 
-  // Cargar plantilla
-  const res = await fetch("/fpl-template.html")
-  if (!res.ok) {
-    throw new Error(`No se pudo cargar la plantilla FPL (status ${res.status})`)
+  // Cargar plantilla: en cliente usar fetch, en servidor usar fs
+  let html: string
+  if (typeof window !== "undefined") {
+    // Cliente: fetch relativo
+    const res = await fetch("/fpl-template.html")
+    if (!res.ok) {
+      throw new Error(`No se pudo cargar la plantilla FPL (status ${res.status})`)
+    }
+    html = await res.text()
+  } else {
+    // Servidor: leer directamente del sistema de archivos
+    const path = await import("path")
+    const fs = await import("fs/promises")
+    const templatePath = path.join(process.cwd(), "public", "fpl-template.html")
+    html = await fs.readFile(templatePath, "utf-8")
   }
-  let html = await res.text()
 
   // Inyectar el script de relleno justo antes de </body>
   if (html.includes("</body>")) {

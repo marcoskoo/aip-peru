@@ -2009,3 +2009,49 @@ Stage Summary:
   * eq_s (transponder como BH2) → DESPUÉS del '/' (left:72.5%, width:14.5%)
 - Campo pic (M. KOO - piloto al mando) movido a la fila N/ PILOTO AL MANDO (top:85.2%)
 - El usuario aclaró: "el casillero 10 está dividido en dos secciones, la primera antes del '/' corresponde a los equipos de navegación y comunicaciones (SBZPCHIRWYZ), y la segunda parte después del '/' es BH2"
+
+---
+Task ID: FPL-AUTOMARK-CASCADE
+Agent: Main Agent
+Task: Implementar auto-marking recursivo en casillas del FPL: al marcar S → P,D,M,J; al marcar J → L,F,U,V; al marcar D → C
+
+Work Log:
+- Analizadas 3 imágenes del usuario (pasted_image_1782170229012.png, Captura 181728.png, Captura 181744.png) con VLM:
+  * Imagen 1 (survival): solo S marcada, faltan P,D,M,J
+  * Imagen 2 (jackets): solo J marcada, faltan L,F,U,V
+  * Imagen 3 (dinghies): D y C marcadas (funcionaba)
+- Identificado el problema: el script inyectado por buildFillScript tenía un tap() simplificado que NO aplicaba el cascade del autoMap
+- Analizado el layout del formulario FPL con VLM (imagen 2223.png y FPL.png):
+  * Survival row: S, P, D, M, J (sq_s, sq_p, sq_d, sq_m, sq_jj)
+  * Jackets row: J, L, F, U, V (sq_jj, sq_ll, sq_ff, sq_uu, sq_vv)
+  * Dinghies row: D/N (sq_n), C (sq_cub)
+- Corregido autoMap en fpl-template.html: cambiado 'sq_d' → 'sq_n' para el cascade D→C (dinghies)
+- Implementado cascade RECURSIVO en fpl-template.html:
+  * Extraído autoMap a variable global FPL_AUTO_MAP
+  * Creada función applyCascade(id) que marca targets y llama recursivamente
+  * tap() ahora llama applyCascade(id) después de marcar
+- Implementado cascade RECURSIVO en fpl-generator.ts buildFillScript:
+  * Mismo patrón: applyCascade(id) recursiva + tap() simplificado
+  * Esto asegura que el cascade funcione tanto en clicks manuales como en generación
+- Simplificado mapeo en planToFplData:
+  * survival: cualquier valor → push sq_s (cascade marca P,D,M,J)
+  * jackets: cualquier valor → push sq_jj (cascade marca L,F,U,V)
+  * dinghies: cualquier valor → push sq_n (cascade marca sq_cub)
+  * Eliminado el push explícito de sq_cub (ahora via cascade)
+- Corregido generateFplHtml para funcionar server-side (fs.readFile) además de client-side (fetch)
+- Verificación con Agent Browser + VLM:
+  * JavaScript eval confirmó 12 casillas marcadas: sq_vhf, sq_s, sq_p, sq_d, sq_m, sq_jj, sq_ll, sq_ff, sq_uu, sq_vv, sq_n, sq_cub
+  * VLM confirmó visualmente: 8 casillas en fila survival+jackets, 2 en dinghies, todas con X
+- bun run lint: 0 errores ✓
+- Dev server: HTTP 200, sin errores runtime ✓
+- Test route temporal eliminada después de verificación
+
+Stage Summary:
+- Auto-marking recursivo implementado en ambos tap() (HTML template + injected script):
+  * S → P, D, M, J (y J cascade a L, F, U, V automáticamente)
+  * J → L, F, U, V
+  * N (dinghies D) → C (cubierta)
+- El cascade es recursivo: marcar S marca P,D,M,J, y como J queda marcado, también marca L,F,U,V
+- Mapeo simplificado: cualquier equipo de supervivencia → sq_s; cualquier chaleco → sq_jj; cualquier balsa → sq_n
+- autoMap corregido: 'sq_d' cambiado a 'sq_n' para D→C (dinghies, no Desert)
+- generateFplHtml ahora funciona tanto en cliente (fetch) como en servidor (fs.readFile)

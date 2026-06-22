@@ -79,6 +79,22 @@ body{background:#666;font-family:'Courier New',monospace;padding:16px}
 </div>
 <script>
 function onSel(id){}
+var FPL_AUTO_MAP = {
+  'sq_s':  ['sq_p','sq_d','sq_m','sq_jj'],
+  'sq_jj': ['sq_ll','sq_ff','sq_uu','sq_vv'],
+  'sq_n':  ['sq_cub']
+};
+function applyCascade(id){
+  var targets = FPL_AUTO_MAP[id];
+  if(!targets) return;
+  for(var i=0;i<targets.length;i++){
+    var t = document.getElementById(targets[i]);
+    if(t && !t.classList.contains('on')){
+      t.classList.add('on');
+      applyCascade(targets[i]);
+    }
+  }
+}
 function tap(el){
   if(!el) return;
   var id = el.id;
@@ -86,18 +102,7 @@ function tap(el){
     el.classList.remove('on');
   } else {
     el.classList.add('on');
-    // Auto-marking logic per FPL form rules
-    var autoMap = {
-      'sq_s':  ['sq_p','sq_d','sq_m','sq_jj'],
-      'sq_jj': ['sq_ll','sq_ff','sq_uu','sq_vv'],
-      'sq_d':  ['sq_cub']
-    };
-    if(autoMap[id]){
-      for(var i=0;i<autoMap[id].length;i++){
-        var t = document.getElementById(autoMap[id][i]);
-        if(t && !t.classList.contains('on')) t.classList.add('on');
-      }
-    }
+    applyCascade(id);
   }
 }
 function clearAll(){
