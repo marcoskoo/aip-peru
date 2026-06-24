@@ -2,7 +2,7 @@
 
 import { useState, useCallback, Suspense } from "react"
 import dynamic from "next/dynamic"
-import { Moon, Sun, Plane, Map, FileText, Route, Settings, Crosshair, Navigation2, AlertTriangle, Shield, Calculator, Search, BookOpen, Menu, X } from "lucide-react"
+import { Moon, Sun, Plane, Map, FileText, Route, Settings, Crosshair, Navigation2, AlertTriangle, Shield, Calculator, Search, BookOpen, Menu, X, Bot } from "lucide-react"
 import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -97,7 +97,18 @@ const AipPublicationBrowser = dynamic(
   }
 )
 
-type ViewMode = "airports" | "heliports" | "chart" | "flight-plan" | "route-calculator" | "airways" | "admin" | "notams" | "airspace" | "calculator" | "publications"
+const SpimBriefing = dynamic(
+  () =>
+    import("@/components/spim-briefing").then(
+      (mod) => mod.SpimBriefing
+    ),
+  {
+    ssr: false,
+    loading: () => <Skeleton className="h-[600px] w-full" />,
+  }
+)
+
+type ViewMode = "airports" | "heliports" | "chart" | "flight-plan" | "route-calculator" | "airways" | "admin" | "notams" | "airspace" | "calculator" | "publications" | "spim-briefing"
 
 export default function Home() {
   const [selectedAirport, setSelectedAirport] = useState<Airport | null>(null)
@@ -180,6 +191,7 @@ export default function Home() {
     { mode: "heliports" as ViewMode, icon: Crosshair, label: "Helipuertos" },
     { mode: "airways" as ViewMode, icon: Navigation2, label: "Rutas" },
     { mode: "notams" as ViewMode, icon: AlertTriangle, label: "NOTAMs" },
+    { mode: "spim-briefing" as ViewMode, icon: Bot, label: "Agente SPIM" },
     { mode: "airspace" as ViewMode, icon: Shield, label: "Zonas" },
     { mode: "chart" as ViewMode, icon: Map, label: "Carta Aeronáutica" },
     { mode: "route-calculator" as ViewMode, icon: Route, label: "Calculadora" },
@@ -364,6 +376,25 @@ export default function Home() {
               </Badge>
             </div>
             <NotamListing />
+          </div>
+        ) : viewMode === "spim-briefing" && !selectedAirport ? (
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <Bot className="size-6 text-amber-500" />
+              <div>
+                <h1 className="text-xl font-bold tracking-tight">
+                  Agente IA SPIM — Briefing Operacional
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                  Inteligencia artificial para análisis de NOTAM, METAR y TAF de la FIR Lima (SPIM)
+                </p>
+              </div>
+              <Badge variant="outline" className="hidden sm:inline-flex gap-1 text-xs text-amber-600 dark:text-amber-400 border-amber-300 dark:border-amber-700 ml-auto shrink-0">
+                <Plane className="size-3" />
+                FIR Lima
+              </Badge>
+            </div>
+            <SpimBriefing />
           </div>
         ) : viewMode === "airspace" && !selectedAirport ? (
           <div className="space-y-4">

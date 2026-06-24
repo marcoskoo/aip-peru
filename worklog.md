@@ -2096,3 +2096,73 @@ Stage Summary:
   1. Opción A (Vercel CLI local): Clonar repo localmente → ejecutar `./deploy-vercel.sh`
   2. Opción B (GitHub + Vercel auto-deploy): Conectar repo marcoskoo/aip-peru en vercel.com → push automático
   3. Variable de entorno requerida en Vercel: DATABASE_URL (Neon PostgreSQL)
+
+---
+Task ID: SPIM-BRIEFING-AGENT
+Agent: Main Agent
+Task: Implementar ficha "API Agente SPIM NOTAM/METAR/TAF" e integrarla en la aplicación
+
+Work Log:
+- Explorada la estructura del proyecto con agent Explore:
+  * App usa viewMode state machine en src/app/page.tsx con 11 modos
+  * WeatherPanel existe en src/components/weather-panel.tsx (METAR/TAF)
+  * NotamListing existe en src/components/notam-listing.tsx
+  * API /api/weather/[icaoCode] ya soporta SPIM
+  * API /api/notams ya filtra por fir=SPIM por defecto
+- Creado endpoint POST /api/spim-briefing/route.ts:
+  * Obtiene METAR/TAF de SPIM via fetch interno a /api/weather/SPIM
+  * Obtiene NOTAMs activos de FIR SPIM via Prisma (db.notam.findMany)
+  * Usa z-ai-web-dev-sdk (LLM) para generar briefing operacional
+  * System prompt: Agente IA especializado en aviación civil CORPAC
+  * Estructura: RESUMEN EJECUTIVO, METEOROLOGÍA, NOTAMs CRÍTICOS, RECOMENDACIONES
+  * También GET handler para status rápido (conteo NOTAMs urgentes/high)
+- Creado endpoint POST /api/spim-briefing/chat/route.ts:
+  * Recibe pregunta del usuario + contexto (weather, notams)
+  * Usa LLM para responder preguntas sobre METAR/TAF/NOTAM
+  * Respuesta concisa en español, máx 200 palabras
+- Creado componente src/components/spim-briefing.tsx:
+  * Card header con branding "Agente IA SPIM" y botón Actualizar
+  * Card "Briefing del Agente" con markdown renderizado del análisis IA
+  * Grid 2 columnas: METAR card (viento, visibilidad, temp, QNH, categoría) + TAF card (períodos)
+  * Card "NOTAMs Activos" con lista scrolleable (prioridad, ID, aeródromo, asunto)
+  * Card "Consulta al Agente IA" con chat interactivo:
+    - Preguntas sugeridas (restricciones pista, categoría vuelo, NOTAMs urgentes, VFR nocturno)
+    - Input + botón enviar
+    - Mensajes con avatares (Bot/User)
+    - Loading states
+  * Badge de categoría de vuelo con colores (VFR green, MVFR blue, IFR red, LIFR purple)
+  * Badge de prioridad NOTAM (URGENT red, HIGH orange, MEDIUM yellow, LOW grey)
+- Integrado en src/app/page.tsx:
+  * Nuevo ViewMode "spim-briefing" añadido al union type
+  * Dynamic import de SpimBriefing (ssr: false)
+  * Nav button "Agente SPIM" con icono Bot, entre NOTAMs y Zonas
+  * Sección renderizada con header + componente SpimBriefing
+- Verificación con Agent Browser + VLM:
+  * Página carga correctamente en http://localhost:3000
+  * Botón "Agente SPIM" visible en navegación
+  * Click navega a la sección de briefing
+  * Briefing IA generado con datos reales:
+    - RESUMEN EJECUTIVO: condiciones IFR con niebla
+    - METAR: VRB03KT, 3000m FG, OVC008, 16/15, Q1014, IFR
+    - NOTAMs: 20 activos, URGENT A0003/25 (AD CLSD), HIGH A0001/25 (RWY CLSD)
+    - RECOMENDACIONES operacionales
+  * METAR card muestra datos completos con badge IFR
+  * NOTAMs list muestra 20 NOTAMs con prioridades
+  * Chat funciona: pregunta "¿Cuál es la categoría de vuelo actual?" → respuesta "IFR" con detalles
+  * Preguntas sugeridas visibles y funcionales
+- bun run lint: 0 errores ✓
+- Dev server: HTTP 200, sin errores runtime ✓
+- APIs respondiendo:
+  * POST /api/spim-briefing 200 (7-12s con generación LLM)
+  * POST /api/spim-briefing/chat 200 (1.6-2.2s)
+  * GET /api/weather/SPIM 200
+
+Stage Summary:
+- Nueva sección "Agente SPIM" integrada en la navegación principal
+- Ficha completa con 5 cards: Briefing IA, METAR, TAF, NOTAMs, Chat
+- API Agente IA usando z-ai-web-dev-sdk (LLM) para análisis inteligente
+- 2 endpoints creados: /api/spim-briefing (briefing) y /api/spim-briefing/chat (consultas)
+- El agente analiza NOTAM + METAR + TAF en tiempo real y genera briefing operacional
+- Chat interactivo permite preguntas de seguimiento sobre los datos
+- Diseño responsive con cards, badges de colores, markdown rendering
+- Compatible con datos simulados y reales (aviationweather.gov)
