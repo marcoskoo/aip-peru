@@ -37,10 +37,17 @@ async function fetchNotams(fir: string = 'SPIM') {
     const notams = await db.notam.findMany({
       where: {
         fir,
-        effectiveFrom: { lte: now },
+        // Incluye vigentes + próximos (para planificación de vuelo)
         OR: [
           { effectiveTo: { gte: now } },
           { isPermanent: true },
+          // Próximos NOTAMs (effectiveFrom > now) pero que aún no expiran
+          {
+            AND: [
+              { effectiveFrom: { gt: now } },
+              { effectiveTo: { gte: now } },
+            ],
+          },
         ],
       },
       include: {
@@ -49,24 +56,63 @@ async function fetchNotams(fir: string = 'SPIM') {
         },
       },
       orderBy: [{ effectiveFrom: 'desc' }],
-      take: 50,
+      take: 100, // ampliamos para que el sort por urgencia tenga material
     })
 
-    // Sort by priority
+    // Sort compuesto:
+    //  1. Expirados al fondo (no deberían venir por el where, pero por si acaso)
+    //  2. Próximos después de los activos
+    //  3. PERM después de los finitos
+    //  4. Entre dos finitos: el que expira antes va primero (más urgente)
+    //  5. Tie-break por prioridad y luego por fecha de emisión
     const priorityOrder: Record<string, number> = {
       URGENT: 4, HIGH: 3, MEDIUM: 2, LOW: 1,
     }
     notams.sort((a, b) => {
-      const diff = (priorityOrder[b.priority] || 0) - (priorityOrder[a.priority] || 0)
-      if (diff !== 0) return diff
+      const nowMs = Date.now()
+      const sa = notamStatus(a.effectiveFrom, a.effectiveTo, a.isPermanent)
+      const sb = notamStatus(b.effectiveFrom, b.effectiveTo, b.isPermanent)
+      // Expirados al fondo
+      if (sa === 'expired' && sb !== 'expired') return 1
+      if (sb === 'expired' && sa !== 'expired') return -1
+      // Próximos después de los activos
+      if (sa === 'upcoming' && sb !== 'upcoming') return 1
+      if (sb === 'upcoming' && sa !== 'upcoming') return -1
+      // PERM después de los finitos
+      const aPerm = a.isPermanent || !a.effectiveTo
+      const bPerm = b.isPermanent || !b.effectiveTo
+      if (aPerm && !bPerm) return 1
+      if (bPerm && !aPerm) return -1
+      // Entre dos finitos: el que expira antes va primero (más urgente)
+      const ta = aPerm ? Number.MAX_SAFE_INTEGER : a.effectiveTo!.getTime() - nowMs
+      const tb = bPerm ? Number.MAX_SAFE_INTEGER : b.effectiveTo!.getTime() - nowMs
+      if (ta !== tb) return ta - tb
+      // Tie-break por prioridad
+      const pa = priorityOrder[a.priority] || 0
+      const pb = priorityOrder[b.priority] || 0
+      if (pa !== pb) return pb - pa
+      // Tie-break final: más reciente primero
       return new Date(b.effectiveFrom).getTime() - new Date(a.effectiveFrom).getTime()
     })
 
-    return notams
+    return notams.slice(0, 50)
   } catch (error) {
     console.error('Error fetching NOTAMs:', error)
     return []
   }
+}
+
+function notamStatus(
+  effectiveFrom: Date,
+  effectiveTo: Date | null,
+  isPermanent: boolean,
+): 'upcoming' | 'active' | 'expired' | 'unknown' {
+  if (isPermanent) return 'active'
+  if (!effectiveTo) return 'unknown'
+  const now = Date.now()
+  if (effectiveTo.getTime() < now) return 'expired'
+  if (effectiveFrom.getTime() > now) return 'upcoming'
+  return 'active'
 }
 
 // ─── LLM Briefing Generation ────────────────────────────────────
@@ -79,9 +125,15 @@ async function generateBriefing(weather: unknown, notams: unknown[]): Promise<st
   const notamsStr = notams.length > 0
     ? notams
         .slice(0, 30)
-        .map((n: Record<string, unknown>) =>
-          `- [${n.priority || 'N/A'}] ${n.notamId || 'SIN-ID'}: ${(n.subject as string) || ''} ${(n.condition as string) || ''}`
-        )
+        .map((n: Record<string, unknown>) => {
+          const isPerm = n.isPermanent
+          const validTo = n.effectiveTo
+            ? isPerm
+              ? 'PERM'
+              : new Date(n.effectiveTo as string).toISOString()
+            : '?'
+          return `- [${n.priority || 'N/A'}] ${n.notamId || 'SIN-ID'} (hasta: ${validTo}): ${(n.subject as string) || ''} ${(n.condition as string) || ''}`
+        })
         .join('\n')
     : 'No hay NOTAMs activos'
 
@@ -93,7 +145,7 @@ Debes responder en ESPAÑOL, con un tono profesional y conciso, como un oficial 
 Estructura OBLIGATORIA del briefing:
 1. **RESUMEN EJECUTIVO** (2-3 líneas): Estado general de la FIR Lima
 2. **METEOROLOGÍA** (SPIM): Análisis del METAR actual y pronóstico TAF, categorías de vuelo, fenómenos significativos
-3. **NOTAMs CRÍTICOS**: Solo los más relevantes (urgentes, alta prioridad, o que afecten rutas/pistas)
+3. **NOTAMs CRÍTICOS**: Solo los más relevantes (urgentes, alta prioridad, o que afecten rutas/pistas). Indica cuánto tiempo les falta expirar si es relevante.
 4. **RECOMENDACIONES OPERACIONALES**: 2-3 puntos clave para pilotos y despachadores
 
 Usa formato Markdown. Sé específico con cifras (visibilidad, techo, viento). Máximo 400 palabras.`
@@ -151,10 +203,36 @@ export async function POST(request: NextRequest) {
     // Generate AI briefing
     const briefing = await generateBriefing(weather, notams)
 
+    // Serializar NOTAMs con fechas ISO (para el countdown del frontend)
+    const notamsSerialized = notams.map((n) => ({
+      id: n.id,
+      notamId: n.notamId,
+      type: n.type,
+      replacesId: n.replacesId,
+      fir: n.fir,
+      effectiveFrom: n.effectiveFrom.toISOString(),
+      effectiveTo: n.effectiveTo?.toISOString() ?? null,
+      isPermanent: n.isPermanent,
+      scope: n.scope,
+      subject: n.subject,
+      condition: n.condition,
+      text: n.text,
+      priority: n.priority,
+      source: n.source,
+      verified: n.verified,
+      airport: n.airport
+        ? {
+            icaoCode: n.airport.icaoCode,
+            name: n.airport.name,
+            city: n.airport.city,
+          }
+        : null,
+    }))
+
     return NextResponse.json({
       briefing,
       weather,
-      notams: notams.slice(0, 20),
+      notams: notamsSerialized.slice(0, 30),
       notamCount: notams.length,
       generatedAt: new Date().toISOString(),
       source: 'Agente IA SPIM',
@@ -163,7 +241,7 @@ export async function POST(request: NextRequest) {
     console.error('Error in SPIM briefing:', error)
     return NextResponse.json(
       { error: 'Error al generar el briefing SPIM' },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }
@@ -186,7 +264,7 @@ export async function GET() {
   } catch {
     return NextResponse.json(
       { error: 'Error al obtener estado SPIM' },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }

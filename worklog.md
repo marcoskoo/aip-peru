@@ -2166,3 +2166,102 @@ Stage Summary:
 - Chat interactivo permite preguntas de seguimiento sobre los datos
 - Diseño responsive con cards, badges de colores, markdown rendering
 - Compatible con datos simulados y reales (aviationweather.gov)
+
+---
+Task ID: SPIM-COUNTDOWN-INTEGRATION
+Agent: Main Agent
+Task: Integrar el bundle "NOTAM Countdown" (StationDetail.tsx + notam-email-parser.py + notam-parser.ts + use-polling.ts + INTEGRATION.md) en la sección "Agente SPIM" existente, adaptándolo al stack Prisma + PostgreSQL del proyecto.
+
+Work Log:
+- Leídos los 6 archivos subidos por el usuario desde /home/z/my-project/upload/:
+  * StationDetail.tsx (componente con countdown, polling, ingest dialog, sorting por urgencia)
+  * notam-email-parser.py (parser OACI + pipeline IMAP AIS Perú → SQLite)
+  * clean-inter-notam-metadata.py (limpieza masiva de metadata inter-NOTAM)
+  * input.tsx (input con suppressHydrationWarning)
+  * notam-countdown-bundle.zip (bundle completo con lib + componentes + scripts)
+  * INTEGRATION.md (guía de integración Next.js)
+- Decidido NO introducir better-sqlite3 (stack actual usa Prisma + PostgreSQL Neon); en su lugar, adaptar las features del bundle para que operen sobre el modelo `Notam` existente en Prisma.
+- Copiados scripts Python a /home/z/my-project/scripts/:
+  * notam-email-parser.py (pipeline IMAP → SQLite, para uso local/cron)
+  * clean-inter-notam-metadata.py (limpieza inter-NOTAM)
+- Copiada documentación a /home/z/my-project/docs/:
+  * INTEGRATION.md
+  * NOTAM_PIPELINE_README.md
+- Creados archivos de librería aviation:
+  * src/lib/aviation/peru-stations.ts — lista canónica de 64 ICAOs peruanos + metadata de estaciones principales + helpers getStation/formatNumber
+  * src/lib/aviation/use-polling.ts — hook de polling determinista (30s default) con secondsToNext, isFetching, refreshNow
+  * src/lib/aviation/notam-parser.ts — parser OACI en TypeScript (espejo del Python), funciones parseIsoMs/notamStatus/formatCountdown
+- Actualizados componentes UI con suppressHydrationWarning (fix de hidratación por extensiones de navegador):
+  * src/components/ui/input.tsx
+  * src/components/ui/textarea.tsx
+- Creado endpoint POST /api/spim-briefing/ingest/route.ts:
+  * Recibe texto plano con NOTAMs (pegado manual desde portal AIS Perú o email)
+  * Usa parseNotams() de notam-parser.ts para extraer NOTAMs OACI
+  * Para cada NOTAM: valida ICAO peruano, parsea fechas B)/C), infiere subject/condition/scope/priority desde Q-code y summary
+  * Upsert en Prisma (findUnique by notamId + create/update) → idempotente
+  * Devuelve { ok, inserted, skipped, errors, items, parsedTotal }
+- Actualizado endpoint POST /api/spim-briefing/route.ts:
+  * Filtro where ampliado: incluye NOTAMs vigentes + próximos (effectiveFrom > now pero effectiveTo >= now) para planificación
+  * Sort compuesto: expired al fondo → upcoming después de activos → PERM después de finitos → entre finitos, el que expira antes va primero → tie-break por prioridad y fecha de emisión
+  * Take aumentado a 100 (para que el sort por urgencia tenga material) y luego sliced a 50
+  * Serialización de NOTAMs con fechas ISO + isPermanent + scope + source + verified + airport
+  * System prompt del LLM actualizado para mencionar tiempos de expiración
+- Reescrito componente src/components/spim-briefing.tsx con todas las features del bundle:
+  * NotamCountdown: reloj de cuenta regresiva (azul negrita > 5min, rojo pulsante ≤ 5min, "PERM" verde, "EXPIRADO" rojo, "PRÓXIMO" ámbar)
+  * useCountdown: hook con state derivado durante render (sin setState síncrono en effect) — usa un "tick counter" que se actualiza cada segundo via setInterval
+  * NotamIngestDialog: dialog con Textarea para pegar NOTAMs, llama a /api/spim-briefing/ingest, muestra resultado con items creados/actualizados/saltados + errores colapsables
+  * NotamRow: fila colapsable con badge de prioridad, badge de ICAO, badge de scope, badge de estado (vigente/permanente/próximo/expirado), countdown timer, preview del campo E), y detalle expandible con mensaje crudo + fechas + fuente
+  * Auto-polling cada 30s con switch toggle + indicador "próxima consulta en Ns" + isFetching spinner
+  * Stats en header: urgentes, expiran <1h, total NOTAMs, total PERM
+  * Lista de NOTAMs en ScrollArea con max-h-96 + scrollbar custom
+  * Chat input con suppressHydrationWarning
+- Configuración ESLint actualizada (eslint.config.mjs): ignores ampliados para excluir upload/, scripts/, docs/, tool-results/ del linting
+- Fix de lint error react-hooks/set-state-in-effect: refactorizado useCountdown para usar pattern "tick counter + estado derivado en render" en lugar de setState síncrono en effect body
+- Fix de lint warning: removido eslint-disable-line innecesario en use-polling.ts
+- Verificación con Agent Browser:
+  * Página / carga HTTP 200, sin errores en consola
+  * Botón "Agente SPIM" en navegación principal funciona
+  * Sección renderiza correctamente con todas las cards:
+    - Header con branding + auto-refresh switch + Actualizar button
+    - Briefing del Agente (LLM) con secciones: RESUMEN EJECUTIVO, METEOROLOGÍA, NOTAMs CRÍTICOS, RECOMENDACIONES OPERACIONALES
+    - METAR card con viento, visibilidad, temp, QNH, categoría de vuelo
+    - TAF card con períodos
+    - NOTAMs list con 21 NOTAMs ordenados por urgencia:
+      * URGENT A0003/25 SPZO vigente 13:46:31 (countdown ticking en tiempo real)
+      * MEDIUM A0021/25 SPQT vigente 1d 13:46:31
+      * MEDIUM A0006/25 vigente 3d 13:46:31
+      * ... (16 NOTAMs más vigentes con countdown)
+      * HIGH A0017/25 SPJC permanente PERM (al final, después de los finitos)
+      * MEDIUM A0022/25 SPZO permanente PERM
+    - Ingestar NOTAMs button abre dialog
+    - Chat input con preguntas sugeridas
+  * Test del Ingest Dialog:
+    - Pegado texto con 2 NOTAMs de prueba (A9999/25 SPJC temporal, A9998/25 SPHI PERM)
+    - Click "Procesar NOTAMs" → POST /api/spim-briefing/ingest 200 en 3.2s
+    - Result panel muestra: "2 NOTAMs procesados · 2 detectados"
+    - Items: CREADO A9999/25 SPJC + CREADO A9998/25 SPHI
+    - Al cerrar el dialog, la lista se auto-refresca (via onIngested={refreshNow}) y muestra el nuevo NOTAM A9998/25 SPHI permanente PERM
+    - El LLM regeneró el briefing e incluyó el nuevo NOTAM: "A9998/25: Aeropuerto no operativo (sin fecha de expiración)"
+  * Test del countdown en tiempo real: sample 1 = "13:46:31", sample 2 (3s después) = "13:46:28" → confirmado que el timer ticka cada segundo
+  * Test del chat: pregunta "¿Cuántos NOTAMs urgentes hay?" → respuesta correcta "1 urgentes"
+  * Limpieza: test NOTAMs eliminados via Prisma deleteMany
+- bun run lint: 0 errores, 0 warnings ✓
+- Dev server: HTTP 200 en todas las rutas, sin errores runtime ✓
+
+Stage Summary:
+- Integración completa del bundle NOTAM Countdown en la sección "Agente SPIM" existente, adaptada al stack Prisma + PostgreSQL (sin introducir better-sqlite3)
+- Features nuevas integradas:
+  1. Reloj de cuenta regresiva (NotamCountdown) en cada NOTAM, con colores críticos (azul > 5min, rojo pulsante ≤ 5min, PERM verde, EXPIRADO rojo, PRÓXIMO ámbar)
+  2. Auto-polling cada 30s con switch toggle + countdown "próxima consulta en Ns"
+  3. Ingesta manual de NOTAMs (NotamIngestDialog) — pega texto del portal AIS Perú, parser OACI extrae cada NOTAM, upsert idempotente en Prisma
+  4. Sort por urgencia: NOTAMs ordenados por expiración más próxima primero, PERM al final, expirados filtrados
+  5. Filas colapsables con detalle (mensaje crudo, fechas, fuente, verificación)
+  6. Status badges (vigente, permanente, próximo, expirado) + priority badges (URGENT, HIGH, MEDIUM, LOW) + scope badges (A, E, W)
+  7. Stats en header: urgentes, expiran <1h, total, PERM
+  8. suppressHydrationWarning en Input/Textarea (fix de extensiones de navegador)
+- Parser OACI en TypeScript (notam-parser.ts) — espejo del script Python, con detección de metadata inter-NOTAM del portal AIS Perú
+- Pipeline IMAP Python (notam-email-parser.py) copiado a /scripts/ para uso local/cron — el usuario puede configurarlo con su cuenta Gmail dedicada y App Password
+- Archivos creados: 5 (peru-stations.ts, use-polling.ts, notam-parser.ts, /api/spim-briefing/ingest/route.ts, docs/)
+- Archivos modificados: 4 (spim-briefing.tsx, /api/spim-briefing/route.ts, input.tsx, textarea.tsx, eslint.config.mjs)
+- Endpoints: POST /api/spim-briefing (briefing + sort por urgencia), POST /api/spim-briefing/ingest (parser OACI + upsert), POST /api/spim-briefing/chat (QA)
+- Verificación end-to-end exitosa con Agent Browser: countdown ticking en tiempo real, ingest crea NOTAMs y aparecen en lista, chat responde correctamente

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect, useCallback } from "react"
+import { useState, useRef, useEffect, useCallback, useMemo } from "react"
 import {
   Plane,
   RefreshCw,
@@ -14,12 +14,40 @@ import {
   Radio,
   FileText,
   Zap,
+  Clock,
+  Timer,
+  Upload,
+  X,
+  ChevronDown,
+  ChevronRight,
+  Trash2,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
+import { Separator } from "@/components/ui/separator"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
+import { usePolling } from "@/lib/aviation/use-polling"
+import {
+  parseIsoMs,
+  notamStatus,
+  formatCountdown,
+} from "@/lib/aviation/notam-parser"
+
+// ─── Types ──────────────────────────────────────────────────────────────
 
 interface WeatherData {
   icaoCode: string
@@ -53,16 +81,20 @@ interface WeatherData {
 interface NotamItem {
   id: string
   notamId: string
+  type: string
+  replacesId: string | null
   fir: string
-  priority: string
-  scope: string
+  effectiveFrom: string
+  effectiveTo: string | null
+  isPermanent: boolean
+  scope: string | null
   subject: string
   condition: string
   text: string
-  effectiveFrom: string
-  effectiveTo?: string
-  isPermanent?: boolean
-  airport?: { icaoCode: string; name: string; city: string }
+  priority: string
+  source: string | null
+  verified: boolean
+  airport?: { icaoCode: string; name: string; city: string } | null
 }
 
 interface BriefingResponse {
@@ -80,6 +112,25 @@ interface ChatMessage {
   timestamp: string
 }
 
+interface IngestResult {
+  ok: boolean
+  inserted: number
+  skipped: number
+  errors: string[]
+  items: Array<{
+    notamId: string
+    icao: string
+    validFrom: string | null
+    validTo: string | null
+    summary: string
+    action: "created" | "updated" | "skipped"
+  }>
+  parsedTotal?: number
+  error?: string
+}
+
+// ─── Color maps ─────────────────────────────────────────────────────────
+
 const flightCategoryColors: Record<string, string> = {
   VFR: "bg-green-500/15 text-green-700 dark:text-green-400 border-green-500/30",
   MVFR: "bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/30",
@@ -94,6 +145,8 @@ const priorityColors: Record<string, string> = {
   LOW: "bg-slate-500/15 text-slate-700 dark:text-slate-400 border-slate-500/30",
 }
 
+// ─── Helpers ────────────────────────────────────────────────────────────
+
 function formatTime(iso: string): string {
   try {
     return new Date(iso).toLocaleTimeString("es-PE", {
@@ -103,6 +156,17 @@ function formatTime(iso: string): string {
     })
   } catch {
     return "--:--"
+  }
+}
+
+function formatDateTime(iso: string): string {
+  try {
+    return new Date(iso)
+      .toISOString()
+      .replace("T", " ")
+      .replace(/\.\d+Z$/, "Z")
+  } catch {
+    return iso
   }
 }
 
@@ -121,37 +185,421 @@ function renderMarkdown(text: string): string {
     .replace(/\n/g, "<br/>")
 }
 
+// ─── Countdown hook + component ─────────────────────────────────────────
+
+interface CountdownState {
+  remainingMs: number | null
+  critical: boolean
+  expired: boolean
+}
+
+function computeCountdown(validTo?: string | null, isPermanent?: boolean): CountdownState {
+  if (!validTo || validTo === "PERM" || isPermanent) {
+    return { remainingMs: null, critical: false, expired: false }
+  }
+  const target = parseIsoMs(validTo)
+  if (target === null) {
+    return { remainingMs: null, critical: false, expired: false }
+  }
+  const diff = target - Date.now()
+  if (diff <= 0) {
+    return { remainingMs: 0, critical: true, expired: true }
+  }
+  return {
+    remainingMs: diff,
+    critical: diff <= 5 * 60 * 1000, // 5 minutos
+    expired: false,
+  }
+}
+
+function useCountdown(validTo?: string | null, isPermanent?: boolean): CountdownState {
+  // "Tick" counter para forzar re-render cada segundo.
+  // El estado del countdown se deriva durante el render (no via setState en effect).
+  const [, setTick] = useState(0)
+
+  useEffect(() => {
+    if (!validTo || validTo === "PERM" || isPermanent) return
+    const target = parseIsoMs(validTo)
+    if (target === null) return
+
+    // Solo dispara re-render mientras falte tiempo; cuando expira, deja de tickar.
+    const id = setInterval(() => setTick((t) => t + 1), 1000)
+    return () => clearInterval(id)
+  }, [validTo, isPermanent])
+
+  // Estado derivado: se recalcula en cada render con el "now" actual.
+  return computeCountdown(validTo, isPermanent)
+}
+
+/**
+ * Reloj de cuenta regresiva para un NOTAM.
+ * - Azul negrita mientras falte más de 5 minutos.
+ * - Rojo negrita con pulso en los últimos 5 minutos.
+ * - "PERM" para NOTAMs permanentes.
+ * - "EXPIRADO" en rojo si ya pasó la fecha.
+ * - "PRÓXIMO" para NOTAMs aún no vigentes.
+ */
+function NotamCountdown({
+  validFrom,
+  validTo,
+  isPermanent,
+}: {
+  validFrom?: string | null
+  validTo?: string | null
+  isPermanent?: boolean
+}) {
+  const { remainingMs, critical, expired } = useCountdown(validTo, isPermanent)
+  const status = notamStatus(validFrom, validTo ?? (isPermanent ? "PERM" : undefined))
+
+  if (status === "upcoming") {
+    return (
+      <span className="inline-flex items-center gap-1 text-xs font-mono font-semibold text-amber-600">
+        <Timer className="h-3.5 w-3.5" />
+        PRÓXIMO
+      </span>
+    )
+  }
+
+  if (!validTo || validTo === "PERM" || isPermanent || remainingMs === null) {
+    return (
+      <span className="inline-flex items-center gap-1 text-xs font-mono font-semibold text-emerald-700 dark:text-emerald-400">
+        <Timer className="h-3.5 w-3.5" />
+        PERM
+      </span>
+    )
+  }
+
+  if (expired) {
+    return (
+      <span className="inline-flex items-center gap-1 text-xs font-mono font-bold text-red-600">
+        <Timer className="h-3.5 w-3.5" />
+        EXPIRADO
+      </span>
+    )
+  }
+
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 text-xs font-mono font-bold tabular-nums",
+        critical ? "text-red-600 animate-pulse" : "text-blue-600 dark:text-blue-400"
+      )}
+      title={critical ? "Expira en menos de 5 minutos" : "Tiempo restante hasta expiración"}
+    >
+      <Timer className={cn("h-3.5 w-3.5", critical && "animate-pulse")} />
+      {formatCountdown(remainingMs)}
+    </span>
+  )
+}
+
+// ─── Ingest Dialog ──────────────────────────────────────────────────────
+
+function NotamIngestDialog({ onIngested }: { onIngested: () => void }) {
+  const [open, setOpen] = useState(false)
+  const [text, setText] = useState("")
+  const [loading, setLoading] = useState(false)
+  const [result, setResult] = useState<IngestResult | null>(null)
+
+  const handleIngest = async () => {
+    if (!text.trim() || loading) return
+    setLoading(true)
+    setResult(null)
+    try {
+      const res = await fetch("/api/spim-briefing/ingest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      })
+      const data: IngestResult = await res.json()
+      setResult(data)
+      if (data.ok && data.inserted > 0) {
+        onIngested()
+      }
+    } catch (err) {
+      setResult({
+        ok: false,
+        inserted: 0,
+        skipped: 0,
+        errors: [err instanceof Error ? err.message : String(err)],
+        items: [],
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleClose = () => {
+    setOpen(false)
+    setText("")
+    setResult(null)
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => (v ? setOpen(true) : handleClose())}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm" className="gap-1.5">
+          <Upload className="size-3.5" />
+          <span className="hidden sm:inline">Ingestar NOTAMs</span>
+          <span className="sm:hidden">Ingestar</span>
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Upload className="size-5 text-amber-500" />
+            Ingesta manual de NOTAMs
+          </DialogTitle>
+          <DialogDescription>
+            Pega el texto plano del boletín NOTAM recibido por email desde AIS Perú
+            (ais@corpac.gob.pe). El parser OACI extraerá cada NOTAM y lo guardará
+            en la base de datos, deduplicando por ID.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="flex-1 overflow-y-auto space-y-3 py-2">
+          <Textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder={`Pega aquí el texto del NOTAM, por ejemplo:\n\nA1234/25 NOTAMN\nQ) SPIM/QFALC/IV/NBO/A/000/999/SPJC\nA) SPJC\nB) 2501151200\nC) 2501161200\nE) RWY 15/33 CLOSED FOR MAINTENANCE\n`}
+            className="min-h-[200px] font-mono text-xs"
+            disabled={loading}
+          />
+
+          {result && (
+            <div className="rounded-md border p-3 space-y-2 text-sm">
+              <div className="flex items-center gap-2 flex-wrap">
+                {result.ok ? (
+                  <CheckCircle2 className="size-4 text-emerald-600" />
+                ) : (
+                  <AlertTriangle className="size-4 text-red-600" />
+                )}
+                <span className="font-semibold">
+                  {result.ok
+                    ? `${result.inserted} NOTAMs ${result.inserted === 1 ? "procesado" : "procesados"}`
+                    : "Error"}
+                </span>
+                {result.parsedTotal != null && (
+                  <Badge variant="secondary" className="text-xs">
+                    {result.parsedTotal} detectados
+                  </Badge>
+                )}
+                {result.skipped > 0 && (
+                  <Badge variant="outline" className="text-xs">
+                    {result.skipped} saltados
+                  </Badge>
+                )}
+              </div>
+
+              {result.items.length > 0 && (
+                <ScrollArea className="max-h-40 rounded border">
+                  <ul className="divide-y text-xs">
+                    {result.items.map((it, i) => (
+                      <li key={i} className="p-2 flex items-center gap-2 flex-wrap">
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "text-[10px]",
+                            it.action === "created" && "text-emerald-700 border-emerald-500/40 bg-emerald-500/5",
+                            it.action === "updated" && "text-blue-700 border-blue-500/40 bg-blue-500/5",
+                            it.action === "skipped" && "text-amber-700 border-amber-500/40 bg-amber-500/5"
+                          )}
+                        >
+                          {it.action === "created" ? "CREADO" : it.action === "updated" ? "ACTUALIZADO" : "SALTADO"}
+                        </Badge>
+                        <span className="font-mono font-semibold">{it.notamId}</span>
+                        <Badge variant="secondary" className="text-[10px]">{it.icao}</Badge>
+                        <span className="text-muted-foreground line-clamp-1 flex-1 min-w-0">
+                          {it.summary}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </ScrollArea>
+              )}
+
+              {result.errors.length > 0 && (
+                <details className="text-xs">
+                  <summary className="cursor-pointer text-amber-700 dark:text-amber-400">
+                    Ver {result.errors.length} advertencia(s)
+                  </summary>
+                  <ul className="mt-1 space-y-0.5 text-muted-foreground">
+                    {result.errors.map((e, i) => (
+                      <li key={i} className="font-mono">{e}</li>
+                    ))}
+                  </ul>
+                </details>
+              )}
+            </div>
+          )}
+        </div>
+
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={handleClose} disabled={loading}>
+            Cerrar
+          </Button>
+          <Button
+            onClick={handleIngest}
+            disabled={loading || !text.trim()}
+            className="bg-amber-500 hover:bg-amber-600 text-navy gap-1.5"
+          >
+            {loading ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Upload className="size-4" />
+            )}
+            Procesar NOTAMs
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+// ─── NOTAM row (collapsible) ────────────────────────────────────────────
+
+function NotamRow({ n }: { n: NotamItem }) {
+  const [expanded, setExpanded] = useState(false)
+  const status = notamStatus(n.effectiveFrom, n.effectiveTo ?? (n.isPermanent ? "PERM" : undefined))
+
+  const statusBadge = useMemo(() => {
+    if (status === "upcoming")
+      return (
+        <Badge variant="outline" className="text-[10px] text-amber-700 border-amber-500/40 bg-amber-500/5">
+          próximo
+        </Badge>
+      )
+    if (status === "expired")
+      return (
+        <Badge variant="outline" className="text-[10px] text-red-700 border-red-500/40 bg-red-500/5">
+          expirado
+        </Badge>
+      )
+    if (n.isPermanent || !n.effectiveTo)
+      return (
+        <Badge variant="outline" className="text-[10px] text-emerald-700 border-emerald-500/40 bg-emerald-500/5">
+          permanente
+        </Badge>
+      )
+    return (
+      <Badge variant="outline" className="text-[10px] text-emerald-700 border-emerald-500/40 bg-emerald-500/5">
+        vigente
+      </Badge>
+    )
+  }, [status, n.isPermanent, n.effectiveTo])
+
+  return (
+    <div className="rounded-md border border-border/60 bg-background/50">
+      <button
+        type="button"
+        onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-start gap-2 p-2.5 text-left hover:bg-muted/40 transition-colors"
+      >
+        <Badge
+          variant="outline"
+          className={cn("text-[10px] shrink-0", priorityColors[n.priority] || priorityColors.LOW)}
+        >
+          {n.priority}
+        </Badge>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-mono text-xs font-semibold">{n.notamId}</span>
+            {n.airport?.icaoCode && (
+              <Badge variant="secondary" className="text-[10px]">{n.airport.icaoCode}</Badge>
+            )}
+            {n.scope && (
+              <Badge variant="outline" className="text-[10px] h-4">{n.scope}</Badge>
+            )}
+            {statusBadge}
+            <span className="ml-auto">
+              <NotamCountdown
+                validFrom={n.effectiveFrom}
+                validTo={n.effectiveTo}
+                isPermanent={n.isPermanent}
+              />
+            </span>
+            {expanded ? (
+              <ChevronDown className="size-3.5 text-muted-foreground shrink-0" />
+            ) : (
+              <ChevronRight className="size-3.5 text-muted-foreground shrink-0" />
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+            <span className="font-medium text-foreground/90">{n.subject}</span>{" "}
+            <span className="text-amber-700 dark:text-amber-400">{n.condition}</span>
+            {" — "}
+            {n.text.split("\n").find((l) => l.startsWith("E)"))?.replace(/^E\)\s*/, "").slice(0, 120) || n.text.slice(0, 120)}
+          </p>
+        </div>
+      </button>
+      {expanded && (
+        <div className="px-3 pb-3 pt-1 space-y-2 border-t border-border/40">
+          <pre className="font-mono text-[11px] bg-muted/50 p-2 rounded whitespace-pre-wrap overflow-x-auto max-h-72">
+            {n.text}
+          </pre>
+          <div className="flex items-center gap-3 text-[10px] text-muted-foreground font-mono flex-wrap">
+            {n.effectiveFrom && (
+              <span>Desde: {formatDateTime(n.effectiveFrom)}</span>
+            )}
+            {n.effectiveTo && (
+              <span>
+                Hasta: {n.isPermanent ? "PERM" : formatDateTime(n.effectiveTo)}
+              </span>
+            )}
+            {n.source && <span>Fuente: {n.source}</span>}
+            {n.verified && (
+              <Badge variant="outline" className="text-[10px] h-4 text-emerald-700 border-emerald-500/40">
+                verificado
+              </Badge>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Main component ─────────────────────────────────────────────────────
+
 export function SpimBriefing() {
   const [briefing, setBriefing] = useState<BriefingResponse | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
   const [chatInput, setChatInput] = useState("")
   const [chatLoading, setChatLoading] = useState(false)
   const [showRawMetar, setShowRawMetar] = useState(false)
   const [showRawTaf, setShowRawTaf] = useState(false)
+  const [autoOn, setAutoOn] = useState(true)
   const chatEndRef = useRef<HTMLDivElement>(null)
 
   const fetchBriefing = useCallback(async () => {
     setLoading(true)
+    setError(null)
     try {
       const res = await fetch("/api/spim-briefing", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "briefing" }),
+        cache: "no-store",
       })
-      if (!res.ok) throw new Error("Error al obtener briefing")
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data: BriefingResponse = await res.json()
       setBriefing(data)
     } catch (err) {
       console.error("Error:", err)
+      setError(err instanceof Error ? err.message : String(err))
     } finally {
       setLoading(false)
     }
   }, [])
 
-  useEffect(() => {
-    fetchBriefing()
-  }, [fetchBriefing])
+  // Polling determinista cada 30s
+  const { secondsToNext, isFetching, refreshNow } = usePolling({
+    fetcher: fetchBriefing,
+    intervalMs: 30_000,
+    enabled: autoOn,
+    runOnMount: true,
+  })
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -206,9 +654,19 @@ export function SpimBriefing() {
   const taf = briefing?.weather?.taf
   const notams = briefing?.notams || []
 
+  // Stats para el header
+  const urgentCount = notams.filter((n) => n.priority === "URGENT").length
+  const highCount = notams.filter((n) => n.priority === "HIGH").length
+  const permCount = notams.filter((n) => n.isPermanent).length
+  const expiringSoon = notams.filter((n) => {
+    if (n.isPermanent || !n.effectiveTo) return false
+    const ms = parseIsoMs(n.effectiveTo)
+    return ms !== null && ms > Date.now() && ms - Date.now() <= 60 * 60 * 1000 // 1h
+  }).length
+
   return (
     <div className="space-y-4">
-      {/* Header */}
+      {/* Header con branding + controles de polling */}
       <Card className="border-amber-500/20 bg-gradient-to-br from-navy to-navy-light text-white">
         <CardContent className="p-5">
           <div className="flex items-start gap-4 flex-wrap">
@@ -225,34 +683,90 @@ export function SpimBriefing() {
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               {briefing && (
-                <Badge
-                  variant="outline"
-                  className="border-amber-500/40 text-amber-400 gap-1"
-                >
-                  <CheckCircle2 className="size-3" />
-                  {notams.length} NOTAMs activos
-                </Badge>
+                <>
+                  {urgentCount > 0 && (
+                    <Badge
+                      variant="outline"
+                      className="border-red-500/40 text-red-400 gap-1"
+                    >
+                      <AlertTriangle className="size-3" />
+                      {urgentCount} urgentes
+                    </Badge>
+                  )}
+                  {expiringSoon > 0 && (
+                    <Badge
+                      variant="outline"
+                      className="border-amber-500/40 text-amber-400 gap-1"
+                    >
+                      <Timer className="size-3" />
+                      {expiringSoon} expiran &lt;1h
+                    </Badge>
+                  )}
+                  <Badge
+                    variant="outline"
+                    className="border-emerald-500/40 text-emerald-400 gap-1"
+                  >
+                    <CheckCircle2 className="size-3" />
+                    {notams.length} NOTAMs
+                  </Badge>
+                </>
               )}
+              {/* Auto-refresh toggle */}
+              <div className="flex items-center gap-1.5 text-xs text-slate-300 px-2 py-1 rounded-md border border-white/10">
+                <Clock className="size-3" />
+                <span className="font-mono">{secondsToNext}s</span>
+                <Switch
+                  checked={autoOn}
+                  onCheckedChange={setAutoOn}
+                  id="auto-polling"
+                  aria-label="Auto-refresh cada 30 segundos"
+                />
+                <Label htmlFor="auto-polling" className="sr-only">
+                  Auto-refresh cada 30 segundos
+                </Label>
+              </div>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={fetchBriefing}
-                disabled={loading}
-                className="border-amber-500/40 text-amber-400 hover:bg-amber-500/10 hover:text-amber-300"
+                onClick={refreshNow}
+                disabled={isFetching}
+                className="border-amber-500/40 text-amber-400 hover:bg-amber-500/10 hover:text-amber-300 gap-1.5"
               >
-                {loading ? (
+                {isFetching ? (
                   <Loader2 className="size-3.5 animate-spin" />
                 ) : (
                   <RefreshCw className="size-3.5" />
                 )}
-                Actualizar
+                <span className="hidden sm:inline">Actualizar</span>
               </Button>
             </div>
           </div>
+          {autoOn && (
+            <div className="flex items-center gap-2 text-[11px] text-slate-300 mt-2">
+              <Badge variant="secondary" className="font-mono text-[10px] gap-1">
+                <RefreshCw className={cn("size-3", isFetching && "animate-spin")} />
+                {isFetching ? "consultando NOAA + AIS…" : `próxima consulta en ${secondsToNext}s`}
+              </Badge>
+              <span className="text-slate-400">
+                · Polling automático cada 30s · Datos oficiales CORPAC AIS Perú
+              </span>
+            </div>
+          )}
         </CardContent>
       </Card>
+
+      {/* Error banner */}
+      {error && !briefing && (
+        <div className="flex items-start gap-2 p-3 rounded-md bg-rose-500/10 border border-rose-500/30">
+          <AlertTriangle className="size-4 mt-0.5 text-rose-600 shrink-0" />
+          <div className="text-sm">
+            <p className="font-medium text-rose-700">Error al cargar el briefing</p>
+            <p className="text-xs text-muted-foreground mt-1 font-mono">{error}</p>
+          </div>
+        </div>
+      )}
 
       {/* AI Briefing Card */}
       <Card>
@@ -295,7 +809,7 @@ export function SpimBriefing() {
         </CardContent>
       </Card>
 
-      {/* Weather + NOTAMs Grid */}
+      {/* Weather Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* METAR Card */}
         <Card>
@@ -306,10 +820,7 @@ export function SpimBriefing() {
               {metar?.flightCategory && (
                 <Badge
                   variant="outline"
-                  className={cn(
-                    "ml-auto text-xs",
-                    flightCategoryColors[metar.flightCategory]
-                  )}
+                  className={cn("ml-auto text-xs", flightCategoryColors[metar.flightCategory])}
                 >
                   {metar.flightCategory}
                 </Badge>
@@ -412,10 +923,7 @@ export function SpimBriefing() {
                       {p.flightCategory && (
                         <Badge
                           variant="outline"
-                          className={cn(
-                            "ml-auto text-xs",
-                            flightCategoryColors[p.flightCategory]
-                          )}
+                          className={cn("ml-auto text-xs", flightCategoryColors[p.flightCategory])}
                         >
                           {p.flightCategory}
                         </Badge>
@@ -444,7 +952,7 @@ export function SpimBriefing() {
         </Card>
       </div>
 
-      {/* NOTAMs Summary */}
+      {/* NOTAMs Summary con countdown + ingest */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
@@ -452,48 +960,35 @@ export function SpimBriefing() {
             NOTAMs Activos — FIR Lima
             <Badge variant="outline" className="ml-auto text-xs">
               {notams.length} total
+              {permCount > 0 && (
+                <span className="text-emerald-700 dark:text-emerald-400 ml-1">
+                  · {permCount} PERM
+                </span>
+              )}
             </Badge>
           </CardTitle>
+          <div className="flex items-center justify-between gap-2 mt-1">
+            <p className="text-xs text-muted-foreground">
+              Orden: expiración más próxima primero · Click en un NOTAM para ver detalle
+            </p>
+            <NotamIngestDialog onIngested={refreshNow} />
+          </div>
         </CardHeader>
         <CardContent>
-          <ScrollArea className="max-h-72 overflow-y-auto">
-            <div className="space-y-1.5">
+          <ScrollArea className="max-h-96 overflow-y-auto">
+            <div className="space-y-1.5 pr-2">
               {notams.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  No hay NOTAMs activos
-                </p>
+                <div className="text-center py-8 space-y-2">
+                  <FileText className="size-8 text-muted-foreground/40 mx-auto" />
+                  <p className="text-sm text-muted-foreground">
+                    No hay NOTAMs activos para FIR Lima
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Usa <strong>Ingestar NOTAMs</strong> para pegar boletines desde AIS Perú
+                  </p>
+                </div>
               ) : (
-                notams.map((n) => (
-                  <div
-                    key={n.id}
-                    className="flex items-start gap-2 p-2 rounded-md hover:bg-muted/50 border border-border/40"
-                  >
-                    <Badge
-                      variant="outline"
-                      className={cn(
-                        "text-xs shrink-0",
-                        priorityColors[n.priority] || priorityColors.LOW
-                      )}
-                    >
-                      {n.priority}
-                    </Badge>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-mono text-xs font-semibold">
-                          {n.notamId}
-                        </span>
-                        {n.airport?.icaoCode && (
-                          <Badge variant="secondary" className="text-xs">
-                            {n.airport.icaoCode}
-                          </Badge>
-                        )}
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
-                        {n.subject} {n.condition}
-                      </p>
-                    </div>
-                  </div>
-                ))
+                notams.map((n) => <NotamRow key={n.id} n={n} />)
               )}
             </div>
           </ScrollArea>
@@ -603,6 +1098,7 @@ export function SpimBriefing() {
               placeholder="Escribe tu consulta al agente..."
               disabled={chatLoading || !briefing}
               className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/40 disabled:opacity-50"
+              suppressHydrationWarning
             />
             <Button
               size="icon"
@@ -622,9 +1118,13 @@ export function SpimBriefing() {
 
       {/* Source info */}
       {briefing && (
-        <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+        <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground flex-wrap">
           <FileText className="size-3" />
-          Fuente: {briefing.source} · Datos: {briefing.weather?.source || "simulado"}
+          <span>Fuente: {briefing.source}</span>
+          <Separator orientation="vertical" className="h-3" />
+          <span>Datos meteorológicos: {briefing.weather?.source || "simulado"}</span>
+          <Separator orientation="vertical" className="h-3" />
+          <span>NOTAMs: Prisma + PostgreSQL · Parser OACI local</span>
         </div>
       )}
     </div>
@@ -633,5 +1133,5 @@ export function SpimBriefing() {
 
 // Minimal skeleton to avoid extra imports
 function Skeleton({ className }: { className?: string }) {
-  return <div className={`animate-pulse rounded bg-muted ${className || ""}`} />
+  return <div className={cn("animate-pulse rounded bg-muted", className || "")} />
 }
