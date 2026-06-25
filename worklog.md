@@ -2265,3 +2265,62 @@ Stage Summary:
 - Archivos modificados: 4 (spim-briefing.tsx, /api/spim-briefing/route.ts, input.tsx, textarea.tsx, eslint.config.mjs)
 - Endpoints: POST /api/spim-briefing (briefing + sort por urgencia), POST /api/spim-briefing/ingest (parser OACI + upsert), POST /api/spim-briefing/chat (QA)
 - Verificación end-to-end exitosa con Agent Browser: countdown ticking en tiempo real, ingest crea NOTAMs y aparecen en lista, chat responde correctamente
+
+---
+Task ID: SPIM-AGENT-REDESIGN
+Agent: Main Agent
+Task: Rediseñar la sección "Agente SPIM" para que coincida exactamente con las capturas de pantalla del usuario (IMG_5932-5935.jpeg) — dashboard estilo agente + vista de detalle de estación con tabs METAR/TAF/NOTAM
+
+Work Log:
+- Analizadas 4 capturas de pantalla subidas por el usuario con VLM (z-ai vision):
+  * IMG_5932: Dashboard con header "Agente de Aviación FIR SPIM", stats (Aeródromos/METAR/TAF/NOTAMs), tabs (Gestión/Agente/API), card "Pegado masivo de NOTAMS"
+  * IMG_5933: Vista detalle estación SPJC con tab METAR — header con ICAO/IATA/INTL, info aeropuerto, tabs, "Última actualización", summary box verde, "VERSIÓN LEGIBLE", "MENSAJE CRUDO", "Ver JSON completo"
+  * IMG_5934: Vista detalle con tab TAF activo
+  * IMG_5935: Vista detalle con tab NOTAM activo — NOTAMs con ID, Q-code, status, countdown, campos OACI estructurados (A/B/C/D/E/F/G), vigencia
+- Creado endpoint GET /api/spim-agent/stats/route.ts:
+  * Retorna stats agregadas: totalStations, metarCount, tafCount, notamCount
+  * Lista de 65 estaciones peruanas con metadata (ICAO, IATA, name, city, region, type, elevation, lat/lon, frequencies, notamCount, hasMetar, hasTaf)
+  * Combina datos de DB (Prisma) + PERUVIAN_STATIONS_BY_ICAO + PERUVIAN_ICAOS
+  * NOTAM counts agrupados por airportId via Prisma groupBy
+- Creado endpoint GET /api/spim-agent/station/[icao]/route.ts:
+  * Retorna detalle completo de estación: metadata + weather (METAR/TAF) + NOTAMs combinados
+  * Parser METAR/TAF propio (espejo del weather route) con cache en memoria (10min TTL)
+  * Fetch desde aviationweather.gov con fallback a datos simulados
+  * Generador de texto legible en español: metarReadable() y tafReadable()
+  * Parser de NOTAMs estructurado: extrae campos OACI (Q/A/B/C/D/E/F/G) del texto
+  * Summary con color (green/amber/red) basado en flight category
+  * lastUpdate timestamp
+- Reescrito completamente src/components/spim-briefing.tsx (~1300 líneas):
+  * Dashboard View: header con icono verde + título + badges (Perú, v1.1, Live·30s), info card, auto-consulta toggle, 4 stat cards, tabs (Gestión/Agente/API), station list con búsqueda, card "Pegado masivo de NOTAMS"
+  * Station Detail View: back button, header con ICAO + IATA + INTL badges + nombre + ubicación + coordenadas + frecuencias, auto-refresh controls, tabs METAR/TAF/NOTAM con counts, last update + summary box coloreada, secciones "VERSIÓN LEGIBLE" y "MENSAJE CRUDO", botón "Ver JSON completo"
+  * METAR Panel: flight category badge, grid de métricas (viento/visibilidad/temp/QNH), texto legible, mensaje crudo, JSON toggle
+  * TAF Panel: períodos, texto legible, mensaje crudo, JSON toggle
+  * NOTAM Panel: lista colapsable con notamId, Q-code, status, priority, countdown timer, campos OACI estructurados, vigencia, texto completo
+  * Agente View: AI briefing (LLM) + chat interactivo con preguntas sugeridas
+  * API View: documentación de endpoints + fuentes de datos
+  * NotamIngestDialog: dialog para pegado masivo de NOTAMs (parser OACI + upsert Prisma)
+  * NotamCountdown: reloj de cuenta regresiva en tiempo real (azul >5min, rojo pulsante ≤5min, PERM verde, EXPIRADO rojo, PRÓXIMO ámbar)
+- Actualizado src/app/page.tsx: removido header duplicado de la sección spim-briefing (el componente ahora tiene su propio header completo)
+- Fix del parser TAF readable: cuando periods está vacío (TAF inicial no parseado), extrae wind/visibility/clouds del texto crudo con regex mejorado (ignora date/time group, busca wind seguido de KT)
+- Limpieza de imports no usados en spim-briefing.tsx
+- Verificación con Agent Browser:
+  * Dashboard renderiza correctamente: header "Agente de Aviación FIR SPIM" + Perú + v1.1 + Live·30s, 4 stat cards (65/64/64/20), tabs Gestión/Agente/API, station list con 65 estaciones, card Pegado masivo
+  * Click en SPJC → station detail renderiza: SPJC + LIM + INTL badges, "AEROPUERTO INTERNACIONAL JORGE CHÁVEZ", "Lima · LIMA · 113 ft · -12.0216, -77.1143", "Frecuencias: TWR 118.30 · APP 119.70 · GND 121.90", tabs METAR(1)/TAF(1)/NOTAM(6), "Última actualización hace 5 min", summary verde "Condiciones normales (VFR)", VERSIÓN LEGIBLE con texto decodificado, MENSAJE CRUDO con METAR raw, botón Ver JSON completo
+  * Tab TAF: muestra TAF readable + raw + JSON toggle
+  * Tab NOTAM: muestra lista de NOTAMs colapsables con countdown timer
+  * Tabs Agente/API funcionan correctamente
+- bun run lint: 0 errores, 0 warnings ✓
+- Dev server: HTTP 200, sin errores runtime ✓
+- APIs respondiendo:
+  * GET /api/spim-agent/stats 200 (65 estaciones, 64 METAR, 64 TAF, 20 NOTAMs)
+  * GET /api/spim-agent/station/SPJC 200 (METAR + TAF + 6 NOTAMs + readable text)
+
+Stage Summary:
+- Sección "Agente SPIM" completamente rediseñada para coincidir con las capturas de pantalla del usuario
+- 2 nuevos endpoints API creados: /api/spim-agent/stats (dashboard) y /api/spim-agent/station/[icao] (detalle)
+- Componente spim-briefing.tsx reescrito desde cero con 3 vistas: Dashboard (Gestión), Agente IA, API docs
+- Dashboard con header estilo agente (icono verde, Live·30s, stats cards, tabs), station list buscable, pegado masivo de NOTAMs
+- Station Detail con tabs METAR/TAF/NOTAM, versiones legibles + crudas, JSON toggle, countdown timers en NOTAMs
+- Diseño limpio con accent esmeralda (verde), cards con borders sutiles, badges coloreados, monospace para datos crudos
+- Funcionalidades preservadas del diseño anterior: AI briefing, chat, ingesta masiva, countdown timers, auto-polling 30s
+- Verificación end-to-end exitosa con Agent Browser + VLM comparison
