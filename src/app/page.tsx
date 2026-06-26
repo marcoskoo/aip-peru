@@ -3,7 +3,7 @@
 import { useState, useCallback, Suspense } from "react"
 import { useToast } from "@/hooks/use-toast"
 import dynamic from "next/dynamic"
-import { Moon, Sun, Plane, Map, FileText, Route, Settings, Crosshair, Navigation2, AlertTriangle, Shield, Calculator, Search, BookOpen, Menu, X, Bot, Download, Loader2 } from "lucide-react"
+import { Moon, Sun, Plane, Map, FileText, Route, Settings, Crosshair, Navigation2, AlertTriangle, Shield, Calculator, Search, BookOpen, Menu, X, Bot } from "lucide-react"
 import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -119,36 +119,8 @@ export default function Home() {
   const [flightPlanRoute, setFlightPlanRoute] = useState<RoutePoint[] | undefined>(undefined)
   const [flightPlanSummary, setFlightPlanSummary] = useState<RouteSummary | undefined>(undefined)
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
-  const [downloadingProject, setDownloadingProject] = useState(false)
   const { theme, setTheme } = useTheme()
   const { toast } = useToast()
-
-  // Descarga el zip completo del proyecto (src, prisma, public, configs, etc.)
-  // Usa un <a> oculto para forzar la descarga con Content-Disposition: attachment.
-  // El endpoint /api/download sirve el archivo en streaming.
-  const handleDownloadProject = useCallback(() => {
-    setDownloadingProject(true)
-    try {
-      const a = document.createElement("a")
-      a.href = "/api/download"
-      a.download = "my-project.zip"
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      toast({
-        title: "Descarga iniciada",
-        description: "El archivo my-project.zip se está descargando.",
-      })
-    } catch {
-      toast({
-        title: "Error",
-        description: "No se pudo iniciar la descarga. Intenta nuevamente.",
-        variant: "destructive",
-      })
-    } finally {
-      setTimeout(() => setDownloadingProject(false), 1500)
-    }
-  }, [toast])
 
   const handleSelectAirport = (airport: Airport) => {
     setSelectedAirport(airport)
@@ -310,23 +282,6 @@ export default function Home() {
                 </Button>
               )}
 
-              {/* Download project zip — visible on every tab */}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleDownloadProject}
-                disabled={downloadingProject}
-                title="Descargar proyecto completo (.zip)"
-                className="text-white hover:bg-navy-light hover:text-amber-400"
-              >
-                {downloadingProject ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <Download className="size-4" />
-                )}
-                <span className="sr-only">Descargar proyecto (.zip)</span>
-              </Button>
-
               {/* Theme toggle */}
               <Button
                 variant="ghost"
@@ -390,27 +345,7 @@ export default function Home() {
               )
             })}
 
-            {/* Download project zip (mobile) */}
-            <div className="mt-2 pt-3 border-t border-white/10 px-3">
-              <p className="pb-2 text-xs font-semibold uppercase tracking-wider text-white/40">
-                Exportar
-              </p>
-              <button
-                onClick={() => {
-                  handleDownloadProject()
-                  setMobileNavOpen(false)
-                }}
-                disabled={downloadingProject}
-                className="flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-colors text-left text-white hover:bg-navy-light hover:text-amber-400 w-full disabled:opacity-60"
-              >
-                {downloadingProject ? (
-                  <Loader2 className="size-5 shrink-0 animate-spin" />
-                ) : (
-                  <Download className="size-5 shrink-0" />
-                )}
-                <span>Descargar proyecto (.zip)</span>
-              </button>
-            </div>
+
           </nav>
         </SheetContent>
       </Sheet>
