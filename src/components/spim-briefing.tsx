@@ -24,6 +24,9 @@ import {
   Settings2,
   Volume2,
   Search,
+  MapPin,
+  ListFilter,
+  Cloud,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -47,6 +50,7 @@ import {
   notamStatus,
   formatCountdown,
 } from "@/lib/aviation/notam-parser"
+import { NotamCountdownClock, sortByExpiry } from "@/components/notam-countdown-clock"
 
 // ─── Types ──────────────────────────────────────────────────────────────
 
@@ -1128,7 +1132,7 @@ function ApiView() {
       <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden">
         <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center gap-2">
           <Code2 className="size-4 text-emerald-600" />
-          <h3 className="font-semibold text-sm text-slate-900 dark:text-slate-100">Endpoints del Agente SPIM</h3>
+          <h3 className="font-semibold text-sm text-slate-900 dark:text-slate-100">Endpoints de INFO SPIM</h3>
         </div>
         <div className="divide-y divide-slate-100 dark:divide-slate-800">
           {endpoints.map((e) => (
@@ -1153,9 +1157,410 @@ function ApiView() {
   )
 }
 
+// ─── Multi-Station Briefing View ─────────────────────────────────────────
+//
+// Permite consultar la información de varias estaciones a la vez (METAR,
+// TAF y NOTAMs). El usuario ingresa una lista de designadores OACI (SPHI,
+// SPRU, SPEO, etc.) separados por comas, espacios o líneas nuevas, y el
+// sistema presenta los resultados en dos bloques:
+//
+//   Bloque 1: METAR y TAF de todas las estaciones solicitadas.
+//   Bloque 2: NOTAMs de todas las estaciones solicitadas.
+
+interface WeatherResult {
+  icao: string
+  ok: boolean
+  metar: { raw: string; flightCategory?: string } | null
+  taf: { raw: string } | null
+  error?: string
+}
+
+interface NotamResult {
+  icao: string
+  ok: boolean
+  count: number
+  notams: Array<{
+    id: string
+    notamId: string
+    text: string
+    effectiveFrom: string
+    effectiveTo: string | null
+    isPermanent: boolean
+    priority: string
+    scope: string | null
+    airport?: { icaoCode: string; name: string } | null
+  }>
+  error?: string
+}
+
+// Parser de designadores OACI desde texto libre.
+// Acepta comas, espacios, puntos y comas, saltos de línea como separadores.
+// Filtra códigos válidos (4 letras, mayúsculas automáticamente).
+function parseIcaoList(input: string): string[] {
+  if (!input.trim()) return []
+  const tokens = input
+    .toUpperCase()
+    .split(/[\s,;]+/)
+    .map((t) => t.replace(/[^A-Z]/g, ""))
+    .filter((t) => t.length === 4)
+  // Eliminar duplicados preservando el orden de entrada.
+  const seen = new Set<string>()
+  const result: string[] = []
+  for (const t of tokens) {
+    if (!seen.has(t)) {
+      seen.add(t)
+      result.push(t)
+    }
+  }
+  return result
+}
+
+function MultiStationBriefing() {
+  const [input, setInput] = useState("")
+  const [icaos, setIcaos] = useState<string[]>([])
+  const [weather, setWeather] = useState<WeatherResult[]>([])
+  const [notams, setNotams] = useState<NotamResult[]>([])
+  const [loadingWeather, setLoadingWeather] = useState(false)
+  const [loadingNotams, setLoadingNotams] = useState(false)
+  const [searched, setSearched] = useState(false)
+
+  const handleSearch = useCallback(async () => {
+    const parsed = parseIcaoList(input)
+    if (parsed.length === 0) return
+    setIcaos(parsed)
+    setSearched(true)
+    setWeather([])
+    setNotams([])
+
+    // ── Bloque 1: METAR + TAF (uno por estación, en paralelo) ───────
+    setLoadingWeather(true)
+    Promise.all(
+      parsed.map(async (icao) => {
+        try {
+          const res = await fetch(`/api/weather/${icao}`)
+          if (!res.ok) {
+            return { icao, ok: false, metar: null, taf: null, error: `HTTP ${res.status}` } as WeatherResult
+          }
+          const data = await res.json()
+          return {
+            icao,
+            ok: true,
+            metar: data.metar ? { raw: data.metar.raw, flightCategory: data.metar.flightCategory } : null,
+            taf: data.taf ? { raw: data.taf.raw } : null,
+          } as WeatherResult
+        } catch (e) {
+          return { icao, ok: false, metar: null, taf: null, error: String(e) } as WeatherResult
+        }
+      }),
+    )
+      .then((results) => setWeather(results))
+      .finally(() => setLoadingWeather(false))
+
+    // ── Bloque 2: NOTAMs (uno por estación, en paralelo) ────────────
+    // Necesitamos el airportId de la DB para filtrar. Lo obtenemos
+    // consultando /api/airports y filtrando por ICAO en el cliente, o
+    // más simple: consultamos /api/notams sin airportId y filtramos por
+    // airport.icaoCode en el resultado. Como /api/notams acepta search,
+    // usamos search=ICAO para acotar.
+    setLoadingNotams(true)
+    Promise.all(
+      parsed.map(async (icao) => {
+        try {
+          // Buscar NOTAMs cuyo aeropuerto tenga este ICAO.
+          // El API filtra por airportId (DB), no por ICAO, así que
+          // usamos search con el ICAO para acotar y luego filtramos.
+          const res = await fetch(`/api/notams?search=${encodeURIComponent(icao)}&active=true&limit=200`)
+          if (!res.ok) {
+            return { icao, ok: false, count: 0, notams: [], error: `HTTP ${res.status}` } as NotamResult
+          }
+          const data = await res.json()
+          const list = Array.isArray(data) ? data : data.notams || []
+          // Filtrar solo los que pertenecen a este aeropuerto por ICAO.
+          const filtered = list.filter(
+            (n: { airport?: { icaoCode?: string } | null; text?: string }) =>
+              n.airport?.icaoCode === icao || (n.text || "").includes(`A) ${icao}`),
+          )
+          return {
+            icao,
+            ok: true,
+            count: filtered.length,
+            notams: filtered.map(
+              (n: Record<string, unknown>) =>
+                ({
+                  id: String(n.id),
+                  notamId: String(n.notamId),
+                  text: String(n.text || ""),
+                  effectiveFrom: String(n.effectiveFrom || ""),
+                  effectiveTo: (n.effectiveTo as string | null) || null,
+                  isPermanent: Boolean(n.isPermanent),
+                  priority: String(n.priority || "MEDIUM"),
+                  scope: (n.scope as string | null) || null,
+                  airport: (n.airport as { icaoCode: string; name: string } | null) || null,
+                }),
+            ),
+          } as NotamResult
+        } catch (e) {
+          return { icao, ok: false, count: 0, notams: [], error: String(e) } as NotamResult
+        }
+      }),
+    )
+      .then((results) => setNotams(results))
+      .finally(() => setLoadingNotams(false))
+  }, [input])
+
+  const totalWeather = weather.filter((w) => w.ok && (w.metar || w.taf)).length
+  const totalNotams = notams.reduce((acc, n) => acc + n.count, 0)
+  const allNotamsSorted = sortByExpiry(
+    notams.flatMap((n) => n.notams.map((nt) => ({ ...nt, icao: n.icao }))),
+  )
+
+  return (
+    <div className="space-y-4">
+      {/* ─── Input ─────────────────────────────────────────────────── */}
+      <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <Search className="size-4 text-emerald-600" />
+          <h3 className="font-semibold text-sm text-slate-900 dark:text-slate-100">
+            Briefing Múltiple — Consulta varias estaciones
+          </h3>
+        </div>
+        <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+          Ingresa los designadores OACI de las estaciones (4 letras). Puedes
+          separarlos con comas, espacios o líneas nuevas. Ejemplo:
+          <code className="mx-1 px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 font-mono text-[11px]">SPHI, SPRU, SPEO</code>
+        </p>
+        <Textarea
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder={"SPHI, SPRU, SPEO\nSPJC SPZO\nSPQU;SPRU"}
+          className="min-h-[80px] font-mono text-sm"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+              handleSearch()
+            }
+          }}
+        />
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button
+            onClick={handleSearch}
+            disabled={parseIcaoList(input).length === 0 || loadingWeather || loadingNotams}
+            className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white"
+            size="sm"
+          >
+            {(loadingWeather || loadingNotams) ? (
+              <Loader2 className="size-3.5 animate-spin" />
+            ) : (
+              <Search className="size-3.5" />
+            )}
+            Consultar ({parseIcaoList(input).length} estaciones)
+          </Button>
+          {icaos.length > 0 && (
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {icaos.map((icao) => (
+                <Badge key={icao} variant="outline" className="font-mono text-[10px] text-emerald-700 dark:text-emerald-400 border-emerald-500/30">
+                  {icao}
+                </Badge>
+              ))}
+            </div>
+          )}
+          <span className="text-[11px] text-slate-400 ml-auto hidden sm:block">
+            ⌘+Enter para consultar
+          </span>
+        </div>
+      </div>
+
+      {/* ─── Resumen ──────────────────────────────────────────────── */}
+      {searched && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3">
+            <div className="flex items-center gap-1.5 text-[11px] text-slate-500 uppercase tracking-wider">
+              <MapPin className="size-3" /> Estaciones
+            </div>
+            <div className="text-xl font-bold text-slate-900 dark:text-slate-100 mt-1">{icaos.length}</div>
+          </div>
+          <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3">
+            <div className="flex items-center gap-1.5 text-[11px] text-slate-500 uppercase tracking-wider">
+              <Cloud className="size-3" /> METAR/TAF
+            </div>
+            <div className="text-xl font-bold text-green-600 dark:text-green-400 mt-1">
+              {loadingWeather ? "…" : `${totalWeather}/${icaos.length}`}
+            </div>
+          </div>
+          <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3">
+            <div className="flex items-center gap-1.5 text-[11px] text-slate-500 uppercase tracking-wider">
+              <FileText className="size-3" /> NOTAMs
+            </div>
+            <div className="text-xl font-bold text-red-600 dark:text-red-400 mt-1">
+              {loadingNotams ? "…" : totalNotams}
+            </div>
+          </div>
+          <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3">
+            <div className="flex items-center gap-1.5 text-[11px] text-slate-500 uppercase tracking-wider">
+              <ListFilter className="size-3" /> Sin datos
+            </div>
+            <div className="text-xl font-bold text-slate-400 mt-1">
+              {icaos.length - totalWeather}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── Bloque 1: METAR y TAF ────────────────────────────────── */}
+      {searched && (
+        <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden">
+          <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center gap-2 bg-green-50/50 dark:bg-green-950/20">
+            <Wind className="size-4 text-green-600" />
+            <h3 className="font-semibold text-sm text-slate-900 dark:text-slate-100">
+              Bloque 1 — METAR y TAF
+            </h3>
+            <Badge variant="secondary" className="text-xs ml-auto">
+              {loadingWeather ? "Cargando…" : `${totalWeather} con datos`}
+            </Badge>
+          </div>
+          {loadingWeather ? (
+            <div className="p-8 text-center">
+              <Loader2 className="size-6 text-green-600 animate-spin mx-auto mb-2" />
+              <p className="text-sm text-slate-500">Consultando METAR/TAF…</p>
+            </div>
+          ) : weather.length === 0 ? (
+            <div className="p-6 text-center text-sm text-slate-500">
+              Sin resultados
+            </div>
+          ) : (
+            <div className="divide-y divide-slate-100 dark:divide-slate-800">
+              {weather.map((w) => (
+                <div key={w.icao} className="p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="font-mono font-bold text-sm text-slate-900 dark:text-slate-100">{w.icao}</span>
+                    {w.metar?.flightCategory && (
+                      <Badge variant="outline" className={cn("text-[10px]", flightCategoryColors[w.metar.flightCategory] || "")}>
+                        {w.metar.flightCategory}
+                      </Badge>
+                    )}
+                    {!w.ok && (
+                      <Badge variant="outline" className="text-[10px] text-red-600 border-red-500/30">
+                        Error
+                      </Badge>
+                    )}
+                    {w.ok && !w.metar && !w.taf && (
+                      <Badge variant="outline" className="text-[10px] text-slate-400">
+                        Sin datos
+                      </Badge>
+                    )}
+                  </div>
+                  {w.metar?.raw && (
+                    <pre className="rounded bg-slate-900 dark:bg-slate-950 p-2 font-mono text-[11px] text-slate-100 dark:text-slate-200 overflow-x-auto whitespace-pre-wrap mb-1.5">
+                      <span className="text-green-400">METAR </span>
+                      {w.metar.raw}
+                    </pre>
+                  )}
+                  {w.taf?.raw && (
+                    <pre className="rounded bg-slate-900 dark:bg-slate-950 p-2 font-mono text-[11px] text-slate-100 dark:text-slate-200 overflow-x-auto whitespace-pre-wrap">
+                      <span className="text-orange-400">TAF   </span>
+                      {w.taf.raw}
+                    </pre>
+                  )}
+                  {w.error && !w.metar && !w.taf && (
+                    <p className="text-[11px] text-red-500 font-mono">{w.error}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ─── Bloque 2: NOTAMs ─────────────────────────────────────── */}
+      {searched && (
+        <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden">
+          <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center gap-2 bg-red-50/50 dark:bg-red-950/20">
+            <FileText className="size-4 text-red-600" />
+            <h3 className="font-semibold text-sm text-slate-900 dark:text-slate-100">
+              Bloque 2 — NOTAMs
+            </h3>
+            <Badge variant="secondary" className="text-xs ml-auto">
+              {loadingNotams ? "Cargando…" : `${totalNotams} NOTAMs`}
+            </Badge>
+          </div>
+          {loadingNotams ? (
+            <div className="p-8 text-center">
+              <Loader2 className="size-6 text-red-600 animate-spin mx-auto mb-2" />
+              <p className="text-sm text-slate-500">Consultando NOTAMs…</p>
+            </div>
+          ) : allNotamsSorted.length === 0 ? (
+            <div className="p-6 text-center text-sm text-slate-500">
+              No hay NOTAMs activos para las estaciones solicitadas
+            </div>
+          ) : (
+            <div className="divide-y divide-slate-100 dark:divide-slate-800 max-h-[70vh] overflow-y-auto">
+              {allNotamsSorted.map((n, idx) => (
+                <div key={n.id} className="p-3">
+                  <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                    <Badge variant="outline" className="font-mono text-[10px] text-emerald-700 dark:text-emerald-400 border-emerald-500/30">
+                      {n.icao}
+                    </Badge>
+                    <span className="font-mono text-[11px] font-bold text-slate-700 dark:text-slate-300">{n.notamId}</span>
+                    {n.priority !== "MEDIUM" && (
+                      <Badge variant="outline" className={cn("text-[9px]", priorityColors[n.priority] || "")}>
+                        {n.priority}
+                      </Badge>
+                    )}
+                    <span className="flex items-center gap-1.5 ml-auto shrink-0">
+                      <NotamCountdownClock
+                        effectiveFrom={n.effectiveFrom}
+                        effectiveTo={n.effectiveTo}
+                        isPermanent={n.isPermanent}
+                      />
+                      <span className="font-mono text-[10px] text-slate-400">#{idx + 1}</span>
+                    </span>
+                  </div>
+                  <pre className="rounded bg-slate-900 dark:bg-slate-950 p-2 font-mono text-[11px] text-slate-100 dark:text-slate-200 overflow-x-auto whitespace-pre-wrap">
+                    {n.text}
+                  </pre>
+                </div>
+              ))}
+            </div>
+          )}
+          {/* Per-station NOTAM counts */}
+          {!loadingNotams && notams.length > 0 && (
+            <div className="p-3 border-t border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/30">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Por estación:</span>
+                {notams.map((n) => (
+                  <Badge
+                    key={n.icao}
+                    variant="outline"
+                    className={cn(
+                      "font-mono text-[10px]",
+                      n.count > 0
+                        ? "text-red-600 dark:text-red-400 border-red-500/30"
+                        : "text-slate-400 border-slate-300",
+                    )}
+                  >
+                    {n.icao}: {n.count}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {!searched && (
+        <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-700 p-8 text-center">
+          <Search className="size-8 text-slate-300 mx-auto mb-2" />
+          <p className="text-sm text-slate-500">
+            Ingresa designadores OACI arriba y presiona <strong>Consultar</strong> para obtener el briefing.
+          </p>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Main Component ─────────────────────────────────────────────────────
 
-type MainTab = "gestion" | "agente" | "api"
+type MainTab = "gestion" | "briefing" | "agente" | "api"
 
 export function SpimBriefing() {
   const [stats, setStats] = useState<StatsResponse | null>(null)
@@ -1195,7 +1600,7 @@ export function SpimBriefing() {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <h1 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100">
-                  Agente de Aviación FIR SPIM
+                  INFO SPIM — Información de Aviación FIR SPIM
                 </h1>
                 <Badge variant="secondary" className="text-xs">Perú</Badge>
                 <Badge variant="outline" className="text-xs text-slate-500">v1.1</Badge>
@@ -1254,6 +1659,7 @@ export function SpimBriefing() {
         <div className="flex border-t border-slate-200 dark:border-slate-700">
           {([
             { key: "gestion" as const, label: "Gestión", icon: Settings2 },
+            { key: "briefing" as const, label: "Briefing Múltiple", icon: Search },
             { key: "agente" as const, label: "Agente", icon: Bot },
             { key: "api" as const, label: "API", icon: Code2 },
           ]).map((t) => {
@@ -1282,6 +1688,8 @@ export function SpimBriefing() {
         <StationDetailView station={selectedStation} onBack={() => setSelectedStation(null)} />
       ) : mainTab === "gestion" ? (
         <DashboardView stats={stats} loading={loading} onRefresh={refreshNow} onIngested={refreshNow} onSelectStation={setSelectedStation} />
+      ) : mainTab === "briefing" ? (
+        <MultiStationBriefing />
       ) : mainTab === "agente" ? (
         <AgenteView onRefresh={refreshNow} />
       ) : (

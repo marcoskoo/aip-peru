@@ -221,7 +221,7 @@ export default function Home() {
     { mode: "heliports" as ViewMode, icon: Crosshair, label: "Helipuertos" },
     { mode: "airways" as ViewMode, icon: Navigation2, label: "Rutas" },
     { mode: "notams" as ViewMode, icon: AlertTriangle, label: "NOTAMs" },
-    { mode: "spim-briefing" as ViewMode, icon: Bot, label: "Agente SPIM" },
+    { mode: "spim-briefing" as ViewMode, icon: Bot, label: "INFO SPIM" },
     { mode: "airspace" as ViewMode, icon: Shield, label: "Zonas" },
     { mode: "chart" as ViewMode, icon: Map, label: "Carta Aeronáutica" },
     { mode: "route-calculator" as ViewMode, icon: Route, label: "Calculadora" },
