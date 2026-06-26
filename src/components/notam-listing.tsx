@@ -428,30 +428,30 @@ export function NotamListing({ onSelectNotam, onSelectAirport }: NotamListingPro
                         </div>
                       </CardHeader>
                       <CardContent className="space-y-3">
+                        {/* TEXTO CRUDO — siempre visible, sin truncar, primero y prominente */}
+                        <div className="bg-slate-900 dark:bg-slate-950 rounded-lg p-3 border border-slate-700 dark:border-slate-800">
+                          <p className="text-[11px] font-mono text-slate-100 dark:text-slate-200 whitespace-pre-wrap break-words leading-relaxed">{notam.text}</p>
+                        </div>
+
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex-1 min-w-0">
-                            <div className="font-semibold text-sm">
+                            <div className="font-semibold text-sm text-muted-foreground">
                               {notam.subject} — {notam.condition}
                             </div>
-                            {!isExpanded && (
-                              <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                                {notam.text}
-                              </p>
-                            )}
                           </div>
                           <CollapsibleTrigger asChild>
-                            <Button variant="ghost" size="sm" className="shrink-0 h-7 w-7 p-0">
-                              {isExpanded ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
+                            <Button variant="ghost" size="sm" className="shrink-0 h-7 gap-1 text-xs">
+                              {isExpanded ? (
+                                <><ChevronUp className="size-4" /> Ocultar detalle</>
+                              ) : (
+                                <><ChevronDown className="size-4" /> Ver detalle</>
+                              )}
                             </Button>
                           </CollapsibleTrigger>
                         </div>
 
                         <CollapsibleContent>
                           <div className="mt-3 space-y-3">
-                            <div className="bg-muted/50 rounded-lg p-3">
-                              <p className="text-sm font-mono whitespace-pre-wrap">{notam.text}</p>
-                            </div>
-
                             {/* Altitude limits */}
                             {(notam.lowerLimit || notam.upperLimit) && (
                               <div className="flex items-center gap-2 text-xs text-muted-foreground">

@@ -142,6 +142,7 @@ export async function GET(request: NextRequest) {
           id: true,
           notamId: true,
           fir: true,
+          text: true,
           subject: true,
           condition: true,
           priority: true,

@@ -166,19 +166,32 @@ export function GlobalSearch({ onSelectResult }: GlobalSearchProps) {
           })
         }
 
-        // NOTAMs
+        // NOTAMs — mostrar preview del texto crudo (no del Q-code parseado)
         if (data.notams?.length > 0) {
           categories.push({
             key: "notam",
             label: "NOTAMs",
             icon: AlertCircle,
-            results: data.notams.map((n: Record<string, unknown>) => ({
-              id: n.id as string,
-              name: n.notamId as string,
-              type: "notam" as const,
-              subtitle: `${n.subject} ${n.condition}`,
-              extra: n.priority as string,
-            })),
+            results: data.notams.map((n: Record<string, unknown>) => {
+              const rawText = String(n.text || "")
+              // Quitar el encabezado "AXXXX/YY NOTAMN/R/C..." para mostrar solo el contenido operativo
+              const cleaned = rawText
+                .replace(/^[A-Z]\d+\/\d+\s+NOTAM[NRC]\s*/i, "")
+                .replace(/^Q\)\s*[^\n]*\n?/i, "")
+                .replace(/^A\)\s*\S+\s*\n?/i, "")
+                .replace(/^B\)\s*\S+\s*\n?/i, "")
+                .replace(/^C\)\s*[^\n]*\n?/i, "")
+                .replace(/^D\)\s*[^\n]*\n?/i, "")
+                .replace(/^E\)\s*/i, "")
+                .trim()
+              return {
+                id: n.id as string,
+                name: n.notamId as string,
+                type: "notam" as const,
+                subtitle: cleaned.slice(0, 120) + (cleaned.length > 120 ? "…" : ""),
+                extra: n.priority as string,
+              }
+            }),
           })
         }
 

@@ -5,7 +5,7 @@ import { motion } from "framer-motion"
 import dynamic from "next/dynamic"
 import {
   ArrowLeft, Printer, Clock, MapPin, Plane, Radio, ShieldAlert,
-  AlertCircle, CheckCircle2, Calendar, ArrowRightLeft, ExternalLink
+  AlertCircle, CheckCircle2, Calendar, ArrowRightLeft, ExternalLink, ChevronRight
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -238,35 +238,44 @@ export function NotamDetail({ notamId, onBack, onSelectAirport, onSelectNotam }:
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Key-value rows */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <InfoRow icon={AlertCircle} label="Tipo" value={typeConf.label} valueClass={typeConf.color} />
-            <InfoRow icon={ShieldAlert} label="Alcance" value={`${notam.scope || "—"} (${scopeConf.label})`} valueClass={scopeConf.color} />
-            <InfoRow icon={Radio} label="FIR" value={notam.fir} />
-            <InfoRow icon={CheckCircle2} label="Estado" value={notam.verified ? "Verificado" : "No verificado"} valueClass={notam.verified ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"} />
-            <InfoRow icon={AlertCircle} label="Asunto" value={notam.subject} />
-            <InfoRow icon={AlertCircle} label="Condición" value={notam.condition} />
-            {notam.source && <InfoRow icon={Radio} label="Fuente" value={notam.source} />}
-            {notam.replacesId && (
-              <InfoRow
-                icon={ArrowRightLeft}
-                label="Reemplaza"
-                value={notam.replacesId}
-                valueClass="text-blue-600 dark:text-blue-400 cursor-pointer hover:underline"
-                onClick={() => onSelectNotam?.(notam.replacesId!)}
-              />
-            )}
+          {/* TEXTO CRUDO — primero y prominente, antes que cualquier campo parseado */}
+          <div>
+            <h4 className="text-sm font-semibold text-amber-600 dark:text-amber-400 mb-2 flex items-center gap-1.5">
+              <AlertCircle className="size-4" />
+              Texto OACI completo (crudo)
+            </h4>
+            <div className="bg-slate-900 dark:bg-slate-950 rounded-lg p-4 border border-slate-700 dark:border-slate-800">
+              <p className="text-sm font-mono text-slate-100 dark:text-slate-200 whitespace-pre-wrap break-words leading-relaxed">{notam.text}</p>
+            </div>
           </div>
 
           <Separator />
 
-          {/* Full text */}
-          <div>
-            <h4 className="text-sm font-semibold text-muted-foreground mb-2">Texto Completo</h4>
-            <div className="bg-muted/50 rounded-lg p-4">
-              <p className="text-sm font-mono whitespace-pre-wrap leading-relaxed">{notam.text}</p>
+          {/* Metadata secundaria (campos parseados del Q-code) */}
+          <details className="group">
+            <summary className="text-sm font-semibold text-muted-foreground cursor-pointer hover:text-foreground transition-colors flex items-center gap-1.5 select-none">
+              <ChevronRight className="size-4 transition-transform group-open:rotate-90" />
+              Metadata parseada (campos del Q-code)
+            </summary>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3 pl-5">
+              <InfoRow icon={AlertCircle} label="Tipo" value={typeConf.label} valueClass={typeConf.color} />
+              <InfoRow icon={ShieldAlert} label="Alcance" value={`${notam.scope || "—"} (${scopeConf.label})`} valueClass={scopeConf.color} />
+              <InfoRow icon={Radio} label="FIR" value={notam.fir} />
+              <InfoRow icon={CheckCircle2} label="Estado" value={notam.verified ? "Verificado" : "No verificado"} valueClass={notam.verified ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"} />
+              <InfoRow icon={AlertCircle} label="Asunto" value={notam.subject} />
+              <InfoRow icon={AlertCircle} label="Condición" value={notam.condition} />
+              {notam.source && <InfoRow icon={Radio} label="Fuente" value={notam.source} />}
+              {notam.replacesId && (
+                <InfoRow
+                  icon={ArrowRightLeft}
+                  label="Reemplaza"
+                  value={notam.replacesId}
+                  valueClass="text-blue-600 dark:text-blue-400 cursor-pointer hover:underline"
+                  onClick={() => onSelectNotam?.(notam.replacesId!)}
+                />
+              )}
             </div>
-          </div>
+          </details>
 
           <Separator />
 

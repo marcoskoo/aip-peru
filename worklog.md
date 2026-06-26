@@ -2563,3 +2563,90 @@ Stage Summary:
 - SPHI ahora muestra datos reales de Chiclayo: VFR, sin lluvia, 28°C, QNH 1009, con remark "BIRD HAZARD RWY 19/01 PP000" (peligro de aves en pista)
 - Entrada v1.4.2 agregada al historial de versiones
 - Verificación end-to-end exitosa con curl + Agent Browser
+
+---
+Task ID: NOTAM-RAW-ALL-SECTIONS
+Agent: Main Agent
+Task: El usuario pide que los NOTAMs se presenten en formato crudo en TODAS las secciones donde aparecen, para evitar errores de interpretación por parte del sistema. Asegurar que el cambio sea permanente.
+
+Work Log:
+- Inventariadas TODAS las secciones donde aparecen NOTAMs en el frontend:
+  1. src/components/notam-listing.tsx — vista principal (sección NOTAMs del nav)
+  2. src/components/notam-detail.tsx — detalle de un NOTAM
+  3. src/components/spim-briefing.tsx NotamPanel — vista detalle estación (INFO SPIM → tab NOTAM)
+  4. src/components/spim-briefing.tsx MultiStationBriefing Bloque 2 — Briefing Múltiple
+  5. src/components/global-search.tsx — resultados de búsqueda global (Ctrl+K)
+- Encontrado que 4 de 5 secciones priorizaban campos parseados (subject/condition del Q-code) sobre el texto crudo:
+  * notam-listing.tsx: cabecera mostraba `subject — condition` parseado + preview con line-clamp-2 (truncado a 2 líneas)
+  * notam-detail.tsx: InfoRows parseados (Tipo, Alcance, Asunto, Condición, FIR, Fuente, Reemplaza) primero, "Texto Completo" al final
+  * spim-briefing.tsx NotamPanel: NOTAMs colapsados por defecto, al expandir mostraba Campos OACI (parseados) primero, texto crudo al final
+  * global-search.tsx: subtitle era `${subject} ${condition}` (parseados del Q-code)
+
+CAMBIOS APLICADOS (permanentes):
+
+1. **notam-listing.tsx** — Card de NOTAM rediseñada:
+   - Removida la preview con `line-clamp-2` (truncaba el texto)
+   - El TEXTO CRUDO OACI ahora se muestra PRIMERO y SIN TRUNCAR, en una caja con fondo oscuro (`bg-slate-900 dark:bg-slate-950`) + border, texto monospace blanco, `whitespace-pre-wrap break-words leading-relaxed`
+   - El `subject — condition` (parseado del Q-code) pasó a posición secundaria, en gris muted
+   - Botón "Ver detalle" ahora con texto explícito en vez de solo icono
+
+2. **notam-detail.tsx** — Detalle de NOTAM reordenado:
+   - "Texto OACI completo (crudo)" ahora ocupa la posición PRINCIPAL, arriba del todo, con header ámbar `AlertCircle + "Texto OACI completo (crudo)"`, fondo oscuro y borde slate-700
+   - Toda la metadata parseada (Tipo, Alcance, Asunto, Condición, FIR, Fuente, Reemplaza) se movió a un bloque `<details>` colapsable titulado "Metadata parseada (campos del Q-code)" con ChevronRight que rota al expandir
+   - Importado `ChevronRight` de lucide-react
+
+3. **spim-briefing.tsx NotamPanel** — Tab NOTAM de estación:
+   - Por defecto TODOS los NOTAMs aparecen EXPANDIDOS (no hay que hacer clic para ver el texto)
+   - Refactorizado de `expanded` (Set de IDs expandidos, necesitaba useEffect → anti-pattern) a `collapsed` (Set de IDs colapsados por el usuario, Set vacío inicial → todos expandidos por defecto sin useEffect)
+   - Reordenado contenido expandido: TEXTO CRUDO OACI primero (con header "Texto OACI completo (crudo)" ámbar), Vigencia después, Campos OACI parseados al final en `<details>` colapsable "Campos OACI parseados (referencial)"
+   - Añadido banner ámbar arriba del todo: "Los NOTAMs se muestran en formato crudo OACI tal cual fueron emitidos por AIS Perú. Los campos parseados (Q/A/B/C/D/E) son referenciales."
+
+4. **spim-briefing.tsx MultiStationBriefing Bloque 2**:
+   - Se mantiene el `<pre>{n.text}</pre>` con texto crudo (ya estaba bien)
+   - Añadido banner ámbar explicativo: "NOTAMs en formato crudo OACI, tal cual fueron emitidos por AIS Perú. Ordenados por fin de vigencia (más próximo a vencer primero, PERM al final)."
+
+5. **global-search.tsx** — Resultados de búsqueda:
+   - Cambiado subtitle de `${subject} ${condition}` (parseados del Q-code) a preview del TEXTO CRUDO (campo E)
+   - Regex de limpieza que remueve: encabezado "AXXXX/YY NOTAMN/R/C", Q), A), B), C), D), y el prefijo "E)" — deja solo el contenido operativo del NOTAM
+   - Truncado a 120 caracteres con "…" si excede
+   - Ejemplo: A2194/26 ahora muestra "A2159/26 Q) SPIM/QNMAS/IV/BO/AE/000/999/ A) SPHI B) 2606211834 C) 2606262359 EST E) VOR/DME CLA FREQ 114.900MHZ CH96X U/…"
+
+6. **Backend /api/search/route.ts**:
+   - Añadido `text: true` al select de la consulta NOTAM (faltaba — por eso el subtitle llegaba vacío al frontend)
+   - Sin este cambio el preview del texto crudo no funcionaría
+
+7. **Historial de versiones** (version-history.ts):
+   - Agregada entrada v1.4.3 (tag: ui) documentando los 6 cambios permanentes
+   - Resalta: "Cambio permanente: el texto crudo es la fuente de verdad; los campos parseados (Q-code, subject, condition) son solo referenciales y claramente marcados como tales."
+
+VERIFICACIÓN (lint + Agent Browser):
+- `bun run lint`: 0 errores, 0 warnings ✓
+- Dev server respondiendo 200 a todas las rutas (sin errores runtime) ✓
+- Navegado a / → click NOTAMs → listado carga con 50 NOTAMs
+  * Cada card muestra el TEXTO CRUDO OACI completo prominente (fondo oscuro, monospace, sin truncar)
+  * Ejemplo: "A2194/26 NOTAMR A2159/26 Q) SPIM/QNMAS/IV/BO/AE/000/999/ A) SPHI B) 2606211834 C) 2606262359 EST E) VOR/DME CLA FREQ 114.900MHZ CH96X U/S"
+  * `subject — condition` ("AD — U/S") en gris como metadata secundaria
+  * Botón "Ver detalle" explícito
+- Click INFO SPIM → click SPJC → tab NOTAM
+  * Banner ámbar visible: "Los NOTAMs se muestran en formato crudo OACI..."
+  * 22 NOTAMs TODOS EXPANDIDOS por defecto (sin necesidad de clicks)
+  * Cada NOTAM con header "TEXTO OACI COMPLETO (CRUDO)" + texto crudo + vigencia + "CAMPOS OACI PARSEADOS (REFERENCIAL)" colapsable
+  * Ejemplo: "C2214/26 NOTAMN Q) SPIM/QWULW/IV/BO/W/000/005/1204S07659W000 A) SPJC B) 2607021130 C) 2610012330 D) 1130-2300 E) SOBREVUELO DE RPAS PARA VIGILANCIA AEREA DISUASIVA..."
+- Click INFO SPIM → Briefing Múltiple → ingresado "SPHI, SPRU" → Consultar
+  * Banner ámbar visible: "NOTAMs en formato crudo OACI..."
+  * NOTAMs en `<pre>` con texto crudo OACI
+- Búsqueda global (Ctrl+K) → "A2194"
+  * Resultado muestra preview del texto crudo en subtitle (no más `subject condition` parseado)
+
+Stage Summary:
+- 5 archivos modificados + 1 archivo backend modificado para hacer permanente el cambio
+- Las 5 secciones donde aparecen NOTAMs ahora los muestran en FORMATO CRUDO OACI de forma prioritaria y prominente:
+  1. Listado principal: texto crudo prominente en cada card (fondo oscuro, sin truncar)
+  2. Detalle: texto crudo arriba del todo, metadata parseada en <details> colapsable
+  3. INFO SPIM tab NOTAM: todos expandidos por defecto, texto crudo primero, campos OACI parseados en <details> colapsable, banner explicativo
+  4. INFO SPIM Briefing Múltiple: texto crudo en <pre>, banner explicativo
+  5. Búsqueda global: preview del texto crudo en subtitle (no más Q-code parseado)
+- Banner visible en INFO SPIM recordando "Los campos parseados (Q/A/B/C/D/E) son referenciales"
+- Backend /api/search ahora devuelve el campo `text` del NOTAM (faltaba)
+- v1.4.3 registrada en historial con todos los cambios detallados
+- Verificación end-to-end exitosa con Agent Browser en las 3 secciones principales + búsqueda global

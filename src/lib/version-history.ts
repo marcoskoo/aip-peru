@@ -17,6 +17,21 @@ export interface VersionEntry {
 
 export const VERSION_HISTORY: VersionEntry[] = [
   {
+    version: "v1.4.3",
+    date: "2026-06-26",
+    title: "NOTAMs siempre en formato crudo OACI en todas las secciones",
+    tag: "ui",
+    changes: [
+      "Sección NOTAMs (listado principal): el texto crudo OACI del NOTAM ahora se muestra PROMINENTE y SIN TRUNCAR en la cabecera de cada card, antes que cualquier campo parseado. El 'subject — condition' (derivado del Q-code) pasó a posición secundaria en gris.",
+      "Detalle de NOTAM (notam-detail): el 'Texto OACI completo (crudo)' ahora ocupa la posición principal, arriba del todo, con fondo oscuro y borde destacado. La metadata parseada (Tipo, Alcance, Asunto, Condición, FIR, Fuente, Reemplaza) se movió a un bloque <details> colapsable titulado 'Metadata parseada (campos del Q-code)'.",
+      "INFO SPIM → tab NOTAM de estación: ahora TODOS los NOTAMs aparecen EXPANDIDOS por defecto (no hay que hacer clic para verlos). El texto crudo OACI se muestra primero con etiqueta 'Texto OACI completo (crudo)'. Los campos Q/A/B/C/D/E/F/G parseados pasaron a un <details> colapsable titulado 'Campos OACI parseados (referencial)'.",
+      "INFO SPIM → Briefing Múltiple → Bloque 2 (NOTAMs): se mantiene el formato crudo <pre> y se añadió un banner ámbar explicando 'NOTAMs en formato crudo OACI, tal cual fueron emitidos por AIS Perú'.",
+      "INFO SPIM → tab NOTAM de estación: se añadió un banner ámbar en la parte superior recordando 'Los NOTAMs se muestran en formato crudo OACI tal cual fueron emitidos por AIS Perú. Los campos parseados (Q/A/B/C/D/E) son referenciales'.",
+      "Búsqueda global (Ctrl+K / Cmd+K): los resultados de NOTAMs ahora muestran una preview del texto crudo (campo E) en lugar del 'subject + condition' parseado del Q-code, para evitar errores de interpretación.",
+      "Cambio permanente: el texto crudo es la fuente de verdad; los campos parseados (Q-code, subject, condition) son solo referenciales y claramente marcados como tales.",
+    ],
+  },
+  {
     version: "v1.4.2",
     date: "2026-06-26",
     title: "Fix de parser de METAR/TAF reales de aviationweather.gov",

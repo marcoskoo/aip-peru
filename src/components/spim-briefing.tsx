@@ -878,10 +878,13 @@ function NotamPanel({ notams, showJson, onToggleJson }: {
   showJson: boolean
   onToggleJson: () => void
 }) {
-  const [expanded, setExpanded] = useState<Set<string>>(new Set())
+  // Por defecto TODOS los NOTAMs expandidos. Para evitar anti-patterns de React
+  // (setState dentro de useEffect), guardamos solo los IDs COLAPSADOS por el usuario.
+  // Si un ID colapsado ya no existe en la nueva lista, simplemente no matchea — no pasa nada.
+  const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set())
 
   const toggle = (id: string) => {
-    setExpanded((prev) => {
+    setCollapsed((prev) => {
       const next = new Set(prev)
       if (next.has(id)) next.delete(id)
       else next.add(id)
@@ -900,8 +903,14 @@ function NotamPanel({ notams, showJson, onToggleJson }: {
 
   return (
     <div className="space-y-2">
+      {/* Banner: recordatorio de que se muestra texto crudo OACI */}
+      <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-amber-500/10 border border-amber-500/30 text-xs text-amber-700 dark:text-amber-400">
+        <FileText className="size-3.5 shrink-0" />
+        <span>Los NOTAMs se muestran en <strong>formato crudo OACI</strong> tal cual fueron emitidos por AIS Perú. Los campos parseados (Q/A/B/C/D/E) son referenciales.</span>
+      </div>
+
       {notams.map((n) => {
-        const isOpen = expanded.has(n.id)
+        const isOpen = !collapsed.has(n.id)
         return (
           <div key={n.id} className="rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
             {/* Header row */}
@@ -923,21 +932,17 @@ function NotamPanel({ notams, showJson, onToggleJson }: {
               </span>
             </button>
 
-            {/* Expanded content */}
+            {/* Expanded content — TEXTO CRUDO PRIMERO */}
             {isOpen && (
               <div className="border-t border-slate-200 dark:border-slate-700 p-3 space-y-3 bg-slate-50/50 dark:bg-slate-800/30">
-                {/* Structured fields */}
-                {n.fields.length > 0 && (
-                  <div className="space-y-1">
-                    <h5 className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Campos OACI</h5>
-                    {n.fields.map((f, i) => (
-                      <div key={i} className="flex items-start gap-2 text-xs">
-                        <span className="font-mono font-semibold text-slate-600 dark:text-slate-400 shrink-0 w-8">{f.label}</span>
-                        <span className="font-mono text-slate-700 dark:text-slate-300 break-all">{f.value}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                {/* TEXTO CRUDO OACI — primero y prominente */}
+                <div>
+                  <h5 className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wider mb-1 flex items-center gap-1">
+                    <FileText className="size-3" />
+                    Texto OACI completo (crudo)
+                  </h5>
+                  <pre className="rounded bg-slate-900 dark:bg-slate-950 p-3 font-mono text-[11px] text-slate-100 dark:text-slate-200 overflow-x-auto whitespace-pre-wrap break-words leading-relaxed border border-slate-700 dark:border-slate-800">{n.text}</pre>
+                </div>
 
                 {/* Validity period */}
                 <div className="flex items-center gap-3 flex-wrap text-xs">
@@ -951,11 +956,23 @@ function NotamPanel({ notams, showJson, onToggleJson }: {
                   </span>
                 </div>
 
-                {/* Raw text */}
-                <div>
-                  <h5 className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Texto completo</h5>
-                  <pre className="rounded bg-slate-900 dark:bg-slate-950 p-2 font-mono text-[11px] text-slate-100 dark:text-slate-200 overflow-x-auto whitespace-pre-wrap">{n.text}</pre>
-                </div>
+                {/* Campos OACI parseados — secundario, colapsable */}
+                {n.fields.length > 0 && (
+                  <details className="group">
+                    <summary className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:text-slate-700 dark:hover:text-slate-300 transition-colors flex items-center gap-1 select-none">
+                      <ChevronRight className="size-3 transition-transform group-open:rotate-90" />
+                      Campos OACI parseados (referencial)
+                    </summary>
+                    <div className="space-y-1 mt-2 pl-4">
+                      {n.fields.map((f, i) => (
+                        <div key={i} className="flex items-start gap-2 text-xs">
+                          <span className="font-mono font-semibold text-slate-600 dark:text-slate-400 shrink-0 w-8">{f.label}</span>
+                          <span className="font-mono text-slate-700 dark:text-slate-300 break-all">{f.value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </details>
+                )}
 
                 {/* JSON */}
                 {showJson && (
@@ -1505,6 +1522,13 @@ function MultiStationBriefing() {
               {loadingNotams ? "Cargando…" : `${totalNotams} NOTAMs`}
             </Badge>
           </div>
+          {/* Banner: formato crudo OACI */}
+          {!loadingNotams && allNotamsSorted.length > 0 && (
+            <div className="px-4 py-2 bg-amber-500/10 border-b border-amber-500/30 text-xs text-amber-700 dark:text-amber-400 flex items-center gap-2">
+              <FileText className="size-3.5 shrink-0" />
+              <span>NOTAMs en <strong>formato crudo OACI</strong>, tal cual fueron emitidos por AIS Perú. Ordenados por fin de vigencia (más próximo a vencer primero, PERM al final).</span>
+            </div>
+          )}
           {loadingNotams ? (
             <div className="p-8 text-center">
               <Loader2 className="size-6 text-red-600 animate-spin mx-auto mb-2" />
