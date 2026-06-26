@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
-import { Search, Plane, MapPin, Globe, Flag, Navigation, Clock } from "lucide-react"
+import { Search, Plane, MapPin, Globe, Flag, Navigation, Clock, AlertTriangle } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
@@ -18,11 +18,13 @@ export function AirportListing({ onSelectAirport }: AirportListingProps) {
   const [airports, setAirports] = useState<Airport[]>([])
   const [search, setSearch] = useState("")
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [departments, setDepartments] = useState<string[]>([])
   const [selectedDepartment, setSelectedDepartment] = useState<string>("")
 
   const fetchAirports = useCallback(async () => {
     setLoading(true)
+    setError(null)
     try {
       const params = new URLSearchParams()
       if (search) params.set("search", search)
@@ -34,9 +36,16 @@ export function AirportListing({ onSelectAirport }: AirportListingProps) {
         setAirports(airportList)
         const depts = [...new Set(airportList.map((a: Airport) => a.department).filter(Boolean))] as string[]
         setDepartments(depts.sort())
+      } else {
+        const errData = await response.json().catch(() => ({}))
+        const msg = errData?.detail || errData?.error || `Error HTTP ${response.status}`
+        setError(msg)
+        console.error('[AirportListing] API error:', response.status, errData)
       }
-    } catch {
-      // Silently handle error - empty state will be shown
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Error de red'
+      setError(msg)
+      console.error('[AirportListing] fetch error:', e)
     } finally {
       setLoading(false)
     }
@@ -251,6 +260,22 @@ export function AirportListing({ onSelectAirport }: AirportListingProps) {
               </div>
             </div>
           ))}
+        </div>
+      ) : error ? (
+        <div className="text-center py-16 px-4">
+          <div className="inline-flex items-center justify-center size-12 rounded-full bg-red-100 dark:bg-red-950/40 mb-4">
+            <AlertTriangle className="size-6 text-red-600 dark:text-red-400" />
+          </div>
+          <h3 className="text-lg font-medium">Error al cargar aeródromos</h3>
+          <p className="text-muted-foreground mt-1 text-sm max-w-md mx-auto">
+            {error}
+          </p>
+          <button
+            onClick={() => fetchAirports()}
+            className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm hover:bg-primary/90"
+          >
+            Reintentar
+          </button>
         </div>
       ) : airports.length === 0 ? (
         <div className="text-center py-16">
