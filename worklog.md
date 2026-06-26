@@ -2764,3 +2764,38 @@ Stage Summary:
 - Necesito nuevo token para empujar commit 242d248 a GitHub
 - Tras el push, Vercel hará auto-redeploy y el error 500 debería desaparecer
 - URL de producción: https://aip-peru-jthk.vercel.app
+
+---
+Task ID: deploy-fix-large-function
+Agent: Z.ai Code (main)
+Task: Resolver error de Vercel 'Function api/download is 281MB, exceeds 250MB limit'
+
+Work Log:
+- Usuario reporto error de Vercel: la funcion /api/download pesaba 281.51MB uncompressed (limite 250MB)
+- Causa raiz identificada: 
+  1) /api/download es un endpoint especifico del sandbox que servia /home/z/my-project.zip (no aplica en produccion)
+  2) serverExternalPackages solo tenia @prisma/client, faltaban excluir los paquetes pesados del frontend
+- Eliminado src/app/api/download/route.ts completamente
+- Eliminado boton 'Descargar proyecto (.zip)' del header (desktop + mobile) en src/app/page.tsx
+- Eliminada funcion handleDownloadProject y estado downloadingProject
+- Eliminados imports no usados: Download, Loader2 de lucide-react
+- Actualizado next.config.ts:
+  * serverExternalPackages ampliado de 2 a 22 paquetes (sharp, leaflet, react-leaflet,
+    react-syntax-highlighter, @mdxeditor/editor, @dnd-kit/*, @reactuses/core,
+    react-zoom-pan-pinch, react-resizable-panels, embla-carousel-react,
+    react-day-picker, react-hook-form, @tanstack/*, input-otp, vaul, cmdk)
+  * outputFileTracingExcludes para /api/** excluyendo:
+    - node_modules pesados (leaflet, recharts, react-syntax-highlighter, etc.)
+    - carpetas public/ (charts, aip-documents, aip-charts)
+  * NO se incluyeron recharts, react-markdown, remark-gfm en serverExternalPackages
+    porque generan conflicto con transpilePackages de Next.js (error de build local)
+- Build local verificado: OK, todas las rutas API compilan correctamente
+- Lint: 0 errores, 0 warnings
+- Commit caf7dd8 empujado a GitHub (force no necesario, fast-forward)
+- Token limpiado del git config tras el push
+
+Stage Summary:
+- Vercel deberia detectar el push y hacer auto-redeploy en 3-5 min
+- Esta vez el build deberia pasar (sin funcion >250MB)
+- Tras el deploy exitoso, la API /api/airports deberia responder con los 32 aeropuertos
+- URL de produccion: https://aip-peru-jthk.vercel.app
