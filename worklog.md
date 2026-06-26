@@ -2650,3 +2650,30 @@ Stage Summary:
 - Backend /api/search ahora devuelve el campo `text` del NOTAM (faltaba)
 - v1.4.3 registrada en historial con todos los cambios detallados
 - Verificación end-to-end exitosa con Agent Browser en las 3 secciones principales + búsqueda global
+
+---
+Task ID: deploy-cleanup-push
+Agent: Z.ai Code (main)
+Task: Limpiar el proyecto para deploy (eliminar PNGs/JSONs sueltos no usados) y hacer force push al repo existente marcoskoo/aip-peru en GitHub
+
+Work Log:
+- Medido tamaño del proyecto: 2.3GB total (node_modules 1.2G + .git 386M + .next 357M + public 159M + upload 144M + skills 61M + tool-results 9.6M)
+- Verificado que NINGÚN PNG suelto (60 archivos, ~9.2MB) está referenciado por src/ o public/ -> son capturas de verificación de dev
+- Verificado que NINGÚN JSON suelto en raíz (seed_SPXX.json x10, search-*.json x6, scribd-airways.json, eaip-home.json, seed_data.json) se carga en runtime -> eran datos temporales ya importados a la DB
+- Verificado que public/fpl-template.html y public/fpl-new-bg.png SÍ se usan (fpl-generator.ts) -> se mantienen
+- Verificado que public/charts/, public/aip-documents/, public/aip-charts/, public/data/ SÍ se usan -> se mantienen
+- Creado repo limpio en /tmp/aip-peru-clean/ con 457 archivos, 161MB total
+- Creado .gitignore robusto (node_modules, .next, .env, /skills/, /tool-results/, /agent-ctx/, /upload/, capturas PNG, JSONs temporales)
+- Creado README.md con instrucciones de dev local + deploy Vercel + estructura del proyecto
+- git init -b main + git add -A + commit (456 files, 49298 insertions)
+- git remote add con token PAT (ghp_***, scope repo)
+- git push --force origin main -> exitoso
+- Token removido del git config tras el push
+- Verificado vía GitHub API: commit e90014cf en main, 20 archivos en raíz (todos los esperados)
+- Token puede ser revocado por el usuario en https://github.com/settings/tokens
+
+Stage Summary:
+- Repo GitHub https://github.com/marcoskoo/aip-peru.git ahora tiene historial limpio (1 commit, 161MB, sin basura de sandbox)
+- Archivos en raíz: .env.example, .gitignore, Caddyfile, README.md, bun.lock, components.json, deploy-vercel.sh, eslint.config.mjs, next.config.ts, package.json, postcss.config.mjs, tailwind.config.ts, tsconfig.json, vercel.json + carpetas docs/, examples/, mini-services/, prisma/, public/, scripts/, src/
+- Próximos pasos para el usuario: (1) importar repo en Vercel, (2) crear DB en Neon, (3) configurar DATABASE_URL en Vercel, (4) ejecutar prisma db push + seeds contra Neon
+- Token PAT usado: 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 (usuario puede revocarlo ya)
