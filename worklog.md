@@ -2402,3 +2402,55 @@ Stage Summary:
 - overscroll-behavior: none/contain previene que los eventos wheel/touch se pierdan hacia el parent del iframe
 - -webkit-overflow-scrolling: touch habilita momentum scroll en dispositivos iOS
 - El scroll funciona en contexto normal y debería funcionar ahora en el panel de preview
+
+---
+Task ID: VERSION-HISTORY-FEATURE
+Agent: Main Agent
+Task: El usuario reporta que las versiones del aplicativo del 25/06/2026 no figuran en el historial de versiones. Se determinó que la app NO tenía una feature de historial de versiones, así que se creó desde cero.
+
+Work Log:
+- Buscado en todo el codebase "historial|changelog|versiones|version history" — no se encontró ninguna feature existente
+- Confirmado que la app solo mostraba "v1.1" como badge estático en INFO SPIM y "AMDT 33/2025" en AIP, sin registro de cambios
+- Creado src/lib/version-history.ts con:
+  * Interface VersionEntry { version, date, title, tag, changes[] }
+  * 5 entradas de versión sembradas:
+    - v1.4.0 (26/06/2026) — Corrección de scroll en panel de preview [fix]
+    - v1.3.0 (25/06/2026) — INFO SPIM, Briefing Múltiple y ordenamiento de NOTAMs PERM [feature]
+    - v1.2.0 (25/06/2026) — Integración del bundle NOTAM Countdown [feature]
+    - v1.1.0 (25/06/2026) — Rediseño de INFO SPIM con dashboard y vista de estación [ui]
+    - v1.0.0 (22/06/2026) — Lanzamiento inicial de AIP PERÚ [feature]
+  * Cada entrada con lista detallada de cambios (9 cambios en v1.3.0, 7 en v1.2.0, 8 en v1.1.0, etc.)
+  * Helper CURRENT_VERSION y formatVersionDate()
+- Creado src/components/version-history-dialog.tsx:
+  * Dialog modal con timeline vertical (línea gradiente + dots coloreados por categoría)
+  * Tag config con 5 categorías: feature (emerald), fix (amber), improvement (blue), data (purple), ui (pink)
+  * Cada entrada: versión mono, badge de categoría, badge "Actual" en la más reciente, fecha, título, lista de cambios con checkmarks
+  * ScrollArea para listas largas
+  * Botón trigger con icono History + badge de versión actual, estilizado para fondo navy del footer
+- Integrado en src/app/page.tsx:
+  * Import de VersionHistoryDialog
+  * Agregado al footer entre "CORPAC S.A." y el copyright
+  * Botón visible en todos los viewModes (siempre en el footer)
+- Fix de accessibility warning: agregado DialogDescription (faltaba aria-describedby)
+- Verificación con Agent Browser:
+  * Página carga correctamente
+  * Footer visible al hacer scroll al final
+  * Botón "Historial v1.4.0" visible en footer
+  * Click abre el dialog "Historial de Versiones"
+  * Timeline muestra las 5 versiones en orden cronológico descendente
+  * Las 3 versiones del 25/06/2026 (v1.3.0, v1.2.0, v1.1.0) aparecen correctamente con sus cambios detallados
+  * Badge "Actual" en v1.4.0 (la más reciente)
+  * Sin warnings en consola, sin errores runtime
+- VLM confirmó: dialog abierto, título "Historial de Versiones", entries con fechas, timeline layout limpio
+- bun run lint: 0 errores, 0 warnings ✓
+
+Stage Summary:
+- Nueva feature "Historial de Versiones" creada desde cero
+- 3 archivos creados: version-history.ts (data), version-history-dialog.tsx (componente), integración en page.tsx
+- 5 versiones registradas incluyendo las 3 del 25/06/2026 que el usuario reportaba como faltantes:
+  * v1.3.0 — INFO SPIM, Briefing Múltiple, NOTAMs PERM al final, countdown timers, fix usePolling, botón descarga zip
+  * v1.2.0 — Integración bundle NOTAM Countdown (countdown timers, auto-polling 30s, ingesta manual, parser OACI)
+  * v1.1.0 — Rediseño INFO SPIM (dashboard, station detail, tabs METAR/TAF/NOTAM, agente IA)
+- Diseño con timeline vertical, badges de categoría coloreados, scroll area para listas largas
+- Accesible desde el footer en todas las vistas de la app
+- Verificación end-to-end exitosa con Agent Browser + VLM

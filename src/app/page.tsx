@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
+import { VersionHistoryDialog } from "@/components/version-history-dialog"
 import { AirportListing } from "@/components/airport-listing"
 import { AirportDetailView } from "@/components/airport-detail"
 import { HeliportListing } from "@/components/heliport-listing"
@@ -554,17 +555,21 @@ export default function Home() {
       {/* Footer */}
       <footer className="bg-navy text-white mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <Plane className="size-4 text-amber-500" />
               <span className="text-sm font-medium">
                 CORPAC S.A. — AIS PERÚ
               </span>
             </div>
-            <p className="text-xs text-slate-400">
-              © {new Date().getFullYear()} Publicación de Información
-              Aeronáutica — AIP PERÚ. Todos los derechos reservados.
-            </p>
+            <div className="flex items-center gap-4">
+              {/* Version history — shows all app versions including 25/06/2026 */}
+              <VersionHistoryDialog />
+              <p className="text-xs text-slate-400 text-center sm:text-right">
+                © {new Date().getFullYear()} Publicación de Información
+                Aeronáutica — AIP PERÚ. Todos los derechos reservados.
+              </p>
+            </div>
           </div>
         </div>
       </footer>
