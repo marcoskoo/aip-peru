@@ -2737,3 +2737,30 @@ Stage Summary:
   * Los datos si la conexión a Neon funciona (caso esperado)
   * Una tarjeta de error con el mensaje exacto si algo falla
 - Pendiente: usuario debe dar la URL de Vercel para verificar end-to-end con Agent Browser
+
+---
+Task ID: deploy-fix-neon-serverless
+Agent: Z.ai Code (main)
+Task: Diagnosticar y fixar el error 500 en /api/airports en Vercel producción
+
+Work Log:
+- Captura del usuario confirmó: página carga pero muestra "0 aeródromos encontrados" (no error visible)
+- Test directo con curl a https://aip-peru-jthk.vercel.app/api/airports → HTTP 500 {"error":"Failed to fetch airports"}
+- El fix anterior (commit 9e09a45) aún NO estaba desplegado (respuesta sin detail/hint)
+- Verificado que la URL de Neon funciona en local: devuelve 32 airports correctamente
+- Causa raíz identificada: Vercel serverless no maneja bien conexiones directas a Neon sin pgbouncer
+- Fix aplicado en src/lib/db.ts:
+  * Creada función createPrismaClient() que detecta URLs de Neon
+  * Si la URL incluye 'neon.tech' y no tiene 'pgbouncer=true', se le añade automáticamente
+  * También se añade connect_timeout=15
+  * Se usa datasourceUrl en lugar de depender implícitamente del env
+- .env.example actualizado con documentación sobre URL directa vs pooler
+- Lint: 0 errores
+- Test local con URL de Neon real: OK, devuelve 32 airports
+- Commit 242d248 creado pero push necesita nuevo token (anterior revocado por usuario)
+
+Stage Summary:
+- Token PAT anterior (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) fue revocado
+- Necesito nuevo token para empujar commit 242d248 a GitHub
+- Tras el push, Vercel hará auto-redeploy y el error 500 debería desaparecer
+- URL de producción: https://aip-peru-jthk.vercel.app
