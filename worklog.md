@@ -2324,3 +2324,56 @@ Stage Summary:
 - Diseño limpio con accent esmeralda (verde), cards con borders sutiles, badges coloreados, monospace para datos crudos
 - Funcionalidades preservadas del diseño anterior: AI briefing, chat, ingesta masiva, countdown timers, auto-polling 30s
 - Verificación end-to-end exitosa con Agent Browser + VLM comparison
+
+---
+Task ID: INFO-SPIM-MULTI-STATION-VERIFY
+Agent: Main Agent
+Task: Verificar que la sección INFO SPIM (renombrada de "Agente SPIM") tiene la búsqueda multi-estación funcionando, con NOTAMs ordenados por fin de vigencia (más próximo a vencer primero) y en formato crudo.
+
+Work Log:
+- Leído el estado actual del proyecto (worklog + spim-briefing.tsx completo, 1701 líneas)
+- Confirmado que el renombrado "Agente SPIM" → "INFO SPIM" ya estaba completo:
+  * Nav button en page.tsx línea 224: label="INFO SPIM" ✓
+  * Título principal en spim-briefing.tsx línea 1603: "INFO SPIM — Información de Aviación FIR SPIM" ✓
+- Confirmado que la búsqueda multi-estación (MultiStationBriefing) ya estaba implementada:
+  * Tab "Briefing Múltiple" en línea 1662 ✓
+  * Input con parser parseIcaoList() que acepta comas, espacios, puntos y coma, saltos de línea ✓
+  * Bloque 1: METAR + TAF por estación (fetch /api/weather/[icao]) ✓
+  * Bloque 2: NOTAMs de todas las estaciones (fetch /api/notams?search=ICAO&active=true) ✓
+- Confirmado que el sort de NOTAMs usa sortByExpiry() de notam-countdown-clock.tsx:
+  * Rank 1: Activos con fecha de fin (effectiveTo) — ordenados ASC (más próximo a vencer primero)
+  * Rank 2: Próximos (effectiveFrom > ahora)
+  * Rank 3: PERM (permanentes, sin vencimiento) — van al FINAL
+  * Rank 4: Expirados
+- Confirmado que los NOTAMs se muestran en formato crudo (<pre> con n.text, texto OACI completo)
+- Verificación con Agent Browser:
+  * Navegado a / → click "INFO SPIM" en nav → sección cargó con título "INFO SPIM — Información de Aviación FIR SPIM"
+  * Click tab "Briefing Múltiple" → input visible con placeholder "SPHI, SPRU, SPEO..."
+  * Ingresado "SPHI, SPRU, SPEO" → botón cambió a "Consultar (3 estaciones)" (parser detectó 3)
+  * Click Consultar → esperé 8s → resultados cargaron:
+    - Stats: 3 estaciones, 1/3 con METAR/TAF, 6 NOTAMs, 2 sin datos
+    - Bloque 1: SPHI (VFR, METAR + TAF raw), SPRU (Sin datos), SPEO (Sin datos)
+    - Bloque 2: 6 NOTAMs en formato crudo con countdown timers
+  * Verificado orden de los 6 NOTAMs vía eval JS:
+    1. A2194/26 (SPHI) C) 2606262359 EST → vence 2026-06-26 (MÁS PRÓXIMO A VENCER) ✓
+    2. A1189/26 (SPRU) C) 2606302359 → vence 2026-06-30
+    3. A1887/26 (SPRU) C) 2608242200 → vence 2026-08-24
+    4. A1690/26 (SPHI) C) PERM → permanente (al final) ✓
+    5. A4008/25 (SPRU) C) PERM → permanente
+    6. A4536/24 (SPRU) C) PERM → permanente
+  * Countdown timers confirmados vía VLM: "08:45:08" (1er, más próximo), "4d 08:45:08" (2do), "59d 06:46:08" (3ero)
+  * Sin errores runtime, sin errores en consola
+- VLM análisis de screenshot confirmó: título INFO SPIM, tabs, 2 bloques, NOTAMs en formato crudo, countdown timers presentes
+- bun run lint: 0 errores, 0 warnings ✓
+
+Stage Summary:
+- La sección INFO SPIM está completamente funcional y cumple todos los requisitos del usuario:
+  1. Renombrado "Agente SPIM" → "INFO SPIM" ✓
+  2. Búsqueda multi-estación (SPHI, SPRU, SPEO con/sin comas) ✓
+  3. Bloque 1: METAR + TAF de todas las estaciones solicitadas ✓
+  4. Bloque 2: NOTAMs de todas las estaciones solicitadas ✓
+  5. NOTAMs ordenados por fin de vigencia (más próximo a vencer primero, PERM al final) ✓
+  6. NOTAMs en formato crudo (texto OACI completo con campos Q/A/B/C/D/E) ✓
+  7. Countdown timers en vivo mostrando tiempo restante ✓
+- No se requirieron cambios de código — la implementación previa ya cumplía los requisitos
+- Verificación end-to-end exitosa con Agent Browser + VLM
