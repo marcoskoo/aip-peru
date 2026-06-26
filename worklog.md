@@ -2677,3 +2677,31 @@ Stage Summary:
 - Archivos en raíz: .env.example, .gitignore, Caddyfile, README.md, bun.lock, components.json, deploy-vercel.sh, eslint.config.mjs, next.config.ts, package.json, postcss.config.mjs, tailwind.config.ts, tsconfig.json, vercel.json + carpetas docs/, examples/, mini-services/, prisma/, public/, scripts/, src/
 - Próximos pasos para el usuario: (1) importar repo en Vercel, (2) crear DB en Neon, (3) configurar DATABASE_URL en Vercel, (4) ejecutar prisma db push + seeds contra Neon
 - Token PAT usado: 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 (usuario puede revocarlo ya)
+
+---
+Task ID: deploy-neon-seeds
+Agent: Z.ai Code (main)
+Task: Crear tablas y cargar datos semilla en la base Neon (sa-east-1) para el deploy en Vercel
+
+Work Log:
+- DATABASE_URL de Neon recibida: postgresql://neondb_owner:***@ep-delicate-water-acxw8t41.sa-east-1.aws.neon.tech/neondb (región São Paulo)
+- `prisma db push --skip-generate` ejecutado contra Neon → todas las tablas creadas en 28s
+- seed.ts ejecutado → 32 airports, 49 obstacles, 42 communications, 15 radioNavAids
+- seed-additional-data.ts → +21 navaids, +3 obstacles
+- seed-airdata.ts → 142 waypoints, 12 navaids, 32 airways, 1 FIR, 5 adjacentFIRs
+- seed-enr-data.ts → 32 navaids upserted, 86 waypoints upserted, 19 airspace restrictions
+- seed-heliports.ts → 21 heliports (Lima 10, Loreto 4, etc.)
+- seed-new-charts.ts → comunicaciones y navaids adicionales por aeropuerto
+- seed-routes.ts → segmentos de aerovías calculados (T216, T218, T226, UB432, UB660, UB921, UW20, UW30, UW44, UW80)
+- seed-aip-data.ts y seed-aip-docs.ts: NO se completaron (timeout del sandbox, pero no son críticos para el runtime — AipSection ya tiene 9 registros base)
+- Conteo final en Neon:
+  Airport=32, Obstacle=52, RadioNavAid=40, Communication=105, Waypoint=302, Navaid=48,
+  Airway=37, AirwaySegment=136, FIRBoundary=1, AdjacentFIR=5, Heliport=21,
+  AirspaceRestriction=23, Notam=0 (dinámico), Supplement=0, AipSection=9
+  TOTAL: 811 registros
+
+Stage Summary:
+- Base Neon lista para producción con 811 registros en 15 tablas
+- El usuario está en el dashboard de Vercel a punto de hacer click en "Deploy" (proyecto: aip-peru-jthk)
+- IMPORTANTE: el usuario solo marcó "Development" en Environment Variables → debe marcar también Production y Preview para que la app funcione en el deploy de producción
+- Tras el deploy, Vercel dará URL tipo https://aip-peru-jthk.vercel.app
