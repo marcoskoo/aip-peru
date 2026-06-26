@@ -2377,3 +2377,28 @@ Stage Summary:
   7. Countdown timers en vivo mostrando tiempo restante ✓
 - No se requirieron cambios de código — la implementación previa ya cumplía los requisitos
 - Verificación end-to-end exitosa con Agent Browser + VLM
+
+---
+Task ID: SCROLL-FIX-IFRAME
+Agent: Main Agent
+Task: El usuario reporta "no se puede scrolear" — la página no se puede desplazar verticalmente en el panel de preview (iframe).
+
+Work Log:
+- Analizada la captura de pantalla del usuario (953x595px): muestra la página "Aeropuertos" con 65 aeródromos pero solo 8 visibles, sin scrollbar visible
+- Verificado con Agent Browser que en contexto normal la página SÍ scrollea (scrollY 0→500→800 funcionando, scrollHeight 3891 > clientHeight 577)
+- Concluido: el problema es específico del iframe del panel de preview, donde los eventos wheel/touch pueden ser capturados por el parent y no llegar al contenido
+- Aplicado fix CSS en src/app/globals.css (@layer base):
+  * html { overflow-y: auto } — fuerza que <html> sea contenedor de scroll vertical
+  * html { overscroll-behavior: none } — previene scroll chaining (eventos que rebotan al parent del iframe)
+  * html { -webkit-overflow-scrolling: touch } — momentum scroll en iOS/touch
+  * body { overscroll-behavior-y: contain } — contiene el overscroll dentro del body
+- Verificado que el CSS se aplicó: htmlOverflowY="auto", htmlOverscroll="none", bodyOverscrollY="contain"
+- Verificado que scroll sigue funcionando: scrollY 0→800 al hacer scroll down
+- bun run lint: 0 errores ✓
+
+Stage Summary:
+- Fix aplicado para problemas de scroll en iframe (panel de preview)
+- El <html> ahora es explícitamente un contenedor de scroll con overflow-y: auto
+- overscroll-behavior: none/contain previene que los eventos wheel/touch se pierdan hacia el parent del iframe
+- -webkit-overflow-scrolling: touch habilita momentum scroll en dispositivos iOS
+- El scroll funciona en contexto normal y debería funcionar ahora en el panel de preview

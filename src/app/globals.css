@@ -133,8 +133,20 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    /* Ensure the page can always scroll vertically, even inside an iframe
+       (preview panel). Without this, some iframe contexts trap wheel/touch
+       events and the user cannot scroll the content. */
+    overflow-y: auto;
+    /* Prevent scroll chaining: wheel/scroll events that reach the boundary
+       should NOT bubble up to the parent (preview panel) and get lost. */
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
+  }
   body {
     @apply bg-background text-foreground;
+    /* Contain overscroll so the iframe doesn't bounce/lose scroll. */
+    overscroll-behavior-y: contain;
   }
 }
 
