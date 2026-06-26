@@ -87,6 +87,9 @@ function parseMetar(raw: string): ParsedMetar {
   const parts = raw.trim().split(/\s+/)
   let idx = 0
 
+  // Saltar prefijo "METAR" o "SPECI" si está presente (aviationweather.gov lo incluye)
+  if (parts[idx] === "METAR" || parts[idx] === "SPECI") idx++
+
   // ICAO code
   if (/^[A-Z]{4}$/.test(parts[idx])) idx++
 
@@ -224,14 +227,13 @@ function parseTafPeriods(raw: string): TafPeriod[] {
   const periods: TafPeriod[] = []
   const parts = raw.trim().split(/\s+/)
 
-  // Skip TAF header and ICAO/time
+  // Skip TAF header and ICAO/time.
+  // NO consumir el primer keyword (FM/TEMPO/BECMG/PROB) aquí —
+  // el segundo while lo procesará como primer período.
   let idx = 0
   while (idx < parts.length && !/^(FM|TEMPO|BECMG|PROB)/.test(parts[idx])) {
     idx++
   }
-
-  // Skip first period indicator
-  idx++
 
   while (idx < parts.length) {
     const part = parts[idx]
@@ -523,17 +525,21 @@ export async function GET(
         ),
       ])
 
+      // Aviationweather.gov API response fields:
+      //   METAR endpoint → returns objects with `rawOb` (the raw METAR string)
+      //   TAF endpoint   → returns objects with `rawTAF` (the raw TAF string)
+      // Older API versions used `rawText` for both — kept as fallback for resilience.
       if (metarResponse?.ok) {
         const metarData = await metarResponse.json()
         if (Array.isArray(metarData) && metarData.length > 0) {
-          metarRaw = metarData[0].rawText || metarData[0].rawObs || null
+          metarRaw = metarData[0].rawOb || metarData[0].rawText || metarData[0].rawObs || null
         }
       }
 
       if (tafResponse?.ok) {
         const tafData = await tafResponse.json()
         if (Array.isArray(tafData) && tafData.length > 0) {
-          tafRaw = tafData[0].rawText || null
+          tafRaw = tafData[0].rawTAF || tafData[0].rawText || null
         }
       }
 

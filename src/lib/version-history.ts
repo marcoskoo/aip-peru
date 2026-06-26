@@ -17,6 +17,20 @@ export interface VersionEntry {
 
 export const VERSION_HISTORY: VersionEntry[] = [
   {
+    version: "v1.4.2",
+    date: "2026-06-26",
+    title: "Fix de parser de METAR/TAF reales de aviationweather.gov",
+    tag: "fix",
+    changes: [
+      "Corregido bug crítico: el endpoint leía d[0].rawText / d[0].rawObs pero aviationweather.gov devuelve los campos rawOb (METAR) y rawTAF (TAF). Por esto las peticiones exitosas caían al fallback simulado y se mostraban datos inventados (ej. SPHI con -RA y BKN015 que no correspondían a la realidad)",
+      "Ahora SPHI muestra el METAR real: 'METAR SPHI 261900Z 18009KT 150V210 9999 BKN040 27/17 Q1010 RMK BIRD HAZARD RWY 19/01 PP000' (VFR, sin lluvia)",
+      "Ahora SPHI muestra el TAF real: 'TAF SPHI 261715Z 2618/2718 20005KT 9999 SCT040 TX28/2619Z TN20/2711Z BECMG 2619/2622 18015KT BECMG 2705/2708 19005KT'",
+      "Aplicado a ambos endpoints: /api/spim-agent/station/[icao] (INFO SPIM) y /api/weather/[icaoCode] (briefing múltiple y otros consumidores)",
+      "Nuevo badge visible en vista de detalle: 'DATOS REALES' (verde, con icono Wifi) cuando source=aviationweather.gov, o 'DATOS SIMULADOS' (ámbar, con icono AlertTriangle) cuando cae al fallback",
+      "rawText / rawObs mantenidos como fallback para resiliencia ante futuros cambios de la API",
+    ],
+  },
+  {
     version: "v1.4.1",
     date: "2026-06-26",
     title: "Corrección de metadata de aeropuertos SPHI, SPRU y SPCL",

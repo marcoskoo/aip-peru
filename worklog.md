@@ -2503,3 +2503,63 @@ Stage Summary:
 - Se aplica a INFO SPIM (dashboard + vista detalle + briefing múltiple), parser OACI y cualquier consumer de PERUVIAN_STATIONS_BY_ICAO
 - Entrada v1.4.1 agregada al historial de versiones
 - Verificación end-to-end exitosa con Agent Browser
+
+---
+Task ID: FIX-METAR-SIMULATED-FALLBACK
+Agent: Main Agent
+Task: El usuario reporta que SPHI muestra "-RA" (lluvia ligera) pero no está lloviendo en Chiclayo. Investiga por qué el METAR muestra datos incorrectos.
+
+Work Log:
+- Investigado el origen del METAR de SPHI en el codebase
+- Encontrado que "-RA" venía de datos SIMULADOS hardcoded en generateSampleMetar() (línea: SPHI: { wind: '20010G20KT', vis: '6000', clouds: 'BKN015 OVC030', temp: '19/16', qnh: 'Q1012', wx: '-RA' })
+- Confirmado con curl directo a aviationweather.gov que la API SÍ responde con datos reales para SPHI:
+  * METAR real: "METAR SPHI 261900Z 18009KT 150V210 9999 BKN040 27/17 Q1010 RMK BIRD HAZARD RWY 19/01 PP000" (VFR, sin -RA)
+  * TAF real: "TAF SPHI 261715Z 2618/2718 20005KT 9999 SCT040 TX28/2619Z TN20/2711Z BECMG 2619/2622 18015KT BECMG 2705/2708 19005KT"
+- Identificado BUG RAÍZ en ambos endpoints (api/spim-agent/station/[icao]/route.ts y api/weather/[icaoCode]/route.ts):
+  * El código buscaba los campos d[0].rawText || d[0].rawObs para METAR, pero aviationweather.gov devuelve d[0].rawOb
+  * Para TAF buscaba d[0].rawText, pero la API devuelve d[0].rawTAF
+  * Por esto las peticiones exitosas caían al fallback simulado con datos inventados
+- Aplicado FIX 1 (campo correcto) en ambos endpoints:
+  * METAR: d[0].rawOb || d[0].rawText || d[0].rawObs (rawText/rawObs como fallback para resiliencia)
+  * TAF: d[0].rawTAF || d[0].rawText
+- Verificado con curl: source cambió de "simulated" → "aviationweather.gov", METAR real aparece
+- PERO detectado BUG 2: el parser METAR no parseaba correctamente el METAR real (wind=0, clouds=[], temp=0, qnh=1013 defaults)
+  * Causa: el METAR real viene con prefijo "METAR " al inicio ("METAR SPHI 262000Z..."), pero el parser solo saltaba el ICAO de 4 letras
+  * FIX 2: agregado "if (parts[idx] === 'METAR' || parts[idx] === 'SPECI') idx++" antes del chequeo de ICAO, en ambos endpoints
+- Detectado BUG 3: el parser METAR no manejaba el formato "160V220" (dirección de viento variable)
+  * Esto hacía que el parser se atascara y no parseara clouds/temp/qnh
+  * FIX 3 en spim-agent/station/[icao]/route.ts:
+    - Añadido varFrom/varTo al tipo ParsedMetar.wind
+    - Añadido manejo del varMatch /^(\d{3})V(\d{3})$/ después del windMatch
+    - Actualizado metarReadable() para mencionar "Dirección variable entre X° y Y°"
+- Detectado BUG 4: el parser TAF solo capturaba 1 período BECMG cuando había 2
+  * Causa: había un idx++ extra después del primer while que se "comía" el primer keyword
+  * FIX 4: eliminado ese idx++ en ambos endpoints, con comentario explicando que el segundo while lo procesa como primer período
+- Detectado BUG 5 (display): el frontend mostraba "CAVOK" para cualquier visibilidad >= 9999, pero CAVOK en METAR significa ceiling+vis OK (palabra literal en el reporte)
+  * FIX 5: ahora muestra "CAVOK" solo si metar.cavok === true, si no muestra "10km+" para vis >= 9999
+- Agregado badge visible "DATOS REALES" (verde, icono Wifi) vs "DATOS SIMULADOS" (ámbar, icono AlertTriangle) en la vista de detalle, basado en detail.weather.source
+- Agregado icono Wifi a los imports de lucide-react
+- Agregada entrada v1.4.2 (tag: fix) en version-history.ts documentando todos los fixes
+- bun run lint: 0 errores, 0 warnings ✓
+- Verificación con Agent Browser:
+  * Click INFO SPIM → click SPHI → vista detalle carga
+  * Badge "DATOS REALES" visible (verde esmeralda con icono Wifi)
+  * METAR muestra datos reales: viento 180° 12kt, vis 10km+, temp 28°/18°, QNH 1009 hPa, VFR
+  * VERSIÓN LEGIBLE: "METAR observado en estación SPHI. Viento desde 180° a 12 nudos. Dirección variable entre 160° y 220°. Visibilidad 10 km o más. pocas nubes a 4000 pies. Temperatura 28°C, punto de rocío 18°C. QNH 1009 hPa."
+  * MENSAJE CRUDO: "METAR SPHI 262000Z 18012KT 160V220 9999 FEW040 28/18 Q1009 RMK BIRD HAZARD RWY 19/01 PP000" (sin -RA)
+  * TAF con 2 períodos BECMG parseados
+  * Footer muestra "Historial v1.4.2"
+- Sin errores runtime ni warnings
+
+Stage Summary:
+- 5 bugs corregidos en el pipeline de datos METAR/TAF:
+  1. Campo incorrecto al leer respuesta de aviationweather.gov (rawText/rawObs → rawOb para METAR, rawText → rawTAF para TAF) — causaba que datos reales exitosos cayeran a fallback simulado
+  2. Parser METAR no saltaba prefijo "METAR"/"SPECI" al inicio del reporte
+  3. Parser METAR no manejaba dirección de viento variable (formato "160V220")
+  4. Parser TAF se comía el primer keyword de período (idx++ extra), perdiendo el primer BECMG/TEMPO/FM
+  5. Frontend mostraba "CAVOK" incorrectamente para cualquier vis >= 9999
+- Aplicado a ambos endpoints afectados: /api/spim-agent/station/[icao] (INFO SPIM) y /api/weather/[icaoCode] (briefing múltiple y otros)
+- Nuevo badge visible "DATOS REALES" / "DATOS SIMULADOS" con icono (Wifi / AlertTriangle) para que el usuario sepa el origen de los datos en todo momento
+- SPHI ahora muestra datos reales de Chiclayo: VFR, sin lluvia, 28°C, QNH 1009, con remark "BIRD HAZARD RWY 19/01 PP000" (peligro de aves en pista)
+- Entrada v1.4.2 agregada al historial de versiones
+- Verificación end-to-end exitosa con curl + Agent Browser

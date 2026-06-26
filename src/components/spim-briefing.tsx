@@ -27,6 +27,7 @@ import {
   MapPin,
   ListFilter,
   Cloud,
+  Wifi,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -668,11 +669,33 @@ function StationDetailView({ station, onBack }: { station: StationSummary; onBac
             </div>
           ) : (
             <>
-              {/* Last update + Summary */}
+              {/* Last update + Source + Summary */}
               <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
-                <div className="text-xs text-slate-500 dark:text-slate-400">
-                  <span className="font-medium">Última actualización</span>
-                  <span className="ml-1.5">{detail ? formatTimeAgo(detail.lastUpdate) : "—"}</span>
+                <div className="flex items-center gap-3 flex-wrap text-xs text-slate-500 dark:text-slate-400">
+                  <div>
+                    <span className="font-medium">Última actualización</span>
+                    <span className="ml-1.5">{detail ? formatTimeAgo(detail.lastUpdate) : "—"}</span>
+                  </div>
+                  {detail?.weather?.source && (
+                    <span className={cn(
+                      "inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide border",
+                      detail.weather.source === "aviationweather.gov"
+                        ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/40"
+                        : "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/40",
+                    )} title={`Origen de los datos METAR/TAF: ${detail.weather.source}`}>
+                      {detail.weather.source === "aviationweather.gov" ? (
+                        <>
+                          <Wifi className="size-2.5" />
+                          Datos reales
+                        </>
+                      ) : (
+                        <>
+                          <AlertTriangle className="size-2.5" />
+                          Datos simulados
+                        </>
+                      )}
+                    </span>
+                  )}
                 </div>
                 {detail && (
                   <div className={cn(
@@ -735,7 +758,7 @@ function MetarPanel({ metar, readable, showJson, onToggleJson }: {
         <div className="rounded-lg bg-slate-50 dark:bg-slate-800/50 p-2.5">
           <p className="text-[10px] text-slate-500 uppercase tracking-wider">Visibilidad</p>
           <p className="font-mono font-semibold text-sm text-slate-900 dark:text-slate-100">
-            {metar.visibility.value >= 9999 ? "CAVOK" : `${metar.visibility.value}m`}
+            {metar.cavok ? "CAVOK" : metar.visibility.value >= 9999 ? "10km+" : `${metar.visibility.value}m`}
           </p>
         </div>
         <div className="rounded-lg bg-slate-50 dark:bg-slate-800/50 p-2.5">
@@ -806,7 +829,7 @@ function TafPanel({ taf, readable, showJson, onToggleJson }: {
                 )}
                 {p.visibility && (
                   <span className="font-mono text-slate-600 dark:text-slate-400">
-                    {p.visibility.value >= 9999 ? "CAVOK" : `${p.visibility.value}m`}
+                    {p.visibility.value >= 9999 ? "10km+" : `${p.visibility.value}m`}
                   </span>
                 )}
                 {p.flightCategory && (

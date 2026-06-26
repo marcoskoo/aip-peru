@@ -11,7 +11,7 @@ import { notamStatus } from '@/lib/aviation/notam-parser'
 interface ParsedMetar {
   raw: string
   time: string
-  wind: { direction: number; speed: number; gust?: number; variable?: boolean }
+  wind: { direction: number; speed: number; gust?: number; variable?: boolean; varFrom?: number; varTo?: number }
   visibility: { value: number; unit: string }
   clouds: { quantity: string; height: number; type?: string }[]
   temperature: number
@@ -85,6 +85,8 @@ function getFlightCategory(
 function parseMetar(raw: string): ParsedMetar {
   const parts = raw.trim().split(/\s+/)
   let idx = 0
+  // Saltar prefijo "METAR" o "SPECI" si está presente (aviationweather.gov lo incluye)
+  if (parts[idx] === 'METAR' || parts[idx] === 'SPECI') idx++
   if (/^[A-Z]{4}$/.test(parts[idx])) idx++
   const isAuto = parts[idx] === 'AUTO'
   if (isAuto) idx++
@@ -98,6 +100,14 @@ function parseMetar(raw: string): ParsedMetar {
     wind.speed = parseInt(windMatch[2])
     if (windMatch[4]) wind.gust = parseInt(windMatch[4])
     wind.variable = windMatch[1] === 'VRB'
+    idx++
+  }
+
+  // Variable wind direction: e.g. "160V220" (viento variable entre 160° y 220°)
+  const varMatch = parts[idx]?.match(/^(\d{3})V(\d{3})$/)
+  if (varMatch) {
+    wind.varFrom = parseInt(varMatch[1])
+    wind.varTo = parseInt(varMatch[2])
     idx++
   }
 
@@ -196,8 +206,9 @@ function parseTafPeriods(raw: string): TafPeriod[] {
   const periods: TafPeriod[] = []
   const parts = raw.trim().split(/\s+/)
   let idx = 0
+  // Avanzar hasta el primer keyword de cambio (FM/TEMPO/BECMG/PROB).
+  // NO consumirlo aquí — el segundo while lo procesará como primer período.
   while (idx < parts.length && !/^(FM|TEMPO|BECMG|PROB)/.test(parts[idx])) idx++
-  idx++
 
   while (idx < parts.length) {
     const part = parts[idx]
@@ -350,6 +361,9 @@ function metarReadable(icao: string, m: ParsedMetar): string {
   const parts: string[] = [`METAR observado en estación ${icao}.`]
   const dir = m.wind.variable ? 'variable' : `${String(m.wind.direction).padStart(3, '0')}°`
   parts.push(`Viento desde ${dir} a ${String(m.wind.speed).padStart(2, '0')} nudos${m.wind.gust ? ` (ráfagas ${m.wind.gust})` : ''}.`)
+  if (m.wind.varFrom != null && m.wind.varTo != null) {
+    parts.push(`Dirección variable entre ${String(m.wind.varFrom).padStart(3, '0')}° y ${String(m.wind.varTo).padStart(3, '0')}°.`)
+  }
   if (m.visibility.value >= 9999) {
     parts.push('Visibilidad 10 km o más.')
   } else {
@@ -434,17 +448,25 @@ async function fetchWeather(icao: string) {
   let source = 'simulated'
 
   try {
+    // Aviationweather.gov API response fields:
+    //   METAR endpoint → returns objects with `rawOb` (the raw METAR string)
+    //   TAF endpoint   → returns objects with `rawTAF` (the raw TAF string)
+    // Older API versions used `rawText` for both — kept as fallback for resilience.
     const [metarRes, tafRes] = await Promise.all([
       fetchWithTimeout(`https://aviationweather.gov/api/data/metar?ids=${icao}&format=json`, 8000),
       fetchWithTimeout(`https://aviationweather.gov/api/data/taf?ids=${icao}&format=json`, 8000),
     ])
     if (metarRes?.ok) {
       const d = await metarRes.json()
-      if (Array.isArray(d) && d.length > 0) metarRaw = d[0].rawText || d[0].rawObs || null
+      if (Array.isArray(d) && d.length > 0) {
+        metarRaw = d[0].rawOb || d[0].rawText || d[0].rawObs || null
+      }
     }
     if (tafRes?.ok) {
       const d = await tafRes.json()
-      if (Array.isArray(d) && d.length > 0) tafRaw = d[0].rawText || null
+      if (Array.isArray(d) && d.length > 0) {
+        tafRaw = d[0].rawTAF || d[0].rawText || null
+      }
     }
     if (metarRaw || tafRaw) source = 'aviationweather.gov'
   } catch {
