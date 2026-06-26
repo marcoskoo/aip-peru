@@ -2454,3 +2454,52 @@ Stage Summary:
 - Diseño con timeline vertical, badges de categoría coloreados, scroll area para listas largas
 - Accesible desde el footer en todas las vistas de la app
 - Verificación end-to-end exitosa con Agent Browser + VLM
+
+---
+Task ID: FIX-SPHI-CHICLAYO
+Agent: Main Agent
+Task: El usuario corrige: SPHI/CIX es el aeropuerto de Chiclayo (no Trujillo como figuraba en peru-stations.ts).
+
+Work Log:
+- Investigadas todas las referencias a SPHI, Chiclayo, Trujillo, CIX, SPRU y SPCL en el codebase
+- Encontrado bug grave en src/lib/aviation/peru-stations.ts:
+  * SPHI estaba etiquetado como Trujillo/LA LIBERTAD con coords y nombre del aeropuerto de Trujillo (CAP. FAP CARLOS MARTÍNEZ DE PINILLOS), pero SPHI/CIX es Chiclayo/LAMBAYEQUE (Cap. FAP José Abelardo Quiñones Gonzáles)
+  * SPCL estaba mal etiquetado como Chiclayo/CIX con nombre "MAYOR FAP FÉLIX DELGADO PÉREZ", pero SPCL/PCL es Pucallpa/UCAYALI (Cap. FAP David Abensur Ríos)
+  * SPRU (Trujillo real) figuraba en la lista de ICAOs pero NO estaba en PERUVIAN_STATIONS — faltaba su metadata completa
+- Verificado que los datos oficiales en prisma/seed.ts y prisma/seed-additional-data.ts están CORRECTOS (dicen CHICLAYO/PUCALLPA/TRUJILLO con las coords y frecuencias reales)
+- Aplicados 3 fixes en peru-stations.ts:
+  1. SPHI: nombre → "AEROPUERTO INTERNACIONAL CAP. FAP JOSÉ ABELARDO QUIÑONES GONZALES", ciudad → Chiclayo, región → LAMBAYEQUE, coords → -6.79, -79.8261 (06°47'24"S / 079°49'34"W), elevación → 95 ft, frecuencias → TWR 118.30 · APP 119.10 · GND 121.90 · ATIS 127.60
+  2. SPRU (nuevo): iata TRU, nombre "AEROPUERTO INTERNACIONAL CAP. FAP CARLOS MARTÍNEZ DE PINILLOS", ciudad Trujillo, región LA LIBERTAD, coords -8.0817, -79.1086 (08°04'54"S / 079°06'31"W), elevación 128 ft, frecuencias TWR 118.70 · APP 119.30 · GND 121.90 · ATIS 132.60
+  3. SPCL: iata PCL, nombre "AEROPUERTO INTERNACIONAL CAP. FAP DAVID ABENSUR RÍOS", ciudad Pucallpa, región UCAYALI, coords -8.3775, -74.5747, elevación 515 ft, frecuencias TWR 126.90 · APP 118.10 · FIS 126.90
+- Cada entrada documentada con comentario de coords ARP + VOR/NDB según el AIP oficial
+- Agregada entrada v1.4.1 (tag: fix) en src/lib/version-history.ts documentando los 3 cambios:
+  * SPHI/CIX → Chiclayo (Lambayeque)
+  * SPRU/TRU agregado como entrada completa (Trujillo, La Libertad)
+  * SPCL/PCL corregido → Pucallpa (Ucayali)
+- bun run lint: 0 errores, 0 warnings ✓
+- Dev server respondiendo 200 a GET /api/spim-agent/station/SPHI ✓
+- Verificación con Agent Browser:
+  * Navegado a / → click INFO SPIM → sección cargó con 65 estaciones
+  * Lista de estaciones muestra las 3 correcciones:
+    - SPHI/CIX → "AEROPUERTO INTERNACIONAL CAP. FAP JOSÉ ABELARDO QUIÑONES GONZALES / INTL / Chiclayo · LAMBAYEQUE"
+    - SPRU/TRU → "AEROPUERTO INTERNACIONAL CAP. FAP CARLOS MARTÍNEZ DE PINILLOS / INTL / Trujillo · LA LIBERTAD · 128 ft" (nueva entrada visible)
+    - SPCL/PCL → "AEROPUERTO INTERNACIONAL CAP. FAP DAVID ABENSUR RÍOS / INTL / Pucallpa · UCAYALI · 515 ft"
+  * Click en SPHI → vista detalle renderiza correctamente:
+    - Header: SPHI · CIX · INTL badges
+    - Nombre: "AEROPUERTO INTERNACIONAL CAP. FAP JOSÉ ABELARDO QUIÑONES GONZALES"
+    - "Chiclayo · LAMBAYEQUE · 95 ft · -6.7900, -79.8261"
+    - "Frecuencias: TWR 118.30 · APP 119.10 · GND 121.90 · ATIS 127.60"
+    - Tabs METAR(1)/TAF(1)/NOTAM(3) funcionando
+    - Summary VFR verde, METAR readable + crudo visibles
+  * Footer: botón "Historial v1.4.1" visible
+- Sin errores runtime ni warnings en consola
+
+Stage Summary:
+- 3 bugs de metadata de aeropuertos corregidos en src/lib/aviation/peru-stations.ts
+- SPHI/CIX ahora correctamente asociado a Chiclayo (Lambayeque) — antes estaba etiquetado como Trujillo
+- SPRU/TRU agregado como entrada con metadata completa — antes solo figuraba en la lista de ICAOs
+- SPCL/PCL corregido a Pucallpa (Ucayali) — antes mal etiquetado como Chiclayo/CIX
+- Datos (coords ARP, elevación, regiones, frecuencias TWR/APP/GND/ATIS) sincronizados con prisma/seed.ts y prisma/seed-additional-data.ts (fuentes oficiales del AIP)
+- Se aplica a INFO SPIM (dashboard + vista detalle + briefing múltiple), parser OACI y cualquier consumer de PERUVIAN_STATIONS_BY_ICAO
+- Entrada v1.4.1 agregada al historial de versiones
+- Verificación end-to-end exitosa con Agent Browser

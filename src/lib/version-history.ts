@@ -17,6 +17,19 @@ export interface VersionEntry {
 
 export const VERSION_HISTORY: VersionEntry[] = [
   {
+    version: "v1.4.1",
+    date: "2026-06-26",
+    title: "Corrección de metadata de aeropuertos SPHI, SPRU y SPCL",
+    tag: "fix",
+    changes: [
+      "SPHI/CIX ahora correctamente asociado a Chiclayo (Lambayeque) — Aeropuerto Internacional Cap. FAP José Abelardo Quiñones Gonzáles. Antes estaba etiquetado como Trujillo.",
+      "SPRU/TRU agregado como estación con metadata completa — Aeropuerto Internacional Cap. FAP Carlos Martínez de Pinillos, Trujillo (La Libertad). Antes figuraba solo en la lista de ICAOs sin datos.",
+      "SPCL/PCL corregido: ahora Pucallpa (Ucayali) — Aeropuerto Internacional Cap. FAP David Abensur Ríos. Antes estaba mal etiquetado como Chiclayo/CIX.",
+      "Coordenadas ARP, elevación, regiones y frecuencias (TWR/APP/GND/ATIS) sincronizadas con los datos oficiales de prisma/seed.ts y prisma/seed-additional-data.ts",
+      "Se aplica a INFO SPIM (dashboard y vista detalle de estación), briefing múltiple y parser OACI",
+    ],
+  },
+  {
     version: "v1.4.0",
     date: "2026-06-26",
     title: "Corrección de scroll en panel de preview",

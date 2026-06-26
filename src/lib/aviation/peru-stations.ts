@@ -78,16 +78,36 @@ export const PERUVIAN_STATIONS: PeruvianStation[] = [
     frequencies: 'TWR 118.30 · APP 119.70',
   },
   {
+    // SPHI / CIX = Chiclayo (Lambayeque).
+    // Cap. FAP José Abelardo Quiñones Gonzáles.
+    // Datos sincronizados con prisma/seed.ts y prisma/seed-additional-data.ts.
+    // Coords ARP: 06°47'24"S / 079°49'34"W  ·  VOR CIX 114.5 · NDB HIC 305
     icao: 'SPHI',
     iata: 'CIX',
+    name: 'AEROPUERTO INTERNACIONAL CAP. FAP JOSÉ ABELARDO QUIÑONES GONZALES',
+    city: 'Chiclayo',
+    region: 'LAMBAYEQUE',
+    type: 'INTERNACIONAL',
+    elevationFt: 95,
+    lat: -6.79,
+    lon: -79.8261,
+    frequencies: 'TWR 118.30 · APP 119.10 · GND 121.90 · ATIS 127.60',
+  },
+  {
+    // SPRU / TRU = Trujillo (La Libertad).
+    // Cap. FAP Carlos Martínez de Pinillos.
+    // Datos sincronizados con prisma/seed.ts y prisma/seed-additional-data.ts.
+    // Coords ARP: 08°04'54"S / 079°06'31"W  ·  VOR TRU 116.3
+    icao: 'SPRU',
+    iata: 'TRU',
     name: 'AEROPUERTO INTERNACIONAL CAP. FAP CARLOS MARTÍNEZ DE PINILLOS',
     city: 'Trujillo',
     region: 'LA LIBERTAD',
     type: 'INTERNACIONAL',
-    elevationFt: 97,
-    lat: -7.9472,
-    lon: -79.1447,
-    frequencies: 'TWR 118.30 · APP 119.70',
+    elevationFt: 128,
+    lat: -8.0817,
+    lon: -79.1086,
+    frequencies: 'TWR 118.70 · APP 119.30 · GND 121.90 · ATIS 132.60',
   },
   {
     icao: 'SPQU',
@@ -102,16 +122,20 @@ export const PERUVIAN_STATIONS: PeruvianStation[] = [
     frequencies: 'TWR 118.30 · APP 119.70',
   },
   {
+    // SPCL / PCL = Pucallpa (Ucayali).
+    // Cap. FAP David Abensur Ríos.
+    // Datos sincronizados con prisma/seed-additional-data.ts.
+    // Coords ARP: 08°22'39"S / 074°34'29"W  ·  VOR PUL 116.7
     icao: 'SPCL',
-    iata: 'CIX',
-    name: 'AEROPUERTO INTERNACIONAL MAYOR FAP FÉLIX DELGADO PÉREZ',
-    city: 'Chiclayo',
-    region: 'LAMBAYEQUE',
+    iata: 'PCL',
+    name: 'AEROPUERTO INTERNACIONAL CAP. FAP DAVID ABENSUR RÍOS',
+    city: 'Pucallpa',
+    region: 'UCAYALI',
     type: 'INTERNACIONAL',
-    elevationFt: 112,
-    lat: -6.7938,
-    lon: -79.8233,
-    frequencies: 'TWR 118.30 · APP 119.70',
+    elevationFt: 515,
+    lat: -8.3775,
+    lon: -74.5747,
+    frequencies: 'TWR 126.90 · APP 118.10 · FIS 126.90',
   },
   {
     icao: 'SPIM',
