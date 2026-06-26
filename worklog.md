@@ -2705,3 +2705,35 @@ Stage Summary:
 - El usuario está en el dashboard de Vercel a punto de hacer click en "Deploy" (proyecto: aip-peru-jthk)
 - IMPORTANTE: el usuario solo marcó "Development" en Environment Variables → debe marcar también Production y Preview para que la app funcione en el deploy de producción
 - Tras el deploy, Vercel dará URL tipo https://aip-peru-jthk.vercel.app
+
+---
+Task ID: deploy-debug-skeleton
+Agent: Z.ai Code (main)
+Task: Diagnosticar por qué los datos no cargan en producción de Vercel (skeleton infinito)
+
+Work Log:
+- Verificado que los datos SÍ están en Neon: 32 airports, 302 waypoints, 21 helipuertos, 9 AipSections
+- Re-analizado captura de Vercel: las 3 tarjetas de stats (32/11/21) son valores por defecto hardcodeados (airports.length || 32)
+- Encontrado el bug raíz: airport-listing.tsx tenía un catch silencioso (líneas 38-40) que ocultaba errores de API
+- Identificado problema secundario: el campo `category` está NULL para los 32 aeropuertos en Neon (aforda el ordenamiento pero no bloquea la carga)
+- Mejorado /api/airports/route.ts:
+  * Agregado `export const dynamic = 'force-dynamic'` y `runtime = 'nodejs'` (mejor para serverless de Vercel)
+  * Verificación temprana de process.env.DATABASE_URL con hint útil si falta
+  * Agregado `mode: 'insensitive'` a todas las búsquedas contains
+  * Logs detallados con tiempo de respuesta y mensaje de error completo
+  * Respuesta de error incluye `detail` y `hint` para diagnóstico
+- Mejorado src/components/airport-listing.tsx:
+  * Agregado estado `error: string | null`
+  * Reemplazado catch silencioso por manejo visible de errores
+  * Agregado bloque de error con icono AlertTriangle y botón "Reintentar"
+  * Import agregado: AlertTriangle de lucide-react
+- Lint: 0 errores, 0 warnings
+- Dev server local: funciona correctamente, devuelve 33 airports en ~330ms
+- Commit 9e09a45 empujado (force) a GitHub marcoskoo/aip-peru
+
+Stage Summary:
+- Vercel debería hacer auto-redeploy al detectar el push (tarda 3-5 min)
+- Tras el redeploy, en lugar de skeletons infinitos, la página mostrará:
+  * Los datos si la conexión a Neon funciona (caso esperado)
+  * Una tarjeta de error con el mensaje exacto si algo falla
+- Pendiente: usuario debe dar la URL de Vercel para verificar end-to-end con Agent Browser
