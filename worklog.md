@@ -3343,3 +3343,28 @@ Stage Summary:
   1. Visit https://aip-peru1.vercel.app → INFO SPIM → scroll through all 65 stations
   2. Click "Pegado masivo de NOTAMS" → paste their real 141-NOTAM email → complete in ~4s
   3. Visit NOTAMs tab → see all 141 NOTAMs listed
+
+---
+Task ID: DEPLOY-PROD
+Agent: main (Z.ai Code)
+Task: Desplegar fixes a producción en aip-peru1.vercel.app usando token de Vercel
+
+Work Log:
+- Verificado: token `vcp_...` es de Vercel (no GitHub); whoami = marcoskoo-5271, team marcos-koos-projects
+- Confirmado: proyecto `aip.pe` (prj_8ydM0CPSuo2paVLKWLZxENQpPkmZ) sirve https://aip-peru1.vercel.app; ya vinculado en .vercel/repo.json
+- Repo local estaba 17 commits adelante de origin/main (remote 4085b71, local d0b9be5) — merge previo exitoso
+- Instalado Vercel CLI 54.18.0 globalmente via `bun add -g vercel`
+- Ejecutado `vercel deploy --prod --yes --token=...` → Build Completed in 22s, aliased a https://aip-peru1.vercel.app, Ready in 59s
+- Verificación con Agent Browser en producción:
+  * Home carga sin errores de consola, lista de aeropuertos completa
+  * Detalle aeropuerto SPJC: tabs General/Pista/Plataforma/Servicios/Obstáculos/Cartas/Clima funcionan; METAR/TAF cargan vía API
+  * Sección NOTAMs: notam-listing.tsx renderiza ~27 NOTAMs con filtros, búsqueda, paginación ("Cargar más 17 restantes")
+  * INFO SPIM: spim-briefing.tsx renderiza 65 estaciones, Auto-consulta, Briefing Múltiple, Agente, API, Pegado masivo de NOTAMS
+  * Endpoint ingest (ingest/route.ts): POST /api/spim-briefing/ingest con campo `text` → ok:true, parsea NOTAM (id, icao, fechas, summary) sin errores
+- Limpieza: NOTAM de prueba eliminado; Auto-consulta repobló DB con 30 NOTAMs reales (source FAA USNS live), A4005/25 restaurado a NOTAMR original
+
+Stage Summary:
+- Producción actualizada y verificada: https://aip-peru1.vercel.app (Ready in 59s)
+- Los 3 archivos corregidos funcionan en producción: ingest/route.ts, notam-listing.tsx, spim-briefing.tsx
+- DB con 30 NOTAMs reales live (FAA USNS); data integrity confirmada
+- Pendiente: usuario debe revocar el token de Vercel por seguridad (se compartió en el chat)
