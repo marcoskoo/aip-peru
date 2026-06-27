@@ -14,6 +14,7 @@ import {
   Zap,
   Clock,
   Timer,
+  Trash2,
   Upload,
   ChevronRight,
   ChevronLeft,
@@ -44,6 +45,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { usePolling } from "@/lib/aviation/use-polling"
 import {
@@ -161,6 +163,13 @@ interface IngestResult {
     action: "created" | "updated" | "skipped"
   }>
   parsedTotal?: number
+  error?: string
+}
+
+interface DeleteAllResult {
+  ok: boolean
+  deleted?: number
+  fir?: string
   error?: string
 }
 
@@ -395,6 +404,94 @@ function NotamIngestDialog({ onIngested }: { onIngested: () => void }) {
   )
 }
 
+// ─── Delete All Dialog ──────────────────────────────────────────────────
+
+function NotamDeleteAllDialog({ onDeleted }: { onDeleted: () => void }) {
+  const [open, setOpen] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [result, setResult] = useState<DeleteAllResult | null>(null)
+
+  const handleDelete = async () => {
+    if (loading) return
+    setLoading(true)
+    setResult(null)
+    try {
+      const res = await fetch("/api/notams?fir=SPIM", { method: "DELETE" })
+      const data: DeleteAllResult = await res.json()
+      setResult(data)
+      if (data.ok) {
+        toast.success(`Se eliminaron ${data.deleted ?? 0} NOTAMs`)
+        onDeleted()
+        setOpen(false)
+        setResult(null)
+      } else {
+        toast.error(data.error || "Error al eliminar NOTAMs")
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      setResult({ ok: false, error: msg })
+      toast.error(msg)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleClose = () => {
+    if (loading) return
+    setOpen(false)
+    setResult(null)
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => (v ? setOpen(true) : handleClose())}>
+      <DialogTrigger asChild>
+        <button className="w-full text-left p-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-red-400 dark:hover:border-red-600 hover:bg-red-50/50 dark:hover:bg-red-950/20 transition-colors group">
+          <div className="flex items-start gap-3">
+            <div className="shrink-0 rounded-lg bg-red-600 p-2 group-hover:scale-105 transition-transform">
+              <Trash2 className="size-4 text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h4 className="font-semibold text-sm text-slate-900 dark:text-slate-100">Eliminar todos los NOTAMs</h4>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                Borra todos los NOTAMs de FIR SPIM de la base de datos local. Útil antes de pegar un boletín nuevo para evitar duplicados.
+              </p>
+            </div>
+            <ChevronRight className="size-4 text-slate-400 group-hover:text-red-600 transition-colors shrink-0 mt-1" />
+          </div>
+        </button>
+      </DialogTrigger>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-red-600">
+            <Trash2 className="size-5" />
+            Eliminar todos los NOTAMs
+          </DialogTitle>
+          <DialogDescription className="whitespace-pre-line">
+            Se eliminarán TODOS los NOTAMs de FIR SPIM de la base de datos local. Esta acción no se puede deshacer.
+
+Útil para limpiar duplicados antes de pegar un boletín nuevo.
+          </DialogDescription>
+        </DialogHeader>
+        {result && !result.ok && (
+          <div className="rounded-md border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/30 p-3 flex items-start gap-2 text-sm text-red-700 dark:text-red-300">
+            <AlertTriangle className="size-4 shrink-0 mt-0.5" />
+            <span className="break-words">{result.error || "Error al eliminar NOTAMs"}</span>
+          </div>
+        )}
+        <DialogFooter>
+          <Button variant="outline" onClick={handleClose} disabled={loading}>
+            Cancelar
+          </Button>
+          <Button variant="destructive" onClick={handleDelete} disabled={loading} className="gap-1.5">
+            {loading ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
+            Eliminar todos
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 // ─── Stat Card ──────────────────────────────────────────────────────────
 
 function StatCard({ icon: Icon, label, value, color }: { icon: typeof Plane; label: string; value: number | string; color: string }) {
@@ -440,6 +537,7 @@ function DashboardView({ stats, loading, onRefresh, onIngested, onSelectStation 
 
       {/* Pegado masivo */}
       <NotamIngestDialog onIngested={onIngested} />
+      <NotamDeleteAllDialog onDeleted={onIngested} />
 
       {/* Station list */}
       <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden">

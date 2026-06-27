@@ -315,6 +315,8 @@ model Notam {
   subject     String              // e.g. RWY, NAV, COM, AD, airspace
   condition   String              // e.g. CLSD, U/S, WIP, ACT
   text        String              // Full NOTAM text
+  qCode       String?             // OACI Q-code (e.g. QFALC, QWLLW) extraído de la línea Q)
+  locationA   String?             // Designador de lugar del campo A) (e.g. SPJC, SPIM)
   coordinates String?             // e.g. 12°00'00"S / 077°00'00"W
   lat         Float?              // Decimal degrees for map
   lon         Float?              // Decimal degrees for map
@@ -334,6 +336,8 @@ model Notam {
   @@index([effectiveFrom])
   @@index([scope])
   @@index([airportId])
+  @@index([qCode])
+  @@index([locationA])
 }
 
 // ─── Airspace Restrictions ───────────────────────────────────────

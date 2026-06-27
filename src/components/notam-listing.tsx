@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   AlertCircle, Search, Filter, RefreshCw, ChevronDown, ChevronUp,
-  Clock, MapPin, Plane, Radio, ShieldAlert, Activity
+  Clock, MapPin, Plane, Radio, ShieldAlert, Activity, Trash2, Loader2
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -23,6 +23,14 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog"
+import { toast } from "sonner"
 import { AerodromeSelector, type AerodromeOption } from "@/components/aerodrome-selector"
 
 // ─── Types ────────────────────────────────────────────────────────
@@ -152,6 +160,21 @@ export function NotamListing({ onSelectNotam, onSelectAirport }: NotamListingPro
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [stats, setStats] = useState<NotamStats | null>(null)
   const [selectedAerodrome, setSelectedAerodrome] = useState<AerodromeOption | null>(null)
+
+  // ── Nuevos filtros (Q, Lugar A, Vigencia, Texto E) ──
+  const [qCodeFilter, setQCodeFilter] = useState<string>("all")
+  const [locationFilter, setLocationFilter] = useState<string>("all")
+  const [validityFilter, setValidityFilter] = useState<string>("all")
+  const [textEFilter, setTextEFilter] = useState<string>("")
+  // textEInput es el valor inmediato del input; textEFilter es el valor debounced.
+  const [textEInput, setTextEInput] = useState<string>("")
+  const [qCodeOptions, setQCodeOptions] = useState<{ value: string; count: number }[]>([])
+  const [locationOptions, setLocationOptions] = useState<{ value: string; count: number }[]>([])
+
+  // ── Delete-all dialog state ──
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+
   const refreshTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const fetchNotams = useCallback(async () => {
@@ -162,6 +185,11 @@ export function NotamListing({ onSelectNotam, onSelectAirport }: NotamListingPro
       if (priorityFilter && priorityFilter !== "all") params.set("priority", priorityFilter)
       if (activeOnly) params.set("active", "true")
       if (selectedAerodrome?.id) params.set("airportId", selectedAerodrome.id)
+      // ── Nuevos filtros solicitados por el usuario ──
+      if (qCodeFilter && qCodeFilter !== "all") params.set("qCode", qCodeFilter)
+      if (locationFilter && locationFilter !== "all") params.set("locationA", locationFilter)
+      if (validityFilter && validityFilter !== "all") params.set("validity", validityFilter)
+      if (textEFilter) params.set("textE", textEFilter)
       // Pedir hasta 200 NOTAMs (máximo que permite la API) para que el
       // listado muestre el boletín completo en vez de solo los primeros 50.
       params.set("limit", "200")
@@ -206,11 +234,61 @@ export function NotamListing({ onSelectNotam, onSelectAirport }: NotamListingPro
       setIsRefreshing(false)
       setLastRefresh(new Date())
     }
-  }, [search, scopeFilter, priorityFilter, activeOnly, selectedAerodrome])
+  }, [search, scopeFilter, priorityFilter, activeOnly, selectedAerodrome, qCodeFilter, locationFilter, validityFilter, textEFilter])
 
   useEffect(() => {
     fetchNotams()
   }, [fetchNotams])
+
+  // ── Fetch distinct Q-codes and locations on mount ──
+  // Populates the dropdowns for Código Q and Lugar (A) filters.
+  useEffect(() => {
+    let cancelled = false
+    async function loadFilters() {
+      try {
+        const res = await fetch("/api/notams/filters?fir=SPIM")
+        if (!res.ok) return
+        const data = await res.json()
+        if (cancelled) return
+        if (Array.isArray(data.qCodes)) setQCodeOptions(data.qCodes)
+        if (Array.isArray(data.locations)) setLocationOptions(data.locations)
+      } catch {
+        // silently ignore — filters just won't have options
+      }
+    }
+    loadFilters()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  // ── Debounce textE input (300ms) ──
+  // textEInput se actualiza inmediatamente; textEFilter se actualiza
+  // 300ms después de la última pulsación para no spammear la API.
+  useEffect(() => {
+    const t = setTimeout(() => setTextEFilter(textEInput), 300)
+    return () => clearTimeout(t)
+  }, [textEInput])
+
+  // ── Delete all NOTAMs handler ──
+  const handleDeleteAll = async () => {
+    setDeleting(true)
+    try {
+      const res = await fetch("/api/notams?fir=SPIM", { method: "DELETE" })
+      const data = await res.json()
+      if (data.ok) {
+        toast.success(`Se eliminaron ${data.deleted} NOTAMs`)
+        setDeleteDialogOpen(false)
+        fetchNotams()
+      } else {
+        toast.error(data.error || "Error al eliminar NOTAMs")
+      }
+    } catch {
+      toast.error("Error de conexión")
+    } finally {
+      setDeleting(false)
+    }
+  }
 
   // Auto-refresh every 5 minutes
   useEffect(() => {
@@ -290,57 +368,126 @@ export function NotamListing({ onSelectNotam, onSelectAirport }: NotamListingPro
       </div>
 
       {/* Filter Bar */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar NOTAM por ID, texto, asunto..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-10 h-10"
+      <div className="space-y-3">
+        {/* Row 1: search + aerodrome + delete-all */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar NOTAM por ID, texto, asunto..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-10 h-10"
+            />
+          </div>
+          <AerodromeSelector
+            onSelect={(aero) => setSelectedAerodrome(aero)}
+            value={selectedAerodrome?.icaoCode}
+            placeholder="Filtrar por aeródromo..."
+            showClear
+            onClear={() => setSelectedAerodrome(null)}
+            className="shrink-0"
           />
+          <Button
+            variant="destructive"
+            size="sm"
+            className="h-10 gap-1.5 shrink-0"
+            onClick={() => setDeleteDialogOpen(true)}
+          >
+            <Trash2 className="size-3.5" />
+            Eliminar todos
+          </Button>
         </div>
-        <AerodromeSelector
-          onSelect={(aero) => setSelectedAerodrome(aero)}
-          value={selectedAerodrome?.icaoCode}
-          placeholder="Filtrar por aeródromo..."
-          showClear
-          onClear={() => setSelectedAerodrome(null)}
-          className="shrink-0"
-        />
-        <Select value={scopeFilter} onValueChange={setScopeFilter}>
-          <SelectTrigger className="w-full sm:w-[160px] h-10">
-            <Filter className="size-3.5 mr-1.5" />
-            <SelectValue placeholder="Alcance" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos</SelectItem>
-            <SelectItem value="A">A — Aeródromo</SelectItem>
-            <SelectItem value="E">E — En-ruta</SelectItem>
-            <SelectItem value="W">W — Aviso Nav.</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-          <SelectTrigger className="w-full sm:w-[160px] h-10">
-            <SelectValue placeholder="Prioridad" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todas</SelectItem>
-            <SelectItem value="URGENT">Urgente</SelectItem>
-            <SelectItem value="HIGH">Alta</SelectItem>
-            <SelectItem value="MEDIUM">Media</SelectItem>
-            <SelectItem value="LOW">Baja</SelectItem>
-          </SelectContent>
-        </Select>
-        <Button
-          variant={activeOnly ? "default" : "outline"}
-          size="sm"
-          className="h-10 gap-1.5 text-xs"
-          onClick={() => setActiveOnly(!activeOnly)}
-        >
-          <Activity className="size-3.5" />
-          {activeOnly ? "Solo Activos" : "Todos"}
-        </Button>
+
+        {/* Row 2: advanced filters (wrap on mobile) */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+          {/* Texto E) — debounced 300ms */}
+          <Input
+            placeholder="Buscar en casilla E)..."
+            value={textEInput}
+            onChange={(e) => setTextEInput(e.target.value)}
+            className="h-10"
+          />
+          {/* Código Q — dinámico desde /api/notams/filters */}
+          <Select value={qCodeFilter} onValueChange={setQCodeFilter}>
+            <SelectTrigger className="w-full h-10">
+              <SelectValue placeholder="Código Q" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos los Q</SelectItem>
+              {qCodeOptions.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.value} ({opt.count})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {/* Lugar (A) — dinámico desde /api/notams/filters */}
+          <Select value={locationFilter} onValueChange={setLocationFilter}>
+            <SelectTrigger className="w-full h-10">
+              <SelectValue placeholder="Lugar (A)" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos los lugares</SelectItem>
+              {locationOptions.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.value} ({opt.count})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {/* Vigencia — opciones fijas */}
+          <Select value={validityFilter} onValueChange={setValidityFilter}>
+            <SelectTrigger className="w-full h-10">
+              <SelectValue placeholder="Vigencia" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas</SelectItem>
+              <SelectItem value="PERM">PERM</SelectItem>
+              <SelectItem value="EST">EST</SelectItem>
+              <SelectItem value="FINITE">Finita</SelectItem>
+            </SelectContent>
+          </Select>
+          {/* Alcance (filtro existente) */}
+          <Select value={scopeFilter} onValueChange={setScopeFilter}>
+            <SelectTrigger className="w-full h-10">
+              <Filter className="size-3.5 mr-1.5" />
+              <SelectValue placeholder="Alcance" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos</SelectItem>
+              <SelectItem value="A">A — Aeródromo</SelectItem>
+              <SelectItem value="E">E — En-ruta</SelectItem>
+              <SelectItem value="W">W — Aviso Nav.</SelectItem>
+            </SelectContent>
+          </Select>
+          {/* Prioridad (filtro existente) */}
+          <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+            <SelectTrigger className="w-full h-10">
+              <SelectValue placeholder="Prioridad" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas</SelectItem>
+              <SelectItem value="URGENT">Urgente</SelectItem>
+              <SelectItem value="HIGH">Alta</SelectItem>
+              <SelectItem value="MEDIUM">Media</SelectItem>
+              <SelectItem value="LOW">Baja</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Row 3: active-only toggle */}
+        <div className="flex items-center gap-2">
+          <Button
+            variant={activeOnly ? "default" : "outline"}
+            size="sm"
+            className="h-10 gap-1.5 text-xs"
+            onClick={() => setActiveOnly(!activeOnly)}
+          >
+            <Activity className="size-3.5" />
+            {activeOnly ? "Solo Activos" : "Todos"}
+          </Button>
+        </div>
       </div>
 
       {/* Auto-refresh indicator */}
@@ -544,6 +691,41 @@ export function NotamListing({ onSelectNotam, onSelectAirport }: NotamListingPro
           )}
         </div>
       )}
+
+      {/* Delete All Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <Trash2 className="size-5" />
+              Eliminar todos los NOTAMs
+            </DialogTitle>
+            <DialogDescription className="text-sm">
+              Se eliminarán <strong>TODOS</strong> los NOTAMs de FIR SPIM de la base de datos local. Esta acción no se puede deshacer.
+              <br /><br />
+              Útil para limpiar duplicados antes de pegar un boletín nuevo.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} disabled={deleting}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteAll} disabled={deleting}>
+              {deleting ? (
+                <>
+                  <Loader2 className="size-4 animate-spin mr-1.5" />
+                  Eliminando...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="size-4 mr-1.5" />
+                  Eliminar todos
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

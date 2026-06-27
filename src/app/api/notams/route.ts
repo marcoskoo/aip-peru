@@ -126,6 +126,15 @@ export async function GET(request: NextRequest) {
     const fir = searchParams.get('fir')?.trim() || 'SPIM'
     const airportId = searchParams.get('airportId')?.trim() || ''
     const active = searchParams.get('active')?.trim() || ''
+    // Nuevos filtros solicitados:
+    //   qCode       → filtra por código Q (e.g. "QFALC", "QWLLW"). Acepta coincidencia parcial.
+    //   locationA   → filtra por designador de lugar del campo A) (e.g. "SPJC", "SPIM").
+    //   validity    → "PERM" | "EST" | "FINITE" filtra por tipo de vigencia.
+    //   textE       → filtra por texto dentro de la casilla E) (búsqueda contains).
+    const qCode = searchParams.get('qCode')?.trim() || ''
+    const locationA = searchParams.get('locationA')?.trim().toUpperCase() || ''
+    const validity = searchParams.get('validity')?.trim().toUpperCase() || ''
+    const textE = searchParams.get('textE')?.trim() || ''
     const limit = Math.min(Math.max(parseInt(searchParams.get('limit') || '50', 10) || 50, 1), 200)
     const offset = Math.max(parseInt(searchParams.get('offset') || '0', 10) || 0, 0)
 
@@ -137,6 +146,7 @@ export async function GET(request: NextRequest) {
     if (dbCount > 0) {
       // Build where clause
       const where: Record<string, unknown> = { fir }
+      const andParts: Record<string, unknown>[] = []
 
       if (search) {
         where.OR = [
@@ -150,9 +160,62 @@ export async function GET(request: NextRequest) {
       if (priority) where.priority = priority
       if (airportId) where.airportId = airportId
 
+      // ── Filtro por código Q (coincidencia parcial, case-insensitive) ──
+      if (qCode) {
+        const q = qCode.toUpperCase()
+        andParts.push({
+          OR: [
+            { qCode: { equals: q } },
+            { qCode: { contains: q } },
+            // Fallback: buscar en el texto si qCode está vacío (NOTAMs viejos)
+            { text: { contains: `Q) SPIM/${q}` } },
+          ],
+        })
+      }
+
+      // ── Filtro por designador de lugar (campo A) ──
+      if (locationA) {
+        andParts.push({
+          OR: [
+            { locationA: { equals: locationA } },
+            // Fallback en texto: "A) SPJC"
+            { text: { contains: `A) ${locationA}` } },
+          ],
+        })
+      }
+
+      // ── Filtro por tipo de vigencia ──
+      if (validity === 'PERM') {
+        andParts.push({ isPermanent: true })
+      } else if (validity === 'EST') {
+        // EST: NO es permanente Y el texto contiene "EST" en el campo C)
+        andParts.push({
+          isPermanent: false,
+          text: { contains: 'EST' },
+        })
+      } else if (validity === 'FINITE') {
+        // Vigencia finita (no PERM, no EST): tiene effectiveTo y no es PERM
+        andParts.push({
+          isPermanent: false,
+          effectiveTo: { not: null },
+        })
+      }
+
+      // ── Filtro por texto de la casilla E) ──
+      if (textE) {
+        // Búsqueda contains case-insensitive en el campo text.
+        // El campo E) está embebido en text; usamos contains para buscarlo.
+        andParts.push({ text: { contains: textE } })
+      }
+
+      if (andParts.length > 0) {
+        where.AND = andParts
+      }
+
       if (active === 'true') {
         const now = new Date()
         where.AND = [
+          ...(where.AND ? (Array.isArray(where.AND) ? where.AND : [where.AND]) : []),
           { effectiveFrom: { lte: now } },
           { OR: [{ effectiveTo: { gte: now } }, { isPermanent: true }] },
         ]
@@ -342,6 +405,38 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       { error: 'Failed to create NOTAM' },
+      { status: 500 }
+    )
+  }
+}
+
+// ─── DELETE: Eliminar todos los NOTAMs (o filtrados por fir) ───────────────
+//
+// Query params:
+//   ?fir=SPIM  → FIR a limpiar (default: SPIM)
+//
+// Respuesta:
+//   { "ok": true, "deleted": 138, "fir": "SPIM" }
+//
+// Caso de uso: el usuario pegó un boletín de 138 NOTAMs dos veces y quiere
+// empezar limpio para evitar duplicados antes de re-pegar.
+export async function DELETE(request: NextRequest) {
+  try {
+    const { searchParams } = request.nextUrl
+    const fir = searchParams.get('fir')?.trim() || 'SPIM'
+
+    const result = await db.notam.deleteMany({ where: { fir } })
+
+    return NextResponse.json({
+      ok: true,
+      deleted: result.count,
+      fir,
+    })
+  } catch (error) {
+    console.error('Error deleting all NOTAMs:', error)
+    const msg = error instanceof Error ? error.message : String(error)
+    return NextResponse.json(
+      { ok: false, error: `Error al eliminar NOTAMs: ${msg}` },
       { status: 500 }
     )
   }

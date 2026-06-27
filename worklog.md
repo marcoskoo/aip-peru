@@ -3399,3 +3399,103 @@ Stage Summary:
 - Antes: NOTAMs sin palabra "NOTAM" explícita NO se detectaban → solo ~27 de 138 se guardaban
 - Después: NOTAMs con o sin palabra "NOTAM" se detectan correctamente via lookahead Q)/A)
 - Usuario puede ahora pegar los 138 NOTAMs del correo CORPAC y se guardarán todos
+
+---
+Task ID: 3-NOTAM-LISTING-FILTERS
+Agent: general-purpose (NotamListing update)
+Task: Add delete-all button and 4 new filters (Q code, Location A, Validity, Text E) to NotamListing component
+
+Work Log:
+- Read worklog.md, notam-listing.tsx, /api/notams route.ts and /api/notams/filters route.ts to understand current state
+- Checked package.json + sonner.tsx: confirmed sonner is installed (^2.0.6) and <Toaster /> is already mounted in src/app/layout.tsx — so importing { toast } from "sonner" is the correct pattern (matches src/components/aip-sections-admin.tsx)
+- Confirmed @/components/ui/dialog exports Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription
+- Added Trash2, Loader2 to the lucide-react import
+- Added Dialog/DialogContent/DialogHeader/DialogTitle/DialogDescription imports from @/components/ui/dialog
+- Added `import { toast } from "sonner"`
+- Added new state vars: qCodeFilter, locationFilter, validityFilter, textEFilter (debounced), textEInput (immediate input value), qCodeOptions, locationOptions, deleteDialogOpen, deleting
+- Updated fetchNotams to append qCode, locationA, validity, textE params + extended useCallback dep array
+- Added a useEffect that fetches /api/notams/filters?fir=SPIM once on mount and populates qCodeOptions + locationOptions (with cancelled flag for cleanup)
+- Added a useEffect that debounces textEInput -> textEFilter with 300ms setTimeout (cleared on unmount/re-trigger)
+- Added handleDeleteAll() that sends DELETE /api/notams?fir=SPIM, shows success toast with deleted count, closes dialog, and refreshes the list via fetchNotams
+- Reorganized the filter bar into a 3-row responsive layout:
+  * Row 1 (flex): search input + AerodromeSelector + new "Eliminar todos" destructive button (Trash2 icon, h-10)
+  * Row 2 (grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6): Texto E) input + Código Q Select + Lugar (A) Select + Vigencia Select + existing Alcance Select + existing Prioridad Select
+  * Row 3 (flex): existing Solo Activos / Todos toggle
+- The Código Q and Lugar (A) dropdowns render each option as "VALUE (count)" and default to "Todos los Q" / "Todos los lugares" (value="all")
+- The Vigencia Select has 4 fixed options: Todas / PERM / EST / Finita
+- Added the delete-confirmation Dialog at the end of the component (before the outer closing </div>): red title with Trash2 icon, warning text in Spanish, Cancelar + Eliminar todos buttons (the destructive button shows a Loader2 spinner while deleting)
+- Kept ALL existing functionality intact: hero stats, search, aerodrome selector, scope/priority filters, active-only toggle, auto-refresh every 5 min, NOTAM cards with collapsible details, "Load more" pagination, motion animations, verified badge, countdown, FIR badge, etc.
+- Did NOT modify any other file (route.ts and filters/route.ts were already prepared by a previous agent)
+- Ran `bun run lint` — no errors (eslint . exited cleanly)
+- Ran `bunx tsc --noEmit --skipLibCheck` and filtered for notam-listing.tsx — no TypeScript errors in this file
+
+Stage Summary:
+- Two new user-facing features added to src/components/notam-listing.tsx only:
+  1. "Eliminar todos" destructive button (top-right of the filter bar) that opens a confirmation Dialog and on confirm calls DELETE /api/notams?fir=SPIM, shows a sonner toast with the count deleted, and refreshes the list.
+  2. Four new filters wired to the existing API params: Código Q (dynamic Select from /api/notams/filters), Lugar (A) (dynamic Select from /api/notams/filters), Vigencia (fixed Select: PERM/EST/FINITA), Texto E) (Input debounced 300ms).
+- Filter bar reorganized into a responsive 3-row layout (search+delete on row 1, 6-col grid of selects on row 2, active-only toggle on row 3) so it still works cleanly on mobile.
+- Toast strategy: chose `sonner` because it is already installed, the <Toaster /> is already mounted in layout.tsx, and the same pattern is used elsewhere (aip-sections-admin.tsx). No new UI components created.
+- TypeScript strict-friendly: no `any` types introduced; the existing `Notam` interface was untouched (qCode/locationA come back from the API but are not needed client-side for rendering). Dynamic option lists are typed as `{ value: string; count: number }[]` matching the /api/notams/filters response shape.
+- Lint passes clean; no TS errors in notam-listing.tsx.
+
+---
+Task ID: 4-SPIM-BRIEFING-DELETE-ALL
+Agent: general-purpose (SpimBriefing delete-all)
+Task: Add "Eliminar todos los NOTAMs" button+dialog to INFO SPIM section
+
+Work Log:
+- Read worklog.md, spim-briefing.tsx, and /api/notams/route.ts (confirmed DELETE handler returns {ok, deleted, fir})
+- Audited existing imports in spim-briefing.tsx: Dialog/DialogContent/DialogHeader/DialogTitle/DialogDescription/DialogFooter/DialogTrigger already imported; Loader2, Trash2, ChevronRight, AlertTriangle, Button, Badge, ScrollArea already imported
+- Added `import { toast } from "sonner"` after the dialog import block
+- Added `DeleteAllResult` interface next to `IngestResult` (fields: ok, deleted?, fir?, error?) for type-safe API response
+- Created new sibling component `NotamDeleteAllDialog({ onDeleted })` right after `NotamIngestDialog`, mirroring its structure (useState for open/loading/result, DialogTrigger card + DialogContent with DialogHeader/Footer)
+- Trigger card: red-600 icon square with Trash2, "Eliminar todos los NOTAMs" title, the spec description, ChevronRight that turns red on hover
+- Confirmation Dialog (max-w-md): title with Trash2 in text-red-600; description uses whitespace-pre-line to render the multi-line spec text; Cancelar (outline) + Eliminar todos (destructive, Loader2 spinner while deleting)
+- handleDelete calls `fetch("/api/notams?fir=SPIM", { method: "DELETE" })`, casts response to DeleteAllResult, shows `toast.success` with deleted count (and triggers onDeleted to refresh stats + closes dialog) or `toast.error` on failure; network errors are also toasted
+- Rendered `<NotamDeleteAllDialog onDeleted={onIngested} />` immediately after `<NotamIngestDialog onIngested={onIngested} />` inside the DashboardView so the stats grid refreshes after a wipe
+- Ran `bun run lint` — clean (no errors/warnings)
+
+Stage Summary:
+- Added a red "Eliminar todos los NOTAMs" action card to the INFO SPIM dashboard, placed directly under the existing "Pegado masivo de NOTAMS" card
+- On click opens a destructive confirmation Dialog; confirming hits DELETE /api/notams?fir=SPIM and toasts the deleted count, then refreshes the dashboard via the same onIngested callback used by the ingest dialog (so the NOTAM count stat updates to 0)
+- Reused existing shadcn/ui Dialog primitives and sonner toasts; no new UI components created; no other files modified; ingest dialog, stations list, and all other views untouched
+- Lint passes clean
+
+---
+Task ID: 5-NOTAM-FILTERS-AND-DELETE-ALL-DEPLOY
+Agent: main (Z.ai Code)
+Task: Implementar botón "Eliminar todos" + filtros Q/A/EST-PERM/E en NOTAMs e INFO SPIM
+
+Work Log:
+- Diagnóstico inicial: los 138 NOTAMs SÍ se cargaron todos (total=138), el "125" que vio el usuario era activeStats.total (NOTAMs activos, 13 expirados)
+- Schema Prisma: agregadas columnas qCode (String?) y locationA (String?) al model Notam + índices @@index([qCode]) y @@index([locationA])
+- prisma db push ejecutado contra Neon (DB producción) → schema sincronizado en 13s
+- Parser (src/lib/aviation/notam-parser.ts): agregados campos q_code y location_a a ParsedNotam interface + extracción en el bucle de parseo (qCode del Q_LINE_RE, locationA del A_LINE_RE)
+- Endpoint ingest (src/app/api/spim-briefing/ingest/route.ts): createMany y update ahora guardan qCode y locationA
+- Endpoint GET /api/notams: agregados 4 nuevos filtros (qCode, locationA, validity, textE) con AND compuesto + fallback en texto para NOTAMs viejos sin qCode/locationA
+- Endpoint DELETE /api/notams: implementado deleteMany por fir (default SPIM) → devuelve {ok, deleted, fir}
+- Endpoint nuevo GET /api/notams/filters: groupBy por qCode y locationA con conteos para poblar dropdowns dinámicos
+- Frontend NotamListing (src/components/notam-listing.tsx): 
+  * Botón "Eliminar todos" (destructive) con Dialog de confirmación + toast sonner
+  * 4 filtros nuevos: Texto E) (input debounced 300ms), Código Q (select dinámico), Lugar A (select dinámico), Vigencia (select fijo PERM/EST/Finita)
+  * Layout reorganizado en 3 filas responsive (grid-cols-2 sm:3 lg:6)
+- Frontend SpimBriefing (src/components/spim-briefing.tsx):
+  * Nuevo componente NotamDeleteAllDialog con card roja + Dialog de confirmación
+  * Renderizado después de NotamIngestDialog en DashboardView
+- Deploy a producción: vercel deploy --prod --yes → Ready in 56s
+- Verificación con Agent Browser:
+  * Botón "Eliminar todos" visible y funcional (confirmó, eliminó 138, toast éxito)
+  * Select "Código Q" muestra opciones dinámicas: QFALC (2), QMRLC (1), QWLLW (1)
+  * Select "Lugar A" muestra: SPJC (2), SPQU (1), SPZO (1)
+  * Select "Vigencia" muestra: Todas, PERM, EST, Finita
+  * Input "Texto E)" filtra en tiempo real (CLOSED → 2 NOTAMs)
+  * Sin errores de consola
+- Verificación API: qCode=QFALC→2, locationA=SPJC→2, validity=PERM→1, textE=CLOSED→2 (todos correctos)
+- Limpieza: NOTAMs de prueba eliminados, DB vuelve a faa-live (30)
+
+Stage Summary:
+- Producción actualizada: https://aip-peru1.vercel.app
+- 5 archivos modificados: prisma/schema.prisma, src/lib/aviation/notam-parser.ts, src/app/api/spim-briefing/ingest/route.ts, src/app/api/notams/route.ts, src/components/notam-listing.tsx, src/components/spim-briefing.tsx
+- 1 archivo creado: src/app/api/notams/filters/route.ts
+- Usuario ahora puede: (1) Eliminar todos los NOTAMs con 1 clic desde NOTAMs o INFO SPIM, (2) Filtrar por código Q, lugar A, vigencia PERM/EST/Finita, y texto de casilla E)
+- NOTAMs cargados ahora guardan qCode y locationA para filtros eficientes

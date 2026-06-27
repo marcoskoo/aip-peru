@@ -1,0 +1,1748 @@
+     1→"use client"
+     2→
+     3→import { useState, useRef, useEffect, useCallback } from "react"
+     4→import {
+     5→  Plane,
+     6→  RefreshCw,
+     7→  Send,
+     8→  Bot,
+     9→  User,
+    10→  AlertTriangle,
+    11→  CheckCircle2,
+    12→  Loader2,
+    13→  FileText,
+    14→  Zap,
+    15→  Clock,
+    16→  Timer,
+    17→  Upload,
+    18→  ChevronRight,
+    19→  ChevronLeft,
+    20→  Database,
+    21→  Wind,
+    22→  Waves,
+    23→  Code2,
+    24→  Settings2,
+    25→  Volume2,
+    26→  Search,
+    27→  MapPin,
+    28→  ListFilter,
+    29→  Cloud,
+    30→  Wifi,
+    31→} from "lucide-react"
+    32→import { Button } from "@/components/ui/button"
+    33→import { Badge } from "@/components/ui/badge"
+    34→import { ScrollArea } from "@/components/ui/scroll-area"
+    35→import { Switch } from "@/components/ui/switch"
+    36→import { Input } from "@/components/ui/input"
+    37→import { Textarea } from "@/components/ui/textarea"
+    38→import {
+    39→  Dialog,
+    40→  DialogContent,
+    41→  DialogDescription,
+    42→  DialogFooter,
+    43→  DialogHeader,
+    44→  DialogTitle,
+    45→  DialogTrigger,
+    46→} from "@/components/ui/dialog"
+    47→import { cn } from "@/lib/utils"
+    48→import { usePolling } from "@/lib/aviation/use-polling"
+    49→import {
+    50→  parseIsoMs,
+    51→  notamStatus,
+    52→  formatCountdown,
+    53→} from "@/lib/aviation/notam-parser"
+    54→import { NotamCountdownClock, sortByExpiry } from "@/components/notam-countdown-clock"
+    55→
+    56→// ─── Types ──────────────────────────────────────────────────────────────
+    57→
+    58→interface StationSummary {
+    59→  icao: string
+    60→  iata?: string
+    61→  name: string
+    62→  city: string
+    63→  region?: string
+    64→  type: string
+    65→  elevationFt?: number
+    66→  lat: number
+    67→  lon: number
+    68→  frequencies?: string
+    69→  notamCount: number
+    70→  hasMetar: boolean
+    71→  hasTaf: boolean
+    72→}
+    73→
+    74→interface StatsResponse {
+    75→  totalStations: number
+    76→  metarCount: number
+    77→  tafCount: number
+    78→  notamCount: number
+    79→  stations: StationSummary[]
+    80→  generatedAt: string
+    81→}
+    82→
+    83→interface ParsedMetar {
+    84→  raw: string
+    85→  time: string
+    86→  wind: { direction: number; speed: number; gust?: number; variable?: boolean }
+    87→  visibility: { value: number; unit: string }
+    88→  clouds: { quantity: string; height: number; type?: string }[]
+    89→  temperature: number
+    90→  dewpoint: number
+    91→  qnh: number
+    92→  flightCategory: "VFR" | "MVFR" | "IFR" | "LIFR"
+    93→  weather?: string[]
+    94→  remarks?: string
+    95→  auto?: boolean
+    96→  cavok?: boolean
+    97→}
+    98→
+    99→interface TafPeriod {
+   100→  type: string
+   101→  from: string
+   102→  to?: string
+   103→  wind?: { direction: number; speed: number; gust?: number }
+   104→  visibility?: { value: number; unit: string }
+   105→  clouds?: { quantity: string; height: number; type?: string }[]
+   106→  weather?: string[]
+   107→  flightCategory?: "VFR" | "MVFR" | "IFR" | "LIFR"
+   108→}
+   109→
+   110→interface StructuredNotam {
+   111→  id: string
+   112→  notamId: string
+   113→  type: string
+   114→  replacesId: string | null
+   115→  fir: string
+   116→  effectiveFrom: string
+   117→  effectiveTo: string | null
+   118→  isPermanent: boolean
+   119→  scope: string | null
+   120→  subject: string
+   121→  condition: string
+   122→  text: string
+   123→  priority: string
+   124→  source: string | null
+   125→  verified: boolean
+   126→  airport?: { icaoCode: string; name: string; city: string } | null
+   127→  status: "vigente" | "upcoming" | "expired" | "perm"
+   128→  qCode?: string
+   129→  fields: { label: string; value: string }[]
+   130→}
+   131→
+   132→interface StationDetail {
+   133→  station: StationSummary
+   134→  weather: {
+   135→    metar: ParsedMetar | null
+   136→    taf: { raw: string; time: string; periods: TafPeriod[] } | null
+   137→    fetchedAt: string
+   138→    source: string
+   139→    metarReadable: string
+   140→    tafReadable: string
+   141→  }
+   142→  notams: StructuredNotam[]
+   143→  notamCount: number
+   144→  summary: string
+   145→  summaryColor: "green" | "amber" | "red"
+   146→  lastUpdate: string
+   147→  generatedAt: string
+   148→}
+   149→
+   150→interface IngestResult {
+   151→  ok: boolean
+   152→  inserted: number
+   153→  skipped: number
+   154→  errors: string[]
+   155→  items: Array<{
+   156→    notamId: string
+   157→    icao: string
+   158→    validFrom: string | null
+   159→    validTo: string | null
+   160→    summary: string
+   161→    action: "created" | "updated" | "skipped"
+   162→  }>
+   163→  parsedTotal?: number
+   164→  error?: string
+   165→}
+   166→
+   167→interface ChatMessage {
+   168→  role: "user" | "assistant"
+   169→  content: string
+   170→  timestamp: string
+   171→}
+   172→
+   173→// ─── Color maps ─────────────────────────────────────────────────────────
+   174→
+   175→const flightCategoryColors: Record<string, string> = {
+   176→  VFR: "bg-green-500/15 text-green-700 dark:text-green-400 border-green-500/30",
+   177→  MVFR: "bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/30",
+   178→  IFR: "bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/30",
+   179→  LIFR: "bg-purple-500/15 text-purple-700 dark:text-purple-400 border-purple-500/30",
+   180→}
+   181→
+   182→const priorityColors: Record<string, string> = {
+   183→  URGENT: "bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/30",
+   184→  HIGH: "bg-orange-500/15 text-orange-700 dark:text-orange-400 border-orange-500/30",
+   185→  MEDIUM: "bg-yellow-500/15 text-yellow-700 dark:text-yellow-400 border-yellow-500/30",
+   186→  LOW: "bg-slate-500/15 text-slate-700 dark:text-slate-400 border-slate-500/30",
+   187→}
+   188→
+   189→const statusColors: Record<string, string> = {
+   190→  vigente: "bg-green-500/15 text-green-700 dark:text-green-400 border-green-500/30",
+   191→  upcoming: "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30",
+   192→  expired: "bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/30",
+   193→  perm: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30",
+   194→}
+   195→
+   196→// ─── Helpers ────────────────────────────────────────────────────────────
+   197→
+   198→function formatTimeAgo(iso: string): string {
+   199→  try {
+   200→    const now = Date.now()
+   201→    const then = new Date(iso).getTime()
+   202→    const diff = now - then
+   203→    if (diff < 0) return "recién"
+   204→    const min = Math.floor(diff / 60000)
+   205→    if (min < 1) return "hace menos de 1 min"
+   206→    if (min < 60) return `hace ${min} min`
+   207→    const hr = Math.floor(min / 60)
+   208→    if (hr < 24) return `hace ${hr} h`
+   209→    const days = Math.floor(hr / 24)
+   210→    return `hace ${days} d`
+   211→  } catch {
+   212→    return "—"
+   213→  }
+   214→}
+   215→
+   216→function formatDateTime(iso: string): string {
+   217→  try {
+   218→    return new Date(iso)
+   219→      .toISOString()
+   220→      .replace("T", " ")
+   221→      .replace(/\.\d+Z$/, "Z")
+   222→  } catch {
+   223→    return iso
+   224→  }
+   225→}
+   226→
+   227→function renderMarkdown(text: string): string {
+   228→  return text
+   229→    .replace(/&/g, "&amp;")
+   230→    .replace(/</g, "&lt;")
+   231→    .replace(/>/g, "&gt;")
+   232→    .replace(/^### (.+)$/gm, '<h3 class="font-bold text-sm mt-3 mb-1">$1</h3>')
+   233→    .replace(/^## (.+)$/gm, '<h2 class="font-bold text-base mt-4 mb-2">$1</h2>')
+   234→    .replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold">$1</strong>')
+   235→    .replace(/^[-•] (.+)$/gm, '<li class="ml-4 list-disc">$1</li>')
+   236→    .replace(/^(\d+)\. (.+)$/gm, '<li class="ml-4 list-decimal">$2</li>')
+   237→    .replace(/\n\n/g, '</p><p class="mb-2">')
+   238→    .replace(/\n/g, "<br/>")
+   239→}
+   240→
+   241→// ─── Countdown hook ─────────────────────────────────────────────────────
+   242→
+   243→interface CountdownState {
+   244→  remainingMs: number | null
+   245→  critical: boolean
+   246→  expired: boolean
+   247→}
+   248→
+   249→function computeCountdown(validTo?: string | null, isPermanent?: boolean): CountdownState {
+   250→  if (!validTo || validTo === "PERM" || isPermanent) {
+   251→    return { remainingMs: null, critical: false, expired: false }
+   252→  }
+   253→  const target = parseIsoMs(validTo)
+   254→  if (target === null) return { remainingMs: null, critical: false, expired: false }
+   255→  const diff = target - Date.now()
+   256→  if (diff <= 0) return { remainingMs: 0, critical: true, expired: true }
+   257→  return { remainingMs: diff, critical: diff <= 5 * 60 * 1000, expired: false }
+   258→}
+   259→
+   260→function useCountdown(validTo?: string | null, isPermanent?: boolean): CountdownState {
+   261→  const [, setTick] = useState(0)
+   262→  useEffect(() => {
+   263→    if (!validTo || validTo === "PERM" || isPermanent) return
+   264→    const target = parseIsoMs(validTo)
+   265→    if (target === null) return
+   266→    const id = setInterval(() => setTick((t) => t + 1), 1000)
+   267→    return () => clearInterval(id)
+   268→  }, [validTo, isPermanent])
+   269→  return computeCountdown(validTo, isPermanent)
+   270→}
+   271→
+   272→function NotamCountdown({ validFrom, validTo, isPermanent }: {
+   273→  validFrom?: string | null
+   274→  validTo?: string | null
+   275→  isPermanent?: boolean
+   276→}) {
+   277→  const { remainingMs, critical, expired } = useCountdown(validTo, isPermanent)
+   278→  const status = notamStatus(validFrom, validTo ?? (isPermanent ? "PERM" : undefined))
+   279→  if (status === "upcoming") {
+   280→    return <span className="inline-flex items-center gap-1 text-xs font-mono font-semibold text-amber-600"><Timer className="h-3.5 w-3.5" />PRÓXIMO</span>
+   281→  }
+   282→  if (!validTo || validTo === "PERM" || isPermanent || remainingMs === null) {
+   283→    return <span className="inline-flex items-center gap-1 text-xs font-mono font-semibold text-emerald-700 dark:text-emerald-400"><Timer className="h-3.5 w-3.5" />PERM</span>
+   284→  }
+   285→  if (expired) {
+   286→    return <span className="inline-flex items-center gap-1 text-xs font-mono font-bold text-red-600"><Timer className="h-3.5 w-3.5" />EXPIRADO</span>
+   287→  }
+   288→  return (
+   289→    <span className={cn("inline-flex items-center gap-1.5 text-xs font-mono font-bold tabular-nums", critical ? "text-red-600 animate-pulse" : "text-blue-600 dark:text-blue-400")}>
+   290→      <Timer className={cn("h-3.5 w-3.5", critical && "animate-pulse")} />
+   291→      {formatCountdown(remainingMs)}
+   292→    </span>
+   293→  )
+   294→}
+   295→
+   296→// ─── Ingest Dialog ──────────────────────────────────────────────────────
+   297→
+   298→function NotamIngestDialog({ onIngested }: { onIngested: () => void }) {
+   299→  const [open, setOpen] = useState(false)
+   300→  const [text, setText] = useState("")
+   301→  const [loading, setLoading] = useState(false)
+   302→  const [result, setResult] = useState<IngestResult | null>(null)
+   303→
+   304→  const handleIngest = async () => {
+   305→    if (!text.trim() || loading) return
+   306→    setLoading(true)
+   307→    setResult(null)
+   308→    try {
+   309→      const res = await fetch("/api/spim-briefing/ingest", {
+   310→        method: "POST",
+   311→        headers: { "Content-Type": "application/json" },
+   312→        body: JSON.stringify({ text }),
+   313→      })
+   314→      const data: IngestResult = await res.json()
+   315→      setResult(data)
+   316→      if (data.ok && data.inserted > 0) onIngested()
+   317→    } catch (err) {
+   318→      setResult({ ok: false, inserted: 0, skipped: 0, errors: [err instanceof Error ? err.message : String(err)], items: [] })
+   319→    } finally {
+   320→      setLoading(false)
+   321→    }
+   322→  }
+   323→
+   324→  const handleClose = () => { setOpen(false); setText(""); setResult(null) }
+   325→
+   326→  return (
+   327→    <Dialog open={open} onOpenChange={(v) => (v ? setOpen(true) : handleClose())}>
+   328→      <DialogTrigger asChild>
+   329→        <button className="w-full text-left p-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-emerald-400 dark:hover:border-emerald-600 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 transition-colors group">
+   330→          <div className="flex items-start gap-3">
+   331→            <div className="shrink-0 rounded-lg bg-emerald-600 p-2 group-hover:scale-105 transition-transform">
+   332→              <Upload className="size-4 text-white" />
+   333→            </div>
+   334→            <div className="flex-1 min-w-0">
+   335→              <h4 className="font-semibold text-sm text-slate-900 dark:text-slate-100">Pegado masivo de NOTAMS</h4>
+   336→              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+   337→                Pega todos los NOTAMs de FIR SPIM de una sola vez. El sistema los clasifica y distribuye automáticamente al aeródromo correspondiente (según el campo A).
+   338→              </p>
+   339→            </div>
+   340→            <ChevronRight className="size-4 text-slate-400 group-hover:text-emerald-600 transition-colors shrink-0 mt-1" />
+   341→          </div>
+   342→        </button>
+   343→      </DialogTrigger>
+   344→      <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
+   345→        <DialogHeader>
+   346→          <DialogTitle className="flex items-center gap-2">
+   347→            <Upload className="size-5 text-emerald-600" />
+   348→            Ingesta manual de NOTAMs
+   349→          </DialogTitle>
+   350→          <DialogDescription>
+   351→            Pega el texto plano del boletín NOTAM recibido por email desde AIS Perú. El parser OACI extraerá cada NOTAM y lo guardará en la base de datos.
+   352→          </DialogDescription>
+   353→        </DialogHeader>
+   354→        <div className="flex-1 overflow-y-auto space-y-3 py-2">
+   355→          <Textarea
+   356→            value={text}
+   357→            onChange={(e) => setText(e.target.value)}
+   358→            placeholder={`Pega aquí el texto del NOTAM, por ejemplo:\n\nA1234/25 NOTAMN\nQ) SPIM/QFALC/IV/NBO/A/000/999/SPJC\nA) SPJC\nB) 2501151200\nC) 2501161200\nE) RWY 15/33 CLOSED FOR MAINTENANCE\n`}
+   359→            className="min-h-[200px] font-mono text-xs"
+   360→            disabled={loading}
+   361→          />
+   362→          {result && (
+   363→            <div className="rounded-md border p-3 space-y-2 text-sm">
+   364→              <div className="flex items-center gap-2 flex-wrap">
+   365→                {result.ok ? <CheckCircle2 className="size-4 text-emerald-600" /> : <AlertTriangle className="size-4 text-red-600" />}
+   366→                <span className="font-semibold">{result.ok ? `${result.inserted} NOTAMs procesados` : "Error"}</span>
+   367→                {result.parsedTotal != null && <Badge variant="secondary" className="text-xs">{result.parsedTotal} detectados</Badge>}
+   368→                {result.skipped > 0 && <Badge variant="outline" className="text-xs">{result.skipped} saltados</Badge>}
+   369→              </div>
+   370→              {result.items.length > 0 && (
+   371→                <ScrollArea className="max-h-40 rounded border">
+   372→                  <ul className="divide-y text-xs">
+   373→                    {result.items.map((it, i) => (
+   374→                      <li key={i} className="p-2 flex items-center gap-2 flex-wrap">
+   375→                        <Badge variant="outline" className={cn("text-xs", it.action === "created" ? "text-emerald-600" : it.action === "updated" ? "text-blue-600" : "text-slate-500")}>{it.action.toUpperCase()}</Badge>
+   376→                        <span className="font-mono font-semibold">{it.notamId}</span>
+   377→                        <span className="text-muted-foreground">{it.icao}</span>
+   378→                      </li>
+   379→                    ))}
+   380→                  </ul>
+   381→                </ScrollArea>
+   382→              )}
+   383→            </div>
+   384→          )}
+   385→        </div>
+   386→        <DialogFooter>
+   387→          <Button variant="outline" onClick={handleClose}>Cancelar</Button>
+   388→          <Button onClick={handleIngest} disabled={loading || !text.trim()} className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5">
+   389→            {loading ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
+   390→            Procesar NOTAMs
+   391→          </Button>
+   392→        </DialogFooter>
+   393→      </DialogContent>
+   394→    </Dialog>
+   395→  )
+   396→}
+   397→
+   398→// ─── Stat Card ──────────────────────────────────────────────────────────
+   399→
+   400→function StatCard({ icon: Icon, label, value, color }: { icon: typeof Plane; label: string; value: number | string; color: string }) {
+   401→  return (
+   402→    <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4">
+   403→      <div className="flex items-center justify-between mb-2">
+   404→        <span className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{label}</span>
+   405→        <div className={cn("rounded-lg p-1.5", color)}>
+   406→          <Icon className="size-4" />
+   407→        </div>
+   408→      </div>
+   409→      <p className="text-2xl font-bold tabular-nums text-slate-900 dark:text-slate-100">{value}</p>
+   410→    </div>
+   411→  )
+   412→}
+   413→
+   414→// ─── Dashboard View ─────────────────────────────────────────────────────
+   415→
+   416→function DashboardView({ stats, loading, onRefresh, onIngested, onSelectStation }: {
+   417→  stats: StatsResponse | null
+   418→  loading: boolean
+   419→  onRefresh: () => void
+   420→  onIngested: () => void
+   421→  onSelectStation: (s: StationSummary) => void
+   422→}) {
+   423→  const [search, setSearch] = useState("")
+   424→
+   425→  const filteredStations = stats?.stations.filter((s) => {
+   426→    if (!search) return true
+   427→    const q = search.toLowerCase()
+   428→    return s.icao.toLowerCase().includes(q) || s.name.toLowerCase().includes(q) || s.city.toLowerCase().includes(q) || (s.iata || "").toLowerCase().includes(q)
+   429→  }) || []
+   430→
+   431→  return (
+   432→    <div className="space-y-4">
+   433→      {/* Stats grid */}
+   434→      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+   435→        <StatCard icon={Plane} label="Aeródromos" value={stats?.totalStations ?? "—"} color="bg-blue-500/15 text-blue-600" />
+   436→        <StatCard icon={Wind} label="METAR" value={stats?.metarCount ?? "—"} color="bg-green-500/15 text-green-600" />
+   437→        <StatCard icon={Waves} label="TAF" value={stats?.tafCount ?? "—"} color="bg-orange-500/15 text-orange-600" />
+   438→        <StatCard icon={FileText} label="NOTAMs" value={stats?.notamCount ?? "—"} color="bg-red-500/15 text-red-600" />
+   439→      </div>
+   440→
+   441→      {/* Pegado masivo */}
+   442→      <NotamIngestDialog onIngested={onIngested} />
+   443→
+   444→      {/* Station list */}
+   445→      <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden">
+   446→        <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
+   447→          <div className="flex items-center gap-2">
+   448→            <Database className="size-4 text-emerald-600" />
+   449→            <h3 className="font-semibold text-sm text-slate-900 dark:text-slate-100">Estaciones</h3>
+   450→            <Badge variant="secondary" className="text-xs">{filteredStations.length}</Badge>
+   451→          </div>
+   452→          <div className="relative w-48 sm:w-64">
+   453→            <Search className="absolute left-2 top-1/2 -translate-y-1/2 size-3.5 text-slate-400" />
+   454→            <Input
+   455→              value={search}
+   456→              onChange={(e) => setSearch(e.target.value)}
+   457→              placeholder="Buscar ICAO, IATA, ciudad..."
+   458→              className="h-8 pl-7 text-xs"
+   459→              suppressHydrationWarning
+   460→            />
+   461→          </div>
+   462→        </div>
+   463→        <ScrollArea className="max-h-[80vh] overscroll-contain">
+   464→          <div className="divide-y divide-slate-100 dark:divide-slate-800">
+   465→            {loading && !stats ? (
+   466→              <div className="p-8 text-center">
+   467→                <Loader2 className="size-6 animate-spin text-slate-400 mx-auto mb-2" />
+   468→                <p className="text-sm text-slate-500">Cargando estaciones...</p>
+   469→              </div>
+   470→            ) : filteredStations.length === 0 ? (
+   471→              <div className="p-8 text-center">
+   472→                <p className="text-sm text-slate-500">No se encontraron estaciones</p>
+   473→              </div>
+   474→            ) : (
+   475→              filteredStations.map((s) => (
+   476→                <StationRow key={s.icao} station={s} onSelect={() => onSelectStation(s)} />
+   477→              ))
+   478→            )}
+   479→          </div>
+   480→        </ScrollArea>
+   481→      </div>
+   482→    </div>
+   483→  )
+   484→}
+   485→
+   486→function StationRow({ station, onSelect }: { station: StationSummary; onSelect: () => void }) {
+   487→  const typeLabel = station.type === "INTERNACIONAL" ? "INTL" : station.type === "MILITAR" ? "MIL" : station.type === "HELIPUERTO" ? "HELI" : "NAC"
+   488→  return (
+   489→    <div onClick={onSelect} className="p-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer group">
+   490→      <div className="flex items-center gap-3">
+   491→        <div className="shrink-0 w-12 text-center">
+   492→          <p className="font-mono font-bold text-sm text-slate-900 dark:text-slate-100">{station.icao}</p>
+   493→          {station.iata && <p className="text-[10px] text-slate-400 font-mono">{station.iata}</p>}
+   494→        </div>
+   495→        <div className="flex-1 min-w-0">
+   496→          <div className="flex items-center gap-1.5 flex-wrap">
+   497→            <p className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">{station.name}</p>
+   498→            <Badge variant="outline" className="text-[10px] px-1 py-0 h-4">{typeLabel}</Badge>
+   499→          </div>
+   500→          <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+   501→            {station.city}{station.region ? ` · ${station.region}` : ""}{station.elevationFt ? ` · ${station.elevationFt} ft` : ""}
+   502→          </p>
+   503→        </div>
+   504→        <div className="flex items-center gap-1.5 shrink-0">
+   505→          {station.hasMetar && (
+   506→            <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-green-600 bg-green-500/10 px-1.5 py-0.5 rounded">
+   507→              <Wind className="size-2.5" />METAR
+   508→            </span>
+   509→          )}
+   510→          {station.hasTaf && (
+   511→            <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-orange-600 bg-orange-500/10 px-1.5 py-0.5 rounded">
+   512→              <Waves className="size-2.5" />TAF
+   513→            </span>
+   514→          )}
+   515→          {station.notamCount > 0 && (
+   516→            <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-red-600 bg-red-500/10 px-1.5 py-0.5 rounded">
+   517→              <FileText className="size-2.5" />{station.notamCount}
+   518→            </span>
+   519→          )}
+   520→        </div>
+   521→        <ChevronRight className="size-4 text-slate-300 group-hover:text-emerald-600 transition-colors shrink-0" />
+   522→      </div>
+   523→    </div>
+   524→  )
+   525→}
+   526→
+   527→// ─── Station Detail View ────────────────────────────────────────────────
+   528→
+   529→type StationTab = "metar" | "taf" | "notam"
+   530→
+   531→function StationDetailView({ station, onBack }: { station: StationSummary; onBack: () => void }) {
+   532→  const [tab, setTab] = useState<StationTab>("metar")
+   533→  const [detail, setDetail] = useState<StationDetail | null>(null)
+   534→  const [loading, setLoading] = useState(true)
+   535→  const [error, setError] = useState<string | null>(null)
+   536→  const [showJson, setShowJson] = useState(false)
+   537→
+   538→  const fetchDetail = useCallback(async () => {
+   539→    try {
+   540→      setError(null)
+   541→      const res = await fetch(`/api/spim-agent/station/${station.icao}`)
+   542→      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+   543→      const data: StationDetail = await res.json()
+   544→      setDetail(data)
+   545→    } catch (err) {
+   546→      setError(err instanceof Error ? err.message : String(err))
+   547→    } finally {
+   548→      setLoading(false)
+   549→    }
+   550→  }, [station.icao])
+   551→
+   552→  useEffect(() => {
+   553→    setLoading(true)
+   554→    setDetail(null)
+   555→    fetchDetail()
+   556→  }, [fetchDetail])
+   557→
+   558→  // Auto-polling every 30s
+   559→  const { secondsToNext, isFetching, refreshNow, autoOn, setAutoOn } = usePolling(fetchDetail, 30)
+   560→
+   561→  const metar = detail?.weather.metar
+   562→  const taf = detail?.weather.taf
+   563→  const notams = detail?.notams || []
+   564→
+   565→  const typeLabel = station.type === "INTERNACIONAL" ? "INTL" : station.type === "MILITAR" ? "MIL" : station.type === "HELIPUERTO" ? "HELI" : "NAC"
+   566→
+   567→  return (
+   568→    <div className="space-y-4">
+   569→      {/* Back nav + breadcrumb */}
+   570→      <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+   571→        <button onClick={onBack} className="flex items-center gap-1 hover:text-emerald-600 transition-colors">
+   572→          <ChevronLeft className="size-3.5" />
+   573→          Volver
+   574→        </button>
+   575→        <span>·</span>
+   576→        <span className="font-mono">{station.icao}</span>
+   577→      </div>
+   578→
+   579→      {/* Station header */}
+   580→      <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden">
+   581→        <div className="p-4 border-b border-slate-200 dark:border-slate-700">
+   582→          <div className="flex items-start justify-between gap-3 flex-wrap">
+   583→            <div className="flex items-center gap-3">
+   584→              <div>
+   585→                <div className="flex items-center gap-1.5 flex-wrap">
+   586→                  <h2 className="text-2xl font-bold font-mono text-slate-900 dark:text-slate-100">{station.icao}</h2>
+   587→                  {station.iata && (
+   588→                    <Badge variant="secondary" className="text-xs">{station.iata}</Badge>
+   589→                  )}
+   590→                  <Badge variant="outline" className="text-xs">{typeLabel}</Badge>
+   591→                </div>
+   592→                <p className="text-sm font-medium text-slate-700 dark:text-slate-300 mt-0.5">{station.name}</p>
+   593→                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+   594→                  {station.city}{station.region ? ` · ${station.region}` : ""}{station.elevationFt ? ` · ${station.elevationFt} ft` : ""} · {station.lat.toFixed(4)}, {station.lon.toFixed(4)}
+   595→                </p>
+   596→                {station.frequencies && (
+   597→                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+   598→                    Frecuencias: {station.frequencies}
+   599→                  </p>
+   600→                )}
+   601→              </div>
+   602→            </div>
+   603→            <div className="flex items-center gap-2 shrink-0">
+   604→              <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400 px-2 py-1 rounded-md border border-slate-200 dark:border-slate-700">
+   605→                <Clock className="size-3" />
+   606→                <span className="font-mono">30s</span>
+   607→                <Switch checked={autoOn} onCheckedChange={setAutoOn} aria-label="Auto-refresh" />
+   608→              </div>
+   609→              <Button variant="outline" size="icon" onClick={refreshNow} disabled={isFetching} className="size-8">
+   610→                {isFetching ? <Loader2 className="size-3.5 animate-spin" /> : <RefreshCw className="size-3.5" />}
+   611→              </Button>
+   612→            </div>
+   613→          </div>
+   614→          {autoOn && (
+   615→            <div className="flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400 mt-2">
+   616→              <Badge variant="secondary" className="font-mono text-[10px] gap-1">
+   617→                <RefreshCw className={cn("size-3", isFetching && "animate-spin")} />
+   618→                {isFetching ? "consultando…" : `próxima consulta en ${secondsToNext}s`}
+   619→              </Badge>
+   620→            </div>
+   621→          )}
+   622→        </div>
+   623→
+   624→        {/* Tabs */}
+   625→        <div className="flex border-b border-slate-200 dark:border-slate-700">
+   626→          {([
+   627→            { key: "metar" as const, label: "METAR", icon: Wind, count: metar ? 1 : 0 },
+   628→            { key: "taf" as const, label: "TAF", icon: Waves, count: taf ? 1 : 0 },
+   629→            { key: "notam" as const, label: "NOTAM", icon: FileText, count: notams.length },
+   630→          ]).map((t) => {
+   631→            const active = tab === t.key
+   632→            return (
+   633→              <button
+   634→                key={t.key}
+   635→                onClick={() => setTab(t.key)}
+   636→                className={cn(
+   637→                  "flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors",
+   638→                  active
+   639→                    ? "border-emerald-600 text-emerald-700 dark:text-emerald-400"
+   640→                    : "border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+   641→                )}
+   642→              >
+   643→                <t.icon className="size-3.5" />
+   644→                {t.label}
+   645→                {t.count > 0 && (
+   646→                  <span className={cn("text-xs px-1.5 rounded", active ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400" : "bg-slate-100 dark:bg-slate-800 text-slate-500")}>
+   647→                    {t.count}
+   648→                  </span>
+   649→                )}
+   650→              </button>
+   651→            )
+   652→          })}
+   653→        </div>
+   654→
+   655→        {/* Tab content */}
+   656→        <div className="p-4">
+   657→          {loading && !detail ? (
+   658→            <div className="flex items-center gap-2 py-8 justify-center">
+   659→              <Loader2 className="size-5 animate-spin text-slate-400" />
+   660→              <span className="text-sm text-slate-500">Cargando datos de {station.icao}...</span>
+   661→            </div>
+   662→          ) : error ? (
+   663→            <div className="flex items-start gap-2 p-3 rounded-md bg-red-500/10 border border-red-500/30">
+   664→              <AlertTriangle className="size-4 mt-0.5 text-red-600 shrink-0" />
+   665→              <div className="text-sm">
+   666→                <p className="font-medium text-red-700">Error al cargar datos</p>
+   667→                <p className="text-xs text-muted-foreground mt-1 font-mono">{error}</p>
+   668→              </div>
+   669→            </div>
+   670→          ) : (
+   671→            <>
+   672→              {/* Last update + Source + Summary */}
+   673→              <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
+   674→                <div className="flex items-center gap-3 flex-wrap text-xs text-slate-500 dark:text-slate-400">
+   675→                  <div>
+   676→                    <span className="font-medium">Última actualización</span>
+   677→                    <span className="ml-1.5">{detail ? formatTimeAgo(detail.lastUpdate) : "—"}</span>
+   678→                  </div>
+   679→                  {detail?.weather?.source && (
+   680→                    <span className={cn(
+   681→                      "inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide border",
+   682→                      detail.weather.source === "aviationweather.gov"
+   683→                        ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/40"
+   684→                        : "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/40",
+   685→                    )} title={`Origen de los datos METAR/TAF: ${detail.weather.source}`}>
+   686→                      {detail.weather.source === "aviationweather.gov" ? (
+   687→                        <>
+   688→                          <Wifi className="size-2.5" />
+   689→                          Datos reales
+   690→                        </>
+   691→                      ) : (
+   692→                        <>
+   693→                          <AlertTriangle className="size-2.5" />
+   694→                          Datos simulados
+   695→                        </>
+   696→                      )}
+   697→                    </span>
+   698→                  )}
+   699→                </div>
+   700→                {detail && (
+   701→                  <div className={cn(
+   702→                    "inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium border",
+   703→                    detail.summaryColor === "green" && "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/30",
+   704→                    detail.summaryColor === "amber" && "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30",
+   705→                    detail.summaryColor === "red" && "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/30",
+   706→                  )}>
+   707→                    <CheckCircle2 className="size-3" />
+   708→                    Resumen: {detail.summary}
+   709→                  </div>
+   710→                )}
+   711→              </div>
+   712→
+   713→              {/* Tab panels */}
+   714→              {tab === "metar" && (
+   715→                <MetarPanel metar={metar} readable={detail?.weather.metarReadable || "METAR no disponible"} showJson={showJson} onToggleJson={() => setShowJson(!showJson)} />
+   716→              )}
+   717→              {tab === "taf" && (
+   718→                <TafPanel taf={taf} readable={detail?.weather.tafReadable || "TAF no disponible"} showJson={showJson} onToggleJson={() => setShowJson(!showJson)} />
+   719→              )}
+   720→              {tab === "notam" && (
+   721→                <NotamPanel notams={notams} showJson={showJson} onToggleJson={() => setShowJson(!showJson)} />
+   722→              )}
+   723→            </>
+   724→          )}
+   725→        </div>
+   726→      </div>
+   727→    </div>
+   728→  )
+   729→}
+   730→
+   731→// ─── METAR Panel ────────────────────────────────────────────────────────
+   732→
+   733→function MetarPanel({ metar, readable, showJson, onToggleJson }: {
+   734→  metar: ParsedMetar | null | undefined
+   735→  readable: string
+   736→  showJson: boolean
+   737→  onToggleJson: () => void
+   738→}) {
+   739→  if (!metar) {
+   740→    return <div className="py-8 text-center text-sm text-slate-500">METAR no disponible para esta estación</div>
+   741→  }
+   742→  return (
+   743→    <div className="space-y-4">
+   744→      {/* Flight category badge */}
+   745→      <div className="flex items-center gap-2 flex-wrap">
+   746→        <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Categoría de vuelo</span>
+   747→        <Badge variant="outline" className={cn("text-xs", flightCategoryColors[metar.flightCategory])}>{metar.flightCategory}</Badge>
+   748→      </div>
+   749→
+   750→      {/* Key metrics grid */}
+   751→      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+   752→        <div className="rounded-lg bg-slate-50 dark:bg-slate-800/50 p-2.5">
+   753→          <p className="text-[10px] text-slate-500 uppercase tracking-wider">Viento</p>
+   754→          <p className="font-mono font-semibold text-sm text-slate-900 dark:text-slate-100">
+   755→            {metar.wind.variable ? "VRB" : String(metar.wind.direction).padStart(3, "0")}° {metar.wind.speed}kt{metar.wind.gust ? ` G${metar.wind.gust}` : ""}
+   756→          </p>
+   757→        </div>
+   758→        <div className="rounded-lg bg-slate-50 dark:bg-slate-800/50 p-2.5">
+   759→          <p className="text-[10px] text-slate-500 uppercase tracking-wider">Visibilidad</p>
+   760→          <p className="font-mono font-semibold text-sm text-slate-900 dark:text-slate-100">
+   761→            {metar.cavok ? "CAVOK" : metar.visibility.value >= 9999 ? "10km+" : `${metar.visibility.value}m`}
+   762→          </p>
+   763→        </div>
+   764→        <div className="rounded-lg bg-slate-50 dark:bg-slate-800/50 p-2.5">
+   765→          <p className="text-[10px] text-slate-500 uppercase tracking-wider">Temp / Rocío</p>
+   766→          <p className="font-mono font-semibold text-sm text-slate-900 dark:text-slate-100">{metar.temperature}° / {metar.dewpoint}°</p>
+   767→        </div>
+   768→        <div className="rounded-lg bg-slate-50 dark:bg-slate-800/50 p-2.5">
+   769→          <p className="text-[10px] text-slate-500 uppercase tracking-wider">QNH</p>
+   770→          <p className="font-mono font-semibold text-sm text-slate-900 dark:text-slate-100">{metar.qnh} hPa</p>
+   771→        </div>
+   772→      </div>
+   773→
+   774→      {/* Readable version */}
+   775→      <div>
+   776→        <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Versión legible</h4>
+   777→        <div className="rounded-lg bg-slate-50 dark:bg-slate-800/50 p-3 text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+   778→          {readable}
+   779→        </div>
+   780→      </div>
+   781→
+   782→      {/* Raw message */}
+   783→      <div>
+   784→        <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Mensaje crudo</h4>
+   785→        <div className="rounded-lg bg-slate-900 dark:bg-slate-950 p-3 font-mono text-xs text-slate-100 dark:text-slate-200 overflow-x-auto">
+   786→          {metar.raw}
+   787→        </div>
+   788→      </div>
+   789→
+   790→      {/* JSON toggle */}
+   791→      <Button variant="ghost" size="sm" onClick={onToggleJson} className="text-xs gap-1.5 text-slate-500 hover:text-slate-700">
+   792→        <Code2 className="size-3.5" />
+   793→        {showJson ? "Ocultar" : "Ver"} JSON completo
+   794→      </Button>
+   795→      {showJson && (
+   796→        <pre className="rounded-lg bg-slate-900 dark:bg-slate-950 p-3 font-mono text-[10px] text-slate-100 dark:text-slate-200 overflow-x-auto max-h-64">
+   797→          {JSON.stringify(metar, null, 2)}
+   798→        </pre>
+   799→      )}
+   800→    </div>
+   801→  )
+   802→}
+   803→
+   804→// ─── TAF Panel ──────────────────────────────────────────────────────────
+   805→
+   806→function TafPanel({ taf, readable, showJson, onToggleJson }: {
+   807→  taf: { raw: string; time: string; periods: TafPeriod[] } | null | undefined
+   808→  readable: string
+   809→  showJson: boolean
+   810→  onToggleJson: () => void
+   811→}) {
+   812→  if (!taf) {
+   813→    return <div className="py-8 text-center text-sm text-slate-500">TAF no disponible para esta estación</div>
+   814→  }
+   815→  return (
+   816→    <div className="space-y-4">
+   817→      {/* Periods */}
+   818→      {taf.periods.length > 0 && (
+   819→        <div>
+   820→          <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Períodos ({taf.periods.length})</h4>
+   821→          <div className="space-y-1 max-h-48 overflow-y-auto rounded-lg bg-slate-50 dark:bg-slate-800/50 p-2">
+   822→            {taf.periods.slice(0, 12).map((p, i) => (
+   823→              <div key={i} className="flex items-center gap-2 text-xs border-b border-slate-200 dark:border-slate-700 pb-1 last:border-0">
+   824→                <Badge variant="outline" className="text-[10px] font-mono">{p.type}</Badge>
+   825→                {p.wind && (
+   826→                  <span className="font-mono text-slate-600 dark:text-slate-400">
+   827→                    {p.wind.variable ? "VRB" : String(p.wind.direction).padStart(3, "0")}{String(p.wind.speed).padStart(2, "0")}KT{p.wind.gust ? `G${p.wind.gust}` : ""}
+   828→                  </span>
+   829→                )}
+   830→                {p.visibility && (
+   831→                  <span className="font-mono text-slate-600 dark:text-slate-400">
+   832→                    {p.visibility.value >= 9999 ? "10km+" : `${p.visibility.value}m`}
+   833→                  </span>
+   834→                )}
+   835→                {p.flightCategory && (
+   836→                  <Badge variant="outline" className={cn("text-[10px] ml-auto", flightCategoryColors[p.flightCategory])}>{p.flightCategory}</Badge>
+   837→                )}
+   838→              </div>
+   839→            ))}
+   840→          </div>
+   841→        </div>
+   842→      )}
+   843→
+   844→      {/* Readable version */}
+   845→      <div>
+   846→        <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Versión legible</h4>
+   847→        <div className="rounded-lg bg-slate-50 dark:bg-slate-800/50 p-3 text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+   848→          {readable}
+   849→        </div>
+   850→      </div>
+   851→
+   852→      {/* Raw message */}
+   853→      <div>
+   854→        <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Mensaje crudo</h4>
+   855→        <div className="rounded-lg bg-slate-900 dark:bg-slate-950 p-3 font-mono text-xs text-slate-100 dark:text-slate-200 overflow-x-auto">
+   856→          {taf.raw}
+   857→        </div>
+   858→      </div>
+   859→
+   860→      {/* JSON toggle */}
+   861→      <Button variant="ghost" size="sm" onClick={onToggleJson} className="text-xs gap-1.5 text-slate-500 hover:text-slate-700">
+   862→        <Code2 className="size-3.5" />
+   863→        {showJson ? "Ocultar" : "Ver"} JSON completo
+   864→      </Button>
+   865→      {showJson && (
+   866→        <pre className="rounded-lg bg-slate-900 dark:bg-slate-950 p-3 font-mono text-[10px] text-slate-100 dark:text-slate-200 overflow-x-auto max-h-64">
+   867→          {JSON.stringify(taf, null, 2)}
+   868→        </pre>
+   869→      )}
+   870→    </div>
+   871→  )
+   872→}
+   873→
+   874→// ─── NOTAM Panel ────────────────────────────────────────────────────────
+   875→
+   876→function NotamPanel({ notams, showJson, onToggleJson }: {
+   877→  notams: StructuredNotam[]
+   878→  showJson: boolean
+   879→  onToggleJson: () => void
+   880→}) {
+   881→  // Por defecto TODOS los NOTAMs expandidos. Para evitar anti-patterns de React
+   882→  // (setState dentro de useEffect), guardamos solo los IDs COLAPSADOS por el usuario.
+   883→  // Si un ID colapsado ya no existe en la nueva lista, simplemente no matchea — no pasa nada.
+   884→  const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set())
+   885→
+   886→  const toggle = (id: string) => {
+   887→    setCollapsed((prev) => {
+   888→      const next = new Set(prev)
+   889→      if (next.has(id)) next.delete(id)
+   890→      else next.add(id)
+   891→      return next
+   892→    })
+   893→  }
+   894→
+   895→  if (notams.length === 0) {
+   896→    return (
+   897→      <div className="py-8 text-center">
+   898→        <FileText className="size-8 text-slate-300 mx-auto mb-2" />
+   899→        <p className="text-sm text-slate-500">No hay NOTAMs activos para esta estación</p>
+   900→      </div>
+   901→    )
+   902→  }
+   903→
+   904→  return (
+   905→    <div className="space-y-2">
+   906→      {/* Banner: recordatorio de que se muestra texto crudo OACI */}
+   907→      <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-amber-500/10 border border-amber-500/30 text-xs text-amber-700 dark:text-amber-400">
+   908→        <FileText className="size-3.5 shrink-0" />
+   909→        <span>Los NOTAMs se muestran en <strong>formato crudo OACI</strong> tal cual fueron emitidos por AIS Perú. Los campos parseados (Q/A/B/C/D/E) son referenciales.</span>
+   910→      </div>
+   911→
+   912→      {notams.map((n) => {
+   913→        const isOpen = !collapsed.has(n.id)
+   914→        return (
+   915→          <div key={n.id} className="rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+   916→            {/* Header row */}
+   917→            <button
+   918→              onClick={() => toggle(n.id)}
+   919→              className="w-full flex items-center gap-2 p-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors text-left"
+   920→            >
+   921→              <ChevronRight className={cn("size-4 text-slate-400 transition-transform shrink-0", isOpen && "rotate-90")} />
+   922→              <span className="font-mono font-semibold text-sm text-slate-900 dark:text-slate-100">{n.notamId}</span>
+   923→              {n.qCode && (
+   924→                <Badge variant="secondary" className="text-[10px] font-mono">{n.qCode}</Badge>
+   925→              )}
+   926→              <Badge variant="outline" className={cn("text-[10px]", statusColors[n.status])}>{n.status}</Badge>
+   927→              {n.priority !== "MEDIUM" && (
+   928→                <Badge variant="outline" className={cn("text-[10px]", priorityColors[n.priority])}>{n.priority}</Badge>
+   929→              )}
+   930→              <span className="ml-auto flex items-center gap-2 text-[11px] text-slate-400 shrink-0">
+   931→                <NotamCountdown validFrom={n.effectiveFrom} validTo={n.effectiveTo} isPermanent={n.isPermanent} />
+   932→              </span>
+   933→            </button>
+   934→
+   935→            {/* Expanded content — TEXTO CRUDO PRIMERO */}
+   936→            {isOpen && (
+   937→              <div className="border-t border-slate-200 dark:border-slate-700 p-3 space-y-3 bg-slate-50/50 dark:bg-slate-800/30">
+   938→                {/* TEXTO CRUDO OACI — primero y prominente */}
+   939→                <div>
+   940→                  <h5 className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wider mb-1 flex items-center gap-1">
+   941→                    <FileText className="size-3" />
+   942→                    Texto OACI completo (crudo)
+   943→                  </h5>
+   944→                  <pre className="rounded bg-slate-900 dark:bg-slate-950 p-3 font-mono text-[11px] text-slate-100 dark:text-slate-200 overflow-x-auto whitespace-pre-wrap break-words leading-relaxed border border-slate-700 dark:border-slate-800">{n.text}</pre>
+   945→                </div>
+   946→
+   947→                {/* Validity period */}
+   948→                <div className="flex items-center gap-3 flex-wrap text-xs">
+   949→                  <span className="text-slate-500">Vigencia:</span>
+   950→                  <span className="font-mono text-slate-700 dark:text-slate-300">
+   951→                    Desde: {formatDateTime(n.effectiveFrom)}
+   952→                  </span>
+   953→                  <span className="text-slate-400">→</span>
+   954→                  <span className="font-mono text-slate-700 dark:text-slate-300">
+   955→                    Hasta: {n.isPermanent ? "PERM" : n.effectiveTo ? formatDateTime(n.effectiveTo) : "—"}
+   956→                  </span>
+   957→                </div>
+   958→
+   959→                {/* Campos OACI parseados — secundario, colapsable */}
+   960→                {n.fields.length > 0 && (
+   961→                  <details className="group">
+   962→                    <summary className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:text-slate-700 dark:hover:text-slate-300 transition-colors flex items-center gap-1 select-none">
+   963→                      <ChevronRight className="size-3 transition-transform group-open:rotate-90" />
+   964→                      Campos OACI parseados (referencial)
+   965→                    </summary>
+   966→                    <div className="space-y-1 mt-2 pl-4">
+   967→                      {n.fields.map((f, i) => (
+   968→                        <div key={i} className="flex items-start gap-2 text-xs">
+   969→                          <span className="font-mono font-semibold text-slate-600 dark:text-slate-400 shrink-0 w-8">{f.label}</span>
+   970→                          <span className="font-mono text-slate-700 dark:text-slate-300 break-all">{f.value}</span>
+   971→                        </div>
+   972→                      ))}
+   973→                    </div>
+   974→                  </details>
+   975→                )}
+   976→
+   977→                {/* JSON */}
+   978→                {showJson && (
+   979→                  <pre className="rounded bg-slate-900 dark:bg-slate-950 p-2 font-mono text-[10px] text-slate-100 dark:text-slate-200 overflow-x-auto max-h-48">
+   980→                    {JSON.stringify(n, null, 2)}
+   981→                  </pre>
+   982→                )}
+   983→              </div>
+   984→            )}
+   985→          </div>
+   986→        )
+   987→      })}
+   988→
+   989→      <Button variant="ghost" size="sm" onClick={onToggleJson} className="text-xs gap-1.5 text-slate-500 hover:text-slate-700 mt-2">
+   990→        <Code2 className="size-3.5" />
+   991→        {showJson ? "Ocultar" : "Ver"} JSON de NOTAMs
+   992→      </Button>
+   993→    </div>
+   994→  )
+   995→}
+   996→
+   997→// ─── Agente View (AI Briefing + Chat) ───────────────────────────────────
+   998→
+   999→function AgenteView({ onRefresh }: { onRefresh: () => void }) {
+  1000→  const [briefing, setBriefing] = useState<string | null>(null)
+  1001→  const [loading, setLoading] = useState(true)
+  1002→  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
+  1003→  const [chatInput, setChatInput] = useState("")
+  1004→  const [chatLoading, setChatLoading] = useState(false)
+  1005→  const chatEndRef = useRef<HTMLDivElement>(null)
+  1006→
+  1007→  const fetchBriefing = useCallback(async () => {
+  1008→    try {
+  1009→      const res = await fetch("/api/spim-briefing", { method: "POST" })
+  1010→      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  1011→      const data = await res.json()
+  1012→      setBriefing(data.briefing)
+  1013→    } catch {
+  1014→      setBriefing(null)
+  1015→    } finally {
+  1016→      setLoading(false)
+  1017→    }
+  1018→  }, [])
+  1019→
+  1020→  useEffect(() => {
+  1021→    fetchBriefing()
+  1022→  }, [fetchBriefing])
+  1023→
+  1024→  useEffect(() => {
+  1025→    chatEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  1026→  }, [chatMessages])
+  1027→
+  1028→  const handleSendChat = async () => {
+  1029→    if (!chatInput.trim() || chatLoading) return
+  1030→    const userMsg: ChatMessage = { role: "user", content: chatInput, timestamp: new Date().toISOString() }
+  1031→    setChatMessages((prev) => [...prev, userMsg])
+  1032→    setChatInput("")
+  1033→    setChatLoading(true)
+  1034→    try {
+  1035→      const res = await fetch("/api/spim-briefing/chat", {
+  1036→        method: "POST",
+  1037→        headers: { "Content-Type": "application/json" },
+  1038→        body: JSON.stringify({ question: userMsg.content }),
+  1039→      })
+  1040→      const data = await res.json()
+  1041→      setChatMessages((prev) => [...prev, { role: "assistant", content: data.answer || "Sin respuesta", timestamp: new Date().toISOString() }])
+  1042→    } catch {
+  1043→      setChatMessages((prev) => [...prev, { role: "assistant", content: "Error de conexión", timestamp: new Date().toISOString() }])
+  1044→    } finally {
+  1045→      setChatLoading(false)
+  1046→    }
+  1047→  }
+  1048→
+  1049→  return (
+  1050→    <div className="space-y-4">
+  1051→      {/* AI Briefing */}
+  1052→      <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden">
+  1053→        <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+  1054→          <div className="flex items-center gap-2">
+  1055→            <div className="rounded-lg bg-emerald-600 p-1.5">
+  1056→              <Zap className="size-4 text-white" />
+  1057→            </div>
+  1058→            <div>
+  1059→              <h3 className="font-semibold text-sm text-slate-900 dark:text-slate-100">Briefing del Agente IA</h3>
+  1060→              <p className="text-xs text-slate-500">Análisis automático de FIR SPIM</p>
+  1061→            </div>
+  1062→          </div>
+  1063→          <Button variant="outline" size="sm" onClick={() => { setLoading(true); fetchBriefing() }} disabled={loading} className="gap-1.5">
+  1064→            {loading ? <Loader2 className="size-3.5 animate-spin" /> : <RefreshCw className="size-3.5" />}
+  1065→            Actualizar
+  1066→          </Button>
+  1067→        </div>
+  1068→        <div className="p-4">
+  1069→          {loading && !briefing ? (
+  1070→            <div className="space-y-2">
+  1071→              <div className="flex items-center gap-2 text-sm text-slate-500">
+  1072→                <Loader2 className="size-4 animate-spin" />
+  1073→                Generando briefing operacional...
+  1074→              </div>
+  1075→              <div className="space-y-1.5">
+  1076→                <div className="h-3 w-full bg-slate-100 dark:bg-slate-800 rounded animate-pulse" />
+  1077→                <div className="h-3 w-5/6 bg-slate-100 dark:bg-slate-800 rounded animate-pulse" />
+  1078→                <div className="h-3 w-4/6 bg-slate-100 dark:bg-slate-800 rounded animate-pulse" />
+  1079→              </div>
+  1080→            </div>
+  1081→          ) : briefing ? (
+  1082→            <div
+  1083→              className="text-sm leading-relaxed prose-sm max-w-none [&_li]:mt-0.5 [&_h2]:mt-3 [&_h3]:mt-2"
+  1084→              dangerouslySetInnerHTML={{ __html: `<p class="mb-2">${renderMarkdown(briefing)}</p>` }}
+  1085→            />
+  1086→          ) : (
+  1087→            <p className="text-sm text-slate-500">No se pudo cargar el briefing.</p>
+  1088→          )}
+  1089→        </div>
+  1090→      </div>
+  1091→
+  1092→      {/* Chat */}
+  1093→      <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden">
+  1094→        <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center gap-2">
+  1095→          <Bot className="size-4 text-emerald-600" />
+  1096→          <h3 className="font-semibold text-sm text-slate-900 dark:text-slate-100">Consulta al Agente IA</h3>
+  1097→          <span className="ml-auto text-xs text-slate-400">Pregunta sobre METAR/TAF/NOTAM</span>
+  1098→        </div>
+  1099→        <div className="p-4 space-y-3">
+  1100→          {chatMessages.length > 0 && (
+  1101→            <div className="space-y-2 max-h-64 overflow-y-auto">
+  1102→              {chatMessages.map((msg, i) => (
+  1103→                <div key={i} className={cn("flex gap-2", msg.role === "user" ? "justify-end" : "justify-start")}>
+  1104→                  {msg.role === "assistant" && (
+  1105→                    <div className="shrink-0 rounded-full bg-emerald-500/15 p-1.5">
+  1106→                      <Bot className="size-3.5 text-emerald-600" />
+  1107→                    </div>
+  1108→                  )}
+  1109→                  <div className={cn("max-w-[80%] rounded-lg px-3 py-2 text-sm", msg.role === "user" ? "bg-slate-900 text-white" : "bg-slate-100 dark:bg-slate-800")}>
+  1110→                    <div className="prose-sm [&_li]:mt-0.5" dangerouslySetInnerHTML={{ __html: renderMarkdown(msg.content) }} />
+  1111→                  </div>
+  1112→                  {msg.role === "user" && (
+  1113→                    <div className="shrink-0 rounded-full bg-slate-300 dark:bg-slate-700 p-1.5">
+  1114→                      <User className="size-3.5 text-slate-700 dark:text-slate-300" />
+  1115→                    </div>
+  1116→                  )}
+  1117→                </div>
+  1118→              ))}
+  1119→              {chatLoading && (
+  1120→                <div className="flex gap-2 justify-start">
+  1121→                  <div className="shrink-0 rounded-full bg-emerald-500/15 p-1.5">
+  1122→                    <Bot className="size-3.5 text-emerald-600" />
+  1123→                  </div>
+  1124→                  <div className="rounded-lg bg-slate-100 dark:bg-slate-800 px-3 py-2">
+  1125→                    <Loader2 className="size-4 animate-spin text-slate-500" />
+  1126→                  </div>
+  1127→                </div>
+  1128→              )}
+  1129→              <div ref={chatEndRef} />
+  1130→            </div>
+  1131→          )}
+  1132→          {chatMessages.length === 0 && (
+  1133→            <div className="flex flex-wrap gap-2">
+  1134→              {["¿Hay restricciones en pista?", "¿Cuál es la categoría de vuelo actual?", "Resume los NOTAMs urgentes", "¿Condiciones para VFR nocturno?"].map((q) => (
+  1135→                <Button key={q} variant="outline" size="sm" className="text-xs h-7" onClick={() => setChatInput(q)}>{q}</Button>
+  1136→              ))}
+  1137→            </div>
+  1138→          )}
+  1139→          <div className="flex gap-2">
+  1140→            <Input
+  1141→              value={chatInput}
+  1142→              onChange={(e) => setChatInput(e.target.value)}
+  1143→              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSendChat() } }}
+  1144→              placeholder="Escribe tu consulta al agente..."
+  1145→              disabled={chatLoading || !briefing}
+  1146→              suppressHydrationWarning
+  1147→            />
+  1148→            <Button size="icon" onClick={handleSendChat} disabled={chatLoading || !chatInput.trim() || !briefing} className="bg-emerald-600 hover:bg-emerald-700 text-white shrink-0">
+  1149→              {chatLoading ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
+  1150→            </Button>
+  1151→          </div>
+  1152→        </div>
+  1153→      </div>
+  1154→    </div>
+  1155→  )
+  1156→}
+  1157→
+  1158→// ─── API View ───────────────────────────────────────────────────────────
+  1159→
+  1160→function ApiView() {
+  1161→  const endpoints = [
+  1162→    { method: "GET", path: "/api/spim-agent/stats", desc: "Estadísticas agregadas + lista de estaciones FIR SPIM" },
+  1163→    { method: "GET", path: "/api/spim-agent/station/[icao]", desc: "Detalle de estación: METAR + TAF + NOTAMs combinados" },
+  1164→    { method: "POST", path: "/api/spim-briefing", desc: "Briefing operacional generado por LLM (z-ai-web-dev-sdk)" },
+  1165→    { method: "POST", path: "/api/spim-briefing/chat", desc: "Consulta al agente IA sobre METAR/TAF/NOTAM" },
+  1166→    { method: "POST", path: "/api/spim-briefing/ingest", desc: "Ingesta masiva de NOTAMs (parser OACI)" },
+  1167→    { method: "GET", path: "/api/weather/[icao]", desc: "METAR/TAF individual desde aviationweather.gov" },
+  1168→    { method: "GET", path: "/api/notams", desc: "Lista de NOTAMs con filtros (fir, airportId, priority, scope)" },
+  1169→  ]
+  1170→  return (
+  1171→    <div className="space-y-4">
+  1172→      <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden">
+  1173→        <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center gap-2">
+  1174→          <Code2 className="size-4 text-emerald-600" />
+  1175→          <h3 className="font-semibold text-sm text-slate-900 dark:text-slate-100">Endpoints de INFO SPIM</h3>
+  1176→        </div>
+  1177→        <div className="divide-y divide-slate-100 dark:divide-slate-800">
+  1178→          {endpoints.map((e) => (
+  1179→            <div key={e.path} className="p-3 flex items-center gap-3">
+  1180→              <Badge variant="outline" className={cn("text-[10px] font-mono shrink-0", e.method === "GET" ? "bg-blue-500/10 text-blue-600 border-blue-500/30" : "bg-emerald-500/10 text-emerald-600 border-emerald-500/30")}>{e.method}</Badge>
+  1181→              <code className="text-xs font-mono text-slate-900 dark:text-slate-100 shrink-0">{e.path}</code>
+  1182→              <span className="text-xs text-slate-500 dark:text-slate-400 truncate">{e.desc}</span>
+  1183→            </div>
+  1184→          ))}
+  1185→        </div>
+  1186→      </div>
+  1187→      <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4">
+  1188→        <h4 className="font-semibold text-sm text-slate-900 dark:text-slate-100 mb-2">Fuentes de datos</h4>
+  1189→        <ul className="space-y-1.5 text-xs text-slate-600 dark:text-slate-400">
+  1190→          <li className="flex items-center gap-2"><Wind className="size-3.5 text-green-600 shrink-0" /> METAR/TAF: NOAA NWS (aviationweather.gov)</li>
+  1191→          <li className="flex items-center gap-2"><FileText className="size-3.5 text-red-600 shrink-0" /> NOTAMs: AIS Perú · CORPAC (ingesta manual vía parser OACI)</li>
+  1192→          <li className="flex items-center gap-2"><Bot className="size-3.5 text-emerald-600 shrink-0" /> Agente LLM: z-ai-web-dev-sdk (análisis inteligente)</li>
+  1193→          <li className="flex items-center gap-2"><Database className="size-3.5 text-blue-600 shrink-0" /> Base de datos: PostgreSQL (Prisma ORM)</li>
+  1194→        </ul>
+  1195→      </div>
+  1196→    </div>
+  1197→  )
+  1198→}
+  1199→
+  1200→// ─── Multi-Station Briefing View ─────────────────────────────────────────
+  1201→//
+  1202→// Permite consultar la información de varias estaciones a la vez (METAR,
+  1203→// TAF y NOTAMs). El usuario ingresa una lista de designadores OACI (SPHI,
+  1204→// SPRU, SPEO, etc.) separados por comas, espacios o líneas nuevas, y el
+  1205→// sistema presenta los resultados en dos bloques:
+  1206→//
+  1207→//   Bloque 1: METAR y TAF de todas las estaciones solicitadas.
+  1208→//   Bloque 2: NOTAMs de todas las estaciones solicitadas.
+  1209→
+  1210→interface WeatherResult {
+  1211→  icao: string
+  1212→  ok: boolean
+  1213→  metar: { raw: string; flightCategory?: string } | null
+  1214→  taf: { raw: string } | null
+  1215→  error?: string
+  1216→}
+  1217→
+  1218→interface NotamResult {
+  1219→  icao: string
+  1220→  ok: boolean
+  1221→  count: number
+  1222→  notams: Array<{
+  1223→    id: string
+  1224→    notamId: string
+  1225→    text: string
+  1226→    effectiveFrom: string
+  1227→    effectiveTo: string | null
+  1228→    isPermanent: boolean
+  1229→    priority: string
+  1230→    scope: string | null
+  1231→    airport?: { icaoCode: string; name: string } | null
+  1232→  }>
+  1233→  error?: string
+  1234→}
+  1235→
+  1236→// Parser de designadores OACI desde texto libre.
+  1237→// Acepta comas, espacios, puntos y comas, saltos de línea como separadores.
+  1238→// Filtra códigos válidos (4 letras, mayúsculas automáticamente).
+  1239→function parseIcaoList(input: string): string[] {
+  1240→  if (!input.trim()) return []
+  1241→  const tokens = input
+  1242→    .toUpperCase()
+  1243→    .split(/[\s,;]+/)
+  1244→    .map((t) => t.replace(/[^A-Z]/g, ""))
+  1245→    .filter((t) => t.length === 4)
+  1246→  // Eliminar duplicados preservando el orden de entrada.
+  1247→  const seen = new Set<string>()
+  1248→  const result: string[] = []
+  1249→  for (const t of tokens) {
+  1250→    if (!seen.has(t)) {
+  1251→      seen.add(t)
+  1252→      result.push(t)
+  1253→    }
+  1254→  }
+  1255→  return result
+  1256→}
+  1257→
+  1258→function MultiStationBriefing() {
+  1259→  const [input, setInput] = useState("")
+  1260→  const [icaos, setIcaos] = useState<string[]>([])
+  1261→  const [weather, setWeather] = useState<WeatherResult[]>([])
+  1262→  const [notams, setNotams] = useState<NotamResult[]>([])
+  1263→  const [loadingWeather, setLoadingWeather] = useState(false)
+  1264→  const [loadingNotams, setLoadingNotams] = useState(false)
+  1265→  const [searched, setSearched] = useState(false)
+  1266→
+  1267→  const handleSearch = useCallback(async () => {
+  1268→    const parsed = parseIcaoList(input)
+  1269→    if (parsed.length === 0) return
+  1270→    setIcaos(parsed)
+  1271→    setSearched(true)
+  1272→    setWeather([])
+  1273→    setNotams([])
+  1274→
+  1275→    // ── Bloque 1: METAR + TAF (uno por estación, en paralelo) ───────
+  1276→    setLoadingWeather(true)
+  1277→    Promise.all(
+  1278→      parsed.map(async (icao) => {
+  1279→        try {
+  1280→          const res = await fetch(`/api/weather/${icao}`)
+  1281→          if (!res.ok) {
+  1282→            return { icao, ok: false, metar: null, taf: null, error: `HTTP ${res.status}` } as WeatherResult
+  1283→          }
+  1284→          const data = await res.json()
+  1285→          return {
+  1286→            icao,
+  1287→            ok: true,
+  1288→            metar: data.metar ? { raw: data.metar.raw, flightCategory: data.metar.flightCategory } : null,
+  1289→            taf: data.taf ? { raw: data.taf.raw } : null,
+  1290→          } as WeatherResult
+  1291→        } catch (e) {
+  1292→          return { icao, ok: false, metar: null, taf: null, error: String(e) } as WeatherResult
+  1293→        }
+  1294→      }),
+  1295→    )
+  1296→      .then((results) => setWeather(results))
+  1297→      .finally(() => setLoadingWeather(false))
+  1298→
+  1299→    // ── Bloque 2: NOTAMs (uno por estación, en paralelo) ────────────
+  1300→    // Necesitamos el airportId de la DB para filtrar. Lo obtenemos
+  1301→    // consultando /api/airports y filtrando por ICAO en el cliente, o
+  1302→    // más simple: consultamos /api/notams sin airportId y filtramos por
+  1303→    // airport.icaoCode en el resultado. Como /api/notams acepta search,
+  1304→    // usamos search=ICAO para acotar.
+  1305→    setLoadingNotams(true)
+  1306→    Promise.all(
+  1307→      parsed.map(async (icao) => {
+  1308→        try {
+  1309→          // Buscar NOTAMs cuyo aeropuerto tenga este ICAO.
+  1310→          // El API filtra por airportId (DB), no por ICAO, así que
+  1311→          // usamos search con el ICAO para acotar y luego filtramos.
+  1312→          const res = await fetch(`/api/notams?search=${encodeURIComponent(icao)}&active=true&limit=200`)
+  1313→          if (!res.ok) {
+  1314→            return { icao, ok: false, count: 0, notams: [], error: `HTTP ${res.status}` } as NotamResult
+  1315→          }
+  1316→          const data = await res.json()
+  1317→          const list = Array.isArray(data) ? data : data.notams || []
+  1318→          // Filtrar solo los que pertenecen a este aeropuerto por ICAO.
+  1319→          const filtered = list.filter(
+  1320→            (n: { airport?: { icaoCode?: string } | null; text?: string }) =>
+  1321→              n.airport?.icaoCode === icao || (n.text || "").includes(`A) ${icao}`),
+  1322→          )
+  1323→          return {
+  1324→            icao,
+  1325→            ok: true,
+  1326→            count: filtered.length,
+  1327→            notams: filtered.map(
+  1328→              (n: Record<string, unknown>) =>
+  1329→                ({
+  1330→                  id: String(n.id),
+  1331→                  notamId: String(n.notamId),
+  1332→                  text: String(n.text || ""),
+  1333→                  effectiveFrom: String(n.effectiveFrom || ""),
+  1334→                  effectiveTo: (n.effectiveTo as string | null) || null,
+  1335→                  isPermanent: Boolean(n.isPermanent),
+  1336→                  priority: String(n.priority || "MEDIUM"),
+  1337→                  scope: (n.scope as string | null) || null,
+  1338→                  airport: (n.airport as { icaoCode: string; name: string } | null) || null,
+  1339→                }),
+  1340→            ),
+  1341→          } as NotamResult
+  1342→        } catch (e) {
+  1343→          return { icao, ok: false, count: 0, notams: [], error: String(e) } as NotamResult
+  1344→        }
+  1345→      }),
+  1346→    )
+  1347→      .then((results) => setNotams(results))
+  1348→      .finally(() => setLoadingNotams(false))
+  1349→  }, [input])
+  1350→
+  1351→  const totalWeather = weather.filter((w) => w.ok && (w.metar || w.taf)).length
+  1352→  const totalNotams = notams.reduce((acc, n) => acc + n.count, 0)
+  1353→  const allNotamsSorted = sortByExpiry(
+  1354→    notams.flatMap((n) => n.notams.map((nt) => ({ ...nt, icao: n.icao }))),
+  1355→  )
+  1356→
+  1357→  return (
+  1358→    <div className="space-y-4">
+  1359→      {/* ─── Input ─────────────────────────────────────────────────── */}
+  1360→      <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 space-y-3">
+  1361→        <div className="flex items-center gap-2">
+  1362→          <Search className="size-4 text-emerald-600" />
+  1363→          <h3 className="font-semibold text-sm text-slate-900 dark:text-slate-100">
+  1364→            Briefing Múltiple — Consulta varias estaciones
+  1365→          </h3>
+  1366→        </div>
+  1367→        <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+  1368→          Ingresa los designadores OACI de las estaciones (4 letras). Puedes
+  1369→          separarlos con comas, espacios o líneas nuevas. Ejemplo:
+  1370→          <code className="mx-1 px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 font-mono text-[11px]">SPHI, SPRU, SPEO</code>
+  1371→        </p>
+  1372→        <Textarea
+  1373→          value={input}
+  1374→          onChange={(e) => setInput(e.target.value)}
+  1375→          placeholder={"SPHI, SPRU, SPEO\nSPJC SPZO\nSPQU;SPRU"}
+  1376→          className="min-h-[80px] font-mono text-sm"
+  1377→          onKeyDown={(e) => {
+  1378→            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+  1379→              handleSearch()
+  1380→            }
+  1381→          }}
+  1382→        />
+  1383→        <div className="flex items-center gap-2 flex-wrap">
+  1384→          <Button
+  1385→            onClick={handleSearch}
+  1386→            disabled={parseIcaoList(input).length === 0 || loadingWeather || loadingNotams}
+  1387→            className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white"
+  1388→            size="sm"
+  1389→          >
+  1390→            {(loadingWeather || loadingNotams) ? (
+  1391→              <Loader2 className="size-3.5 animate-spin" />
+  1392→            ) : (
+  1393→              <Search className="size-3.5" />
+  1394→            )}
+  1395→            Consultar ({parseIcaoList(input).length} estaciones)
+  1396→          </Button>
+  1397→          {icaos.length > 0 && (
+  1398→            <div className="flex items-center gap-1.5 flex-wrap">
+  1399→              {icaos.map((icao) => (
+  1400→                <Badge key={icao} variant="outline" className="font-mono text-[10px] text-emerald-700 dark:text-emerald-400 border-emerald-500/30">
+  1401→                  {icao}
+  1402→                </Badge>
+  1403→              ))}
+  1404→            </div>
+  1405→          )}
+  1406→          <span className="text-[11px] text-slate-400 ml-auto hidden sm:block">
+  1407→            ⌘+Enter para consultar
+  1408→          </span>
+  1409→        </div>
+  1410→      </div>
+  1411→
+  1412→      {/* ─── Resumen ──────────────────────────────────────────────── */}
+  1413→      {searched && (
+  1414→        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+  1415→          <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3">
+  1416→            <div className="flex items-center gap-1.5 text-[11px] text-slate-500 uppercase tracking-wider">
+  1417→              <MapPin className="size-3" /> Estaciones
+  1418→            </div>
+  1419→            <div className="text-xl font-bold text-slate-900 dark:text-slate-100 mt-1">{icaos.length}</div>
+  1420→          </div>
+  1421→          <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3">
+  1422→            <div className="flex items-center gap-1.5 text-[11px] text-slate-500 uppercase tracking-wider">
+  1423→              <Cloud className="size-3" /> METAR/TAF
+  1424→            </div>
+  1425→            <div className="text-xl font-bold text-green-600 dark:text-green-400 mt-1">
+  1426→              {loadingWeather ? "…" : `${totalWeather}/${icaos.length}`}
+  1427→            </div>
+  1428→          </div>
+  1429→          <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3">
+  1430→            <div className="flex items-center gap-1.5 text-[11px] text-slate-500 uppercase tracking-wider">
+  1431→              <FileText className="size-3" /> NOTAMs
+  1432→            </div>
+  1433→            <div className="text-xl font-bold text-red-600 dark:text-red-400 mt-1">
+  1434→              {loadingNotams ? "…" : totalNotams}
+  1435→            </div>
+  1436→          </div>
+  1437→          <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3">
+  1438→            <div className="flex items-center gap-1.5 text-[11px] text-slate-500 uppercase tracking-wider">
+  1439→              <ListFilter className="size-3" /> Sin datos
+  1440→            </div>
+  1441→            <div className="text-xl font-bold text-slate-400 mt-1">
+  1442→              {icaos.length - totalWeather}
+  1443→            </div>
+  1444→          </div>
+  1445→        </div>
+  1446→      )}
+  1447→
+  1448→      {/* ─── Bloque 1: METAR y TAF ────────────────────────────────── */}
+  1449→      {searched && (
+  1450→        <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden">
+  1451→          <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center gap-2 bg-green-50/50 dark:bg-green-950/20">
+  1452→            <Wind className="size-4 text-green-600" />
+  1453→            <h3 className="font-semibold text-sm text-slate-900 dark:text-slate-100">
+  1454→              Bloque 1 — METAR y TAF
+  1455→            </h3>
+  1456→            <Badge variant="secondary" className="text-xs ml-auto">
+  1457→              {loadingWeather ? "Cargando…" : `${totalWeather} con datos`}
+  1458→            </Badge>
+  1459→          </div>
+  1460→          {loadingWeather ? (
+  1461→            <div className="p-8 text-center">
+  1462→              <Loader2 className="size-6 text-green-600 animate-spin mx-auto mb-2" />
+  1463→              <p className="text-sm text-slate-500">Consultando METAR/TAF…</p>
+  1464→            </div>
+  1465→          ) : weather.length === 0 ? (
+  1466→            <div className="p-6 text-center text-sm text-slate-500">
+  1467→              Sin resultados
+  1468→            </div>
+  1469→          ) : (
+  1470→            <div className="divide-y divide-slate-100 dark:divide-slate-800">
+  1471→              {weather.map((w) => (
+  1472→                <div key={w.icao} className="p-3">
+  1473→                  <div className="flex items-center gap-2 mb-2">
+  1474→                    <span className="font-mono font-bold text-sm text-slate-900 dark:text-slate-100">{w.icao}</span>
+  1475→                    {w.metar?.flightCategory && (
+  1476→                      <Badge variant="outline" className={cn("text-[10px]", flightCategoryColors[w.metar.flightCategory] || "")}>
+  1477→                        {w.metar.flightCategory}
+  1478→                      </Badge>
+  1479→                    )}
+  1480→                    {!w.ok && (
+  1481→                      <Badge variant="outline" className="text-[10px] text-red-600 border-red-500/30">
+  1482→                        Error
+  1483→                      </Badge>
+  1484→                    )}
+  1485→                    {w.ok && !w.metar && !w.taf && (
+  1486→                      <Badge variant="outline" className="text-[10px] text-slate-400">
+  1487→                        Sin datos
+  1488→                      </Badge>
+  1489→                    )}
+  1490→                  </div>
+  1491→                  {w.metar?.raw && (
+  1492→                    <pre className="rounded bg-slate-900 dark:bg-slate-950 p-2 font-mono text-[11px] text-slate-100 dark:text-slate-200 overflow-x-auto whitespace-pre-wrap mb-1.5">
+  1493→                      <span className="text-green-400">METAR </span>
+  1494→                      {w.metar.raw}
+  1495→                    </pre>
+  1496→                  )}
+  1497→                  {w.taf?.raw && (
+  1498→                    <pre className="rounded bg-slate-900 dark:bg-slate-950 p-2 font-mono text-[11px] text-slate-100 dark:text-slate-200 overflow-x-auto whitespace-pre-wrap">
+  1499→                      <span className="text-orange-400">TAF   </span>
+  1500→                      {w.taf.raw}
+  1501→                    </pre>
+  1502→                  )}
+  1503→                  {w.error && !w.metar && !w.taf && (
+  1504→                    <p className="text-[11px] text-red-500 font-mono">{w.error}</p>
+  1505→                  )}
+  1506→                </div>
+  1507→              ))}
+  1508→            </div>
+  1509→          )}
+  1510→        </div>
+  1511→      )}
+  1512→
+  1513→      {/* ─── Bloque 2: NOTAMs ─────────────────────────────────────── */}
+  1514→      {searched && (
+  1515→        <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden">
+  1516→          <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center gap-2 bg-red-50/50 dark:bg-red-950/20">
+  1517→            <FileText className="size-4 text-red-600" />
+  1518→            <h3 className="font-semibold text-sm text-slate-900 dark:text-slate-100">
+  1519→              Bloque 2 — NOTAMs
+  1520→            </h3>
+  1521→            <Badge variant="secondary" className="text-xs ml-auto">
+  1522→              {loadingNotams ? "Cargando…" : `${totalNotams} NOTAMs`}
+  1523→            </Badge>
+  1524→          </div>
+  1525→          {/* Banner: formato crudo OACI */}
+  1526→          {!loadingNotams && allNotamsSorted.length > 0 && (
+  1527→            <div className="px-4 py-2 bg-amber-500/10 border-b border-amber-500/30 text-xs text-amber-700 dark:text-amber-400 flex items-center gap-2">
+  1528→              <FileText className="size-3.5 shrink-0" />
+  1529→              <span>NOTAMs en <strong>formato crudo OACI</strong>, tal cual fueron emitidos por AIS Perú. Ordenados por fin de vigencia (más próximo a vencer primero, PERM al final).</span>
+  1530→            </div>
+  1531→          )}
+  1532→          {loadingNotams ? (
+  1533→            <div className="p-8 text-center">
+  1534→              <Loader2 className="size-6 text-red-600 animate-spin mx-auto mb-2" />
+  1535→              <p className="text-sm text-slate-500">Consultando NOTAMs…</p>
+  1536→            </div>
+  1537→          ) : allNotamsSorted.length === 0 ? (
+  1538→            <div className="p-6 text-center text-sm text-slate-500">
+  1539→              No hay NOTAMs activos para las estaciones solicitadas
+  1540→            </div>
+  1541→          ) : (
+  1542→            <div className="divide-y divide-slate-100 dark:divide-slate-800 max-h-[70vh] overflow-y-auto overscroll-contain custom-scrollbar">
+  1543→              {allNotamsSorted.map((n, idx) => (
+  1544→                <div key={n.id} className="p-3">
+  1545→                  <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+  1546→                    <Badge variant="outline" className="font-mono text-[10px] text-emerald-700 dark:text-emerald-400 border-emerald-500/30">
+  1547→                      {n.icao}
+  1548→                    </Badge>
+  1549→                    <span className="font-mono text-[11px] font-bold text-slate-700 dark:text-slate-300">{n.notamId}</span>
+  1550→                    {n.priority !== "MEDIUM" && (
+  1551→                      <Badge variant="outline" className={cn("text-[9px]", priorityColors[n.priority] || "")}>
+  1552→                        {n.priority}
+  1553→                      </Badge>
+  1554→                    )}
+  1555→                    <span className="flex items-center gap-1.5 ml-auto shrink-0">
+  1556→                      <NotamCountdownClock
+  1557→                        effectiveFrom={n.effectiveFrom}
+  1558→                        effectiveTo={n.effectiveTo}
+  1559→                        isPermanent={n.isPermanent}
+  1560→                      />
+  1561→                      <span className="font-mono text-[10px] text-slate-400">#{idx + 1}</span>
+  1562→                    </span>
+  1563→                  </div>
+  1564→                  <pre className="rounded bg-slate-900 dark:bg-slate-950 p-2 font-mono text-[11px] text-slate-100 dark:text-slate-200 overflow-x-auto whitespace-pre-wrap">
+  1565→                    {n.text}
+  1566→                  </pre>
+  1567→                </div>
+  1568→              ))}
+  1569→            </div>
+  1570→          )}
+  1571→          {/* Per-station NOTAM counts */}
+  1572→          {!loadingNotams && notams.length > 0 && (
+  1573→            <div className="p-3 border-t border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/30">
+  1574→              <div className="flex items-center gap-2 flex-wrap">
+  1575→                <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Por estación:</span>
+  1576→                {notams.map((n) => (
+  1577→                  <Badge
+  1578→                    key={n.icao}
+  1579→                    variant="outline"
+  1580→                    className={cn(
+  1581→                      "font-mono text-[10px]",
+  1582→                      n.count > 0
+  1583→                        ? "text-red-600 dark:text-red-400 border-red-500/30"
+  1584→                        : "text-slate-400 border-slate-300",
+  1585→                    )}
+  1586→                  >
+  1587→                    {n.icao}: {n.count}
+  1588→                  </Badge>
+  1589→                ))}
+  1590→              </div>
+  1591→            </div>
+  1592→          )}
+  1593→        </div>
+  1594→      )}
+  1595→
+  1596→      {!searched && (
+  1597→        <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-700 p-8 text-center">
+  1598→          <Search className="size-8 text-slate-300 mx-auto mb-2" />
+  1599→          <p className="text-sm text-slate-500">
+  1600→            Ingresa designadores OACI arriba y presiona <strong>Consultar</strong> para obtener el briefing.
+  1601→          </p>
+  1602→        </div>
+  1603→      )}
+  1604→    </div>
+  1605→  )
+  1606→}
+  1607→
+  1608→// ─── Main Component ─────────────────────────────────────────────────────
+  1609→
+  1610→type MainTab = "gestion" | "briefing" | "agente" | "api"
+  1611→
+  1612→export function SpimBriefing() {
+  1613→  const [stats, setStats] = useState<StatsResponse | null>(null)
+  1614→  const [loading, setLoading] = useState(true)
+  1615→  const [selectedStation, setSelectedStation] = useState<StationSummary | null>(null)
+  1616→  const [mainTab, setMainTab] = useState<MainTab>("gestion")
+  1617→
+  1618→  const fetchStats = useCallback(async () => {
+  1619→    try {
+  1620→      const res = await fetch("/api/spim-agent/stats")
+  1621→      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  1622→      const data: StatsResponse = await res.json()
+  1623→      setStats(data)
+  1624→    } catch {
+  1625→      // silent fail
+  1626→    } finally {
+  1627→      setLoading(false)
+  1628→    }
+  1629→  }, [])
+  1630→
+  1631→  useEffect(() => {
+  1632→    fetchStats()
+  1633→  }, [fetchStats])
+  1634→
+  1635→  const { secondsToNext, isFetching, refreshNow, autoOn, setAutoOn } = usePolling(fetchStats, 30)
+  1636→
+  1637→  return (
+  1638→    <div className="min-h-[calc(100vh-200px)] flex flex-col">
+  1639→      {/* ─── Agent Header ──────────────────────────────────────────── */}
+  1640→      <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden mb-4">
+  1641→        <div className="p-4 sm:p-5">
+  1642→          {/* Top row: icon + title + badges */}
+  1643→          <div className="flex items-center gap-3 mb-3 flex-wrap">
+  1644→            <div className="rounded-xl bg-emerald-600 p-2.5 shadow-sm">
+  1645→              <Plane className="size-6 text-white" />
+  1646→            </div>
+  1647→            <div className="flex-1 min-w-0">
+  1648→              <div className="flex items-center gap-2 flex-wrap">
+  1649→                <h1 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100">
+  1650→                  INFO SPIM — Información de Aviación FIR SPIM
+  1651→                </h1>
+  1652→                <Badge variant="secondary" className="text-xs">Perú</Badge>
+  1653→                <Badge variant="outline" className="text-xs text-slate-500">v1.1</Badge>
+  1654→              </div>
+  1655→            </div>
+  1656→            {/* Live badge */}
+  1657→            <div className="inline-flex items-center gap-1.5 rounded-full bg-green-500/15 text-green-700 dark:text-green-400 px-3 py-1 text-xs font-medium">
+  1658→              <span className="relative flex size-2">
+  1659→                <span className="absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75 animate-ping" />
+  1660→                <span className="relative inline-flex size-2 rounded-full bg-green-600" />
+  1661→              </span>
+  1662→              <Volume2 className="size-3" />
+  1663→              Live · 30s
+  1664→            </div>
+  1665→          </div>
+  1666→
+  1667→          {/* Info card */}
+  1668→          <div className="rounded-xl bg-slate-50 dark:bg-slate-800/50 p-3 mb-3">
+  1669→            <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
+  1670→              {stats?.totalStations ?? "—"} estaciones · FIR Lima (SPIM)
+  1671→            </p>
+  1672→            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">
+  1673→              METAR · TAF · NOTAM para todos los aeródromos del Perú — API + agente LLM
+  1674→            </p>
+  1675→            <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
+  1676→              Fuentes: NOAA NWS (METAR/TAF) · NOTAMs ingresados manualmente vía AIS Perú · CORPAC
+  1677→            </p>
+  1678→          </div>
+  1679→
+  1680→          {/* Auto-consulta controls */}
+  1681→          <div className="flex items-center gap-3 flex-wrap">
+  1682→            <div className="flex items-center gap-2">
+  1683→              <Clock className="size-4 text-slate-400" />
+  1684→              <span className="text-sm text-slate-600 dark:text-slate-400">Auto-consulta cada 30s</span>
+  1685→              <Switch checked={autoOn} onCheckedChange={setAutoOn} aria-label="Auto-consulta" />
+  1686→            </div>
+  1687→            {autoOn && (
+  1688→              <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">
+  1689→                próxima en {secondsToNext}s
+  1690→              </span>
+  1691→            )}
+  1692→            <Button
+  1693→              variant="outline"
+  1694→              size="sm"
+  1695→              onClick={refreshNow}
+  1696→              disabled={isFetching}
+  1697→              className="ml-auto gap-1.5 border-emerald-500/40 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
+  1698→            >
+  1699→              {isFetching ? <Loader2 className="size-3.5 animate-spin" /> : <RefreshCw className="size-3.5" />}
+  1700→              Consultar ahora
+  1701→            </Button>
+  1702→          </div>
+  1703→        </div>
+  1704→
+  1705→        {/* Bottom nav tabs */}
+  1706→        <div className="flex border-t border-slate-200 dark:border-slate-700">
+  1707→          {([
+  1708→            { key: "gestion" as const, label: "Gestión", icon: Settings2 },
+  1709→            { key: "briefing" as const, label: "Briefing Múltiple", icon: Search },
+  1710→            { key: "agente" as const, label: "Agente", icon: Bot },
+  1711→            { key: "api" as const, label: "API", icon: Code2 },
+  1712→          ]).map((t) => {
+  1713→            const active = mainTab === t.key
+  1714→            return (
+  1715→              <button
+  1716→                key={t.key}
+  1717→                onClick={() => setMainTab(t.key)}
+  1718→                className={cn(
+  1719→                  "flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-medium border-b-2 transition-colors",
+  1720→                  active
+  1721→                    ? "border-emerald-600 text-emerald-700 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/20"
+  1722→                    : "border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+  1723→                )}
+  1724→              >
+  1725→                <t.icon className="size-3.5" />
+  1726→                {t.label}
+  1727→              </button>
+  1728→            )
+  1729→          })}
+  1730→        </div>
+  1731→      </div>
+  1732→
+  1733→      {/* ─── Content area ──────────────────────────────────────────── */}
+  1734→      {selectedStation ? (
+  1735→        <StationDetailView station={selectedStation} onBack={() => setSelectedStation(null)} />
+  1736→      ) : mainTab === "gestion" ? (
+  1737→        <DashboardView stats={stats} loading={loading} onRefresh={refreshNow} onIngested={refreshNow} onSelectStation={setSelectedStation} />
+  1738→      ) : mainTab === "briefing" ? (
+  1739→        <MultiStationBriefing />
+  1740→      ) : mainTab === "agente" ? (
+  1741→        <AgenteView onRefresh={refreshNow} />
+  1742→      ) : (
+  1743→        <ApiView />
+  1744→      )}
+  1745→    </div>
+  1746→  )
+  1747→}
+  1748→

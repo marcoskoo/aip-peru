@@ -91,6 +91,8 @@ export interface ParsedNotam {
   valid_from: string | null
   valid_to: string | null
   classification: string | null
+  q_code: string | null      // Q-code OACI completo (e.g. "QFALC", "QWLLW")
+  location_a: string | null  // Designador de lugar del campo A) (e.g. "SPJC", "SPIM")
   source_email_id: string
 }
 
@@ -213,10 +215,21 @@ export function parseNotams(text: string, sourceEmailId = 'manual'): ParsedNotam
       if (rm) refNotamId = rm[1].replace(/\s+/g, '').toUpperCase()
     }
 
-    // Q) → clasificación
+    // Q) → clasificación + Q-code completo
     let classification: string | null = null
+    let qCode: string | null = null
     const qm = Q_LINE_RE.exec(chunk)
-    if (qm) classification = qm[2].toUpperCase()
+    if (qm) {
+      classification = qm[2].toUpperCase()
+      qCode = qm[2].toUpperCase()
+    }
+
+    // A) → designador de lugar (locationA)
+    let locationA: string | null = null
+    const am = A_LINE_RE.exec(chunk)
+    if (am) {
+      locationA = am[1].toUpperCase()
+    }
 
     // B) y C) → fechas
     let validFrom: string | null = null
@@ -288,6 +301,8 @@ export function parseNotams(text: string, sourceEmailId = 'manual'): ParsedNotam
       valid_from: validFrom,
       valid_to: validTo,
       classification,
+      q_code: qCode,
+      location_a: locationA,
       source_email_id: sourceEmailId,
     })
   }
