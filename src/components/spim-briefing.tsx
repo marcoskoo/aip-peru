@@ -460,7 +460,7 @@ function DashboardView({ stats, loading, onRefresh, onIngested, onSelectStation 
             />
           </div>
         </div>
-        <ScrollArea className="max-h-[500px]">
+        <ScrollArea className="max-h-[80vh] overscroll-contain">
           <div className="divide-y divide-slate-100 dark:divide-slate-800">
             {loading && !stats ? (
               <div className="p-8 text-center">
@@ -1539,7 +1539,7 @@ function MultiStationBriefing() {
               No hay NOTAMs activos para las estaciones solicitadas
             </div>
           ) : (
-            <div className="divide-y divide-slate-100 dark:divide-slate-800 max-h-[70vh] overflow-y-auto">
+            <div className="divide-y divide-slate-100 dark:divide-slate-800 max-h-[70vh] overflow-y-auto overscroll-contain custom-scrollbar">
               {allNotamsSorted.map((n, idx) => (
                 <div key={n.id} className="p-3">
                   <div className="flex items-center gap-2 mb-1.5 flex-wrap">

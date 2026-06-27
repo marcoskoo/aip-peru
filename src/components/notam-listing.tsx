@@ -162,20 +162,30 @@ export function NotamListing({ onSelectNotam, onSelectAirport }: NotamListingPro
       if (priorityFilter && priorityFilter !== "all") params.set("priority", priorityFilter)
       if (activeOnly) params.set("active", "true")
       if (selectedAerodrome?.id) params.set("airportId", selectedAerodrome.id)
+      // Pedir hasta 200 NOTAMs (máximo que permite la API) para que el
+      // listado muestre el boletín completo en vez de solo los primeros 50.
+      params.set("limit", "200")
       const response = await fetch(`/api/notams?${params.toString()}`)
       if (response.ok) {
         const data = await response.json()
-        const list = Array.isArray(data) ? data : data.notams || []
+        const list: Notam[] = Array.isArray(data) ? data : data.notams || []
         setNotams(list)
 
-        // Compute stats from results
+        // El servidor devuelve el total real en `data.total` (puede ser > list.length
+        // cuando hay más de 200). Para stats por scope/prioridad, usamos la lista
+        // que sí tenemos en memoria; para total, preferimos data.total.
+        const serverTotal: number = typeof data.total === "number" ? data.total : list.length
+        const serverActiveStats = data.activeStats as
+          | { total: number; urgent: number; high: number }
+          | undefined
+
         const activeNotams = list.filter((n: Notam) => {
           if (!n.effectiveTo || n.isPermanent) return true
           return new Date(n.effectiveTo) > new Date()
         })
         setStats({
-          total: list.length,
-          active: activeNotams.length,
+          total: serverTotal,
+          active: serverActiveStats?.total ?? activeNotams.length,
           byScope: {
             A: list.filter((n: Notam) => n.scope === "A").length,
             E: list.filter((n: Notam) => n.scope === "E").length,
