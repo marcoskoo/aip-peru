@@ -2833,3 +2833,121 @@ Stage Summary:
 - Todas las APIs responden correctamente con datos reales de Neon
 - Aplicacion renderiza completamente con 32 aeropuertos, 21 helipuertos, 42 regulaciones, etc.
 - Token PAT de GitHub puede ser revocado por el usuario
+
+---
+Task ID: fix-notams-and-spjc
+Agent: Z.ai Code (main)
+Task: Resolver dos problemas reportados por el usuario en producción:
+  1. NOTAMs no cargan en la pestaña NOTAM de la app desplegada
+  2. La tarjeta con la información de SPJC no aparece en la pestaña Aeródromos
+
+Work Log:
+- Verificado con curl que /api/airports en producción devuelve 32 aeropuertos SIN SPJC
+- Verificado que /api/notams en producción devuelve `{notams:[], total:0, activeStats:{...}}` (DB vacía)
+- Verificado que /api/spim-agent/notams devuelve 404 (ruta no existe)
+- Identificada la causa raíz de NOTAMs vacíos: el pipeline original lee NOTAMs
+  desde Gmail vía IMAP (scripts/notam-email-parser.py) y los inserta en SQLite.
+  En Vercel serverless ese pipeline no puede ejecutarse, por lo tanto la DB
+  Neon queda vacía y no hay NOTAMs.
+- Identificada la causa raíz de SPJC faltante: el script scripts/seed-spjc.ts
+  existía pero nunca se había ejecutado contra la DB Neon de producción.
+
+Fix #1 — SPJC agregado a la DB Neon:
+- Ejecutado `DATABASE_URL=<neon-url> bun run scripts/seed-spjc.ts`
+- Resultado: SPJC creado en producción (33 aeropuertos total)
+- Verificado con curl: /api/airports ahora devuelve 33 aeropuertos incluyendo SPJC
+  con datos completos (category=INTERNACIONAL, city=LIMA/CALLAO, fireCategory=CAT 9)
+
+Fix #2 — NOTAMs en vivo desde la FAA:
+- Descubierto que la FAA publica NOTAMs internacionales (incluyendo FIR SPIM y
+  todos los aeropuertos peruanos) en https://notams.aim.faa.gov/notamSearch/search
+  con respuesta JSON y formato OACI completo en el campo `icaoMessage`
+- Verificado con curl: la FAA devuelve NOTAMs para SPJC, SPIM, SPZO, SPHI, SPQT,
+  SPQU, SPCL en una sola petición con designatorsForLocation comma-separated
+- Creado nuevo módulo src/lib/aviation/faa-notams.ts:
+  * Función fetchLiveNotams(airportIcao?, fir='SPIM') que llama a la FAA
+  * Normaliza la respuesta al mismo formato que usa la DB (NormalizedNotam)
+  * Usa parseNotams() de notam-parser.ts para extraer campos OACI
+  * El texto crudo icaoMessage se devuelve intacto en el campo `text`
+  * Heurística de prioridad basada en Q-codes (URGENT para QMRL/QRH, HIGH para
+    QFALC/QNAA/QWLLW, etc.)
+  * Extract de coordenadas, lat/lon, radius, lower/upper limits del Q-code
+  * Deduplicación por notamId
+- Modificado /api/notams/route.ts:
+  * Estrategia: intenta primero la DB local (db.notam.count)
+  * Si la DB tiene NOTAMs, los usa (comportamiento original, DB-first)
+  * Si la DB está vacía, hace fallback en vivo a la FAA
+  * Filtros (search, scope, priority, active, airportId) aplicados in-memory
+    sobre los resultados de la FAA
+  * Si airportId está seteado, resuelve el ICAO code y consulta solo ese
+  * Marcado como force-dynamic + runtime=nodejs
+- Modificado /api/spim-agent/station/[icao]/route.ts:
+  * Misma estrategia DB → FAA fallback
+  * Importado fetchLiveNotams
+  * Marcado como force-dynamic + runtime=nodejs
+- El frontend (notam-listing.tsx) ya mostraba el texto crudo en una caja
+  negra monospace (líneas 432-434) — no se modificó, cumple con el requisito
+  del usuario de "presentar NOTAMs en crudo en todas las secciones"
+
+Verificación local (con DATABASE_URL exportada):
+- /api/airports: HTTP 200, 33 aeropuertos incluyendo SPJC
+- /api/notams?active=true&limit=15: HTTP 200, source=faa-live, total=27,
+  activeStats={total:27, urgent:3, high:10}, 15 NOTAMs con texto crudo OACI
+- /api/notams?airportId=<SPJC_ID>&active=true: HTTP 200, 13 NOTAMs de SPJC
+- /api/spim-agent/station/SPJC: HTTP 200, 13 NOTAMs + METAR + TAF + summary
+
+Issue encontrado durante desarrollo:
+- bun run dev NO propaga las variables del archivo .env al proceso `next dev`
+  cuando se ejecuta como subprocess. Solución temporal: exportar DATABASE_URL
+  explícitamente antes de `bun run dev`. Esto NO afecta a producción (Vercel
+  carga las env vars del dashboard correctamente).
+
+Commit: 5a4cd0c
+Push: caf7dd8..5a4cd0c main -> main (GitHub)
+
+Stage Summary:
+- SPJC agregado a la DB Neon — la tarjeta de Jorge Chávez aparecerá en
+  la pestaña Aeródromos de producción
+- NOTAMs ahora se cargan en vivo desde la FAA cuando la DB está vacía —
+  la pestaña NOTAM mostrará NOTAMs reales con texto crudo OACI
+- Las dos rutas API (notams y spim-agent/station) tienen la estrategia
+  DB-first → FAA-fallback, así que si en el futuro se activa el pipeline
+  IMAP→DB, los datos locales tendrán prioridad
+- Pendiente: Vercel auto-redeploy tras el push (3-5 min), luego verificar
+  end-to-end con Agent Browser en https://aip-peru1.vercel.app
+
+---
+Task ID: fix-notams-and-spjc-verification
+Agent: Z.ai Code (main)
+Task: Verificación end-to-end con Agent Browser en producción
+
+Work Log:
+- Esperado 90s para auto-deploy de Vercel tras push del commit 5a4cd0c
+- Verificado con curl que producción responde correctamente:
+  * https://aip-peru1.vercel.app/api/airports → HTTP 200, 33 aeropuertos (incluye SPJC)
+  * https://aip-peru1.vercel.app/api/notams?active=true → HTTP 200, source=faa-live,
+    total=27, activeStats={total:27, urgent:3, high:10}
+- Verificación con Agent Browser en https://aip-peru1.vercel.app/:
+  * Página principal carga sin errores
+  * Tab "Todos 33" muestra 33 aeropuertos incluyendo la tarjeta de SPJC:
+    "SPJC | INTERNACIONAL | AEROPUERTO INTERNACIONAL JORGE CHÁVEZ | LIMA / CALLAO, LIMA | 34 m / 113 ft | CAT 9 | VFR / IFR"
+  * Click en tarjeta SPJC carga el detalle del aeropuerto (HTTP 200 en /api/airports/SPJC)
+  * Click en botón "NOTAMs" del nav carga la pestaña NOTAM con:
+    - Stats: 27 Total, 27 Activos, Por Alcance (A:4, E:0, W:7), Por Prioridad (L:0, M:14, H:10, U:3)
+    - 10 NOTAMs visibles con texto crudo OACI en caja negra monospace
+    - Botón "Cargar más (17 restantes)" para ver los 27 completos
+    - NOTAMs reales de SPJC, SPCL, SPIM, SPRU, SPQT con IDs como A1427/26, A1487/26,
+      A1834/26, A0237/26, A1114/26, A4006/25, A4008/25, etc.
+  * Sin errores en consola del navegador
+  * Network requests: /api/airports, /api/notams, /api/airports/SPJC todos responden 200
+
+Stage Summary:
+- AMBOS problemas reportados por el usuario están RESUELTOS y verificados en producción:
+  1. ✅ SPJC (Aeropuerto Internacional Jorge Chávez) ahora aparece en la pestaña
+     Aeródromos como una tarjeta más, con todos sus datos (categoría INTERNACIONAL,
+     ciudad LIMA/CALLAO, altitud 34m/113ft, CAT 9, VFR/IFR)
+  2. ✅ NOTAMs ahora cargan en la pestaña NOTAM con 27 NOTAMs activos en vivo desde
+     la FAA, mostrando el texto crudo OACI (Q) A) B) C) D) E) F) G)) en una caja
+     negra monospace, sin interpretación del sistema
+- URL de producción: https://aip-peru1.vercel.app/
+- Commit: 5a4cd0c (pushed a GitHub main, auto-deployed por Vercel)
