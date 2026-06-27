@@ -882,193 +882,219 @@ export function AirportDetailView({ airport, onBack }: AirportDetailProps) {
         </TabsContent>
         {/* Cartas Tab */}
         <TabsContent value="cartas" className="mt-4">
-          {/* Documentos Oficiales (PDF) */}
-          {documentsLoading ? (
-            <Card className="mb-4">
-              <CardHeader className="pb-3">
-                <Skeleton className="h-6 w-48" />
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <Skeleton key={i} className="h-16 w-full" />
-                ))}
-              </CardContent>
-            </Card>
-          ) : documentsData && documentsData.totalDocuments > 0 ? (
-            <Card className="mb-6 border-amber-200 dark:border-amber-900/50 bg-amber-50/40 dark:bg-amber-950/10">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <FileText className="size-5 text-amber-600" />
-                  Documentos Oficiales AIP (PDF)
-                  <Badge variant="secondary" className="ml-1">
-                    {documentsData.totalDocuments}
-                  </Badge>
-                </CardTitle>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Documentos PDF oficiales de la publicación AIP para {airport.icaoCode}. Descarga directa.
-                </p>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {documentsData.documents.map((doc) => {
-                    const TypeIcon =
-                      chartTypeLabels[doc.type]?.icon || FileText
-                    return (
-                      <a
-                        key={doc.code}
-                        href={doc.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        download
-                        className="group flex items-start gap-3 p-3 rounded-lg border border-amber-200/70 dark:border-amber-900/40 bg-white dark:bg-slate-900 hover:ring-2 hover:ring-amber-400 transition-all"
-                      >
-                        <div className="shrink-0 mt-0.5">
-                          <div className="size-10 rounded-md bg-amber-100 dark:bg-amber-950/40 flex items-center justify-center">
-                            <TypeIcon className="size-5 text-amber-700 dark:text-amber-400" />
-                          </div>
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2 mb-0.5">
-                            <Badge
-                              variant="outline"
-                              className={`text-[10px] font-bold px-1.5 py-0 ${
-                                doc.type === "SID"
-                                  ? "border-green-500 text-green-700 dark:text-green-400"
-                                  : doc.type === "STAR"
-                                  ? "border-blue-500 text-blue-700 dark:text-blue-400"
-                                  : doc.type === "IAC"
-                                  ? "border-red-500 text-red-700 dark:text-red-400"
-                                  : doc.type === "VAC"
-                                  ? "border-cyan-500 text-cyan-700 dark:text-cyan-400"
-                                  : doc.type === "HELO"
-                                  ? "border-orange-500 text-orange-700 dark:text-orange-400"
-                                  : "border-purple-500 text-purple-700 dark:text-purple-400"
-                              }`}
-                            >
-                              {doc.type}
-                            </Badge>
-                            <span className="text-[10px] text-muted-foreground uppercase tracking-wide">
-                              {doc.category}
-                            </span>
-                          </div>
-                          <p className="text-sm font-medium leading-tight line-clamp-2">
-                            {doc.name}
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
-                            {doc.description}
-                          </p>
-                        </div>
-                        <div className="shrink-0 self-center flex flex-col gap-1">
-                          <Download className="size-4 text-muted-foreground group-hover:text-amber-600 transition-colors" />
-                          <ExternalLink className="size-3 text-muted-foreground/60 group-hover:text-amber-600/80 transition-colors" />
-                        </div>
-                      </a>
-                    )
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-          ) : null}
-
-          {/* Charts (imágenes) */}
-          {chartsLoading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <Card key={i}>
-                  <CardContent className="pt-6 space-y-3">
-                    <Skeleton className="h-4 w-20" />
-                    <Skeleton className="h-40 w-full" />
-                    <Skeleton className="h-4 w-32" />
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : chartsData && chartsData.totalCharts > 0 ? (
+          <div className="space-y-6">
+            {/* ═══ SECCIÓN 1: Cartas Aeronáuticas (Imágenes) ═══ */}
             <div className="space-y-4">
-              {/* Chart type filter */}
-              <div className="flex items-center gap-2 flex-wrap">
-                <Button
-                  variant={chartFilter === "all" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setChartFilter("all")}
-                >
-                  Todas ({chartsData.totalCharts})
-                </Button>
-                {chartTypes.filter(t => chartsData.grouped[t]).map(type => {
-                  const TypeIcon = chartTypeLabels[type]?.icon || Map
-                  return (
-                    <Button
-                      key={type}
-                      variant={chartFilter === type ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setChartFilter(type)}
-                      className="gap-1.5"
-                    >
-                      <TypeIcon className="size-3.5" />
-                      {type} ({chartsData.grouped[type].length})
-                    </Button>
-                  )
-                })}
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex items-center justify-center size-9 rounded-lg bg-amber-100 dark:bg-amber-950/40">
+                    <Map className="size-5 text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <div>
+                    <h2 className="text-base sm:text-lg font-bold tracking-tight">
+                      Cartas Aeronáuticas
+                    </h2>
+                    <p className="text-xs text-muted-foreground">
+                      Imágenes embebidas — SID, STAR, IAC, ADC, TMA, VAC, HELO, NADP
+                    </p>
+                  </div>
+                </div>
+                {chartsData && (
+                  <Badge variant="secondary" className="text-xs font-semibold">
+                    {chartsData.totalCharts} carta{chartsData.totalCharts !== 1 ? "s" : ""}
+                  </Badge>
+                )}
               </div>
 
-              {/* Chart grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredCharts.map((chart) => {
-                  const TypeIcon = chartTypeLabels[chart.type]?.icon || Map
-                  return (
-                    <Card
-                      key={chart.file}
-                      className="cursor-pointer hover:ring-2 hover:ring-amber-400 transition-all overflow-hidden group"
-                      onClick={() => setSelectedChart(chart)}
-                    >
-                      <div className="relative bg-slate-100 dark:bg-slate-800">
-                        <img
-                          src={chart.url}
-                          alt={`${chart.type} - ${chart.name}`}
-                          className="w-full h-48 object-contain p-2 group-hover:scale-105 transition-transform"
-                        />
-                        <div className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <ZoomIn className="size-4" />
-                        </div>
-                      </div>
-                      <CardContent className="p-3">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Badge
-                            variant="outline"
-                            className={`text-xs font-bold ${
-                              chart.type === "SID" ? "border-green-500 text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950/30" :
-                              chart.type === "STAR" ? "border-blue-500 text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30" :
-                              chart.type === "IAC" ? "border-red-500 text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/30" :
-                              chart.type === "ADC" ? "border-purple-500 text-purple-700 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/30" :
-                              chart.type === "TMA" ? "border-amber-500 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30" :
-                              chart.type === "VAC" ? "border-cyan-500 text-cyan-700 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-950/30" :
-                              chart.type === "HELO" ? "border-orange-500 text-orange-700 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/30" :
-                              chart.type === "NADP" ? "border-slate-500 text-slate-700 dark:text-slate-400 bg-slate-50 dark:bg-slate-950/30" :
-                              "border-gray-500 text-gray-700 dark:text-gray-400 bg-gray-50 dark:bg-gray-950/30"
-                            }`}
-                          >
-                            <TypeIcon className="size-3 mr-1" />
-                            {chart.type}
-                          </Badge>
-                        </div>
-                        <p className="text-sm font-medium leading-tight">{chart.name}</p>
+              {chartsLoading ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <Card key={i}>
+                      <CardContent className="pt-6 space-y-3">
+                        <Skeleton className="h-4 w-20" />
+                        <Skeleton className="h-40 w-full" />
+                        <Skeleton className="h-4 w-32" />
                       </CardContent>
                     </Card>
-                  )
-                })}
-              </div>
+                  ))}
+                </div>
+              ) : chartsData && chartsData.totalCharts > 0 ? (
+                <div className="space-y-4">
+                  {/* Chart type filter */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Button
+                      variant={chartFilter === "all" ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setChartFilter("all")}
+                    >
+                      Todas ({chartsData.totalCharts})
+                    </Button>
+                    {chartTypes.filter(t => chartsData.grouped[t]).map(type => {
+                      const TypeIcon = chartTypeLabels[type]?.icon || Map
+                      return (
+                        <Button
+                          key={type}
+                          variant={chartFilter === type ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setChartFilter(type)}
+                          className="gap-1.5"
+                        >
+                          <TypeIcon className="size-3.5" />
+                          {type} ({chartsData.grouped[type].length})
+                        </Button>
+                      )
+                    })}
+                  </div>
+
+                  {/* Chart grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {filteredCharts.map((chart) => {
+                      const TypeIcon = chartTypeLabels[chart.type]?.icon || Map
+                      return (
+                        <Card
+                          key={chart.file}
+                          className="cursor-pointer hover:ring-2 hover:ring-amber-400 transition-all overflow-hidden group"
+                          onClick={() => setSelectedChart(chart)}
+                        >
+                          <div className="relative bg-slate-100 dark:bg-slate-800">
+                            <img
+                              src={chart.url}
+                              alt={`${chart.type} - ${chart.name}`}
+                              loading="lazy"
+                              className="w-full h-48 object-contain p-2 group-hover:scale-105 transition-transform"
+                            />
+                            <div className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <ZoomIn className="size-4" />
+                            </div>
+                          </div>
+                          <CardContent className="p-3">
+                            <div className="flex items-center gap-2 mb-1">
+                              <Badge
+                                variant="outline"
+                                className={`text-xs font-bold ${
+                                  chart.type === "SID" ? "border-green-500 text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950/30" :
+                                  chart.type === "STAR" ? "border-blue-500 text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30" :
+                                  chart.type === "IAC" ? "border-red-500 text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/30" :
+                                  chart.type === "ADC" ? "border-purple-500 text-purple-700 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/30" :
+                                  chart.type === "TMA" ? "border-amber-500 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30" :
+                                  chart.type === "VAC" ? "border-cyan-500 text-cyan-700 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-950/30" :
+                                  chart.type === "HELO" ? "border-orange-500 text-orange-700 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/30" :
+                                  chart.type === "NADP" ? "border-slate-500 text-slate-700 dark:text-slate-400 bg-slate-50 dark:bg-slate-950/30" :
+                                  "border-gray-500 text-gray-700 dark:text-gray-400 bg-gray-50 dark:bg-gray-950/30"
+                                }`}
+                              >
+                                <TypeIcon className="size-3 mr-1" />
+                                {chart.type}
+                              </Badge>
+                            </div>
+                            <p className="text-sm font-medium leading-tight">{chart.name}</p>
+                          </CardContent>
+                        </Card>
+                      )
+                    })}
+                  </div>
+                </div>
+              ) : (
+                <Card>
+                  <CardContent className="py-12 text-center">
+                    <Map className="size-10 text-muted-foreground mx-auto mb-3 opacity-50" />
+                    <h3 className="text-lg font-medium">Sin cartas disponibles</h3>
+                    <p className="text-muted-foreground mt-1">
+                      No hay cartas SID/STAR/IAC disponibles para este aeródromo
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
             </div>
-          ) : (
-            <Card>
-              <CardContent className="py-12 text-center">
-                <Map className="size-10 text-muted-foreground mx-auto mb-3 opacity-50" />
-                <h3 className="text-lg font-medium">Sin cartas disponibles</h3>
-                <p className="text-muted-foreground mt-1">
-                  No hay cartas SID/STAR/IAC disponibles para este aeródromo
-                </p>
-              </CardContent>
-            </Card>
-          )}
+
+            {/* ═══ SECCIÓN 2: Documentos Oficiales AIP (PDF) ═══ */}
+            {documentsLoading ? (
+              <Card>
+                <CardHeader className="pb-3">
+                  <Skeleton className="h-6 w-48" />
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <Skeleton key={i} className="h-16 w-full" />
+                  ))}
+                </CardContent>
+              </Card>
+            ) : documentsData && documentsData.totalDocuments > 0 ? (
+              <Card className="border-amber-200 dark:border-amber-900/50 bg-amber-50/40 dark:bg-amber-950/10">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <FileText className="size-5 text-amber-600" />
+                    Documentos Oficiales AIP (PDF)
+                    <Badge variant="secondary" className="ml-1">
+                      {documentsData.totalDocuments}
+                    </Badge>
+                  </CardTitle>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Documentos PDF oficiales de la publicación AIP para {airport.icaoCode}. Descarga directa.
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {documentsData.documents.map((doc) => {
+                      const TypeIcon =
+                        chartTypeLabels[doc.type]?.icon || FileText
+                      return (
+                        <a
+                          key={doc.code}
+                          href={doc.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          download
+                          className="group flex items-start gap-3 p-3 rounded-lg border border-amber-200/70 dark:border-amber-900/40 bg-white dark:bg-slate-900 hover:ring-2 hover:ring-amber-400 transition-all"
+                        >
+                          <div className="shrink-0 mt-0.5">
+                            <div className="size-10 rounded-md bg-amber-100 dark:bg-amber-950/40 flex items-center justify-center">
+                              <TypeIcon className="size-5 text-amber-700 dark:text-amber-400" />
+                            </div>
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 mb-0.5">
+                              <Badge
+                                variant="outline"
+                                className={`text-[10px] font-bold px-1.5 py-0 ${
+                                  doc.type === "SID"
+                                    ? "border-green-500 text-green-700 dark:text-green-400"
+                                    : doc.type === "STAR"
+                                    ? "border-blue-500 text-blue-700 dark:text-blue-400"
+                                    : doc.type === "IAC"
+                                    ? "border-red-500 text-red-700 dark:text-red-400"
+                                    : doc.type === "VAC"
+                                    ? "border-cyan-500 text-cyan-700 dark:text-cyan-400"
+                                    : doc.type === "HELO"
+                                    ? "border-orange-500 text-orange-700 dark:text-orange-400"
+                                    : "border-purple-500 text-purple-700 dark:text-purple-400"
+                                }`}
+                              >
+                                {doc.type}
+                              </Badge>
+                              <span className="text-[10px] text-muted-foreground uppercase tracking-wide">
+                                {doc.category}
+                              </span>
+                            </div>
+                            <p className="text-sm font-medium leading-tight line-clamp-2">
+                              {doc.name}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                              {doc.description}
+                            </p>
+                          </div>
+                          <div className="shrink-0 self-center flex flex-col gap-1">
+                            <Download className="size-4 text-muted-foreground group-hover:text-amber-600 transition-colors" />
+                            <ExternalLink className="size-3 text-muted-foreground/60 group-hover:text-amber-600/80 transition-colors" />
+                          </div>
+                        </a>
+                      )
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            ) : null}
+          </div>
         </TabsContent>
 
         {/* Clima Tab */}
