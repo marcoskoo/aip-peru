@@ -6,7 +6,7 @@ const globalForPrisma = globalThis as unknown as {
 
 function createPrismaClient() {
   const databaseUrl = process.env.DATABASE_URL
-  
+
   // Para Neon serverless en Vercel: asegurar parámetros de pooling si no están
   let finalUrl = databaseUrl
   if (finalUrl && finalUrl.includes('neon.tech') && !finalUrl.includes('pgbouncer=true')) {
