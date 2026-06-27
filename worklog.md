@@ -2951,3 +2951,48 @@ Stage Summary:
      negra monospace, sin interpretación del sistema
 - URL de producción: https://aip-peru1.vercel.app/
 - Commit: 5a4cd0c (pushed a GitHub main, auto-deployed por Vercel)
+
+---
+Task ID: 4
+Agent: Main Agent
+Task: Reorganizar la sección de aeródromos en dos grupos (CON y SIN METAR/TAF), con internacionales primero dentro del grupo CON METAR/TAF, y arreglar el problema de scroll en mobile donde el usuario no podía ver todos los aeródromos.
+
+Work Log:
+- Analizada captura IMG_5951.png con VLM: el usuario solo veía ~8 aeródromos en mobile sin poder hacer scroll efectivo para ver SPJC y los demás
+- Revisado airport-listing.tsx anterior: usaba Tabs (Todos/Internacionales/Nacionales) lo cual añadía complejidad visual y altura innecesaria
+- Verificado que la DB tiene 33 aeropuertos (incluyendo SPJC) — el problema era de presentación, no de datos
+- Verificado que aviationweather.gov acepta múltiples ICAOs en una sola petición batch (ej: ?ids=SPJC,SPZO,SPQT,...)
+- Creado endpoint /api/airports/weather-status/route.ts:
+  * Hace UNA sola petición batch a aviationweather.gov para todos los ICAOs peruanos
+  * Verifica disponibilidad real de METAR y TAF en paralelo
+  * Incluye lista de respaldo (FALLBACK_WEATHER_ICAOS) para aeropuertos con datos simulados
+  * Cache en memoria de 10 minutos
+- Reescrito src/components/airport-listing.tsx:
+  * Eliminados los Tabs (Todos/Internacionales/Nacionales) que causaban confusión
+  * Añadido fetch paralelo del estado METAR/TAF al cargar la página
+  * Nueva estructura con DOS grupos principales:
+    - Grupo 1: "CON INFORMACIÓN METAR / TAF" (icono CloudSun, color amber)
+      * Sub-sección "Aeropuertos Internacionales" (borde amber, 12 aeropuertos)
+      * Sub-sección "Aeropuertos Nacionales" (borde emerald, 17 aeropuertos)
+    - Grupo 2: "SIN INFORMACIÓN METAR / TAF" (icono CloudFog, color slate)
+      * Sub-sección "Aeropuertos Internacionales" (si hay)
+      * Sub-sección "Aeropuertos Nacionales" (4 aeropuertos)
+  * Sub-secciones vacías se ocultan automáticamente
+  * Stats del hero actualizadas para mostrar Intl METAR / Nac METAR
+  * Indicador de carga mientras se verifica disponibilidad METAR/TAF
+- Verificado con Agent Browser (viewport mobile 412x915 y desktop 1280x800):
+  * Página carga correctamente
+  * Estructura de 2 grupos visible claramente
+  * SPJC aparece en Internacional + CON METAR/TAF
+  * 29 aeropuertos con METAR/TAF, 4 sin METAR/TAF
+  * Scroll funciona correctamente en mobile (página completa navegable)
+  * Click en SPJC navega a su detail view con todas las pestañas (General, Pista, Plataforma, Servicios, Obstáculos, Cartas, Clima)
+  * Footer visible al final de la página
+- Lint pasa sin errores
+
+Stage Summary:
+- airport-listing.tsx reescrito completamente con nueva estructura solicitada
+- Endpoint /api/airports/weather-status creado y funcionando (1.3s response time, 10min cache)
+- Verificado en mobile y desktop con Agent Browser
+- SPJC visible en sección correcta (Internacional + CON METAR/TAF)
+- Scroll funcionando correctamente, todos los aeródromos accesibles

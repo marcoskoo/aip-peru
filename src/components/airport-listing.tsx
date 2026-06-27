@@ -1,11 +1,10 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
-import { Search, Plane, MapPin, Globe, Flag, Navigation, Clock, AlertTriangle } from "lucide-react"
+import { useEffect, useState, useCallback, useMemo } from "react"
+import { Search, Plane, MapPin, Globe, Flag, Navigation, Clock, AlertTriangle, CloudSun, CloudFog } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { AirportCard } from "@/components/airport-card"
 import type { Airport } from "@/lib/types"
 import { isInternationalAirport } from "@/lib/utils"
@@ -16,12 +15,15 @@ interface AirportListingProps {
 
 export function AirportListing({ onSelectAirport }: AirportListingProps) {
   const [airports, setAirports] = useState<Airport[]>([])
+  const [weatherStatus, setWeatherStatus] = useState<Record<string, boolean>>({})
+  const [weatherStatusLoading, setWeatherStatusLoading] = useState(true)
   const [search, setSearch] = useState("")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [departments, setDepartments] = useState<string[]>([])
   const [selectedDepartment, setSelectedDepartment] = useState<string>("")
 
+  // Fetch airports list
   const fetchAirports = useCallback(async () => {
     setLoading(true)
     setError(null)
@@ -51,9 +53,30 @@ export function AirportListing({ onSelectAirport }: AirportListingProps) {
     }
   }, [search, selectedDepartment])
 
+  // Fetch weather status (one batched call for all airports)
+  const fetchWeatherStatus = useCallback(async () => {
+    setWeatherStatusLoading(true)
+    try {
+      const response = await fetch('/api/airports/weather-status')
+      if (response.ok) {
+        const data = await response.json()
+        setWeatherStatus(data || {})
+      }
+    } catch (e) {
+      console.error('[AirportListing] weather-status fetch error:', e)
+    } finally {
+      setWeatherStatusLoading(false)
+    }
+  }, [])
+
   useEffect(() => {
     fetchAirports()
   }, [fetchAirports])
+
+  // Fetch weather status once on mount (independent of search/dept filters)
+  useEffect(() => {
+    fetchWeatherStatus()
+  }, [fetchWeatherStatus])
 
   // Debounce search
   useEffect(() => {
@@ -63,17 +86,57 @@ export function AirportListing({ onSelectAirport }: AirportListingProps) {
     return () => clearTimeout(timer)
   }, [search, fetchAirports])
 
-  // Group airports by category.
-  const internationalAirports = airports.filter(a => isInternationalAirport(a))
-  const nationalAirports = airports.filter(a => !isInternationalAirport(a))
+  // Determinar si un aeropuerto tiene METAR/TAF disponible
+  const hasWeather = useCallback(
+    (icao: string): boolean => {
+      return Boolean(weatherStatus[icao.toUpperCase()])
+    },
+    [weatherStatus]
+  )
+
+  // Agrupar aeropuertos según la nueva estructura solicitada:
+  //   Grupo 1 — Con METAR/TAF
+  //     1a. Internacionales (ordenados por ICAO)
+  //     1b. Nacionales (ordenados por ICAO)
+  //   Grupo 2 — Sin METAR/TAF
+  //     Todos los demás (ordenados por ICAO)
+  const {
+    weatherIntl,
+    weatherNatl,
+    noWeather,
+  } = useMemo(() => {
+    const withWeather: Airport[] = []
+    const withoutWeather: Airport[] = []
+
+    for (const a of airports) {
+      if (hasWeather(a.icaoCode)) {
+        withWeather.push(a)
+      } else {
+        withoutWeather.push(a)
+      }
+    }
+
+    const weatherIntl = withWeather
+      .filter((a) => isInternationalAirport(a))
+      .sort((a, b) => a.icaoCode.localeCompare(b.icaoCode))
+    const weatherNatl = withWeather
+      .filter((a) => !isInternationalAirport(a))
+      .sort((a, b) => a.icaoCode.localeCompare(b.icaoCode))
+    const noWeather = withoutWeather
+      .sort((a, b) => a.icaoCode.localeCompare(b.icaoCode))
+
+    return { weatherIntl, weatherNatl, noWeather }
+  }, [airports, hasWeather])
+
+  const totalWithWeather = weatherIntl.length + weatherNatl.length
 
   const renderAirportGrid = (list: Airport[]) => {
     if (list.length === 0) {
       return (
-        <div className="text-center py-12">
-          <Plane className="size-10 text-muted-foreground mx-auto mb-3 opacity-50" />
-          <h3 className="text-lg font-medium">No se encontraron aeródromos</h3>
-          <p className="text-muted-foreground mt-1">
+        <div className="text-center py-10">
+          <Plane className="size-8 text-muted-foreground mx-auto mb-2 opacity-50" />
+          <h3 className="text-sm font-medium">No se encontraron aeródromos</h3>
+          <p className="text-muted-foreground mt-1 text-xs">
             Intente con otros términos de búsqueda
           </p>
         </div>
@@ -163,19 +226,19 @@ export function AirportListing({ onSelectAirport }: AirportListingProps) {
               <div className="h-10 w-px bg-white/15" />
               <div className="text-center">
                 <div className="text-2xl sm:text-3xl font-bold text-amber-400 tabular-nums">
-                  {internationalAirports.length || 11}
+                  {weatherIntl.length || 0}
                 </div>
                 <div className="text-[10px] uppercase tracking-wider text-slate-400 mt-0.5">
-                  Internacionales
+                  Intl · METAR
                 </div>
               </div>
               <div className="h-10 w-px bg-white/15" />
               <div className="text-center">
                 <div className="text-2xl sm:text-3xl font-bold text-emerald-400 tabular-nums">
-                  {nationalAirports.length || 21}
+                  {weatherNatl.length || 0}
                 </div>
                 <div className="text-[10px] uppercase tracking-wider text-slate-400 mt-0.5">
-                  Nacionales
+                  Nac · METAR
                 </div>
               </div>
             </div>
@@ -224,20 +287,20 @@ export function AirportListing({ onSelectAirport }: AirportListingProps) {
           {!loading && airports.length > 0 && (
             <div className="hidden sm:flex items-center gap-3">
               <span className="flex items-center gap-1.5">
-                <Globe className="size-3.5 text-amber-600" />
-                {internationalAirports.length} internacional{internationalAirports.length !== 1 ? "es" : ""}
+                <CloudSun className="size-3.5 text-amber-600" />
+                {totalWithWeather} con METAR/TAF
               </span>
               <span className="text-border">|</span>
               <span className="flex items-center gap-1.5">
-                <Flag className="size-3.5 text-emerald-600" />
-                {nationalAirports.length} nacional{nationalAirports.length !== 1 ? "es" : ""}
+                <CloudFog className="size-3.5 text-slate-500" />
+                {noWeather.length} sin METAR/TAF
               </span>
             </div>
           )}
         </div>
       </div>
 
-      {/* Tab-based Airport Grid */}
+      {/* Airport Groups — Dos grupos principales */}
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
@@ -286,81 +349,122 @@ export function AirportListing({ onSelectAirport }: AirportListingProps) {
           </p>
         </div>
       ) : (
-        <Tabs defaultValue="todos" className="w-full">
-          <TabsList className="w-full sm:w-auto grid grid-cols-3 sm:inline-flex h-auto gap-1 p-1">
-            <TabsTrigger value="todos" className="gap-1.5 text-xs sm:text-sm">
-              <Plane className="size-3.5 sm:size-4" />
-              <span>Todos</span>
-              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 min-w-4">
-                {airports.length}
-              </Badge>
-            </TabsTrigger>
-            <TabsTrigger value="internacionales" className="gap-1.5 text-xs sm:text-sm">
-              <Globe className="size-3.5 sm:size-4" />
-              <span>Internacionales</span>
-              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 min-w-4">
-                {internationalAirports.length}
-              </Badge>
-            </TabsTrigger>
-            <TabsTrigger value="nacionales" className="gap-1.5 text-xs sm:text-sm">
-              <Flag className="size-3.5 sm:size-4" />
-              <span>Nacionales</span>
-              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 min-w-4">
-                {nationalAirports.length}
-              </Badge>
-            </TabsTrigger>
-          </TabsList>
+        <div className="space-y-12">
+          {/* ═══════════════════════════════════════════════════
+              GRUPO 1 — Aeródromos CON información METAR / TAF
+              (Internacionales primero, luego Nacionales)
+              ═══════════════════════════════════════════════════ */}
+          {totalWithWeather > 0 && (
+            <section className="space-y-8">
+              {/* Encabezado del Grupo 1 */}
+              <div className="flex items-center gap-3 flex-wrap">
+                <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                  <CloudSun className="size-5 text-amber-600 dark:text-amber-400" />
+                  <span className="font-bold text-amber-800 dark:text-amber-300 text-sm sm:text-base tracking-wider">
+                    CON INFORMACIÓN METAR / TAF
+                  </span>
+                </div>
+                <Badge variant="secondary" className="text-xs font-medium">
+                  {totalWithWeather}
+                </Badge>
+                <div className="flex-1 h-px bg-gradient-to-r from-amber-300/60 to-transparent dark:from-amber-700/60" />
+              </div>
 
-          <TabsContent value="todos" className="mt-6">
-            <div className="space-y-12">
-              {/* Internacional Section */}
-              {internationalAirports.length > 0 && (
-                <div>
-                  <div className="flex items-center gap-3 mb-5">
-                    <div className="flex items-center gap-2.5 px-3.5 py-2 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
-                      <Globe className="size-4 text-amber-600 dark:text-amber-400" />
-                      <span className="font-semibold text-amber-800 dark:text-amber-300 text-sm tracking-wider">
-                        AEROPUERTOS INTERNACIONALES
-                      </span>
-                    </div>
-                    <Badge variant="secondary" className="text-xs font-medium">
-                      {internationalAirports.length}
+              {/* Grupo 1a — Internacionales con METAR/TAF */}
+              {weatherIntl.length > 0 && (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2.5 pl-2 border-l-4 border-amber-500">
+                    <Globe className="size-4 text-amber-600 dark:text-amber-400" />
+                    <h3 className="font-semibold text-amber-800 dark:text-amber-300 text-xs sm:text-sm tracking-wider uppercase">
+                      Aeropuertos Internacionales
+                    </h3>
+                    <Badge variant="outline" className="text-[10px] border-amber-300 text-amber-700 dark:border-amber-700 dark:text-amber-400">
+                      {weatherIntl.length}
                     </Badge>
-                    <div className="flex-1 h-px bg-gradient-to-r from-border to-transparent" />
                   </div>
-                  {renderAirportGrid(internationalAirports)}
+                  {renderAirportGrid(weatherIntl)}
                 </div>
               )}
 
-              {/* Nacional Section */}
-              {nationalAirports.length > 0 && (
-                <div>
-                  <div className="flex items-center gap-3 mb-5">
-                    <div className="flex items-center gap-2.5 px-3.5 py-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800">
-                      <Flag className="size-4 text-emerald-600 dark:text-emerald-400" />
-                      <span className="font-semibold text-emerald-800 dark:text-emerald-300 text-sm tracking-wider">
-                        AEROPUERTOS NACIONALES
-                      </span>
-                    </div>
-                    <Badge variant="secondary" className="text-xs font-medium">
-                      {nationalAirports.length}
+              {/* Grupo 1b — Nacionales con METAR/TAF */}
+              {weatherNatl.length > 0 && (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2.5 pl-2 border-l-4 border-emerald-500">
+                    <Flag className="size-4 text-emerald-600 dark:text-emerald-400" />
+                    <h3 className="font-semibold text-emerald-800 dark:text-emerald-300 text-xs sm:text-sm tracking-wider uppercase">
+                      Aeropuertos Nacionales
+                    </h3>
+                    <Badge variant="outline" className="text-[10px] border-emerald-300 text-emerald-700 dark:border-emerald-700 dark:text-emerald-400">
+                      {weatherNatl.length}
                     </Badge>
-                    <div className="flex-1 h-px bg-gradient-to-r from-border to-transparent" />
                   </div>
-                  {renderAirportGrid(nationalAirports)}
+                  {renderAirportGrid(weatherNatl)}
                 </div>
               )}
+            </section>
+          )}
+
+          {/* ═══════════════════════════════════════════════════
+              GRUPO 2 — Aeródromos SIN información METAR / TAF
+              ═══════════════════════════════════════════════════ */}
+          {noWeather.length > 0 && (
+            <section className="space-y-5">
+              {/* Encabezado del Grupo 2 */}
+              <div className="flex items-center gap-3 flex-wrap">
+                <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-lg bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-700">
+                  <CloudFog className="size-5 text-slate-500 dark:text-slate-400" />
+                  <span className="font-bold text-slate-700 dark:text-slate-300 text-sm sm:text-base tracking-wider">
+                    SIN INFORMACIÓN METAR / TAF
+                  </span>
+                </div>
+                <Badge variant="secondary" className="text-xs font-medium">
+                  {noWeather.length}
+                </Badge>
+                <div className="flex-1 h-px bg-gradient-to-r from-slate-300/60 to-transparent dark:from-slate-700/60" />
+              </div>
+
+              {/* Sub-división opcional — Internacionales sin METAR/TAF */}
+              {noWeather.filter((a) => isInternationalAirport(a)).length > 0 && (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2.5 pl-2 border-l-4 border-amber-400/60">
+                    <Globe className="size-4 text-amber-600/70 dark:text-amber-400/70" />
+                    <h3 className="font-semibold text-amber-800/80 dark:text-amber-300/70 text-xs sm:text-sm tracking-wider uppercase">
+                      Aeropuertos Internacionales
+                    </h3>
+                    <Badge variant="outline" className="text-[10px] border-amber-300/60 text-amber-700/80 dark:border-amber-700/60 dark:text-amber-400/70">
+                      {noWeather.filter((a) => isInternationalAirport(a)).length}
+                    </Badge>
+                  </div>
+                  {renderAirportGrid(noWeather.filter((a) => isInternationalAirport(a)))}
+                </div>
+              )}
+
+              {/* Sub-división — Nacionales sin METAR/TAF */}
+              {noWeather.filter((a) => !isInternationalAirport(a)).length > 0 && (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2.5 pl-2 border-l-4 border-emerald-400/60">
+                    <Flag className="size-4 text-emerald-600/70 dark:text-emerald-400/70" />
+                    <h3 className="font-semibold text-emerald-800/80 dark:text-emerald-300/70 text-xs sm:text-sm tracking-wider uppercase">
+                      Aeropuertos Nacionales
+                    </h3>
+                    <Badge variant="outline" className="text-[10px] border-emerald-300/60 text-emerald-700/80 dark:border-emerald-700/60 dark:text-emerald-400/70">
+                      {noWeather.filter((a) => !isInternationalAirport(a)).length}
+                    </Badge>
+                  </div>
+                  {renderAirportGrid(noWeather.filter((a) => !isInternationalAirport(a)))}
+                </div>
+              )}
+            </section>
+          )}
+
+          {/* Indicador de carga del estado METAR/TAF */}
+          {weatherStatusLoading && airports.length > 0 && (
+            <div className="flex items-center justify-center gap-2 py-3 text-xs text-muted-foreground">
+              <div className="size-3 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+              <span>Verificando disponibilidad de METAR / TAF…</span>
             </div>
-          </TabsContent>
-
-          <TabsContent value="internacionales" className="mt-6">
-            {renderAirportGrid(internationalAirports)}
-          </TabsContent>
-
-          <TabsContent value="nacionales" className="mt-6">
-            {renderAirportGrid(nationalAirports)}
-          </TabsContent>
-        </Tabs>
+          )}
+        </div>
       )}
     </div>
   )
