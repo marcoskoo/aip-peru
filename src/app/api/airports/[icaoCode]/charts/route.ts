@@ -1,25 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { readFile } from 'fs/promises';
-import { join } from 'path';
+import chartsMetadata from '@/../public/charts/charts-metadata.json';
 
-// Mark as dynamic so it runs as a serverless function on Netlify
+// Mark as dynamic so it runs as a serverless function
 export const dynamic = 'force-dynamic';
 
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ icaoCode: string }> }
 ) {
   try {
     const { icaoCode } = await params;
     const code = icaoCode.toUpperCase();
 
-    // Read the charts metadata
-    const metadataPath = join(process.cwd(), 'public', 'charts', 'charts-metadata.json');
-    const metadataContent = await readFile(metadataPath, 'utf-8');
-    const allCharts = JSON.parse(metadataContent);
+    // Use imported metadata (bundled at build time — works on Vercel serverless)
+    const allCharts = chartsMetadata as { icaoCode: string; charts: { type: string; name: string; file: string }[] }[];
 
     const airportCharts = allCharts.find(
-      (a: { icaoCode: string }) => a.icaoCode === code
+      (a) => a.icaoCode === code
     );
 
     if (!airportCharts) {
@@ -30,7 +27,7 @@ export async function GET(
     }
 
     // Return chart data with full URLs
-    const charts = airportCharts.charts.map((chart: { type: string; name: string; file: string }) => ({
+    const charts = airportCharts.charts.map((chart) => ({
       type: chart.type,
       name: chart.name,
       file: chart.file,
@@ -38,7 +35,7 @@ export async function GET(
     }));
 
     // Group by type
-    const grouped = charts.reduce((acc: Record<string, typeof charts>, chart: { type: string; name: string; file: string; url: string }) => {
+    const grouped = charts.reduce((acc: Record<string, typeof charts>, chart) => {
       if (!acc[chart.type]) acc[chart.type] = [];
       acc[chart.type].push(chart);
       return acc;
