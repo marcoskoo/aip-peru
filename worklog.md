@@ -2996,3 +2996,44 @@ Stage Summary:
 - Verificado en mobile y desktop con Agent Browser
 - SPJC visible en sección correcta (Internacional + CON METAR/TAF)
 - Scroll funcionando correctamente, todos los aeródromos accesibles
+
+---
+Task ID: 5
+Agent: Main Agent
+Task: Corregir la visualización de obstáculos de SPJC que mostraba "Sin obstáculos" a pesar de tener datos definidos.
+
+Work Log:
+- Analizada captura IMG_5952.png con VLM: confirmado que la pestaña "Obstáculos" de SPJC mostraba "Sin obstáculos / No hay obstáculos registrados para este aeródromo"
+- Revisado el endpoint /api/airports/[icao]/obstacles/route.ts: funciona correctamente, devuelve obstacles del DB
+- Revisado el componente airport-detail.tsx: renderiza obstacles correctamente cuando existen en DB
+- Identificada la causa raíz: los datos de obstáculos están definidos en prisma/seed-additional-data.ts (4 obstáculos para SPJC) pero nunca se cargaron a la base de datos Neon en producción
+- Verificado que 17 aeropuertos ya tenían obstáculos en la BD (SPZO, SPHI, SPSO, SPRU, SPQU, SPTN, SPJL, SPQT, SPEO, SPNC, SPJI, SPMF, SPJA, SPST, SPMS, SPZA, SPYL)
+- SPJC era el ÚNICO aeropuerto con datos definidos pero no cargados
+- Creado script src/scripts/seed-obstacles.ts:
+  * Combina datos de seed.ts y seed-additional-data.ts
+  * Carga .env manualmente (Bun no sobrescribe vars del sistema)
+  * Usa import dinámico para evitar hoisting de módulos
+  * SOLO inserta obstáculos faltantes (no elimina ni sobrescribe)
+  * Es idempotente — seguro de ejecutar múltiples veces
+- Detectado y resuelto problema crítico: variable de entorno del sistema DATABASE_URL=file:/home/z/my-project/db/custom.db (SQLite) estaba sobrescribiendo el .env del proyecto
+- Script ejecutado exitosamente:
+  * SPJC: 4 obstáculos insertados ✅
+  * 17 aeropuertos omitidos (ya tenían datos)
+  * 0 aeropuertos no encontrados
+  * Total obstáculos en BD: 56
+- Verificado con curl que /api/airports/SPJC/obstacles devuelve los 4 obstáculos:
+  * Circuit area - Antena - 153 m / 502 ft - LGTD
+  * RWY 16L approach - Antena - 86 m / 282 ft - LGTD
+  * RWY 16R approach - Chimenea - 94 m / 308 ft - LGTD
+  * RWY 34R approach - Edificio - 58 m / 190 ft - NIL
+- Verificado con Agent Browser:
+  * Click en SPJC desde lista de aeropuertos
+  * Click en pestaña "Obstáculos"
+  * Confirmado con VLM: "Obstáculos del Aeródromo (4)" con 4 obstáculos visibles (Antena, Edificio, Antena, Chimenea)
+  * Todas las columnas mostradas: Área de Pista, Tipo, Elevación, Marcación/Iluminación, Coordenadas, Observaciones
+
+Stage Summary:
+- 4 obstáculos de SPJC insertados en la base de datos Neon
+- Script src/scripts/seed-obstacles.ts creado para re-poblar si es necesario
+- Verificado end-to-end con Agent Browser que la pestaña "Obstáculos" de SPJC muestra correctamente los 4 obstáculos
+- Importante: el mismo fix debe aplicarse en Vercel — ejecutar `bun run src/scripts/seed-obstacles.ts` en producción para que los datos persistan en Neon
