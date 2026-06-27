@@ -1,0 +1,2530 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plan de Vuelo OACI / ICAO FPL</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://smtpjs.com/v3/smtp.js"></script>
+<script>
+// ── CONFIGURACION EMAIL ──────────────────────────────────────────────────────
+// Sistema de envio con adjunto PDF real usando SMTP.js
+// INSTRUCCIONES:
+//  1. Ir a https://smtpjs.com → "Encrypt your SMTP Credentials"
+//  2. Host: smtp.gmail.com | User: fpl.mkoo@gmail.com | Pass: (app password de Google)
+//     Port: 465 | Security: SSL
+//  3. Copiar el "Secure Token" generado y pegarlo en SMTP_CONFIG.secureToken abajo
+//  4. En Gmail: Activar "Contrasenas de aplicacion" en Seguridad de la cuenta Google
+
+const SMTP_CONFIG = {
+  // Token encriptado de smtpjs.com (reemplazar con el token real):
+  secureToken: 'YOUR_SMTPJS_TOKEN_HERE',
+  // O usar credenciales directas (menos seguro, solo para pruebas):
+  host:     'smtp.gmail.com',
+  username: 'fpl.mkoo@gmail.com',
+  password: 'Mk/06612',  // App Password de Gmail configurada
+  port:     '465',
+  // Remitente
+  fromEmail: 'fpl.mkoo@gmail.com',
+  fromName:  'FPL-MKOO Sistema Plan de Vuelo',
+  // Modo: 'token' usa secureToken (recomendado), 'direct' usa host/user/pass
+  mode: 'direct'
+};
+</script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@300;400;600;700&display=swap');
+:root{
+  --bg:#050b14;--panel:#0a1628;--card:#0d1f3c;--inp:#071020;
+  --bdr:#1a3a6b;--glow:#2557a7;--acc:#00c8ff;--acc2:#f4a600;--acc3:#00ff9d;
+  --txt:#c8deff;--dim:#5a7aaa;--lbl:#7ab3ff;--red:#ff4444;
+  --sh:0 0 20px rgba(0,200,255,.15);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font-family:'Rajdhani',sans-serif;min-height:100vh;
+  background-image:radial-gradient(ellipse at 20% 10%,rgba(0,80,180,.12) 0%,transparent 60%),
+  radial-gradient(ellipse at 80% 90%,rgba(0,100,200,.08) 0%,transparent 60%),
+  repeating-linear-gradient(0deg,transparent,transparent 39px,rgba(26,58,107,.15) 40px),
+  repeating-linear-gradient(90deg,transparent,transparent 39px,rgba(26,58,107,.15) 40px);}
+/* ── ITEM 18 SELECTOR CHIPS ─────────────────────────────────────── */
+.i18sw{position:relative;display:flex;flex-direction:column;gap:4px;}
+.i18panel{display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:600;
+  background:#040e1e;border:1px solid var(--acc);border-radius:8px;
+  padding:12px 14px;min-width:300px;max-width:500px;
+  box-shadow:0 4px 32px rgba(0,200,255,.3);}
+.i18panel.open{display:block;}
+.i18panel-title{font-family:'Orbitron',monospace;font-size:9px;color:var(--acc);
+  letter-spacing:2px;margin-bottom:8px;text-transform:uppercase;}
+.i18panel-title em{color:var(--acc2);font-style:normal;}
+.i18sub{font-family:'Share Tech Mono',monospace;font-size:9px;
+  color:var(--acc3);margin:7px 0 4px;letter-spacing:1px;}
+.i18chips{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:4px;}
+.i18chip{padding:3px 9px;border-radius:4px;cursor:pointer;
+  font-family:'Share Tech Mono',monospace;font-size:10px;
+  background:var(--inp);border:1px solid var(--bdr);color:var(--dim);
+  transition:all .15s;user-select:none;white-space:nowrap;}
+.i18chip:hover{border-color:var(--acc);color:var(--acc);}
+.i18chip.on{background:rgba(0,200,255,.18);border-color:var(--acc);color:#fff;font-weight:700;}
+.i18chip.on::before{content:'\2713 ';}
+.i18foot{display:flex;justify-content:flex-end;gap:6px;
+  border-top:1px solid var(--bdr);padding-top:8px;margin-top:6px;}
+.i18foot button{font-family:'Share Tech Mono',monospace;font-size:10px;
+  padding:4px 12px;border-radius:3px;cursor:pointer;}
+.i18foot .fcl{background:rgba(255,60,60,.1);color:#ff6666;border:1px solid #ff4444;}
+.i18foot .fok{background:rgba(0,200,255,.15);color:var(--acc);border:1px solid var(--acc);}
+.i18btn{display:flex;align-items:center;justify-content:space-between;gap:6px;
+  background:var(--inp);border:1px solid var(--bdr);border-radius:4px;
+  color:var(--txt);cursor:pointer;font-family:'Share Tech Mono',monospace;
+  font-size:12px;padding:6px 10px;width:100%;transition:border-color .2s;}
+.i18btn:hover,.i18btn.open{border-color:var(--acc);}
+.i18val{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  color:var(--acc);text-align:left;}
+.i18val.mt{color:var(--dim);opacity:.5;}
+.i18arr{font-size:9px;color:var(--dim);}
+/* TOP BAR */
+.top-bar{background:linear-gradient(90deg,#020a18,#071428 40%,#020a18);border-bottom:1px solid var(--glow);
+  padding:6px 20px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 20px rgba(0,100,255,.2);}
+.top-bar .logo{font-family:'Orbitron',monospace;font-size:11px;letter-spacing:3px;color:var(--acc);opacity:.7;}
+.top-bar .scan{flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--glow),transparent);}
+.top-bar .utc{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--acc3);letter-spacing:2px;}
+/* HEADER */
+.mh{padding:20px 24px 16px;text-align:center;position:relative;}
+.mh::after{content:'';position:absolute;bottom:0;left:10%;right:10%;height:1px;
+  background:linear-gradient(90deg,transparent,var(--acc),var(--acc2),var(--acc),transparent);}
+.mh .sub{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--acc);letter-spacing:5px;margin-bottom:6px;opacity:.8;}
+.mh h1{font-family:'Orbitron',monospace;font-size:clamp(16px,3vw,28px);font-weight:900;color:#fff;
+  text-shadow:0 0 30px rgba(0,200,255,.5);letter-spacing:4px;}
+.mh .ref{margin-top:4px;font-size:11px;color:var(--dim);letter-spacing:2px;font-family:'Share Tech Mono',monospace;}
+/* DB BUTTON */
+.db-btn{display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:4px;
+  background:rgba(244,166,0,.12);border:1px solid var(--acc2);color:var(--acc2);
+  font-family:'Orbitron',monospace;font-size:10px;letter-spacing:1px;cursor:pointer;transition:all .15s;}
+.db-btn:hover{background:rgba(244,166,0,.22);}
+/* FORM WRAPPER */
+.fw{max-width:1100px;margin:0 auto;padding:16px 16px 40px;}
+/* SECTION */
+.sec{background:var(--card);border:1px solid var(--bdr);border-radius:8px;margin-bottom:12px;
+  overflow:hidden;box-shadow:var(--sh);transition:border-color .2s;}
+.sec:hover{border-color:var(--glow);}
+.sh{background:linear-gradient(90deg,rgba(0,80,180,.3),rgba(0,40,100,.2));
+  border-bottom:1px solid var(--bdr);padding:8px 16px;display:flex;align-items:center;gap:10px;}
+.sh .ino{font-family:'Orbitron',monospace;font-size:10px;font-weight:700;
+  background:var(--acc);color:#000;padding:2px 8px;border-radius:3px;letter-spacing:1px;min-width:50px;text-align:center;}
+.sh .ino.o{background:var(--acc2);}
+.sh .ino.g{background:var(--acc3);}
+.sh h3{font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;color:var(--lbl);text-transform:uppercase;letter-spacing:2px;}
+.sb{padding:12px 16px;}
+/* GRID */
+.fg{display:grid;gap:10px;}
+.fg.c2{grid-template-columns:1fr 1fr;}
+.fg.c3{grid-template-columns:1fr 1fr 1fr;}
+.fg.c4{grid-template-columns:repeat(4,1fr);}
+.fgr{display:flex;flex-direction:column;gap:4px;}
+.fgr.s2{grid-column:span 2;}
+.fgr.s3{grid-column:span 3;}
+.fgr.s4{grid-column:span 4;}
+/* LABELS */
+label{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim);
+  letter-spacing:1.5px;text-transform:uppercase;display:flex;align-items:center;gap:6px;}
+label .req{color:var(--red);font-size:12px;}
+label .hint{color:var(--acc);font-size:9px;opacity:.7;background:rgba(0,200,255,.1);padding:1px 5px;border-radius:2px;}
+/* INPUTS */
+input[type=text],select,textarea{
+  background:var(--inp);border:1px solid var(--bdr);border-radius:4px;color:var(--txt);
+  font-family:'Share Tech Mono',monospace;font-size:13px;padding:6px 10px;width:100%;outline:none;
+  transition:border-color .2s,box-shadow .2s;text-transform:uppercase;}
+input:focus,select:focus,textarea:focus{
+  border-color:var(--acc);box-shadow:0 0 0 2px rgba(0,200,255,.15),inset 0 0 8px rgba(0,200,255,.05);}
+input::placeholder{color:var(--dim);opacity:.5;text-transform:none;}
+textarea{resize:vertical;min-height:60px;text-transform:none;}
+select option{background:var(--panel);}
+/* AUTOCOMPLETE */
+.ac-wrap{position:relative;}
+.ac-drop{display:none;position:absolute;top:100%;left:0;right:0;z-index:100;
+  background:var(--panel);border:1px solid var(--acc);border-radius:4px;max-height:180px;overflow-y:auto;}
+.ac-drop.open{display:block;}
+.ac-item{padding:6px 10px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--txt);
+  display:flex;flex-direction:column;gap:2px;border-bottom:1px solid var(--bdr);}
+.ac-item:hover{background:rgba(0,200,255,.12);color:var(--acc);}
+.ac-item span{font-size:9px;color:var(--dim);}
+/* CHECKBOXES */
+.cg{display:flex;flex-wrap:wrap;gap:6px;padding:4px 0;}
+.ci{display:flex;align-items:center;gap:5px;cursor:pointer;font-family:'Share Tech Mono',monospace;
+  font-size:11px;color:var(--txt);background:var(--inp);border:1px solid var(--bdr);
+  border-radius:4px;padding:3px 8px;transition:all .15s;user-select:none;}
+.ci:hover{border-color:var(--acc);color:var(--acc);}
+.ci input[type=checkbox]{display:none;}
+.ci.active{background:rgba(0,200,255,.12);border-color:var(--acc);color:var(--acc);}
+.ci .box{width:14px;height:14px;border:1px solid currentColor;border-radius:2px;
+  display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;}
+/* ROUTE VISUAL */
+.rv{display:flex;align-items:center;gap:8px;background:rgba(0,200,255,.04);
+  border:1px solid rgba(0,200,255,.15);border-radius:6px;padding:6px 12px;margin-bottom:8px;
+  font-family:'Share Tech Mono',monospace;font-size:12px;}
+.rd{width:10px;height:10px;border-radius:50%;background:var(--acc);flex-shrink:0;}
+.rd.d{background:var(--acc2);}
+.rl{flex:1;height:2px;background:repeating-linear-gradient(90deg,var(--acc) 0,var(--acc) 8px,transparent 8px,transparent 14px);}
+/* DIVIDER */
+.dv{display:flex;align-items:center;gap:10px;margin:6px 0;}
+.dl{flex:1;height:1px;background:var(--bdr);}
+.dlt{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim);letter-spacing:2px;}
+/* ICAO PREVIEW */
+.ip{background:#020c1a;border:1px solid var(--acc);border-radius:6px;padding:12px 16px;margin-top:12px;
+  font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--acc3);line-height:1.8;
+  position:relative;overflow:hidden;box-shadow:0 0 20px rgba(0,200,255,.1);}
+.ip::before{content:'FORMATO OACI / ICAO MESSAGE';position:absolute;top:8px;right:12px;
+  font-size:9px;color:var(--dim);letter-spacing:2px;}
+/* BUTTONS */
+.bb{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:20px;}
+.btn{display:flex;align-items:center;gap:7px;padding:11px 24px;border-radius:6px;border:none;
+  font-family:'Orbitron',monospace;font-size:11px;font-weight:700;letter-spacing:2px;cursor:pointer;
+  text-transform:uppercase;transition:all .2s;position:relative;overflow:hidden;}
+.btn::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.1),transparent 60%);opacity:0;transition:opacity .2s;}
+.btn:hover::after{opacity:1;}
+.btn:hover{transform:translateY(-1px);}
+.btn svg{width:15px;height:15px;}
+.b-prev{background:linear-gradient(135deg,#0d3060,#1a5299);color:var(--acc);border:1px solid var(--acc);box-shadow:0 0 16px rgba(0,200,255,.2);}
+.b-prev:hover{box-shadow:0 0 28px rgba(0,200,255,.45);}
+.b-pdf{background:linear-gradient(135deg,#5a1a00,#9e3200);color:#ffb347;border:1px solid var(--acc2);box-shadow:0 0 16px rgba(244,166,0,.2);}
+.b-pdf:hover{box-shadow:0 0 28px rgba(244,166,0,.45);}
+.b-icao{background:linear-gradient(135deg,#003820,#006040);color:var(--acc3);border:1px solid var(--acc3);box-shadow:0 0 16px rgba(0,255,157,.2);}
+.b-icao:hover{box-shadow:0 0 28px rgba(0,255,157,.45);}
+.b-clr{background:linear-gradient(135deg,#1a0a0a,#3a1010);color:#ff6666;border:1px solid var(--red);}
+/* MODAL */
+.mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;align-items:center;justify-content:center;}
+.mo.open{display:flex;}
+.md{background:var(--panel);border:1px solid var(--acc);border-radius:10px;padding:20px 24px;
+  max-width:700px;width:95%;box-shadow:0 0 60px rgba(0,200,255,.25);max-height:85vh;overflow-y:auto;}
+.md h2{font-family:'Orbitron',monospace;font-size:13px;color:var(--acc);letter-spacing:3px;margin-bottom:12px;}
+.md pre{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--acc3);background:#020c1a;
+  border:1px solid var(--bdr);border-radius:6px;padding:12px;white-space:pre-wrap;word-break:break-all;line-height:1.7;}
+.mc{margin-top:12px;padding:8px 20px;background:rgba(0,200,255,.1);border:1px solid var(--acc);
+  border-radius:4px;color:var(--acc);font-family:'Orbitron',monospace;font-size:10px;cursor:pointer;letter-spacing:2px;}
+/* DB MODAL */
+.db-md{max-width:900px;}
+.db-tabs{display:flex;gap:4px;margin-bottom:16px;}
+.db-tab{padding:6px 16px;border:1px solid var(--bdr);border-radius:4px;cursor:pointer;
+  font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--dim);background:var(--inp);}
+.db-tab.active{border-color:var(--acc);color:var(--acc);background:rgba(0,200,255,.1);}
+.db-panel{display:none;}
+.db-panel.active{display:block;}
+.db-list{display:flex;flex-direction:column;gap:6px;max-height:280px;overflow-y:auto;margin-bottom:12px;}
+.db-row{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--inp);
+  border:1px solid var(--bdr);border-radius:4px;cursor:pointer;transition:all .15s;}
+.db-row:hover{border-color:var(--acc);background:rgba(0,200,255,.06);}
+.db-row .dr-main{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--acc);font-weight:700;flex:0 0 80px;}
+.db-row .dr-sub{font-size:11px;color:var(--dim);flex:1;}
+.db-row .dr-del{margin-left:auto;color:var(--red);font-size:16px;cursor:pointer;padding:0 4px;line-height:1;}
+.db-form{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;}
+.db-form .full{grid-column:span 2;}
+.db-save{margin-top:10px;padding:8px 20px;background:rgba(0,255,157,.1);border:1px solid var(--acc3);
+  border-radius:4px;color:var(--acc3);font-family:'Orbitron',monospace;font-size:10px;cursor:pointer;letter-spacing:2px;}
+/* SCANLINE */
+@keyframes sl{0%{transform:translateY(-100%)}100%{transform:translateY(100vh)}}
+.sl{position:fixed;top:0;left:0;width:100%;height:3px;
+  background:linear-gradient(transparent,rgba(0,200,255,.1),transparent);
+  animation:sl 8s linear infinite;pointer-events:none;z-index:999;}
+/* RESPONSIVE */
+@media(max-width:700px){.fg.c3,.fg.c4{grid-template-columns:1fr 1fr;}.fgr.s3,.fgr.s4{grid-column:span 2;}.fg.c2{grid-template-columns:1fr;}}
+footer{border-top:1px solid var(--bdr);margin-top:24px;padding:12px 20px;text-align:center;
+  font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim);letter-spacing:2px;}
+footer span{color:var(--acc);}
+
+/* ── TOOLTIP POR EQUIPO ─────────────────────────────────── */
+.ci-tt{position:relative;}
+.ci-tt .ci-tooltip{
+  display:none;position:absolute;z-index:2000;
+  bottom:calc(100% + 8px);left:0;
+  background:#020c1a;border:1px solid var(--acc);border-radius:6px;
+  padding:9px 13px;min-width:230px;max-width:320px;
+  font-family:'Share Tech Mono',monospace;font-size:10px;line-height:1.6;
+  color:var(--txt);box-shadow:0 0 22px rgba(0,200,255,.3);
+  pointer-events:none;white-space:normal;
+}
+.ci-tt .ci-tooltip::after{
+  content:'';position:absolute;top:100%;left:14px;
+  border:5px solid transparent;border-top-color:var(--acc);
+}
+.ci-tt:hover .ci-tooltip{display:block;}
+.ci-tt .ci-tooltip b{color:var(--acc2);font-size:11px;}
+.ci-tt .ci-tooltip em{color:var(--acc3);font-style:normal;display:block;margin-top:3px;font-size:9px;opacity:.8;}
+/* SSR multi: now multi-select like comNav */
+/* ── EMAIL SECTION ──────────────────────────────────────── */
+.email-sec{
+  background:linear-gradient(135deg,rgba(13,31,60,.95),rgba(8,18,36,.9));
+  border:1px solid var(--bdr);border-radius:8px;
+  padding:18px 20px;margin-top:14px;box-shadow:var(--sh);
+}
+.email-sec h4{
+  font-family:'Orbitron',monospace;font-size:11px;color:var(--acc2);
+  letter-spacing:2px;margin-bottom:14px;display:flex;align-items:center;gap:8px;
+  text-transform:uppercase;
+}
+.email-row{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;}
+.email-field{flex:1;min-width:240px;}
+.email-field label{font-family:'Share Tech Mono',monospace;font-size:10px;
+  color:var(--dim);letter-spacing:1.5px;display:block;margin-bottom:5px;text-transform:uppercase;}
+.email-field input{
+  background:var(--inp);border:1px solid var(--bdr);border-radius:4px;
+  color:var(--txt);font-family:'Share Tech Mono',monospace;font-size:13px;
+  padding:8px 12px;width:100%;outline:none;transition:border-color .2s,box-shadow .2s;
+}
+.email-field input:focus{border-color:var(--acc2);box-shadow:0 0 0 2px rgba(244,166,0,.15);}
+.email-field input::placeholder{color:var(--dim);opacity:.4;}
+.b-email{
+  background:linear-gradient(135deg,#1a2800,#2e5000);
+  color:#aaff44;border:1px solid #66cc22;
+  box-shadow:0 0 14px rgba(100,200,0,.2);flex-shrink:0;
+}
+.b-email:hover{box-shadow:0 0 26px rgba(100,220,0,.4);}
+.email-note{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim);
+  margin-top:10px;padding:8px 12px;border:1px solid var(--bdr);border-radius:4px;
+  background:rgba(0,0,0,.3);line-height:1.6;}
+.email-note b{color:var(--acc3);}
+/* EMAIL STATUS */
+.email-status{
+  margin-top:10px;padding:0;max-height:0;overflow:hidden;
+  border-radius:4px;font-family:'Share Tech Mono',monospace;font-size:11px;
+  letter-spacing:.5px;transition:all .4s ease;opacity:0;
+}
+.email-status.show{
+  padding:10px 14px;max-height:100px;opacity:1;
+}
+.email-status.ok{
+  background:rgba(0,200,100,.12);border:1px solid rgba(0,200,100,.4);
+  color:#44ee88;
+}
+.email-status.err{
+  background:rgba(255,60,60,.12);border:1px solid rgba(255,60,60,.4);
+  color:#ff6666;
+}
+/* TOOLTIP IMPROVEMENTS — flip upward if near bottom */
+.ci-tt:last-child .ci-tooltip,
+.ci-tt:nth-last-child(-n+3) .ci-tooltip{
+  bottom:auto;top:calc(100% + 8px);
+}
+.ci-tt:last-child .ci-tooltip::after,
+.ci-tt:nth-last-child(-n+3) .ci-tooltip::after{
+  top:auto;bottom:100%;border-top-color:transparent;border-bottom-color:var(--acc);
+}
+/* INPUT TOOLTIPS — for regular text fields */
+.inp-tt{position:relative;}
+.inp-tt .inp-help{
+  display:none;position:absolute;z-index:1500;
+  top:calc(100% + 6px);left:0;
+  background:#020c1a;border:1px solid var(--acc);border-radius:6px;
+  padding:9px 13px;min-width:240px;max-width:340px;
+  font-family:'Share Tech Mono',monospace;font-size:10px;line-height:1.65;
+  color:var(--txt);box-shadow:0 0 22px rgba(0,200,255,.3);
+  pointer-events:none;white-space:normal;
+}
+.inp-tt .inp-help::before{
+  content:'';position:absolute;bottom:100%;left:14px;
+  border:5px solid transparent;border-bottom-color:var(--acc);
+}
+.inp-tt input:focus ~ .inp-help,
+.inp-tt input:hover ~ .inp-help,
+.inp-tt:focus-within .inp-help{display:block;}
+.inp-tt .inp-help b{color:var(--acc2);font-size:11px;display:block;margin-bottom:4px;}
+.inp-tt .inp-help span{color:var(--acc3);font-size:9px;opacity:.85;}
+.inp-tt .inp-help ul{margin:4px 0 0 10px;color:var(--dim);font-size:9px;}
+.inp-tt .inp-help ul li{margin-bottom:2px;}
+/* EMAIL CONFIG BADGE */
+.email-from-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(0,200,255,.08);border:1px solid rgba(0,200,255,.2);
+  border-radius:4px;padding:3px 10px;
+  font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--acc);
+  margin-bottom:10px;
+}
+.email-from-badge svg{opacity:.7;}
+.email-cfg-link{
+  font-family:'Share Tech Mono',monospace;font-size:10px;
+  color:var(--acc2);cursor:pointer;text-decoration:underline;
+  background:none;border:none;padding:0;
+}
+.email-cfg-link:hover{color:#fff;}
+/* CONFIG MODAL */
+.cfg-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.cfg-grid .full{grid-column:span 2;}
+.cfg-input{
+  background:var(--inp);border:1px solid var(--bdr);border-radius:4px;
+  color:var(--txt);font-family:'Share Tech Mono',monospace;font-size:12px;
+  padding:7px 10px;width:100%;outline:none;
+}
+.cfg-input:focus{border-color:var(--acc);}
+.cfg-status{
+  font-family:'Share Tech Mono',monospace;font-size:11px;
+  padding:8px 12px;border-radius:4px;margin-top:8px;display:none;
+}
+.cfg-status.show{display:block;}
+.cfg-status.ok{background:rgba(0,255,157,.1);border:1px solid var(--acc3);color:var(--acc3);}
+.cfg-status.err{background:rgba(255,60,60,.1);border:1px solid var(--red);color:#ff8888;}
+.cfg-steps{
+  background:rgba(0,0,0,.3);border:1px solid var(--bdr);border-radius:6px;
+  padding:12px 14px;margin-top:10px;
+  font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim);
+  line-height:1.8;
+}
+.cfg-steps b{color:var(--acc2);}
+.cfg-steps a{color:var(--acc);text-decoration:none;}
+.cfg-steps a:hover{text-decoration:underline;}
+.cfg-saved-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  background:rgba(0,255,157,.12);border:1px solid var(--acc3);
+  border-radius:3px;padding:2px 8px;
+  font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--acc3);
+}
+/* TOOLS */
+.tool-tab-btn.active{background:rgba(244,166,0,.25)!important;border-color:var(--acc2)!important;color:var(--acc2)!important;}
+.tool-panel{display:none;}
+.tool-panel.active{display:block;}
+.tool-panel{animation:fadein .2s ease;}
+@keyframes fadein{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+/* CRUISE TABLE */
+.cruise-tbl{border-collapse:collapse;width:100%;font-family:Share Tech Mono,monospace;font-size:11px;}
+.cruise-tbl th{background:#0a1a30;color:var(--acc);padding:5px 10px;border:1px solid var(--bdr);text-align:center;letter-spacing:1px;}
+.cruise-tbl td{padding:4px 10px;border:1px solid var(--bdr);text-align:center;color:var(--txt);}
+.cruise-tbl tr:hover td{background:rgba(0,200,255,.06);}
+.cruise-tbl td.hi{color:var(--acc);font-weight:700;}
+/* I18 HELP */
+.i18-help-ico{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;
+  border-radius:50%;background:rgba(244,166,0,.2);border:1px solid var(--acc2);
+  color:var(--acc2);font-size:9px;font-weight:700;cursor:pointer;font-family:Share Tech Mono,monospace;
+  transition:background .15s;vertical-align:middle;}
+.i18-help-ico:hover{background:rgba(244,166,0,.4);}
+.i18-help-table{width:100%;border-collapse:collapse;margin-top:8px;font-size:10px;}
+.i18-help-table th{background:#0a1a30;color:var(--acc);padding:5px 8px;border:1px solid var(--bdr);letter-spacing:1px;}
+.i18-help-table td{padding:4px 8px;border:1px solid var(--bdr);color:var(--txt);vertical-align:top;}
+.i18-help-table td:first-child{color:var(--acc2);font-weight:700;white-space:nowrap;}
+.i18-help-table tr:hover td{background:rgba(0,200,255,.05);}
+/* HELP ICON on labels */
+.help-ico{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:14px;height:14px;border-radius:50%;
+  background:rgba(0,200,255,.15);border:1px solid rgba(0,200,255,.35);
+  color:var(--acc);font-size:9px;font-weight:700;cursor:help;
+  font-family:'Share Tech Mono',monospace;flex-shrink:0;
+  transition:background .15s;
+}
+.help-ico:hover{background:rgba(0,200,255,.3);}
+</style>
+</head>
+<body>
+<div class="sl"></div>
+
+<!-- TOP BAR -->
+<div class="top-bar">
+  <span class="logo" style="display:flex;align-items:center;gap:10px">
+    ICAO &middot; OACI &middot; DOC 4444
+  </span>
+  <div class="scan"></div>
+  <button class="db-btn" onclick="openDB()">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg>
+    BASE DE DATOS
+  </button>
+  <span class="utc">UTC <span id="utcClock">--:--:--</span></span>
+</div>
+
+<!-- MAIN HEADER -->
+<div class="mh">
+  <div class="sub">&#9654; SISTEMA DE PRESENTACION DE</div>
+  <h1>PLAN DE VUELO</h1>
+  <div class="ref">FLIGHT PLAN &middot; FPL &middot; OACI DOC 4444 PANS-ATM &middot; ANEXO 2</div>
+</div>
+
+<!-- FORM -->
+<div class="fw">
+<form id="fplForm" autocomplete="off">
+
+<!-- PRIORIDAD -->
+<div class="sec">
+  <div class="sh"><span class="ino">PRIO</span><h3>Prioridad y Destinatarios / Priority &amp; Addressees</h3></div>
+  <div class="sb">
+    <div class="fg c4" style="margin-bottom:8px">
+      <div class="fgr"><label>Destinatario 1 (AFTN)</label><input type="text" id="addr1" maxlength="8" placeholder="AFTN 8 CHAR"></div>
+      <div class="fgr"><label>Destinatario 2 (AFTN)</label><input type="text" id="addr2" maxlength="8" placeholder="AFTN 8 CHAR"></div>
+      <div class="fgr"><label>Origen/Sender (AFTN)</label><input type="text" id="sender" maxlength="8" placeholder="SPECSXXX"></div>
+      <div class="fgr"><label>DTG <span class="hint">DDHHMM</span></label><input type="text" id="dtg" maxlength="6" placeholder="290945"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ITEM 7 -->
+<div class="sec">
+  <div class="sh"><span class="ino">ITEM 7</span><h3>Identificacion de Aeronave / Aircraft Identification</h3></div>
+  <div class="sb">
+    <div class="fg c4">
+      <div class="fgr s2 ac-wrap">
+        <label>Matricula / Aircraft ID <span class="req">*</span> <span class="hint">MAX 7 CAR</span></label>
+        <input type="text" id="acid" maxlength="7" placeholder="OB1234" required oninput="acSearch('acid','aircraft')">
+        <div class="ac-drop" id="ac_acid"></div>
+      </div>
+      <div class="fgr"></div><div class="fgr"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ITEM 8 -->
+<div class="sec">
+  <div class="sh"><span class="ino">ITEM 8</span><h3>Reglas de Vuelo y Tipo / Flight Rules &amp; Type of Flight</h3></div>
+  <div class="sb">
+    <div class="fg c2">
+      <div class="fgr">
+        <label>Reglas de Vuelo <span class="req">*</span></label>
+        <select id="rules" required>
+          <option value="">-- Seleccionar --</option>
+          <option value="I">I - IFR</option><option value="V">V - VFR</option>
+          <option value="Y">Y - IFR luego VFR</option><option value="Z">Z - VFR luego IFR</option>
+        </select>
+      </div>
+      <div class="fgr">
+        <label>Tipo de Vuelo <span class="req">*</span></label>
+        <select id="flighttype" required>
+          <option value="">-- Seleccionar --</option>
+          <option value="S">S - Aviacion General</option><option value="N">N - No planificado</option>
+          <option value="G">G - General</option><option value="M">M - Militar</option><option value="X">X - Otros</option>
+        </select>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ITEM 9 -->
+<div class="sec">
+  <div class="sh"><span class="ino">ITEM 9</span><h3>Numero, Tipo de Aeronave y Estela / Aircraft Type &amp; Wake Turbulence</h3></div>
+  <div class="sb">
+    <div class="fg c4">
+      <div class="fgr"><label>N&deg; Aeronaves <span class="hint">OMIT SI 1</span></label><input type="text" id="acnum" maxlength="2" placeholder="1"></div>
+      <div class="fgr"><label>Tipo OACI <span class="req">*</span> <span class="hint">DOC 8643</span></label><input type="text" id="actype" maxlength="4" placeholder="B738/C172" required></div>
+      <div class="fgr">
+        <label>Cat. Estela <span class="req">*</span></label>
+        <select id="wtc" required>
+          <option value="">--</option>
+          <option value="L">L - LIGHT (&le;7000kg)</option><option value="M">M - MEDIUM</option>
+          <option value="H">H - HEAVY</option><option value="J">J - SUPER (A380)</option>
+        </select>
+      </div>
+      <div class="fgr"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ITEM 10 -->
+<div class="sec">
+  <div class="sh"><span class="ino">ITEM 10</span><h3>Equipo / Equipment &amp; Capabilities</h3></div>
+  <div class="sb">
+    <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--acc2);letter-spacing:2px;margin-bottom:8px">&#9658; COM / NAV / APPROACH EQUIPMENT &nbsp;<span style="color:var(--dim);font-size:9px">(pase el cursor sobre cada equipo para ver su descripcion)</span></div>
+    <div class="cg" id="comNav">
+
+      <div class="ci-tt"><label class="ci" data-code="N" onclick="toggleCk(this)"><div class="box"></div>N&nbsp;&ndash;&nbsp;Nil</label>
+        <div class="ci-tooltip"><b>N &ndash; Nil / Ninguno</b><em>Sin equipo COM/NAV a bordo, o el equipo no es operativo. Se usa cuando no aplica ninguno de los codigos anteriores.</em></div></div>
+
+      <div class="ci-tt"><label class="ci" data-code="S" onclick="toggleCk(this)"><div class="box"></div>S&nbsp;&ndash;&nbsp;VOR/VHF/ILS</label>
+        <div class="ci-tooltip"><b>S &ndash; Equipo Estandar</b><em>VHF RTF + VOR + ILS. Incluye equipamiento estandar de comunicacion y navegacion basico para vuelo IFR.</em></div></div>
+
+      <div class="ci-tt"><label class="ci" data-code="D" onclick="toggleCk(this)"><div class="box"></div>D&nbsp;&ndash;&nbsp;DME</label>
+        <div class="ci-tooltip"><b>D &ndash; Distance Measuring Equipment</b><em>Equipo medidor de distancia. Permite conocer la distancia slant range a una estacion VOR/DME o ILS/DME.</em></div></div>
+
+      <div class="ci-tt"><label class="ci" data-code="F" onclick="toggleCk(this)"><div class="box"></div>F&nbsp;&ndash;&nbsp;ADF</label>
+        <div class="ci-tooltip"><b>F &ndash; Automatic Direction Finder</b><em>Radiogoniometro automatico. Receptor de radio para navegacion por balizas NDB. Uso en areas sin cobertura VOR.</em></div></div>
+
+      <div class="ci-tt"><label class="ci" data-code="G" onclick="toggleCk(this)"><div class="box"></div>G&nbsp;&ndash;&nbsp;GNSS</label>
+        <div class="ci-tooltip"><b>G &ndash; GNSS (GPS/GLONASS/Galileo)</b><em>Sistema de navegacion por satelite. Si se usa en vuelo IFR, el receptor debe estar certificado. Especificar tipo en Item 18: NAV/GNSS.</em></div></div>
+
+      <div class="ci-tt"><label class="ci" data-code="H" onclick="toggleCk(this)"><div class="box"></div>H&nbsp;&ndash;&nbsp;HF RTF</label>
+        <div class="ci-tooltip"><b>H &ndash; HF Radio Telefonía</b><em>Radio de alta frecuencia (2&ndash;30 MHz). Requerida para comunicaciones oceánicas de largo alcance (NAT, Pacifico) donde VHF no tiene cobertura. Especificar en Item 18 si HF no es estandar.</em></div></div>
+
+      <div class="ci-tt"><label class="ci" data-code="I" onclick="toggleCk(this)"><div class="box"></div>I&nbsp;&ndash;&nbsp;INS/IRS</label>
+        <div class="ci-tooltip"><b>I &ndash; Inertial Navigation System</b><em>Sistema de navegacion inercial. No requiere senales externas. Usado en aviacion comercial de largo alcance y operaciones oceánicas.</em></div></div>
+
+      <div class="ci-tt"><label class="ci" data-code="J1" onclick="toggleCk(this)"><div class="box"></div>J1&nbsp;&ndash;&nbsp;CPDLC ATN VHF</label>
+        <div class="ci-tooltip"><b>J1 &ndash; CPDLC via ATN VHF</b><em>Controller-Pilot Data Link Communications por red ATN en VHF (VDL Mode 2). Usado en Europa (LINK 2000+). Requerido para operaciones en espacio aereo europeo CPDLC.</em></div></div>
+
+      <div class="ci-tt"><label class="ci" data-code="J2" onclick="toggleCk(this)"><div class="box"></div>J2&nbsp;&ndash;&nbsp;CPDLC HF</label>
+        <div class="ci-tooltip"><b>J2 &ndash; CPDLC via HFDL</b><em>CPDLC sobre High Frequency Data Link. Usado en operaciones oceánicas/remotas donde VHF no es viable. Complemento de FANS 1/A en rutas NAT o Pacifico.</em></div></div>
+
+      <div class="ci-tt"><label class="ci" data-code="J3" onclick="toggleCk(this)"><div class="box"></div>J3&nbsp;&ndash;&nbsp;CPDLC VDL A</label>
+        <div class="ci-tooltip"><b>J3 &ndash; CPDLC via VDL Mode A</b><em>CPDLC sobre VHF Digital Link Modo A (ACARS legacy). Sistema antiguo de datalink ATC. Presente en aeronaves con avionics de generacion anterior.</em></div></div>
+
+      <div class="ci-tt"><label class="ci" data-code="J4" onclick="toggleCk(this)"><div class="box"></div>J4&nbsp;&ndash;&nbsp;CPDLC VDL 2</label>
+        <div class="ci-tooltip"><b>J4 &ndash; CPDLC via VDL Mode 2</b><em>CPDLC sobre VHF Digital Link Modo 2 (AVLC). Estandar actual para datalink ATN en Europa y otros espacios aereos. Mayor velocidad que Modo A.</em></div></div>
+
+      <div class="ci-tt"><label class="ci" data-code="J5" onclick="toggleCk(this)"><div class="box"></div>J5&nbsp;&ndash;&nbsp;CPDLC SATCOM Inmarsat</label>
+        <div class="ci-tooltip"><b>J5 &ndash; CPDLC via SATCOM (Inmarsat)</b><em>CPDLC sobre satelite Inmarsat (FANS 1/A). Requerido para operaciones RCP240/RSP180 en rutas oceánicas/remotas (NAT, Pacifico, Indico).</em></div></div>
+
+      <div class="ci-tt"><label class="ci" data-code="J6" onclick="toggleCk(this)"><div class="box"></div>J6&nbsp;&ndash;&nbsp;CPDLC SATCOM MTSAT</label>
+        <div class="ci-tooltip"><b>J6 &ndash; CPDLC via SATCOM (MTSAT)</b><em>CPDLC sobre satelite MTSAT (Multi-functional Transport Satellite). Usado en Region Pacifico/Asia bajo proveedor MTSAT. Alternativa regional a Inmarsat.</em></div></div>
+
+      <div class="ci-tt"><label class="ci" data-code="J7" onclick="toggleCk(this)"><div class="box"></div>J7&nbsp;&ndash;&nbsp;CPDLC SATCOM Iridium</label>
+        <div class="ci-tooltip"><b>J7 &ndash; CPDLC via SATCOM (Iridium)</b><em>CPDLC sobre satelite Iridium (cobertura polar global). Permite datalink ATC en latitudes extremas donde Inmarsat tiene cobertura limitada.</em></div></div>
+
+      <div class="ci-tt"><label class="ci" data-code="K" onclick="toggleCk(this)"><div class="box"></div>K&nbsp;&ndash;&nbsp;MLS</label>
+        <div class="ci-tooltip"><b>K &ndash; Microwave Landing System</b><em>Sistema de aterrizaje por microondas. Alternativa al ILS con mayor precision y flexibilidad angular. Poco desplegado globalmente; presente en algunos aeropuertos militares y experimentales.</em></div></div>
+
+      <div class="ci-tt"><label class="ci" data-code="L" onclick="toggleCk(this)"><div class="box"></div>L&nbsp;&ndash;&nbsp;ILS</label>
+        <div class="ci-tooltip"><b>L &ndash; ILS (Instrument Landing System)</b><em>Sistema de aterrizaje por instrumentos. Proporciona guia de rumbo (localizer) y senda de planeo (glide slope). Estandar mundial para aproximaciones de precision CAT I/II/III.</em></div></div>
+
+      <div class="ci-tt"><label class="ci" data-code="M1" onclick="toggleCk(this)"><div class="box"></div>M1&nbsp;&ndash;&nbsp;ATC RTF SATCOM (Inmarsat)</label>
+        <div class="ci-tooltip"><b>M1 &ndash; Radiotelefonia ATC via Inmarsat</b><em>Comunicacion de voz ATC sobre satelite Inmarsat. Usado en operaciones oceánicas/remotas para comunicacion directa con ATC cuando VHF/HF no son suficientes.</em></div></div>
+
+      <div class="ci-tt"><label class="ci" data-code="M2" onclick="toggleCk(this)"><div class="box"></div>M2&nbsp;&ndash;&nbsp;ATC RTF SATCOM (MTSAT)</label>
+        <div class="ci-tooltip"><b>M2 &ndash; Radiotelefonia ATC via MTSAT</b><em>Comunicacion de voz ATC sobre satelite MTSAT. Utilizado principalmente en la Region Asia-Pacifico (ICAO FIR Tokyo, Fukuoka). Similar funcionalidad que M1 pero en red MTSAT.</em></div></div>
+
+      <div class="ci-tt"><label class="ci" data-code="M3" onclick="toggleCk(this)"><div class="box"></div>M3&nbsp;&ndash;&nbsp;ATC RTF SATCOM (Iridium)</label>
+        <div class="ci-tooltip"><b>M3 &ndash; Radiotelefonia ATC via Iridium</b><em>Comunicacion de voz ATC sobre satelite Iridium. Cobertura global incluyendo polos. Usado en operaciones polares y remotas donde otros SATCOM no tienen cobertura adecuada.</em></div></div>
+
+      <div class="ci-tt"><label class="ci" data-code="O" onclick="toggleCk(this)"><div class="box"></div>O&nbsp;&ndash;&nbsp;VOR</label>
+        <div class="ci-tooltip"><b>O &ndash; VOR solamente</b><em>VHF Omnidirectional Range. Radiofaro VHF para navegacion en ruta. Requiere receptor VOR sin necesariamente tener DME.</em></div></div>
+
+      <div class="ci-tt"><label class="ci" data-code="P1" onclick="toggleCk(this)"><div class="box"></div>P1&nbsp;&ndash;&nbsp;RCP 400</label>
+        <div class="ci-tooltip"><b>P1 &ndash; Required Communications Performance 400</b><em>Capacidad de comunicacion con tiempo de transaccion ≤400 segundos. RCP requerida en ciertas rutas oceánicas. Especificar en Item 18: PBN/ y COM/ segun corresponda.</em></div></div>
+
+      <div class="ci-tt"><label class="ci" data-code="P2" onclick="toggleCk(this)"><div class="box"></div>P2&nbsp;&ndash;&nbsp;RCP 240</label>
+        <div class="ci-tooltip"><b>P2 &ndash; Required Communications Performance 240</b><em>Capacidad de comunicacion con tiempo de transaccion ≤240 segundos. Requerida en operaciones PBCS oceánicas (NAT MNPS). Implica FANS 1/A con SATCOM o HFDL.</em></div></div>
+
+      <div class="ci-tt"><label class="ci" data-code="P3" onclick="toggleCk(this)"><div class="box"></div>P3&nbsp;&ndash;&nbsp;RCP 130</label>
+        <div class="ci-tooltip"><b>P3 &ndash; Required Communications Performance 130</b><em>Capacidad de comunicacion con tiempo de transaccion ≤130 segundos. Requerida en operaciones de alta densidad con datalink ATC (LINK 2000+ en Europa continental).</em></div></div>
+
+      <div class="ci-tt"><label class="ci" data-code="R" onclick="toggleCk(this)"><div class="box"></div>R&nbsp;&ndash;&nbsp;PBN</label>
+        <div class="ci-tooltip"><b>R &ndash; PBN aprobado</b><em>Performance Based Navigation. Requiere especificar codigos PBN en Item 18: PBN/. Ej: B2 (RNAV-5), O2 (RNP-1), S1 (RNAV-1). Obligatorio para RNAV/RNP.</em></div></div>
+
+      <div class="ci-tt"><label class="ci" data-code="T" onclick="toggleCk(this)"><div class="box"></div>T&nbsp;&ndash;&nbsp;TACAN</label>
+        <div class="ci-tooltip"><b>T &ndash; TACAN</b><em>Tactical Air Navigation. Equipo militar de navegacion por radio. Proporciona rumbo y distancia a estaciones TACAN/VORTAC.</em></div></div>
+
+      <div class="ci-tt"><label class="ci" data-code="U" onclick="toggleCk(this)"><div class="box"></div>U&nbsp;&ndash;&nbsp;UHF RTF</label>
+        <div class="ci-tooltip"><b>U &ndash; UHF Radio Telefonía</b><em>Comunicacion por radio en frecuencias UHF (225&ndash;400 MHz). Principalmente uso militar. Requerido para operaciones en espacio aereo militar.</em></div></div>
+
+      <div class="ci-tt"><label class="ci" data-code="V" onclick="toggleCk(this)"><div class="box"></div>V&nbsp;&ndash;&nbsp;VHF RTF</label>
+        <div class="ci-tooltip"><b>V &ndash; VHF Radio Telefonía</b><em>Comunicacion en VHF (118&ndash;137 MHz). Estandar en aviacion civil. Requerido para todos los vuelos IFR/VFR controlados.</em></div></div>
+
+      <div class="ci-tt"><label class="ci" data-code="W" onclick="toggleCk(this)"><div class="box"></div>W&nbsp;&ndash;&nbsp;RVSM</label>
+        <div class="ci-tooltip"><b>W &ndash; RVSM aprobado</b><em>Reduced Vertical Separation Minima. Permite vuelo entre FL290&ndash;FL410 con separacion vertical de 300m (1000ft). Requiere aprobacion DGAC.</em></div></div>
+
+      <div class="ci-tt"><label class="ci" data-code="X" onclick="toggleCk(this)"><div class="box"></div>X&nbsp;&ndash;&nbsp;MNPS</label>
+        <div class="ci-tooltip"><b>X &ndash; MNPS aprobado</b><em>Minimum Navigation Performance Specification. Requerido para vuelo en espacio aereo NAT (Atlantico Norte) sobre FL285. Especificar en Item 18.</em></div></div>
+
+      <div class="ci-tt"><label class="ci" data-code="Y" onclick="toggleCk(this)"><div class="box"></div>Y&nbsp;&ndash;&nbsp;VHF 8.33kHz</label>
+        <div class="ci-tooltip"><b>Y &ndash; VHF con espaciado 8.33 kHz</b><em>Radio VHF con capacidad de sintonizar canales cada 8.33 kHz. Obligatorio en Europa (encima FL195) y espacios aereos de alta densidad.</em></div></div>
+
+      <div class="ci-tt"><label class="ci" data-code="Z" onclick="toggleCk(this)"><div class="box"></div>Z&nbsp;&ndash;&nbsp;Otros</label>
+        <div class="ci-tooltip"><b>Z &ndash; Otro equipo</b><em>Otro equipo COM/NAV no listado arriba. Debe especificarse en Item 18 usando indicador COM/ y/o NAV/ seguido de la descripcion del equipo.</em></div></div>
+
+    </div>
+
+    <div class="dv" style="margin-top:14px"><div class="dl"></div><div class="dlt">SSR / VIGILANCIA RADAR &mdash; SELECCION MULTIPLE</div><div class="dl"></div></div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--dim);margin-bottom:7px;letter-spacing:1px">&#9432; Puede seleccionar varios equipos de vigilancia simultaneamente. El campo 10 se generara automaticamente.</div>
+    <div class="cg" id="ssrGrp">
+
+      <div class="ci-tt"><label class="ci" data-code="N" onclick="toggleCk(this)"><div class="box"></div>N&nbsp;&ndash;&nbsp;Ninguno</label>
+        <div class="ci-tooltip"><b>N &ndash; Sin equipo SSR</b><em>La aeronave no porta transponder ni ningun equipo de vigilancia radar secundaria.</em></div></div>
+
+      <div class="ci-tt"><label class="ci" data-code="A" onclick="toggleCk(this)"><div class="box"></div>A&nbsp;&ndash;&nbsp;Modo A</label>
+        <div class="ci-tooltip"><b>A &ndash; Transponder Modo A</b><em>Transponder de identidad (4096 codigos). Solo identifica la aeronave mediante codigo squawk. Sin altitud.</em></div></div>
+
+      <div class="ci-tt"><label class="ci" data-code="C" onclick="toggleCk(this)"><div class="box"></div>C&nbsp;&ndash;&nbsp;Modo C</label>
+        <div class="ci-tooltip"><b>C &ndash; Transponder Modo A + C</b><em>Transponder con altimetria codificada Gillham. Transmite identidad y altitud de presion al radar. Estandar en aviacion general IFR.</em></div></div>
+
+      <div class="ci-tt"><label class="ci" data-code="S" onclick="toggleCk(this)"><div class="box"></div>S&nbsp;&ndash;&nbsp;Modo S</label>
+        <div class="ci-tooltip"><b>S &ndash; Modo S (Identidad + Altitud)</b><em>Transponder Modo S basico: interrogacion selectiva, transmite identificacion de aeronave (ACID) y altitud de presion. Usado con TCAS II.</em></div></div>
+
+      <div class="ci-tt"><label class="ci" data-code="E" onclick="toggleCk(this)"><div class="box"></div>E&nbsp;&ndash;&nbsp;ADS-B Out</label>
+        <div class="ci-tooltip"><b>E &ndash; Modo S + ADS-B Out (1090 ES)</b><em>Transponder Modo S con ADS-B extended squitter 1090MHz. Emite posicion GPS, velocidad y datos de vuelo. Obligatorio en muchos espacios aereos.</em></div></div>
+
+      <div class="ci-tt"><label class="ci" data-code="H" onclick="toggleCk(this)"><div class="box"></div>H&nbsp;&ndash;&nbsp;Vigilancia Ampliada</label>
+        <div class="ci-tooltip"><b>H &ndash; Modo S + Enhanced Surveillance</b><em>Modo S con transmision de parametros adicionales (velocidad seleccionada, nivel seleccionado, intento de viraje). Requerido en espacio aereo europeo.</em></div></div>
+
+      <div class="ci-tt"><label class="ci" data-code="I" onclick="toggleCk(this)"><div class="box"></div>I&nbsp;&ndash;&nbsp;Modo S+ID</label>
+        <div class="ci-tooltip"><b>I &ndash; Modo S con identificacion</b><em>Modo S con capacidad de transmitir identificacion de aeronave (ACID) pero SIN altitud. Menos comun que Modo S completo.</em></div></div>
+
+      <div class="ci-tt"><label class="ci" data-code="P" onclick="toggleCk(this)"><div class="box"></div>P&nbsp;&ndash;&nbsp;Modo S+Alt</label>
+        <div class="ci-tooltip"><b>P &ndash; Modo S con altitud de presion</b><em>Modo S con altimetria pero SIN identificacion de aeronave. Transicion de sistemas mas antiguos hacia Modo S completo.</em></div></div>
+
+      <div class="ci-tt"><label class="ci" data-code="B1" onclick="toggleCk(this)"><div class="box"></div>B1&nbsp;&ndash;&nbsp;ADS-B 1090</label>
+        <div class="ci-tooltip"><b>B1 &ndash; ADS-B Out 1090 MHz ES dedicado</b><em>ADS-B Out en 1090 MHz Extended Squitter independiente del transponder. Alta precision. Requerido en operaciones RVSM y oceánicas modernas.</em></div></div>
+
+      <div class="ci-tt"><label class="ci" data-code="B2" onclick="toggleCk(this)"><div class="box"></div>B2&nbsp;&ndash;&nbsp;ADS-B+In</label>
+        <div class="ci-tooltip"><b>B2 &ndash; ADS-B Out+In 1090 MHz</b><em>ADS-B bidireccional: transmite y recibe trafico. Permite awareness de trafico sin TCAS. Usado en cabinas avanzadas (G1000, avionics modernos).</em></div></div>
+
+      <div class="ci-tt"><label class="ci" data-code="U1" onclick="toggleCk(this)"><div class="box"></div>U1&nbsp;&ndash;&nbsp;ADS-B UAT Out</label>
+        <div class="ci-tooltip"><b>U1 &ndash; ADS-B Out UAT 978 MHz</b><em>ADS-B Out en Universal Access Transceiver 978 MHz. Utilizado principalmente en aviacion general en USA por debajo de FL180. Mas economico que 1090 ES.</em></div></div>
+
+      <div class="ci-tt"><label class="ci" data-code="U2" onclick="toggleCk(this)"><div class="box"></div>U2&nbsp;&ndash;&nbsp;ADS-B UAT In</label>
+        <div class="ci-tooltip"><b>U2 &ndash; ADS-B Out+In UAT 978 MHz</b><em>UAT bidireccional. Ademas de emitir, recibe Flight Information Services-Broadcast (FIS-B) y Traffic Information Services-Broadcast (TIS-B).</em></div></div>
+
+      <div class="ci-tt"><label class="ci" data-code="V1" onclick="toggleCk(this)"><div class="box"></div>V1&nbsp;&ndash;&nbsp;ADS-C FANS</label>
+        <div class="ci-tooltip"><b>V1 &ndash; ADS-C con FANS 1/A</b><em>Automatic Dependent Surveillance-Contract via datalink FANS 1/A. Requerido para operaciones RCP240/RSP180 en oceánico/remoto (NAT, Pacific).</em></div></div>
+
+      <div class="ci-tt"><label class="ci" data-code="V2" onclick="toggleCk(this)"><div class="box"></div>V2&nbsp;&ndash;&nbsp;ADS-C ATN</label>
+        <div class="ci-tooltip"><b>V2 &ndash; ADS-C con ATN</b><em>ADS-Contract via Aeronautical Telecommunications Network. Futuro estandar para CPDLC/ADS-C en espacio aereo europeo continental (FANS 2/B).</em></div></div>
+
+    </div>
+
+    <div style="margin-top:12px">
+      <label>Campo 10 Completo <span class="hint">AUTO-GENERADO AL SELECCIONAR / EDITABLE</span></label>
+      <input type="text" id="equip10" placeholder="SDE2E3FGHIJ1/CSE" style="font-size:14px;font-weight:700;color:var(--acc);">
+    </div>
+  </div>
+</div>
+
+<!-- ITEM 13 -->
+<div class="sec">
+  <div class="sh"><span class="ino">ITEM 13</span><h3>Aerodromo de Salida y Hora / Departure Aerodrome &amp; EOBT</h3></div>
+  <div class="sb">
+    <div class="rv"><div class="rd"></div><span id="lbDep" style="color:var(--dim);font-size:11px">DEP</span><div class="rl"></div><span id="lbDst" style="color:var(--dim);font-size:11px">DEST</span><div class="rd d"></div></div>
+    <div class="fg c3">
+      <div class="fgr"><label>Aerodromo Salida <span class="req">*</span> <span class="hint">OACI 4C</span></label><input type="text" id="adep" maxlength="4" placeholder="SPJC" required oninput="updateRoute()"></div>
+      <div class="fgr"><label>EOBT <span class="hint">HHMM UTC</span></label><input type="text" id="eobt" maxlength="4" placeholder="1430"></div>
+      <div class="fgr"><label>DOF <span class="hint">AAMMDD</span></label><input type="text" id="dof" maxlength="6" placeholder="260329"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ITEM 15 -->
+<div class="sec">
+  <div class="sh"><span class="ino">ITEM 15</span><h3>Velocidad de Crucero, Nivel y Ruta / Cruise Speed, Level &amp; Route</h3></div>
+  <div class="sb">
+    <div class="fg c4">
+      <div class="fgr">
+        <label>Tipo Velocidad</label>
+        <select id="speedtype">
+          <option value="N">N - Nudos (kt)</option><option value="K">K - km/h</option><option value="M">M - Mach</option>
+        </select>
+      </div>
+      <div class="fgr"><label>Velocidad <span class="req">*</span> <span class="hint">4 DIG</span></label><input type="text" id="speed" maxlength="4" placeholder="0120" required></div>
+      <div class="fgr">
+        <label>Tipo Nivel</label>
+        <select id="leveltype">
+          <option value="F">F - FL (nivel vuelo)</option><option value="A">A - Altitud (ft)</option>
+          <option value="S">S - Std (m)</option><option value="M">M - Altitud (m)</option>
+        </select>
+      </div>
+      <div class="fgr"><label>Nivel <span class="req">*</span> <span class="hint">3 DIG</span></label><input type="text" id="level" maxlength="3" placeholder="090" required></div>
+    </div>
+    <div class="fgr" style="margin-top:8px">
+      <label>Ruta / Route <span class="req">*</span> <span class="hint">DCT/AIRWAYS/FIXES</span></label>
+      <textarea id="route" rows="3" placeholder="DCT CLA V1 TRU DCT&#10;(Ejemplo: SID DCT FIJO AEROVIA DCT STAR)"></textarea>
+    </div>
+  </div>
+</div>
+
+<!-- ITEM 16 -->
+<div class="sec">
+  <div class="sh"><span class="ino">ITEM 16</span><h3>Aerodromo Destino, EET y Alternos / Destination, EET &amp; Alternates</h3></div>
+  <div class="sb">
+    <div class="fg c4">
+      <div class="fgr s2"><label>Aerodromo Destino <span class="req">*</span> <span class="hint">OACI 4C</span></label><input type="text" id="ades" maxlength="4" placeholder="SEQU" required oninput="updateRoute()"></div>
+      <div class="fgr"><label>EET Total <span class="req">*</span> <span class="hint">HHMM</span></label><input type="text" id="eet" maxlength="4" placeholder="0130" required></div>
+      <div class="fgr"></div>
+    </div>
+    <div class="fg c3" style="margin-top:8px">
+      <div class="fgr"><label>Alterno 1 <span class="hint">OACI</span></label><input type="text" id="altn1" maxlength="4" placeholder="SPHI"></div>
+      <div class="fgr"><label>Alterno 2 <span class="hint">OPC</span></label><input type="text" id="altn2" maxlength="4" placeholder="SPIM"></div>
+      <div class="fgr"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ITEM 18 -->
+<div class="sec">
+  <div class="sh"><span class="ino o">ITEM 18</span><h3>Otra Informacion / Other Information</h3></div>
+  <div class="sb">
+    <div class="fg c3">
+      <!-- STS/ SELECTOR -->
+      <div class="fgr i18-field i18sw" data-key="STS">
+        <label>STS/ <span class="hint">ESTADO ESPECIAL</span> <span class="i18-help-ico" onclick="showI18Help('STS')">?</span></label>
+        <button type="button" class="i18btn" id="ibtn_sts18" onclick="i18toggle('sts18')">
+          <span class="i18val mt" id="ival_sts18">Seleccionar...</span><span class="i18arr">&#9660;</span>
+        </button>
+        <input type="hidden" id="sts18">
+        <div class="i18panel" id="ipnl_sts18">
+          <div class="i18panel-title">STS/ &mdash; <em>Estado Especial del Vuelo</em></div>
+          <div class="i18chips">
+            <span class="i18chip" data-v="HOSP" onclick="i18pick(this,'sts18',0)">HOSP</span>
+            <span class="i18chip" data-v="MEDEVAC" onclick="i18pick(this,'sts18',0)">MEDEVAC</span>
+            <span class="i18chip" data-v="STATE" onclick="i18pick(this,'sts18',0)">STATE</span>
+            <span class="i18chip" data-v="HEAD" onclick="i18pick(this,'sts18',0)">HEAD</span>
+            <span class="i18chip" data-v="FFR" onclick="i18pick(this,'sts18',0)">FFR</span>
+            <span class="i18chip" data-v="HOSP/MEDEVAC" onclick="i18pick(this,'sts18',0)">HOSP/MEDEVAC</span>
+          </div>
+          <div class="i18foot">
+            <button class="fcl" onclick="i18clear('sts18')">&#10005; Limpiar</button>
+            <button class="fok" onclick="i18close('sts18')">&#10003; Aceptar</button>
+          </div>
+        </div>
+      </div>
+      <!-- PBN/ SELECTOR (multi) -->
+      <div class="fgr i18-field i18sw" data-key="PBN" style="grid-column:span 2">
+        <label>PBN/ <span class="hint">RNAV/RNP &mdash; MULTIPLE</span> <span class="i18-help-ico" onclick="showI18Help('PBN')">?</span></label>
+        <button type="button" class="i18btn" id="ibtn_pbn" onclick="i18toggle('pbn')">
+          <span class="i18val mt" id="ival_pbn">Seleccionar...</span><span class="i18arr">&#9660;</span>
+        </button>
+        <input type="hidden" id="pbn">
+        <div class="i18panel" id="ipnl_pbn" style="min-width:460px">
+          <div class="i18panel-title">PBN/ &mdash; <em>Performance Based Navigation</em></div>
+          <div class="i18sub">&#9658; RNAV (Area Navigation)</div>
+          <div class="i18chips">
+            <span class="i18chip" data-v="A1" title="RNAV-10: Oceanico" onclick="i18pick(this,'pbn',1)">A1 RNAV-10</span>
+            <span class="i18chip" data-v="B1" title="RNAV-5 en ruta" onclick="i18pick(this,'pbn',1)">B1 RNAV-5</span>
+            <span class="i18chip" data-v="B2" title="RNAV-5 GNSS" onclick="i18pick(this,'pbn',1)">B2 RNAV-5/GNSS</span>
+            <span class="i18chip" data-v="B3" title="RNAV-5 DME/DME" onclick="i18pick(this,'pbn',1)">B3 RNAV-5/DME</span>
+            <span class="i18chip" data-v="B4" title="RNAV-5 VOR/DME" onclick="i18pick(this,'pbn',1)">B4 RNAV-5/VOR</span>
+            <span class="i18chip" data-v="B5" title="RNAV-5 INS/IRS" onclick="i18pick(this,'pbn',1)">B5 RNAV-5/INS</span>
+            <span class="i18chip" data-v="C1" title="RNAV-2" onclick="i18pick(this,'pbn',1)">C1 RNAV-2</span>
+            <span class="i18chip" data-v="C2" title="RNAV-2 GNSS" onclick="i18pick(this,'pbn',1)">C2 RNAV-2/GNSS</span>
+            <span class="i18chip" data-v="C3" title="RNAV-2 DME/DME" onclick="i18pick(this,'pbn',1)">C3 RNAV-2/DME</span>
+            <span class="i18chip" data-v="C4" title="RNAV-2 DME+IRU" onclick="i18pick(this,'pbn',1)">C4 RNAV-2/IRU</span>
+            <span class="i18chip" data-v="D1" title="RNAV-1 SID/STAR" onclick="i18pick(this,'pbn',1)">D1 RNAV-1</span>
+            <span class="i18chip" data-v="D2" title="RNAV-1 GNSS" onclick="i18pick(this,'pbn',1)">D2 RNAV-1/GNSS</span>
+            <span class="i18chip" data-v="D3" title="RNAV-1 DME/DME" onclick="i18pick(this,'pbn',1)">D3 RNAV-1/DME</span>
+            <span class="i18chip" data-v="D4" title="RNAV-1 DME+IRU" onclick="i18pick(this,'pbn',1)">D4 RNAV-1/IRU</span>
+          </div>
+          <div class="i18sub">&#9658; RNP (Required Navigation Performance)</div>
+          <div class="i18chips">
+            <span class="i18chip" data-v="L1" title="RNP-4 Oceanico" onclick="i18pick(this,'pbn',1)">L1 RNP-4</span>
+            <span class="i18chip" data-v="O1" title="Basic-RNP-1" onclick="i18pick(this,'pbn',1)">O1 RNP-1</span>
+            <span class="i18chip" data-v="O2" title="Basic-RNP-1 GNSS" onclick="i18pick(this,'pbn',1)">O2 RNP-1/GNSS</span>
+            <span class="i18chip" data-v="O3" title="Basic-RNP-1 DME" onclick="i18pick(this,'pbn',1)">O3 RNP-1/DME</span>
+            <span class="i18chip" data-v="O4" title="Basic-RNP-1 IRU" onclick="i18pick(this,'pbn',1)">O4 RNP-1/IRU</span>
+            <span class="i18chip" data-v="S1" title="RNP-APCH SBAS" onclick="i18pick(this,'pbn',1)">S1 RNP-APCH</span>
+            <span class="i18chip" data-v="S2" title="RNP-APCH Baro" onclick="i18pick(this,'pbn',1)">S2 RNP-APCH/BARO</span>
+            <span class="i18chip" data-v="T1" title="RNP-AR con RF" onclick="i18pick(this,'pbn',1)">T1 RNP-AR</span>
+            <span class="i18chip" data-v="T2" title="RNP-AR sin RF" onclick="i18pick(this,'pbn',1)">T2 RNP-AR/NoRF</span>
+          </div>
+          <div class="i18foot">
+            <button class="fcl" onclick="i18clear('pbn')">&#10005; Limpiar</button>
+            <button class="fok" onclick="i18close('pbn')">&#10003; Aceptar</button>
+          </div>
+        </div>
+      </div>
+      <!-- NAV/ SELECTOR (single) -->
+      <div class="fgr i18-field i18sw" data-key="NAV">
+        <label>NAV/ <span class="hint">GNSS/TIPO</span> <span class="i18-help-ico" onclick="showI18Help('NAV')">?</span></label>
+        <button type="button" class="i18btn" id="ibtn_nav18" onclick="i18toggle('nav18')">
+          <span class="i18val mt" id="ival_nav18">Seleccionar...</span><span class="i18arr">&#9660;</span>
+        </button>
+        <input type="hidden" id="nav18">
+        <div class="i18panel" id="ipnl_nav18">
+          <div class="i18panel-title">NAV/ &mdash; <em>Equipo NAV adicional (con Z en Item 10)</em></div>
+          <div class="i18chips">
+            <span class="i18chip" data-v="GNSS" onclick="i18pick(this,'nav18',0)">GNSS</span>
+            <span class="i18chip" data-v="GPS" onclick="i18pick(this,'nav18',0)">GPS</span>
+            <span class="i18chip" data-v="GBAS" onclick="i18pick(this,'nav18',0)">GBAS</span>
+            <span class="i18chip" data-v="SBAS" onclick="i18pick(this,'nav18',0)">SBAS</span>
+            <span class="i18chip" data-v="GLONASS" onclick="i18pick(this,'nav18',0)">GLONASS</span>
+            <span class="i18chip" data-v="GALILEO" onclick="i18pick(this,'nav18',0)">GALILEO</span>
+            <span class="i18chip" data-v="DME/DME" onclick="i18pick(this,'nav18',0)">DME/DME</span>
+            <span class="i18chip" data-v="VOR/DME" onclick="i18pick(this,'nav18',0)">VOR/DME</span>
+            <span class="i18chip" data-v="ILS" onclick="i18pick(this,'nav18',0)">ILS</span>
+          </div>
+          <div class="i18foot">
+            <button class="fcl" onclick="i18clear('nav18')">&#10005; Limpiar</button>
+            <button class="fok" onclick="i18close('nav18')">&#10003; Aceptar</button>
+          </div>
+        </div>
+      </div>
+      <!-- COM/ SELECTOR (multi) -->
+      <div class="fgr i18-field i18sw" data-key="COM">
+        <label>COM/ <span class="hint">SI Z EN ITEM 10</span> <span class="i18-help-ico" onclick="showI18Help('COM')">?</span></label>
+        <button type="button" class="i18btn" id="ibtn_com18" onclick="i18toggle('com18')">
+          <span class="i18val mt" id="ival_com18">Seleccionar...</span><span class="i18arr">&#9660;</span>
+        </button>
+        <input type="hidden" id="com18">
+        <div class="i18panel" id="ipnl_com18">
+          <div class="i18panel-title">COM/ &mdash; <em>Equipo COM adicional (con Z en Item 10)</em></div>
+          <div class="i18chips">
+            <span class="i18chip" data-v="HF" onclick="i18pick(this,'com18',1)">HF</span>
+            <span class="i18chip" data-v="SAT" onclick="i18pick(this,'com18',1)">SAT</span>
+            <span class="i18chip" data-v="SATVOICE" onclick="i18pick(this,'com18',1)">SATVOICE</span>
+            <span class="i18chip" data-v="INMARSAT" onclick="i18pick(this,'com18',1)">INMARSAT</span>
+            <span class="i18chip" data-v="IRIDIUM" onclick="i18pick(this,'com18',1)">IRIDIUM</span>
+            <span class="i18chip" data-v="CPDLC" onclick="i18pick(this,'com18',1)">CPDLC</span>
+            <span class="i18chip" data-v="PDC" onclick="i18pick(this,'com18',1)">PDC</span>
+            <span class="i18chip" data-v="ACARS" onclick="i18pick(this,'com18',1)">ACARS</span>
+            <span class="i18chip" data-v="VHF" onclick="i18pick(this,'com18',1)">VHF</span>
+            <span class="i18chip" data-v="UHF" onclick="i18pick(this,'com18',1)">UHF</span>
+          </div>
+          <div class="i18foot">
+            <button class="fcl" onclick="i18clear('com18')">&#10005; Limpiar</button>
+            <button class="fok" onclick="i18close('com18')">&#10003; Aceptar</button>
+          </div>
+        </div>
+      </div>
+      <div class="fgr"><label>DAT/</label><input type="text" id="dat18" oninput="buildI18()"></div>
+      <!-- SUR/ SELECTOR (multi) -->
+      <div class="fgr i18-field i18sw" data-key="SUR">
+        <label>SUR/ <span class="hint">ADS-B/ADS-C</span> <span class="i18-help-ico" onclick="showI18Help('SUR')">?</span></label>
+        <button type="button" class="i18btn" id="ibtn_sur18" onclick="i18toggle('sur18')">
+          <span class="i18val mt" id="ival_sur18">Seleccionar...</span><span class="i18arr">&#9660;</span>
+        </button>
+        <input type="hidden" id="sur18">
+        <div class="i18panel" id="ipnl_sur18">
+          <div class="i18panel-title">SUR/ &mdash; <em>Vigilancia ADS-B / ADS-C</em></div>
+          <div class="i18sub">&#9658; ADS-B (Broadcast)</div>
+          <div class="i18chips">
+            <span class="i18chip" data-v="260B" title="ADS-B 1090MHz DO-260B" onclick="i18pick(this,'sur18',1)">260B ADS-B DO-260B</span>
+            <span class="i18chip" data-v="282B" title="ADS-B UAT DO-282B" onclick="i18pick(this,'sur18',1)">282B ADS-B UAT</span>
+            <span class="i18chip" data-v="260BU" title="ADS-B 1090+UAT" onclick="i18pick(this,'sur18',1)">260BU Dual</span>
+          </div>
+          <div class="i18sub">&#9658; ADS-C (Contract)</div>
+          <div class="i18chips">
+            <span class="i18chip" data-v="D1" title="ADS-C FANS 1/A" onclick="i18pick(this,'sur18',1)">D1 FANS 1/A</span>
+            <span class="i18chip" data-v="G1" title="ADS-C VDL Mode 2" onclick="i18pick(this,'sur18',1)">G1 VDL M2</span>
+          </div>
+          <div class="i18foot">
+            <button class="fcl" onclick="i18clear('sur18')">&#10005; Limpiar</button>
+            <button class="fok" onclick="i18close('sur18')">&#10003; Aceptar</button>
+          </div>
+        </div>
+      </div>
+      <div class="fgr"><label>DEP/ <span class="hint">SI ADEP=ZZZZ</span></label><input type="text" id="dep18" oninput="buildI18()"></div>
+      <div class="fgr"><label>DEST/ <span class="hint">SI ADES=ZZZZ</span></label><input type="text" id="dest18" oninput="buildI18()"></div>
+      <div class="fgr"><label>DOF/ <span class="hint">YYMMDD</span></label><input type="text" id="dof18" oninput="buildI18()"></div>
+      <div class="fgr"><label>REG/ <span class="hint">MATRICULA</span></label><input type="text" id="reg18" placeholder="OB-1234" oninput="buildI18()"></div>
+      <div class="fgr"><label>EET/ <span class="hint">FIR HORA</span></label><input type="text" id="eet18" oninput="buildI18()"></div>
+      <div class="fgr"><label>SEL/ <span class="hint">SELCAL</span></label><input type="text" id="sel18" oninput="buildI18()"></div>
+      <div class="fgr"><label>TYP/ <span class="hint">SI ACTYPE=ZZZZ</span></label><input type="text" id="typ18" oninput="buildI18()"></div>
+      <div class="fgr"><label>CODE/ <span class="hint">MODO S HEX</span></label><input type="text" id="code18" placeholder="A4D012" oninput="buildI18()"></div>
+      <div class="fgr"><label>DLE/</label><input type="text" id="dle18" oninput="buildI18()"></div>
+      <div class="fgr"><label>OPR/ <span class="hint">OPERADOR</span></label><input type="text" id="opr18" oninput="buildI18()"></div>
+      <div class="fgr s3"><label>RMK/</label><input type="text" id="rmk18" placeholder="OBSERVACIONES" oninput="buildI18()"></div>
+      <div class="fgr s3">
+        <label style="display:flex;align-items:center;gap:8px;">
+          Campo 18 Completo <span class="hint">AUTO-GENERADO / EDITABLE</span>
+          <span style="font-family:Share Tech Mono,monospace;font-size:9px;color:var(--red);cursor:pointer;" onclick="resetI18Auto()">&#8635; Auto</span>
+        </label>
+        <textarea id="item18" rows="3" style="text-transform:uppercase;font-size:12px;color:var(--acc);"
+          placeholder="PBN/A1 NAV/GNSS SUR/260B DOF/260329 OPR/..."
+          oninput="this._manualEdit=true;"></textarea>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ITEM 19 -->
+<div class="sec">
+  <div class="sh"><span class="ino g">ITEM 19</span><h3>Informacion Complementaria / Supplementary Information (SAR)</h3></div>
+  <div class="sb">
+    <div class="fg c4">
+      <div class="fgr"><label>E/ Autonomia <span class="hint">HHMM</span></label><input type="text" id="endurance" maxlength="4" placeholder="0430"></div>
+      <div class="fgr"><label>P/ Personas a bordo</label><input type="text" id="pob" maxlength="3" placeholder="004"></div>
+      <div class="fgr s2 ac-wrap">
+        <label>C/ Piloto al Mando <span class="hint">NOMBRE COMPLETO</span></label>
+        <input type="text" id="pic" placeholder="CAPT. JUAN PEREZ" oninput="acSearch('pic','pilots')">
+        <div class="ac-drop" id="ac_pic"></div>
+      </div>
+      <div class="fgr s2"><label>A/ Color y Marcas Aeronave</label><input type="text" id="accolor" placeholder="BLANCO CON FRANJA AZUL"></div>
+      <div class="fgr s2"><label>N/ Observaciones</label><input type="text" id="remarks19" placeholder=""></div>
+    </div>
+    <div class="dv" style="margin:10px 0"><div class="dl"></div><div class="dlt">EQUIPO DE EMERGENCIA / EMERGENCY EQUIPMENT</div><div class="dl"></div></div>
+    <div class="fg c2">
+      <div class="fgr">
+        <label>R/ Radio Emergencia</label>
+        <div class="cg" id="rGrp">
+          <label class="ci" data-code="U" onclick="toggleCk(this)"><div class="box"></div>U-UHF 243.0 MHz</label>
+          <label class="ci" data-code="V" onclick="toggleCk(this)"><div class="box"></div>V-VHF 121.5 MHz</label>
+          <label class="ci" data-code="E" onclick="toggleCk(this)"><div class="box"></div>E-ELT/ELBA</label>
+        </div>
+      </div>
+      <div class="fgr">
+        <label>S/ Equipo Supervivencia</label>
+        <div class="cg" id="sGrp">
+          <label class="ci" data-code="P" onclick="toggleCk(this)"><div class="box"></div>P-Polar</label>
+          <label class="ci" data-code="D" onclick="toggleCk(this)"><div class="box"></div>D-Desierto</label>
+          <label class="ci" data-code="M" onclick="toggleCk(this)"><div class="box"></div>M-Maritimo</label>
+          <label class="ci" data-code="J" onclick="toggleCk(this)"><div class="box"></div>J-Jungla</label>
+        </div>
+      </div>
+      <div class="fgr">
+        <label>J/ Chalecos Salvavidas</label>
+        <div class="cg" id="jGrp">
+          <label class="ci" data-code="L" onclick="toggleCk(this)"><div class="box"></div>L-Luz</label>
+          <label class="ci" data-code="F" onclick="toggleCk(this)"><div class="box"></div>F-Fluorescente</label>
+          <label class="ci" data-code="U" onclick="toggleCk(this)"><div class="box"></div>U-UHF</label>
+          <label class="ci" data-code="V" onclick="toggleCk(this)"><div class="box"></div>V-VHF</label>
+        </div>
+      </div>
+      <div class="fgr">
+        <label>D/ Balsas / Dinghies</label>
+        <div class="fg c2" style="gap:6px;margin-top:4px">
+          <div class="fgr"><label style="font-size:9px">Numero <span class="hint">MAX 2</span></label><input type="text" id="dinghyNum" placeholder="02" maxlength="2"></div>
+          <div class="fgr"><label style="font-size:9px">Capacidad <span class="hint">MAX 4</span></label><input type="text" id="dinghyCap" placeholder="0020" maxlength="4"></div>
+        </div>
+        <div class="fg c2" style="gap:6px;margin-top:6px">
+          <div class="fgr">
+            <label style="font-size:9px">C/ Cubierta <span class="hint">Cover</span></label>
+            <div class="cg" id="covGrp" style="gap:6px">
+              <label class="ci" data-code="C" onclick="toggleRd(this,'covGrp')"><div class="box"></div>C – Con cubierta</label>
+              <label class="ci" data-code="" onclick="toggleRd(this,'covGrp')"><div class="box"></div>Sin cubierta</label>
+            </div>
+          </div>
+          <div class="fgr"><label style="font-size:9px">Color de Balsas <span class="hint">Colour</span></label><input type="text" id="dinghyColor" placeholder="NARANJA" style="text-transform:uppercase"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOOLS SECTION -->
+<div class="sec">
+  <div class="sh"><span class="ino" style="background:var(--acc2);color:#000">TOOLS</span><h3>Herramientas de Vuelo / Flight Tools</h3></div>
+  <div class="sb">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+      <button type="button" class="btn tool-tab-btn active" data-tool="fuel"
+        style="background:rgba(244,166,0,.15);border:1px solid var(--acc2);color:var(--acc2);font-size:10px;padding:8px 16px;"
+        onclick="toolTab('fuel')">&#9981; Calculadora Combustible</button>
+      <button type="button" class="btn tool-tab-btn" data-tool="levels"
+        style="background:rgba(0,200,255,.08);border:1px solid var(--acc);color:var(--acc);font-size:10px;padding:8px 16px;"
+        onclick="toolTab('levels')">&#9992; Niveles de Crucero</button>
+    </div>
+
+    <!-- FUEL CALC -->
+    <div id="tool_fuel" class="tool-panel active">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--acc2);letter-spacing:2px;margin-bottom:10px;">&#9981; CALCULADORA DE COMBUSTIBLE / FUEL CALCULATOR (ICAO DOC 9976)</div>
+      <div class="fg c4" style="gap:8px;">
+        <div class="fgr">
+          <label>Consumo / Burn Rate <span class="hint">por hora</span></label>
+          <input type="number" id="fc_burn" placeholder="120" min="0">
+        </div>
+        <div class="fgr">
+          <label>Tiempo Vuelo / Flight Time <span class="hint">minutos</span></label>
+          <input type="number" id="fc_time" placeholder="90" min="0">
+        </div>
+        <div class="fgr">
+          <label>Taxi / Rodaje <span class="hint">unidades</span></label>
+          <input type="number" id="fc_taxi" placeholder="10" min="0" value="10">
+        </div>
+        <div class="fgr">
+          <label>Contingencia <span class="hint">%</span></label>
+          <input type="number" id="fc_cont" placeholder="5" min="0" max="20" value="5">
+        </div>
+        <div class="fgr">
+          <label>Combustible Alterno <span class="hint">unidades</span></label>
+          <input type="number" id="fc_alt" placeholder="0" min="0" value="0">
+        </div>
+        <div class="fgr">
+          <label>Reserva Final <span class="hint">minutos</span></label>
+          <input type="number" id="fc_res" placeholder="45" min="0" value="45">
+        </div>
+        <div class="fgr">
+          <label>Unidad / Unit</label>
+          <select id="fc_unit">
+            <option value="kg">Kilogramos (KG)</option>
+            <option value="L">Litros (L)</option>
+            <option value="USG">US Galones (USG)</option>
+            <option value="LB">Libras (LB)</option>
+          </select>
+        </div>
+        <div class="fgr" style="display:flex;align-items:flex-end;">
+          <button type="button" class="btn b-prev" style="padding:8px 20px;font-size:10px;" onclick="calcFuel()">&#9654; Calcular</button>
+        </div>
+      </div>
+      <div id="fuel_result" style="margin-top:10px;background:rgba(0,0,0,.35);border:1px solid var(--bdr);border-radius:6px;padding:14px;font-family:'Share Tech Mono',monospace;font-size:11px;line-height:2.1;display:none;"></div>
+    </div>
+
+    <!-- CRUISING LEVELS TABLE -->
+    <div id="tool_levels" class="tool-panel">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--acc2);letter-spacing:2px;margin-bottom:10px;">&#9992; TABLA DE NIVELES DE CRUCERO / CRUISING LEVELS — ICAO Annex 2 Table</div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px;align-items:flex-end;">
+        <div class="fgr" style="flex:0 0 auto;">
+          <label>Reglas</label>
+          <select id="cl_rules" onchange="renderCruiseLevels()">
+            <option value="IFR">IFR</option>
+            <option value="VFR">VFR</option>
+          </select>
+        </div>
+        <div class="fgr" style="flex:0 0 auto;">
+          <label>Rumbo magnético</label>
+          <select id="cl_mag" onchange="renderCruiseLevels()">
+            <option value="MAG">Magnético</option>
+            <option value="TRUE">Verdadero (zona polar)</option>
+          </select>
+        </div>
+        <div class="fgr" style="flex:0 0 auto;">
+          <label>Hasta nivel</label>
+          <select id="cl_max" onchange="renderCruiseLevels()">
+            <option value="200">FL 200</option>
+            <option value="300">FL 300</option>
+            <option value="450" selected>FL 450</option>
+          </select>
+        </div>
+      </div>
+      <div id="cruise_table" style="overflow-x:auto;max-height:400px;overflow-y:auto;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- I18 HELP MODAL -->
+<div class="mo" id="moI18Help">
+  <div class="md" style="max-width:700px;max-height:85vh;overflow-y:auto;">
+    <h2 id="i18HelpTitle">&#9654; AYUDA</h2>
+    <div id="i18HelpBody" style="font-family:'Share Tech Mono',monospace;font-size:11px;line-height:1.85;color:var(--txt);"></div>
+    <button class="mc" onclick="closeMo('moI18Help')" style="margin-top:14px">&#x2715; Cerrar</button>
+  </div>
+</div>
+
+<!-- OACI PREVIEW -->
+<div class="sec">
+  <div class="sh"><span class="ino">OACI</span><h3>Vista Previa Mensaje OACI / ICAO FPL Preview</h3></div>
+  <div class="sb">
+    <div class="ip"><div id="icaoText" style="white-space:pre;line-height:1.9">Complete los campos y haga clic en "Generar OACI" para ver el mensaje...</div></div>
+  </div>
+</div>
+
+<!-- BUTTONS -->
+<div class="bb">
+  <button type="button" class="btn b-prev" onclick="genICAO()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+    Generar OACI
+  </button>
+  <button type="button" class="btn b-pdf" onclick="downloadPDF()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+    Descargar PDF
+  </button>
+  <button type="button" class="btn b-icao" onclick="downloadICAO()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v3"/><polyline points="14 2 14 8 20 8"/><path d="M2 15h10M9 18l3-3-3-3"/></svg>
+    Descargar OACI (.txt)
+  </button>
+  <button type="button" class="btn b-clr" onclick="clearAll()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.57"/></svg>
+    Limpiar
+  </button>
+</div>
+
+<!-- EMAIL SECTION -->
+<div class="email-sec">
+  <h4>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 7L2 7"/></svg>
+    Enviar Plan de Vuelo por Correo Electronico
+  </h4>
+
+  <!-- FROM badge -->
+  <div style="margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+    <div class="email-from-badge">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 7L2 7"/></svg>
+      DE: <b id="fromBadge" style="color:#fff"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="dabcaab6f4b7b1b5b59abdb7bbb3b6f4b9b5b7">[email&#160;protected]</a></b>
+      &nbsp;<span id="cfgBadge" class="cfg-saved-badge" style="display:none">&#10003; CONFIGURADO</span>
+    </div>
+    <button class="email-cfg-link" onclick="openEmailConfig()">&#9881; Configurar envio automatico</button>
+  </div>
+
+  <div class="email-row">
+    <div class="email-field">
+      <label>&#9993; Correo Destinatario <span style="color:var(--red)">*</span></label>
+      <input type="email" id="emailAddr" placeholder="piloto@aerolinea.com.pe" autocomplete="email">
+    </div>
+    <div class="email-field" style="max-width:260px">
+      <label>Asunto <span style="color:var(--acc3);font-size:9px">(auto-generado si se deja vacio)</span></label>
+      <input type="text" id="emailSubject" placeholder="Se genera: FPL OB1234 SPJC-SEQU DOF:...">
+    </div>
+    <button type="button" class="btn b-email" onclick="sendEmail()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      Enviar PDF
+    </button>
+  </div>
+
+  <div class="email-note" style="margin-top:8px">
+    <b>&#9432; Dos modos de envio:</b>
+    <br>&#9654; <b style="color:var(--acc3)">Automatico (recomendado):</b> Configura tu App Password de Gmail una sola vez y el <b style="color:#fff">PDF se envia como adjunto real</b> directamente desde <b><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="ff998f93d192949090bf98929e9693d19c9092">[email&#160;protected]</a></b>.
+    <br>&#9654; <b style="color:var(--acc)">Manual:</b> Si no esta configurado, se descarga el PDF y se abre tu cliente de correo para adjuntarlo.
+  </div>
+  <div class="email-status" id="emailStatus"></div>
+</div>
+
+<!-- EMAIL CONFIG MODAL -->
+<div class="mo" id="moEmailCfg">
+  <div class="md" style="max-width:640px">
+    <h2>&#9881; CONFIGURAR ENVIO CON PDF ADJUNTO</h2>
+    <div style="font-family:Share Tech Mono,monospace;font-size:11px;color:var(--acc);margin-bottom:12px;letter-spacing:1px">
+      REMITENTE: <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="0a6c7a6624676165654a6d676b636624696567">[email&#160;protected]</a> &nbsp;|&nbsp; SERVICIO: smtpjs.com (adjunto PDF real)
+    </div>
+
+    <div class="cfg-steps">
+      <b style="color:var(--acc2)">&#9650; OPCION A &mdash; App Password de Gmail (recomendado, mas facil):</b><br>
+      <b>PASO 1:</b> En Gmail → Cuenta Google → <b>Seguridad</b> → <b>Verificacion en 2 pasos</b> (activar si no esta)<br>
+      <b>PASO 2:</b> Buscar <b>"Contrasenas de aplicacion"</b> → Seleccionar app: "Correo" → Dispositivo: "Otro (FPL-MKOO)"<br>
+      <b>PASO 3:</b> Google genera una <b>contrasena de 16 caracteres</b> → copiarla abajo<br><br>
+
+      <b style="color:var(--acc3)">&#9650; OPCION B &mdash; Token encriptado (smtpjs.com, mas seguro):</b><br>
+      <b>PASO 1:</b> Ir a <a href="https://smtpjs.com" target="_blank" style="color:var(--acc)">smtpjs.com</a> → secccion <b>"Encrypt your SMTP Credentials"</b><br>
+      <b>PASO 2:</b> SMTP Server: <b>smtp.gmail.com</b> | Port: <b>465</b> | Username: <b><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="5137213d7f3c3a3e3e11363c30383d7f323e3c">[email&#160;protected]</a></b><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Password: <b>(App Password)</b> | Security: <b>SSL</b> → clic <b>Encrypt</b><br>
+      <b>PASO 3:</b> Copiar el <b>Secure Token</b> generado → pegarlo abajo
+    </div>
+
+    <div style="margin-top:14px;display:flex;flex-direction:column;gap:10px">
+      <div class="fgr">
+        <label style="font-family:Share Tech Mono,monospace;font-size:10px;color:var(--acc2);letter-spacing:1px;margin-bottom:4px;display:block">
+          &#9654; APP PASSWORD DE GMAIL <span style="color:var(--dim)">(16 caracteres, ej: abcd efgh ijkl mnop)</span>
+        </label>
+        <input type="password" class="cfg-input" id="cfg_pass"
+          placeholder="xxxx xxxx xxxx xxxx"
+          style="font-family:Share Tech Mono,monospace;font-size:14px;letter-spacing:2px">
+      </div>
+      <div class="fgr">
+        <label style="font-family:Share Tech Mono,monospace;font-size:10px;color:var(--acc3);letter-spacing:1px;margin-bottom:4px;display:block">
+          &#9654; SECURE TOKEN de smtpjs.com <span style="color:var(--dim)">(opcional, reemplaza la contrasena)</span>
+        </label>
+        <input type="text" class="cfg-input" id="cfg_token"
+          placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+      </div>
+      <div class="fgr" style="display:none">
+        <input type="hidden" id="cfg_mode" value="direct">
+      </div>
+    </div>
+
+    <div class="cfg-status" id="cfgStatus"></div>
+
+    <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+      <button class="db-save" onclick="saveEmailConfig()"
+        style="background:rgba(0,255,157,.1);border-color:var(--acc3);color:var(--acc3)">
+        &#128190; Guardar
+      </button>
+      <button class="db-save" onclick="testEmailConfig()"
+        style="background:rgba(0,200,255,.08);border-color:var(--acc);color:var(--acc)">
+        &#9654; Probar Envio
+      </button>
+      <button class="mc" onclick="closeMo('moEmailCfg')" style="margin-top:0">&#x2715; Cerrar</button>
+    </div>
+  </div>
+</div>
+</form>
+</div>
+
+<!-- OACI MODAL -->
+<div class="mo" id="moICAO">
+  <div class="md">
+    <h2>&#9654; MENSAJE FPL / OACI</h2>
+    <pre id="moPre"></pre>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+      <button class="mc" onclick="copyICAO()">&#128203; Copiar</button>
+      <button class="mc" onclick="closeMo('moICAO')">&#x2715; Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- DB MODAL -->
+<div class="mo" id="moDB">
+  <div class="md db-md">
+    <h2>&#9654; BASE DE DATOS LOCAL</h2>
+    <div class="db-tabs">
+      <div class="db-tab active" onclick="dbTab('aircraft')">&#9992; AERONAVES</div>
+      <div class="db-tab" onclick="dbTab('pilots')">&#128100; PILOTOS</div>
+      <div class="db-tab" onclick="dbTab('routes')">&#128205; RUTAS</div>
+    </div>
+
+    <!-- AERONAVES -->
+    <div class="db-panel active" id="dbp_aircraft">
+      <div class="db-list" id="dbl_aircraft"></div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--acc2);margin-bottom:6px;letter-spacing:2px">NUEVA AERONAVE / GUARDAR ACTUAL</div>
+      <div class="db-form">
+        <div class="fgr"><label>Matricula <span class="req">*</span></label><input type="text" id="db_reg" placeholder="OB-1234" style="font-size:12px"></div>
+        <div class="fgr"><label>Tipo OACI</label><input type="text" id="db_type" placeholder="C172" style="font-size:12px"></div>
+        <div class="fgr"><label>Estela WTC</label><input type="text" id="db_wtc" placeholder="L" style="font-size:12px"></div>
+        <div class="fgr"><label>Equipo Campo 10</label><input type="text" id="db_equip" placeholder="SDFG/C" style="font-size:12px"></div>
+        <div class="fgr"><label>Tipo Veloc.</label><input type="text" id="db_speedtype" placeholder="N" style="font-size:12px"></div>
+        <div class="fgr"><label>Velocidad</label><input type="text" id="db_speed" placeholder="0120" style="font-size:12px"></div>
+        <div class="fgr"><label>Tipo Nivel</label><input type="text" id="db_leveltype" placeholder="F" style="font-size:12px"></div>
+        <div class="fgr"><label>Nivel</label><input type="text" id="db_level" placeholder="090" style="font-size:12px"></div>
+        <div class="fgr full"><label>Color y Marcas (A/)</label><input type="text" id="db_color" placeholder="BLANCO Y AZUL" style="font-size:12px"></div>
+        <div class="fgr full"><label>Item 18 (PBN/ NAV/ etc.)</label><input type="text" id="db_i18" style="font-size:12px" placeholder="PBN/A1 NAV/GNSS SUR/260B"></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="db-save" onclick="dbSaveAircraft()">&#128190; Guardar Aeronave</button>
+        <button class="db-save" onclick="dbFromFormAircraft()" style="background:rgba(0,200,255,.1);border-color:var(--acc);color:var(--acc)">&#8593; Cargar desde formulario</button>
+      </div>
+    </div>
+
+    <!-- PILOTOS -->
+    <div class="db-panel" id="dbp_pilots">
+      <div class="db-list" id="dbl_pilots"></div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--acc2);margin-bottom:6px;letter-spacing:2px">NUEVO PILOTO / GUARDAR ACTUAL</div>
+      <div class="db-form">
+        <div class="fgr"><label>Nombre Completo <span class="req">*</span></label><input type="text" id="db_pname" style="font-size:12px" placeholder="JUAN PEREZ"></div>
+        <div class="fgr"><label>Licencia DGAC</label><input type="text" id="db_plic" style="font-size:12px" placeholder="DGAC 075"></div>
+        <div class="fgr full"><label>Contacto / Telefono</label><input type="text" id="db_pcontact" style="font-size:12px" placeholder="+51 999 000 111"></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="db-save" onclick="dbSavePilot()">&#128190; Guardar Piloto</button>
+        <button class="db-save" onclick="dbFromFormPilot()" style="background:rgba(0,200,255,.1);border-color:var(--acc);color:var(--acc)">&#8593; Cargar desde formulario</button>
+      </div>
+    </div>
+
+    <!-- RUTAS -->
+    <div class="db-panel" id="dbp_routes">
+      <div class="db-list" id="dbl_routes"></div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--acc2);margin-bottom:6px;letter-spacing:2px">NUEVA RUTA / GUARDAR ACTUAL</div>
+      <div class="db-form">
+        <div class="fgr"><label>DEP <span class="req">*</span></label><input type="text" id="db_rdep" maxlength="4" style="font-size:12px" placeholder="SPJC"></div>
+        <div class="fgr"><label>DEST <span class="req">*</span></label><input type="text" id="db_rdest" maxlength="4" style="font-size:12px" placeholder="SPRU"></div>
+        <div class="fgr"><label>Alterno 1</label><input type="text" id="db_ral1" maxlength="4" style="font-size:12px"></div>
+        <div class="fgr"><label>Alterno 2</label><input type="text" id="db_ral2" maxlength="4" style="font-size:12px"></div>
+        <div class="fgr"><label>EET (HHMM)</label><input type="text" id="db_reet" maxlength="4" style="font-size:12px" placeholder="0100"></div>
+        <div class="fgr"><label>Nombre/Descripcion</label><input type="text" id="db_rname" style="font-size:12px" placeholder="Lima-Trujillo via CLA"></div>
+        <div class="fgr full"><label>Ruta Completa</label><textarea id="db_rroute" rows="2" style="font-size:11px;text-transform:uppercase" placeholder="DCT CLA V1 TRU DCT"></textarea></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="db-save" onclick="dbSaveRoute()">&#128190; Guardar Ruta</button>
+        <button class="db-save" onclick="dbFromFormRoute()" style="background:rgba(0,200,255,.1);border-color:var(--acc);color:var(--acc)">&#8593; Cargar desde formulario</button>
+      </div>
+    </div>
+
+    <button class="mc" onclick="closeMo('moDB')" style="margin-top:12px">&#x2715; Cerrar</button>
+  </div>
+</div>
+
+<footer><span>OACI DOC 4444</span> &middot; PANS-ATM &middot; ANNEX 2 &middot; FORMULARIO FPL INTERNACIONAL &middot; <span>Conforme enmiendas ICAO 2012+</span></footer>
+
+<script>
+// ─── UTC CLOCK ──────────────────────────────────────────────────────────────
+function updateClock(){const n=new Date();document.getElementById('utcClock').textContent=[n.getUTCHours(),n.getUTCMinutes(),n.getUTCSeconds()].map(x=>String(x).padStart(2,'0')).join(':');}
+setInterval(updateClock,1000);updateClock();
+
+// Auto-fill dates
+(function(){
+  const n=new Date();
+  const dd=String(n.getUTCDate()).padStart(2,'0');
+  const hh=String(n.getUTCHours()).padStart(2,'0');
+  const mm=String(n.getUTCMinutes()).padStart(2,'0');
+  const yy=String(n.getUTCFullYear()).slice(2);
+  const mo=String(n.getUTCMonth()+1).padStart(2,'0');
+  document.getElementById('dtg').value=dd+hh+mm;
+  document.getElementById('dof').value=yy+mo+dd;
+  document.getElementById('dof18').value=yy+mo+dd;
+})();
+
+// ─── HELPERS ────────────────────────────────────────────────────────────────
+function gv(id){return (document.getElementById(id)?.value||'').trim().toUpperCase();}
+function gvr(id){return (document.getElementById(id)?.value||'').trim();}
+function sv(id,val){const el=document.getElementById(id);if(el)el.value=val||'';}
+
+// ─── CHECKBOX TOGGLE ────────────────────────────────────────────────────────
+function toggleCk(el){
+  // Always operate on the .ci label, not a child element
+  const ci = el.closest ? el.closest('.ci') : el;
+  if(!ci) return;
+  ci.classList.toggle('active');
+  const box = ci.querySelector('.box');
+  if(box) box.textContent = ci.classList.contains('active') ? '✓' : '';
+  buildEquip10();
+}
+function toggleRd(el,grpId){
+  // Legacy: kept for any remaining radio groups but SSR now uses toggleCk
+  document.getElementById(grpId).querySelectorAll('.ci').forEach(c=>{c.classList.remove('active');c.querySelector('.box').textContent='';});
+  el.classList.add('active');el.querySelector('.box').textContent='✓';
+  buildEquip10();
+}
+// Get code from element
+function getCode(el){return el.getAttribute('data-code')||'';}
+// Get active codes from a group
+function getActive(grpId){
+  const codes=[];
+  document.getElementById(grpId).querySelectorAll('.ci.active').forEach(el=>codes.push(getCode(el)));
+  return codes;
+}
+// Set active codes in a group
+function setActive(grpId,codes){
+  document.getElementById(grpId).querySelectorAll('.ci').forEach(el=>{
+    const c=getCode(el);
+    const on=codes.includes(c);
+    el.classList.toggle('active',on);
+    el.querySelector('.box').textContent=on?'✓':'';
+  });
+}
+
+// ─── AUTO-BUILD ITEM 10 ─────────────────────────────────────────────────────
+function buildEquip10(){
+  const navCodes=getActive('comNav');
+  // COM/NAV: single-letter codes in ICAO order, then multi-char grouped
+  const navStd=['N','S','D','F','G','H','I','K','L','O','R','T','U','V','W','X','Y','Z'];
+  const navExt=['J1','J2','J3','J4','J5','J6','J7','M1','M2','M3','P1','P2','P3'];
+  let navOut='';
+  for(const c of navStd) if(navCodes.includes(c)) navOut+=c;
+  for(const c of navExt) if(navCodes.includes(c)) navOut+=c;
+  const ssrCodes=getActive('ssrGrp');
+  // SSR: sort standard codes first (N A C S E H I P), then extended (B1 B2 U1 U2 V1 V2)
+  const ssrStd=['N','A','C','S','E','H','I','P'];
+  const ssrExt=['B1','B2','U1','U2','V1','V2'];
+  let ssrOut='';
+  for(const c of ssrStd) if(ssrCodes.includes(c)) ssrOut+=c;
+  for(const c of ssrExt) if(ssrCodes.includes(c)) ssrOut+=c;
+  const auto=(navOut||'S')+(ssrOut?'/'+ssrOut:'');
+  sv('equip10',auto);
+}
+
+// ─── SEND EMAIL ─────────────────────────────────────────────────────────────
+// ─── EMAIL CONFIG & SMTP ─────────────────────────────────────────────────────
+const EJCFG_KEY = 'fpl_smtp_config';
+
+function loadEmailConfig(){
+  try{
+    var saved = JSON.parse(localStorage.getItem(EJCFG_KEY)||'{}');
+    if(saved.password)  SMTP_CONFIG.password  = saved.password;
+    if(saved.secureToken && saved.secureToken !== 'YOUR_SMTPJS_TOKEN_HERE')
+      SMTP_CONFIG.secureToken = saved.secureToken;
+    if(saved.mode)      SMTP_CONFIG.mode       = saved.mode;
+  }catch(e){}
+  // Show badge if configured
+  var hasToken = SMTP_CONFIG.secureToken && SMTP_CONFIG.secureToken !== 'YOUR_SMTPJS_TOKEN_HERE';
+  var hasPass  = SMTP_CONFIG.password && SMTP_CONFIG.password.length > 0;
+  var b = document.getElementById('cfgBadge');
+  if(b && (hasToken || hasPass)) b.style.display = 'inline-flex';
+  // Pre-fill config modal
+  try{
+    var t = document.getElementById('cfg_token');
+    var p = document.getElementById('cfg_pass');
+    var m = document.getElementById('cfg_mode');
+    if(t) t.value = (SMTP_CONFIG.secureToken !== 'YOUR_SMTPJS_TOKEN_HERE') ? SMTP_CONFIG.secureToken : '';
+    if(p) p.value = SMTP_CONFIG.password || '';
+    if(m) m.value = SMTP_CONFIG.mode || 'direct';
+  }catch(e){}
+}
+document.addEventListener('DOMContentLoaded', loadEmailConfig);
+
+function openEmailConfig(){
+  try{
+    var t = document.getElementById('cfg_token');
+    var p = document.getElementById('cfg_pass');
+    var m = document.getElementById('cfg_mode');
+    if(t) t.value = (SMTP_CONFIG.secureToken !== 'YOUR_SMTPJS_TOKEN_HERE') ? SMTP_CONFIG.secureToken : '';
+    if(p) p.value = SMTP_CONFIG.password || '';
+    if(m) m.value = SMTP_CONFIG.mode || 'direct';
+  }catch(e){}
+  document.getElementById('moEmailCfg').classList.add('open');
+}
+
+function saveEmailConfig(){
+  var tok = document.getElementById('cfg_token') ? document.getElementById('cfg_token').value.trim() : '';
+  var pas = document.getElementById('cfg_pass')  ? document.getElementById('cfg_pass').value.trim()  : '';
+  var mod = document.getElementById('cfg_mode')  ? document.getElementById('cfg_mode').value         : 'direct';
+  if(!tok && !pas){ showCfgStatus('err','Ingrese el Token o la App Password de Gmail.'); return; }
+  SMTP_CONFIG.secureToken = tok || 'YOUR_SMTPJS_TOKEN_HERE';
+  SMTP_CONFIG.password    = pas;
+  SMTP_CONFIG.mode        = mod;
+  localStorage.setItem(EJCFG_KEY, JSON.stringify({secureToken:tok, password:pas, mode:mod}));
+  var b = document.getElementById('cfgBadge');
+  if(b) b.style.display = 'inline-flex';
+  showCfgStatus('ok','✓ Configuracion guardada correctamente.');
+}
+
+function testEmailConfig(){
+  showCfgStatus('ok','Enviando correo de prueba...');
+  smtpSend('fpl.mkoo@gmail.com','Prueba FPL-MKOO','Configuracion SMTP correcta.\n\nSistema FPL-MKOO OACI DOC 4444',null,null)
+    .then(function(){ showCfgStatus('ok','✓ Correo de prueba enviado. Revisa la bandeja de fpl.mkoo@gmail.com'); })
+    .catch(function(e){ showCfgStatus('err','Error: '+e+'\nVerifica la App Password o Token.'); });
+}
+
+function showCfgStatus(type, msg){
+  var el = document.getElementById('cfgStatus');
+  if(!el) return;
+  el.textContent = msg;
+  el.className = 'cfg-status ' + type + ' show';
+}
+
+// ─── CORE SMTP SEND (smtpjs.com — soporta adjuntos reales) ───────────────────
+function smtpSend(toEmail, subject, body, pdfBlob, filename){
+  return new Promise(function(resolve, reject){
+    if(typeof Email === 'undefined'){
+      reject('smtpjs no cargado. Verifica conexion a internet.');
+      return;
+    }
+    var cfg = {
+      To:      toEmail,
+      From:    SMTP_CONFIG.fromEmail,
+      Subject: subject,
+      Body:    body.replace(/\n/g,'<br>'),
+    };
+    // Auth: token (encrypted) or direct credentials
+    var hasToken = SMTP_CONFIG.secureToken && SMTP_CONFIG.secureToken !== 'YOUR_SMTPJS_TOKEN_HERE';
+    if(hasToken){
+      cfg.SecureToken = SMTP_CONFIG.secureToken;
+    } else {
+      cfg.Host     = SMTP_CONFIG.host;
+      cfg.Username = SMTP_CONFIG.username;
+      cfg.Password = SMTP_CONFIG.password;
+      cfg.Port     = SMTP_CONFIG.port;
+    }
+    // PDF attachment
+    if(pdfBlob && filename){
+      var reader = new FileReader();
+      reader.onload = function(ev){
+        // smtpjs attachment format: base64 string (strip data URL prefix)
+        var b64 = ev.target.result.split(',')[1];
+        cfg.Attachments = [{
+          name: filename,
+          data: b64
+        }];
+        Email.send(cfg).then(function(msg){
+          if(msg === 'OK') resolve(msg);
+          else reject(msg);
+        }).catch(reject);
+      };
+      reader.onerror = function(){ reject('Error leyendo PDF'); };
+      reader.readAsDataURL(pdfBlob);
+    } else {
+      Email.send(cfg).then(function(msg){
+        if(msg === 'OK') resolve(msg);
+        else reject(msg);
+      }).catch(reject);
+    }
+  });
+}
+
+// ─── SEND EMAIL ───────────────────────────────────────────────────────────────
+function sendEmail(){
+  var toEmail = document.getElementById('emailAddr').value.trim();
+  if(!toEmail){ showEmailStatus('err','⚠ Ingrese el correo del destinatario.'); return; }
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(toEmail)){
+    showEmailStatus('err','⚠ Correo no valido.'); return;
+  }
+  var acid = gv('acid')||'FPL';
+  var dep  = gv('adep')||'N/A';
+  var des  = gv('ades')||'N/A';
+  var dof  = gv('dof')||'N/A';
+  var eobt = gv('eobt')||'N/A';
+  var subjectEl = document.getElementById('emailSubject');
+  var autoSubj = 'FPL '+acid+' '+dep+'-'+des+' DOF:'+dof+' EOBT:'+eobt+'Z';
+  var subject = (subjectEl.value.trim()) || autoSubj;
+  if(!subjectEl.value.trim()) subjectEl.value = autoSubj;
+
+  var fplMsg=''; try{ fplMsg=buildICAO(); }catch(e){}
+  var i19msg=''; try{ i19msg=buildI19()||'N/A'; }catch(e){}
+
+  var sep = '============================================================';
+  var lin = '------------------------------------------------------------';
+  var body = [
+    'PLAN DE VUELO / FLIGHT PLAN (OACI DOC 4444)',sep,'',
+    'AERONAVE : '+acid+' | TIPO: '+(gv('actype')||'N/A')+' | ESTELA: '+(gv('wtc')||'N/A'),
+    'RUTA     : '+dep+' -> '+des,
+    'DOF      : '+dof+'  EOBT: '+eobt+' UTC  EET: '+(gv('eet')||'N/A'),
+    'REGLAS   : '+(gv('rules')||'')+(gv('flighttype')||''),
+    'EQUIPO   : '+(gv('equip10')||'N/A'),
+    'PILOTO   : '+(gv('pic')||'N/A'),
+    '','MENSAJE FPL OACI:',lin,fplMsg,lin,'',
+    'ITEM 19 (Informacion Suplementaria):',i19msg,lin,
+    'Generado: Sistema FPL-MKOO | ICAO DOC 4444 PANS-ATM Annex 2',
+    'Remitente: fpl.mkoo@gmail.com'
+  ].join('\n');
+
+  var filename = 'PlanVuelo_'+acid+'_'+dep+'_'+des+'.pdf';
+
+  // Verificar configuracion
+  var hasToken = SMTP_CONFIG.secureToken && SMTP_CONFIG.secureToken !== 'YOUR_SMTPJS_TOKEN_HERE';
+  var hasPass  = SMTP_CONFIG.password && SMTP_CONFIG.password.length > 0;
+  if(!hasToken && !hasPass){
+    showEmailStatus('err',
+      '⚠ Email no configurado.\n'+
+      'Haz clic en "⚙ Configurar envio automatico" e ingresa tu App Password de Gmail.');
+    return;
+  }
+
+  showEmailStatus('ok','⏳ Generando PDF del Plan de Vuelo...');
+
+  // Generar PDF
+  var pdfBlob = null;
+  try{ pdfBlob = buildPDFBlob(); }catch(e){ console.error('buildPDFBlob:',e); }
+
+  if(!pdfBlob){
+    showEmailStatus('err','⚠ No se pudo generar el PDF. Complete los campos del plan de vuelo primero.');
+    return;
+  }
+
+  showEmailStatus('ok','⏳ Enviando correo con PDF adjunto a '+toEmail+'...');
+
+  smtpSend(toEmail, subject, body, pdfBlob, filename)
+    .then(function(){
+      // Also save PDF locally
+      downloadBlobLocal(pdfBlob, filename);
+      showEmailStatus('ok',
+        '✅ CORREO ENVIADO CON PDF ADJUNTO\n'+
+        '   Para: '+toEmail+'\n'+
+        '   Adjunto: '+filename+'\n'+
+        '   PDF tambien guardado localmente.');
+    })
+    .catch(function(err){
+      console.error('SMTP error:', err);
+      showEmailStatus('err',
+        '❌ Error al enviar: '+err+'\n'+
+        'Descargando PDF y abriendo cliente de correo...');
+      // Fallback: download PDF + open mailto
+      downloadBlobLocal(pdfBlob, filename);
+      setTimeout(function(){
+        var bodyTrunc = body.length > 2000 ? body.slice(0,2000)+'...' : body;
+        window.open('mailto:'+encodeURIComponent(toEmail)+
+          '?subject='+encodeURIComponent(subject)+
+          '&body='+encodeURIComponent(bodyTrunc), '_self');
+        showEmailStatus('err',
+          '⚠ Adjunta el PDF manualmente: '+filename+'\n'+
+          'El cliente de correo fue abierto.');
+      }, 1200);
+    });
+}
+
+function buildPDFBlob(){
+  var jsPDF = window.jspdf.jsPDF;
+  var capturedBlob = null;
+  var origSave = jsPDF.prototype.save;
+  // Patch: capture the blob, suppress browser download trigger
+  jsPDF.prototype.save = function(name){
+    try{
+      var arr = this.output('arraybuffer');
+      capturedBlob = new Blob([arr], {type:'application/pdf'});
+    }catch(e){ console.error('PDF capture:', e); }
+    // intentionally suppress actual download here (blob captured above)
+  };
+  try{ downloadPDF(); }catch(e){ console.error('downloadPDF error:', e); }
+  finally{ jsPDF.prototype.save = origSave; }
+  return capturedBlob;
+}
+
+function downloadBlobLocal(blob, filename){
+  try{
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 5000);
+  }catch(e){ console.error('downloadBlobLocal:', e); }
+}
+
+function showEmailStatus(type, msg){
+  const el=document.getElementById('emailStatus');
+  el.textContent=decodeURIComponent(msg);
+  el.className=`email-status ${type} show`;
+  setTimeout(()=>el.classList.remove('show'), type==='err'?15000:10000);
+}
+
+// ─── ITEM 18 HELP DATA ──────────────────────────────────────────────────────
+const I18_HELP = {
+  STS: {
+    title: 'STS/ — Estado Especial / Special Status',
+    body: `Indica el estado especial de vuelo. Uno solo por campo.<br><br>
+<b>Valores posibles:</b><br>
+<span style="color:var(--acc2)">HOSP</span> — Vuelo médico humanitario (Hospital aircraft)<br>
+<span style="color:var(--acc2)">MEDEVAC</span> — Evacuación médica de emergencia<br>
+<span style="color:var(--acc2)">STATE</span> — Aeronave de estado (gobierno, militar no registrado como militar)<br>
+<span style="color:var(--acc2)">HEAD</span> — Jefe de estado a bordo<br>
+<span style="color:var(--acc2)">FFR</span> — Combate contra incendios forestales<br>
+<span style="color:var(--acc2)">HOSP/MEDEVAC</span> — Combinado si aplica<br><br>
+<i>Ref: OACI DOC 4444 — Tabla del Campo 18 STS/</i>`
+  },
+  PBN: {
+    title: 'PBN/ — Performance Based Navigation',
+    body: `<b>RNAV (Area Navigation)</b><br>
+<span style="color:var(--acc2)">A1</span> — RNAV-10 (RNP 10): Oceánico/remoto, sin RAIM, ±10 NM. Req: INS o GNSS certificado.<br>
+<span style="color:var(--acc2)">B1</span> — RNAV-5 (B-RNAV): En ruta, ±5 NM. Req: VOR/DME, DME/DME, INS o GNSS.<br>
+<span style="color:var(--acc2)">B2</span> — RNAV-5 con GNSS: Como B1, usando GNSS certificado.<br>
+<span style="color:var(--acc2)">B3</span> — RNAV-5 con DME/DME.<br>
+<span style="color:var(--acc2)">B4</span> — RNAV-5 con VOR/DME.<br>
+<span style="color:var(--acc2)">B5</span> — RNAV-5 con INS/IRS.<br>
+<span style="color:var(--acc2)">C1</span> — RNAV-2: En ruta, ±2 NM. Req: DME/DME o GNSS.<br>
+<span style="color:var(--acc2)">C2</span> — RNAV-2 con GNSS.<br>
+<span style="color:var(--acc2)">C3</span> — RNAV-2 con DME/DME.<br>
+<span style="color:var(--acc2)">C4</span> — RNAV-2 con DME/DME+IRU.<br>
+<span style="color:var(--acc2)">D1</span> — RNAV-1: SID/STAR, ±1 NM. Req: DME/DME, GNSS o DME/DME+IRU.<br>
+<span style="color:var(--acc2)">D2</span> — RNAV-1 con GNSS.<br>
+<span style="color:var(--acc2)">D3</span> — RNAV-1 con DME/DME.<br>
+<span style="color:var(--acc2)">D4</span> — RNAV-1 con DME/DME+IRU.<br><br>
+<b>RNP (Required Navigation Performance)</b><br>
+<span style="color:var(--acc3)">L1</span> — RNP-4: Oceánico/remoto. ±4 NM con monitoreo de integridad (RAIM).<br>
+<span style="color:var(--acc3)">O1</span> — Basic-RNP-1: Ruta/llegada. ±1 NM. Req: GNSS o DME/DME certificado para RNP.<br>
+<span style="color:var(--acc3)">O2</span> — Basic-RNP-1 con GNSS.<br>
+<span style="color:var(--acc3)">O3</span> — Basic-RNP-1 con DME/DME.<br>
+<span style="color:var(--acc3)">O4</span> — Basic-RNP-1 con DME/DME+IRU.<br>
+<span style="color:var(--acc3)">S1</span> — RNP-APCH: Aproximación RNP. Req: GNSS con SBAS o Baro-VNAV.<br>
+<span style="color:var(--acc3)">S2</span> — RNP-APCH con Baro-VNAV.<br>
+<span style="color:var(--acc3)">T1</span> — RNP-AR-APCH: Aprox. radio de viraje requerido. Req: GNSS+FMS certificado AR.<br>
+<span style="color:var(--acc3)">T2</span> — RNP-AR-APCH sin RF leg.<br><br>
+<i>Ref: OACI Doc 9613 PBN Manual / ICAO Annex 10 Vol I</i>`
+  },
+  NAV: {
+    title: 'NAV/ — Equipamiento NAV adicional / Additional NAV Equipment',
+    body: `Se usa cuando el Item 10 contiene <b>Z</b> (otro equipo) o para especificar el tipo de GNSS.<br><br>
+<b>Valores comunes:</b><br>
+<span style="color:var(--acc2)">GNSS</span> — Sistema GNSS genérico certificado para IFR<br>
+<span style="color:var(--acc2)">GPS</span> — Solo GPS (NAVSTAR)<br>
+<span style="color:var(--acc2)">GBAS</span> — GNSS con aumentación basada en tierra (ILS-like)<br>
+<span style="color:var(--acc2)">SBAS</span> — GNSS con aumentación por satélite (WAAS/EGNOS/MSAS)<br>
+<span style="color:var(--acc2)">GLONASS</span> — Sistema GLONASS ruso<br>
+<span style="color:var(--acc2)">GALILEO</span> — Sistema europeo Galileo<br>
+<span style="color:var(--acc2)">DME/DME</span> — Navegación por intersección de DME<br>
+<span style="color:var(--acc2)">VOR/DME</span> — Navegación convencional VOR/DME<br>
+<span style="color:var(--acc2)">ILS</span> — Sistema de aterrizaje por instrumentos<br><br>
+<i>Ejemplo: NAV/GNSS — Ref: OACI DOC 4444 Table Field 18</i>`
+  },
+  COM: {
+    title: 'COM/ — Equipamiento COM adicional / Additional COM Equipment',
+    body: `Se usa cuando el Item 10 contiene <b>Z</b>. Especifica comunicaciones adicionales.<br><br>
+<b>Valores comunes:</b><br>
+<span style="color:var(--acc2)">CPDLC</span> — Controller-Pilot Data Link Communications (FANS-1/A o ATN)<br>
+<span style="color:var(--acc2)">FANS1A</span> — FANS 1/A CPDLC/ADS-C (Para operaciones oceánicas)<br>
+<span style="color:var(--acc2)">HFDL</span> — High Frequency Data Link<br>
+<span style="color:var(--acc2)">SATVOICE</span> — Voz vía satélite (Inmarsat, Iridium)<br>
+<span style="color:var(--acc2)">VHF</span> — VHF convencional (si no está en el código S)<br>
+<span style="color:var(--acc2)">HF</span> — Radio HF (Alta Frecuencia)<br><br>
+<i>Ref: OACI DOC 4444 — Field 18 COM/</i>`
+  },
+  SUR: {
+    title: 'SUR/ — Capacidad de Vigilancia / Surveillance Capability',
+    body: `Describe el equipamiento de vigilancia disponible (ADS-B, ADS-C) con sus parámetros.<br><br>
+<b>Formato:</b> SUR/[código][versión]<br><br>
+<b>Valores ADS-B:</b><br>
+<span style="color:var(--acc2)">260B</span> — ADS-B Out 1090ES, DO-260B (más común en aviación general/comercial actual)<br>
+<span style="color:var(--acc2)">260A</span> — ADS-B Out 1090ES, DO-260A (versión anterior)<br>
+<span style="color:var(--acc2)">260</span> — ADS-B Out 1090ES, DO-260 original<br>
+<span style="color:var(--acc2)">282B</span> — ADS-B Out UAT (978 MHz), DO-282B (USA GA)<br>
+<span style="color:var(--acc2)">ADSBIN</span> — ADS-B In instalado<br><br>
+<b>Valores ADS-C:</b><br>
+<span style="color:var(--acc3)">ADSC</span> — ADS-C genérico<br>
+<span style="color:var(--acc3)">FANS1A</span> — ADS-C con FANS 1/A (Oceánico, Pacífico, NAT)<br>
+<span style="color:var(--acc3)">ATN</span> — ADS-C con ATN (Europeo futuro)<br><br>
+<i>Ejemplo: SUR/260B — Ref: OACI DOC 4444 Appendix 2 Field 18 SUR/</i>`
+  }
+};
+
+function showI18Help(key){
+  const help = I18_HELP[key];
+  if(!help){ alert('Ayuda no disponible para: '+key); return; }
+  document.getElementById('i18HelpTitle').innerHTML = '&#9654; ' + help.title;
+  document.getElementById('i18HelpBody').innerHTML = help.body;
+  document.getElementById('moI18Help').classList.add('open');
+}
+
+// Reset Item 18 to auto-generated
+function resetI18Auto(){
+  const ta = document.getElementById('item18');
+  if(ta){ ta._manualEdit = false; buildI18(); }
+}
+
+// ─── TOOLS TAB SWITCHING ────────────────────────────────────────────────────
+function toolTab(t){
+  document.querySelectorAll('.tool-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tool-tab-btn').forEach(b=>b.classList.remove('active'));
+  const panel = document.getElementById('tool_'+t);
+  if(panel) panel.classList.add('active');
+  document.querySelectorAll('.tool-tab-btn').forEach(b=>{
+    if(b.getAttribute('data-tool')===t) b.classList.add('active');
+  });
+}
+
+// ─── FUEL CALCULATOR ────────────────────────────────────────────────────────
+function calcFuel(){
+  const burnRate  = parseFloat(document.getElementById('fc_burn')?.value)||0;
+  const flightMin = parseFloat(document.getElementById('fc_time')?.value)||0;
+  const taxiFuel  = parseFloat(document.getElementById('fc_taxi')?.value)||0;
+  const contPct   = parseFloat(document.getElementById('fc_cont')?.value)||5;
+  const altFuel   = parseFloat(document.getElementById('fc_alt')?.value)||0;
+  const resFuel   = parseFloat(document.getElementById('fc_res')?.value)||45;
+  const unit      = document.getElementById('fc_unit')?.value||'kg';
+
+  if(!burnRate||!flightMin){ alert('Ingrese consumo/hora y tiempo de vuelo'); return; }
+
+  const trip     = (burnRate/60)*flightMin;
+  const cont     = trip*(contPct/100);
+  const resv     = (burnRate/60)*resFuel;
+  const total    = taxiFuel + trip + cont + altFuel + resv;
+
+  const res = document.getElementById('fuel_result');
+  if(res){
+    res.style.display='block';
+    res.innerHTML = `
+<span style="color:var(--acc2);font-size:12px;letter-spacing:2px">RESULTADO CALCULO DE COMBUSTIBLE</span><br><br>
+<span style="color:var(--dim)">Combustible de rodaje (Taxi):</span>     <b style="color:var(--acc)">${taxiFuel.toFixed(1)} ${unit}</b><br>
+<span style="color:var(--dim)">Combustible de vuelo (Trip):</span>       <b style="color:var(--acc)">${trip.toFixed(1)} ${unit}</b><br>
+<span style="color:var(--dim)">Contingencia (${contPct}%):</span>             <b style="color:var(--acc)">${cont.toFixed(1)} ${unit}</b><br>
+<span style="color:var(--dim)">Combustible alternado:</span>              <b style="color:var(--acc)">${altFuel.toFixed(1)} ${unit}</b><br>
+<span style="color:var(--dim)">Reserva final (${resFuel} min):</span>         <b style="color:var(--acc)">${resv.toFixed(1)} ${unit}</b><br>
+<span style="color:var(--bdr)">──────────────────────────────────────</span><br>
+<span style="color:var(--acc2);font-size:13px">TOTAL REQUERIDO:  <b style="color:#fff;font-size:15px">${total.toFixed(1)} ${unit}</b></span>
+    `;
+    // Auto-fill endurance
+    const endH = Math.floor(flightMin/60);
+    const endM = Math.floor(flightMin%60);
+    const endStr = String(endH).padStart(2,'0')+String(endM).padStart(2,'0');
+    sv('endurance', endStr);
+  }
+}
+
+// ─── CRUISING LEVELS TABLE ──────────────────────────────────────────────────
+function renderCruiseLevels(){
+  const rules  = document.getElementById('cl_rules')?.value || 'IFR';
+  const isMag  = (document.getElementById('cl_mag')?.value || 'MAG') === 'MAG';
+  const maxFL  = parseInt(document.getElementById('cl_max')?.value || '450');
+  const el     = document.getElementById('cruise_table');
+  if(!el) return;
+
+  // ICAO Annex 2 Table — IFR: odd FL E/NE, even FL W/SW (magnetic)
+  // VFR: odd+500 E/NE, even+500 W/SW
+  // Above FL410: by ATC (no standard semi-circular)
+  const rows = [];
+  const hdgRanges = isMag
+    ? [{ label:'000°–179° (ESTE/NORTE)', odd:true },
+       { label:'180°–359° (OESTE/SUR)', odd:false }]
+    : [{ label:'000°–179° (TRUE E/N)', odd:true },
+       { label:'180°–359° (TRUE W/S)', odd:false }];
+
+  // Build levels
+  for(const hr of hdgRanges){
+    const levs = [];
+    for(let fl = hr.odd ? 10 : 20; fl <= maxFL; fl += 20){
+      let vfr_fl = fl + (rules==='VFR' ? 5 : 0);
+      const ft = fl * 100;
+      const m  = Math.round(ft * 0.3048 / 100) * 100;
+      levs.push({ fl:rules==='VFR'?vfr_fl:fl, ft, m });
+    }
+    rows.push({ ...hr, levs });
+  }
+
+  const ths = `<th style="min-width:80px">FL</th><th style="min-width:90px">Pies (ft)</th><th style="min-width:80px">Metros (m)</th>`;
+  let html = `<table style="width:100%;border-collapse:collapse;font-family:'Share Tech Mono',monospace;font-size:10px;">
+    <thead><tr style="background:rgba(0,100,200,.25);color:var(--acc);">
+      <th colspan="3" style="padding:6px 10px;text-align:left;letter-spacing:2px;font-size:10px;">RUMBO ${rows[0].label}</th>
+      <th colspan="3" style="padding:6px 10px;text-align:left;letter-spacing:2px;font-size:10px;">RUMBO ${rows[1].label}</th>
+    </tr>
+    <tr style="background:rgba(0,0,0,.3);color:var(--dim);">${ths}${ths}</tr></thead><tbody>`;
+
+  const maxLen = Math.max(rows[0].levs.length, rows[1].levs.length);
+  for(let i = 0; i < maxLen; i++){
+    const L = rows[0].levs[i];
+    const R = rows[1].levs[i];
+    const even = i%2===0;
+    const bg = even ? 'rgba(0,0,0,.15)' : 'rgba(0,50,100,.12)';
+    const cellL = L
+      ? `<td style="padding:4px 10px;color:var(--acc2)"><b>FL${String(L.fl).padStart(3,'0')}</b></td>
+         <td style="padding:4px 10px;color:var(--txt)">${L.ft.toLocaleString()}</td>
+         <td style="padding:4px 10px;color:var(--dim)">${L.m.toLocaleString()}</td>`
+      : '<td colspan="3"></td>';
+    const cellR = R
+      ? `<td style="padding:4px 10px;color:var(--acc3)"><b>FL${String(R.fl).padStart(3,'0')}</b></td>
+         <td style="padding:4px 10px;color:var(--txt)">${R.ft.toLocaleString()}</td>
+         <td style="padding:4px 10px;color:var(--dim)">${R.m.toLocaleString()}</td>`
+      : '<td colspan="3"></td>';
+    html += `<tr style="background:${bg};">${cellL}${cellR}</tr>`;
+  }
+
+  html += `</tbody></table>
+  <div style="margin-top:8px;font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--dim);line-height:1.7;">
+    <b style="color:var(--acc2)">Nota ICAO Annex 2:</b> Por encima de FL410 los niveles los asigna el ATC.
+    Los niveles VFR son FL+500ft (ej: FL35, FL55...). Ref: ICAO Annex 2, Appendix 3.
+  </div>`;
+  el.innerHTML = html;
+}
+
+// Initialize tools on load
+document.addEventListener('DOMContentLoaded', ()=>{
+  toolTab('fuel');
+  renderCruiseLevels();
+});
+
+// ─── ITEM 18 SELECTORS ───────────────────────────────────────────────────────
+function i18toggle(fid){
+  var pnl=document.getElementById('ipnl_'+fid);
+  var btn=document.getElementById('ibtn_'+fid);
+  if(!pnl) return;
+  var opening=!pnl.classList.contains('open');
+  // close all first
+  document.querySelectorAll('.i18panel.open').forEach(function(p){p.classList.remove('open');});
+  document.querySelectorAll('.i18btn.open').forEach(function(b){b.classList.remove('open');});
+  if(opening){
+    pnl.classList.add('open');
+    if(btn) btn.classList.add('open');
+  }
+}
+function i18close(fid){
+  var p=document.getElementById('ipnl_'+fid);
+  var b=document.getElementById('ibtn_'+fid);
+  if(p) p.classList.remove('open');
+  if(b) b.classList.remove('open');
+}
+function i18clear(fid){
+  var pnl=document.getElementById('ipnl_'+fid);
+  if(pnl) pnl.querySelectorAll('.i18chip.on').forEach(function(c){c.classList.remove('on');});
+  i18sync(fid);
+}
+function i18pick(chipEl,fid,multi){
+  if(!multi){
+    var pnl=document.getElementById('ipnl_'+fid);
+    if(pnl) pnl.querySelectorAll('.i18chip').forEach(function(c){c.classList.remove('on');});
+  }
+  chipEl.classList.toggle('on');
+  i18sync(fid);
+}
+function i18sync(fid){
+  var pnl=document.getElementById('ipnl_'+fid);
+  var inp=document.getElementById(fid);
+  var lbl=document.getElementById('ival_'+fid);
+  if(!inp) return;
+  var vals=[];
+  if(pnl) pnl.querySelectorAll('.i18chip.on').forEach(function(c){vals.push(c.getAttribute('data-v'));});
+  inp.value=vals.join(' ');
+  if(lbl){
+    if(vals.length){lbl.textContent=inp.value;lbl.classList.remove('mt');}
+    else{lbl.textContent='Seleccionar...';lbl.classList.add('mt');}
+  }
+  buildI18();
+}
+function i18syncAll(){
+  ['sts18','pbn','nav18','com18','sur18'].forEach(function(fid){
+    var inp=document.getElementById(fid);
+    var pnl=document.getElementById('ipnl_'+fid);
+    var lbl=document.getElementById('ival_'+fid);
+    if(!inp||!pnl) return;
+    var stored=(inp.value||'').trim().toUpperCase();
+    var vals=stored?stored.split(/\s+/):[];
+    pnl.querySelectorAll('.i18chip').forEach(function(c){
+      c.classList.toggle('on', vals.indexOf(c.getAttribute('data-v'))>=0);
+    });
+    if(lbl){
+      if(stored){lbl.textContent=stored;lbl.classList.remove('mt');}
+      else{lbl.textContent='Seleccionar...';lbl.classList.add('mt');}
+    }
+  });
+}
+// Close panels on outside click
+document.addEventListener('click',function(e){
+  if(!e.target.closest('.i18sw')){
+    document.querySelectorAll('.i18panel.open').forEach(function(p){p.classList.remove('open');});
+    document.querySelectorAll('.i18btn.open').forEach(function(b){b.classList.remove('open');});
+  }
+});
+
+// ─── AUTO-BUILD ITEM 18 ─────────────────────────────────────────────────────
+function buildI18(){
+  const parts=[];
+  const add=(key,val)=>{if((val||'').trim())parts.push(key+'/'+(val||'').trim());};
+  add('STS',gv('sts18'));
+  add('PBN',gv('pbn'));add('NAV',gv('nav18'));add('COM',gv('com18'));
+  add('DAT',gv('dat18'));add('SUR',gv('sur18'));add('DEP',gv('dep18'));
+  add('DEST',gv('dest18'));add('DOF',gv('dof18'));add('REG',gv('reg18'));
+  add('EET',gv('eet18'));add('SEL',gv('sel18'));add('TYP',gv('typ18'));
+  add('CODE',gv('code18'));add('DLE',gv('dle18'));add('OPR',gv('opr18'));
+  add('RMK',gv('rmk18'));
+  const result = parts.join(' ') || '0';
+  // Only auto-update if user hasn't manually edited (check for manual flag)
+  const ta = document.getElementById('item18');
+  if(ta && !ta._manualEdit) ta.value = result;
+}
+
+// ─── ROUTE VISUAL ───────────────────────────────────────────────────────────
+function updateRoute(){
+  const dep=gv('adep')||'DEP';
+  const dst=gv('ades')||'DEST';
+  document.getElementById('lbDep').textContent=dep;
+  document.getElementById('lbDst').textContent=dst;
+}
+
+// ─── BUILD ICAO STRING ──────────────────────────────────────────────────────
+function buildICAO(){
+  const acid=gv('acid'),rules=gv('rules'),ftype=gv('flighttype');
+  const acnum=gv('acnum'),actype=gv('actype'),wtc=gv('wtc'),equip=gv('equip10')||'S';
+  const adep=gv('adep'),eobt=gv('eobt');
+  const sptype=gv('speedtype'),spd=gv('speed'),lvltype=gv('leveltype'),lvl=gv('level');
+  const route=gvr('route').toUpperCase();
+  const ades=gv('ades'),eet=gv('eet'),altn1=gv('altn1'),altn2=gv('altn2');
+  const i18=gv('item18')||'0';
+  const sl=sptype+spd+lvltype+lvl;
+  return `(FPL-${acid}-${rules}${ftype}\n-${acnum}${actype}/${wtc}-${equip}\n-${adep}${eobt}\n-${sl} ${route}\n-${ades}${eet} ${altn1}${altn2?' '+altn2:''}\n-${i18})`;
+}
+function buildI19(){
+  const e=gv('endurance')?'E/'+gv('endurance'):'';
+  const p=gv('pob')?'P/'+gv('pob'):'';
+  const c=gv('pic')?'C/'+gv('pic'):'';
+  const a=gv('accolor')?'A/'+gv('accolor'):'';
+  const n=gv('remarks19')?'N/'+gv('remarks19'):'';
+  const r='R/'+getActive('rGrp').join('');
+  const s='S/'+getActive('sGrp').join('');
+  const j='J/'+getActive('jGrp').join('');
+  return [e,p,r,s,j,a,n,c].filter(x=>x&&!x.endsWith('/')).join(' ');
+}
+
+// ─── GENERATE & PREVIEW ─────────────────────────────────────────────────────
+function genICAO(){
+  const fpl=buildICAO();
+  const i19=buildI19();
+  const full=`── MENSAJE FPL OACI ────────────────\n${fpl}\n\n── ITEM 19 (NO TRANSMITIR A ATC) ───\n${i19||'N/A'}`;
+  const colored=fpl.replace(/\(FPL/g,'<span style="color:var(--acc2)">(FPL</span>').replace(/\)/g,'<span style="color:var(--acc2)">)</span>').replace(/-/g,'<span style="color:var(--acc)">-</span>');
+  document.getElementById('icaoText').innerHTML=colored+'\n\n<span style="color:var(--dim)">── ITEM 19 (no transmitido a ATC) ──</span>\n'+i19;
+  document.getElementById('moPre').textContent=full;
+  document.getElementById('moICAO').classList.add('open');
+}
+function copyICAO(){navigator.clipboard.writeText(document.getElementById('moPre').textContent).then(()=>alert('Copiado ✓'));}
+function closeMo(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.mo').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
+
+// ─── DOWNLOAD ICAO TXT ──────────────────────────────────────────────────────
+function downloadICAO(){
+  genICAO();
+  const msg=`FF ${gv('addr1')||'SPECSXXX'}\n${gv('dtg')} ${gv('sender')||'SPECSXXX'}\n\n${buildICAO()}\n\n(E${gv('endurance')||'0000'} P${gv('pob')||'TBE'})\n${buildI19()}`;
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([msg],{type:'text/plain'}));
+  a.download=`FPL_${gv('acid')||'FPL'}_${gv('adep')||'XXXX'}_${gv('ades')||'XXXX'}.txt`;a.click();
+}
+
+// ─── CLEAR FORM ─────────────────────────────────────────────────────────────
+function clearAll(){
+  if(!confirm('¿Limpiar todos los campos?'))return;
+  document.getElementById('fplForm').reset();
+  document.querySelectorAll('.ci').forEach(c=>{c.classList.remove('active');c.querySelector('.box').textContent='';});
+  document.getElementById('icaoText').textContent='Complete los campos y haga clic en "Generar OACI" para ver el mensaje...';
+  updateRoute();
+  const n=new Date();
+  const dd=String(n.getUTCDate()).padStart(2,'0');
+  const hh=String(n.getUTCHours()).padStart(2,'0');
+  const mm=String(n.getUTCMinutes()).padStart(2,'0');
+  const yy=String(n.getUTCFullYear()).slice(2);
+  const mo=String(n.getUTCMonth()+1).padStart(2,'0');
+  sv('dtg',dd+hh+mm);sv('dof',yy+mo+dd);sv('dof18',yy+mo+dd);
+}
+
+// ─── DATABASE (localStorage) ─────────────────────────────────────────────────
+const DB={
+  get(key){try{return JSON.parse(localStorage.getItem('fpl_'+key)||'[]');}catch{return[];}},
+  set(key,data){localStorage.setItem('fpl_'+key,JSON.stringify(data));}
+};
+
+// ─── AUTOCOMPLETE ────────────────────────────────────────────────────────────
+function acSearch(fieldId,dbKey){
+  const q=gv(fieldId);
+  const drop=document.getElementById('ac_'+fieldId);
+  if(!q||q.length<1){drop.classList.remove('open');return;}
+  const data=DB.get(dbKey);
+  let matches;
+  if(dbKey==='aircraft'){
+    matches=data.filter(r=>r.reg&&r.reg.startsWith(q));
+    drop.innerHTML=matches.map(r=>`<div class="ac-item" onclick="loadAircraft('${r.reg}')"><b>${r.reg}</b> <span>${r.type||''} | WTC:${r.wtc||''} | ${r.equip||''}</span></div>`).join('');
+  } else {
+    matches=data.filter(r=>r.name&&r.name.includes(q));
+    drop.innerHTML=matches.map(r=>`<div class="ac-item" onclick="loadPilot('${r.name}')"><b>${r.name}</b> <span>${r.license||''} ${r.contact||''}</span></div>`).join('');
+  }
+  drop.classList.toggle('open',matches.length>0);
+}
+document.addEventListener('click',e=>{
+  if(!e.target.closest('.ac-wrap'))document.querySelectorAll('.ac-drop').forEach(d=>d.classList.remove('open'));
+});
+
+// Load aircraft into form
+function loadAircraft(reg){
+  const data=DB.get('aircraft');
+  const r=data.find(x=>x.reg===reg);if(!r)return;
+  sv('acid',r.reg);sv('actype',r.type);
+  // Set WTC select
+  const wtcEl=document.getElementById('wtc');if(wtcEl)wtcEl.value=r.wtc||'';
+  // Set speed/level
+  const spEl=document.getElementById('speedtype');if(spEl&&r.speedtype)spEl.value=r.speedtype;
+  sv('speed',r.speed);
+  const lvEl=document.getElementById('leveltype');if(lvEl&&r.leveltype)lvEl.value=r.leveltype;
+  sv('level',r.level);sv('accolor',r.color);
+  // Equipment: parse nav/ssr
+  if(r.equip){
+    sv('equip10',r.equip);
+    const parts=r.equip.split('/');
+    const navStr=parts[0]||'';const ssrStr=parts[1]||'';
+    setActive('comNav',navStr.split(''));
+    if(ssrStr)setActive('ssrGrp',[ssrStr[0]]);
+  }
+  // Item 18
+  if(r.i18){sv('item18',r.i18);parseI18(r.i18);}
+  document.getElementById('ac_acid').classList.remove('open');
+  // Suggest routes
+  suggestRoutes();
+}
+function parseI18(str){
+  var map={PBN:'pbn',NAV:'nav18',COM:'com18',DAT:'dat18',SUR:'sur18',
+           DEP:'dep18',DEST:'dest18',DOF:'dof18',REG:'reg18',EET:'eet18',
+           SEL:'sel18',TYP:'typ18',CODE:'code18',DLE:'dle18',OPR:'opr18',
+           RMK:'rmk18',STS:'sts18'};
+  var re=/([A-Z]+)\/([\w\s.\/-]+?)(?=\s+[A-Z]+\/|$)/g;
+  var m2;
+  while((m2=re.exec(str))!==null){
+    var fid=map[m2[1]];
+    if(fid){ sv(fid,m2[2].trim()); }
+  }
+  // Sync the 5 selector fields
+  i18syncAll();
+}
+
+// Load pilot into form
+function loadPilot(name){
+  const data=DB.get('pilots');
+  const r=data.find(x=>x.name===name);if(!r)return;
+  let picStr=r.name;
+  if(r.license)picStr+=' LIC '+r.license;
+  if(r.contact)picStr+=' '+r.contact;
+  sv('pic',picStr);
+  document.getElementById('ac_pic').classList.remove('open');
+}
+
+// Route suggestions (when dep+dest are filled)
+function suggestRoutes(){
+  const dep=gv('adep'),dest=gv('ades');
+  if(!dep&&!dest)return;
+  const routes=DB.get('routes');
+  const matches=routes.filter(r=>(r.dep===dep||!dep)&&(r.dest===dest||!dest));
+  if(matches.length===0)return;
+  // Show as notification
+  const r=matches[0];
+  if(confirm(`Ruta guardada encontrada: "${r.name||r.dep+'-'+r.dest}"\n${r.route}\n\n¿Cargar esta ruta?`)){
+    sv('route',r.route);sv('altn1',r.al1);sv('altn2',r.al2);sv('eet',r.eet);
+  }
+}
+// Watch dep/dest changes for route suggestions
+document.getElementById('adep').addEventListener('change',()=>suggestRoutes());
+document.getElementById('ades').addEventListener('change',()=>suggestRoutes());
+
+// ─── DB MODAL ────────────────────────────────────────────────────────────────
+let curDbTab='aircraft';
+function openDB(){renderDB();document.getElementById('moDB').classList.add('open');}
+function dbTab(t){
+  curDbTab=t;
+  document.querySelectorAll('.db-tab').forEach((el,i)=>el.classList.toggle('active',['aircraft','pilots','routes'][i]===t));
+  document.querySelectorAll('.db-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('dbp_'+t).classList.add('active');
+  renderDB();
+}
+
+function renderDB(){renderAircraft();renderPilots();renderRoutes();}
+
+function renderAircraft(){
+  const data=DB.get('aircraft');
+  const el=document.getElementById('dbl_aircraft');
+  el.innerHTML=data.length?data.map(r=>`<div class="db-row" onclick="loadAircraft('${r.reg}')"><span class="dr-main">${r.reg}</span><span class="dr-sub">${r.type||''} WTC:${r.wtc||''} | ${r.equip||''} | ${r.color||''}</span><span class="dr-del" onclick="event.stopPropagation();dbDel('aircraft','${r.reg}')">&#xd7;</span></div>`).join(''):'<div style="font-family:Share Tech Mono,monospace;font-size:11px;color:var(--dim);padding:8px">No hay aeronaves guardadas</div>';
+}
+function renderPilots(){
+  const data=DB.get('pilots');
+  const el=document.getElementById('dbl_pilots');
+  el.innerHTML=data.length?data.map(r=>`<div class="db-row" onclick="loadPilot('${r.name}')"><span class="dr-main">${r.name.split(' ')[0]||r.name}</span><span class="dr-sub">${r.name} | ${r.license||''} | ${r.contact||''}</span><span class="dr-del" onclick="event.stopPropagation();dbDel('pilots','${r.name}')">&#xd7;</span></div>`).join(''):'<div style="font-family:Share Tech Mono,monospace;font-size:11px;color:var(--dim);padding:8px">No hay pilotos guardados</div>';
+}
+function renderRoutes(){
+  const data=DB.get('routes');
+  const el=document.getElementById('dbl_routes');
+  el.innerHTML=data.length?data.map(r=>`<div class="db-row" onclick="loadRoute('${r.dep}','${r.dest}')"><span class="dr-main">${r.dep}-${r.dest}</span><span class="dr-sub">${r.name||r.route||''} | EET:${r.eet||''} | Alt:${r.al1||'-'}/${r.al2||'-'}</span><span class="dr-del" onclick="event.stopPropagation();dbDel('routes','${r.dep+r.dest+r.name}')">&#xd7;</span></div>`).join(''):'<div style="font-family:Share Tech Mono,monospace;font-size:11px;color:var(--dim);padding:8px">No hay rutas guardadas</div>';
+}
+function loadRoute(dep,dest){
+  const data=DB.get('routes');
+  const r=data.find(x=>x.dep===dep&&x.dest===dest);if(!r)return;
+  sv('adep',r.dep);sv('ades',r.dest);sv('route',r.route);sv('altn1',r.al1);sv('altn2',r.al2);sv('eet',r.eet);
+  updateRoute();
+  closeMo('moDB');
+}
+function dbDel(key,id){
+  const data=DB.get(key);
+  let filtered;
+  if(key==='aircraft')filtered=data.filter(r=>r.reg!==id);
+  else if(key==='pilots')filtered=data.filter(r=>r.name!==id);
+  else filtered=data.filter(r=>(r.dep+r.dest+r.name)!==id);
+  DB.set(key,filtered);renderDB();
+}
+
+function dbSaveAircraft(){
+  const reg=document.getElementById('db_reg').value.trim().toUpperCase();
+  if(!reg){alert('Ingrese la matricula');return;}
+  const rec={reg,type:document.getElementById('db_type').value.trim().toUpperCase(),
+    wtc:document.getElementById('db_wtc').value.trim().toUpperCase(),
+    equip:document.getElementById('db_equip').value.trim().toUpperCase(),
+    speedtype:document.getElementById('db_speedtype').value.trim().toUpperCase(),
+    speed:document.getElementById('db_speed').value.trim().toUpperCase(),
+    leveltype:document.getElementById('db_leveltype').value.trim().toUpperCase(),
+    level:document.getElementById('db_level').value.trim().toUpperCase(),
+    color:document.getElementById('db_color').value.trim().toUpperCase(),
+    i18:document.getElementById('db_i18').value.trim().toUpperCase()};
+  const data=DB.get('aircraft').filter(r=>r.reg!==reg);
+  data.push(rec);DB.set('aircraft',data);renderAircraft();
+  alert('Aeronave '+reg+' guardada correctamente');
+}
+function dbFromFormAircraft(){
+  document.getElementById('db_reg').value=gv('acid');
+  document.getElementById('db_type').value=gv('actype');
+  document.getElementById('db_wtc').value=gv('wtc');
+  document.getElementById('db_equip').value=gv('equip10');
+  document.getElementById('db_speedtype').value=gv('speedtype');
+  document.getElementById('db_speed').value=gv('speed');
+  document.getElementById('db_leveltype').value=gv('leveltype');
+  document.getElementById('db_level').value=gv('level');
+  document.getElementById('db_color').value=gv('accolor');
+  document.getElementById('db_i18').value=gv('item18');
+}
+function dbSavePilot(){
+  const name=document.getElementById('db_pname').value.trim().toUpperCase();
+  if(!name){alert('Ingrese el nombre');return;}
+  const rec={name,license:document.getElementById('db_plic').value.trim().toUpperCase(),contact:document.getElementById('db_pcontact').value.trim()};
+  const data=DB.get('pilots').filter(r=>r.name!==name);data.push(rec);DB.set('pilots',data);renderPilots();
+  alert('Piloto '+name+' guardado correctamente');
+}
+function dbFromFormPilot(){
+  document.getElementById('db_pname').value=gv('pic');
+}
+function dbSaveRoute(){
+  const dep=document.getElementById('db_rdep').value.trim().toUpperCase();
+  const dest=document.getElementById('db_rdest').value.trim().toUpperCase();
+  if(!dep||!dest){alert('Ingrese DEP y DEST');return;}
+  const rec={dep,dest,route:document.getElementById('db_rroute').value.trim().toUpperCase(),
+    al1:document.getElementById('db_ral1').value.trim().toUpperCase(),
+    al2:document.getElementById('db_ral2').value.trim().toUpperCase(),
+    eet:document.getElementById('db_reet').value.trim(),
+    name:document.getElementById('db_rname').value.trim()};
+  const data=DB.get('routes').filter(r=>!(r.dep===dep&&r.dest===dest&&r.name===rec.name));
+  data.push(rec);DB.set('routes',data);renderRoutes();
+  alert('Ruta '+dep+'-'+dest+' guardada correctamente');
+}
+function dbFromFormRoute(){
+  document.getElementById('db_rdep').value=gv('adep');
+  document.getElementById('db_rdest').value=gv('ades');
+  document.getElementById('db_rroute').value=gvr('route');
+  document.getElementById('db_ral1').value=gv('altn1');
+  document.getElementById('db_ral2').value=gv('altn2');
+  document.getElementById('db_reet').value=gv('eet');
+}
+
+// ─── DOWNLOAD PDF  ·  CORPAC FPL ────────────────────────────────────────────
+function loadImageAsBase64(url){
+  return new Promise((resolve)=>{
+    const img=new Image();
+    img.crossOrigin='anonymous';
+    img.onload=function(){
+      const canvas=document.createElement('canvas');
+      canvas.width=img.naturalWidth;
+      canvas.height=img.naturalHeight;
+      const ctx=canvas.getContext('2d');
+      ctx.drawImage(img,0,0);
+      resolve(canvas.toDataURL('image/png'));
+    };
+    img.onerror=function(){resolve(null);};
+    img.src=url;
+  });
+}
+
+async function downloadPDF(){
+  const logoBase64='data:image/jpeg;base64,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AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP//Z';
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+
+  // Page: 210x297  margins ml=5 mt=8 mb=5  inner=200x284
+  const PW=210,PH=297,ml=5,mt=8;
+  const W=200;
+  const BK='#000000',GY='#666666',BL='#003399';
+
+  // -- Only safe Latin-1/ASCII chars for jsPDF helvetica --
+  function safe(s){
+    return String(s||'')
+      .replace(/[\u2013\u2014]/g,'-')
+      .replace(/\u2192/g,'>')
+      .replace(/\u2261/g,'=')
+      .replace(/[\u00ab\u00bb]/g,'<<')
+      .replace(/[\u2018\u2019]/g,"'")
+      .replace(/[\u201c\u201d]/g,'"')
+      .replace(/[^\x00-\xFF]/g,'?');
+  }
+
+  function hl(y,x1,x2,lw){x1=x1??ml;x2=x2??(ml+W);lw=lw??0.25;doc.setDrawColor(BK);doc.setLineWidth(lw);doc.line(x1,y,x2,y);}
+  function vl(x,y1,y2,lw){lw=lw??0.25;doc.setDrawColor(BK);doc.setLineWidth(lw);doc.line(x,y1,x,y2);}
+
+  // txt: place text, font=hel, sz, bold, col, align, maxWidth (clips to cell)
+  function tx(s,x,y,sz,bold,col,al,mw){
+    sz=sz??7;bold=bold??false;col=col??BK;al=al??'left';
+    doc.setFontSize(sz);doc.setTextColor(col);
+    doc.setFont('helvetica',bold?'bold':'normal');
+    const o={align:al};if(mw)o.maxWidth=mw;
+    doc.text(safe(s),x,y,o);
+  }
+  // lbl: small bold label + italic english
+  function lb(m,e,x,y,mw){
+    tx(m,x,y,5.5,true,BK,'left',mw);
+    if(e)tx(e,x,y+2.8,4.5,false,GY,'left',mw);
+  }
+  // val: data value, courier bold blue
+  function vx(s,x,y,sz,mw){
+    sz=sz??9;mw=mw??50;
+    doc.setFontSize(sz);doc.setTextColor(BL);doc.setFont('courier','bold');
+    doc.text(safe(s),x,y,{maxWidth:mw});
+  }
+  // OACI character boxes
+  function cbox(x,y,n,bw,bh){bw=bw??4;bh=bh??3.5;for(let i=0;i<n;i++){doc.setFillColor('#f2f2f2');doc.setDrawColor('#999999');doc.setLineWidth(0.15);doc.rect(x+i*(bw+0.25),y,bw,bh,'FD');}}
+  // Character boxes WITH value: each char centered in its box
+  function cboxVal(val,x,y,n,bw,bh,fsz){
+    bw=bw??4;bh=bh??3.5;fsz=fsz??8.5;
+    const s=safe(String(val||'')).toUpperCase().slice(0,n);
+    for(let i=0;i<n;i++){
+      const bx=x+i*(bw+0.25);
+      const hasChar=i<s.length;
+      doc.setFillColor(hasChar?'#eaf4ff':'#f2f2f2');
+      doc.setDrawColor('#5599cc');doc.setLineWidth(0.18);
+      doc.rect(bx,y,bw,bh,'FD');
+      if(hasChar){
+        doc.setFontSize(fsz);doc.setTextColor('#003399');
+        doc.setFont('courier','bold');
+        doc.text(s[i],bx+bw/2,y+bh-0.7,{align:'center'});
+      }
+    }
+  }
+  // Checkbox square
+  function sqb(x,y,sz,on){sz=sz??4.5;doc.setFillColor(on?BK:'#ffffff');doc.setDrawColor(BK);doc.setLineWidth(0.25);doc.rect(x,y,sz,sz,'FD');if(on){doc.setFontSize(5.5);doc.setTextColor('#ffffff');doc.setFont('helvetica','bold');doc.text('X',x+sz/2,y+sz-0.7,{align:'center'});}}
+
+  // Read checkbox codes from DOM groups
+  function getActPDF(grpId){return getActive(grpId);}
+
+  const CK={
+    rGrp:getActPDF('rGrp'),
+    sGrp:getActPDF('sGrp'),
+    jGrp:getActPDF('jGrp'),
+  };
+
+  const D={
+    a1:gv('addr1'),a2:gv('addr2'),snd:gv('sender'),dtg:gv('dtg'),sid:gv('specificId')||'',
+    acid:gv('acid'),rul:gv('rules'),ftp:gv('flighttype'),
+    num:gv('acnum'),atp:gv('actype'),wtc:gv('wtc'),eq:gv('equip10')||'S',
+    dep:gv('adep'),obt:gv('eobt'),dof:gv('dof'),
+    spd:gv('speedtype')+gv('speed'),lvl:gv('leveltype')+gv('level'),
+    rte:gvr('route').toUpperCase(),
+    des:gv('ades'),eet:gv('eet'),al1:gv('altn1'),al2:gv('altn2'),
+    i18:gv('item18')||'0',
+    end:gv('endurance'),pob:gv('pob'),pic:gv('pic'),
+    col:gv('accolor'),rmk:gv('remarks19'),
+    dn:gv('dinghyNum'),dc:gv('dinghyCap'),
+    dcover:getActive('covGrp').includes('C')?'C':'',
+    dcolor:gv('dinghyColor'),
+    fby:gv('filedBy')||''
+  };
+
+  // White page + outer border
+  doc.setFillColor('#ffffff');doc.rect(0,0,PW,PH,'F');
+  doc.setDrawColor(BK);doc.setLineWidth(0.4);
+  doc.rect(ml,mt,W,PH-mt-5,'S');
+
+  let Y=mt,ry;
+  ry=Y;
+
+  // Logo CORPAC (izquierda del encabezado)
+  if(logoBase64){
+    // Logo dimensions: 36mm ancho x 19mm alto, centrado verticalmente en el header de 20mm
+    doc.addImage(logoBase64,'JPEG',ml+1,ry+0.5,36,19);
+  }
+
+  // Title
+  tx('PLAN DE VUELO / FLIGHT PLAN',PW/2+3,ry+9,13,true,BK,'center');
+  tx('FLIGHT PLAN  |  FPL  |  OACI DOC 4444',PW/2+3,ry+13.5,6,false,'#334466','center');
+  tx('PANS-ATM  ANNEX 2  |  INTERNATIONAL ATS',PW/2+3,ry+17,5,false,'#667799','center');
+  // Accent line
+  doc.setFillColor('#1a5fa8');doc.rect(ml,ry+20,50,0.4,'F');
+  Y+=20;hl(Y,ml,ml+W,0.5);
+
+  /* == PRIO FF + ADDR1  9mm == */
+  ry=Y;vl(ml+33,ry,ry+9+8);
+  lb('PRIORIDAD','Priority',ml+1,ry+3,31);
+  tx('<<==  FF->',ml+1,ry+7.5,8.5,true,BK);
+  lb('DESTINATARIO(S)','Addressee(s)',ml+34,ry+3,163);
+  vx(D.a1,ml+34,ry+7.8,8.5,163);
+  Y+=9;hl(Y,ml+33,ml+W);
+
+  /* == ADDR2  8mm == */
+  ry=Y;vx(D.a2,ml+34,ry+5.5,8.5,160);tx('<<==',ml+W-8,ry+5.5,7,true,BK);
+  Y+=8;hl(Y);
+
+  /* == HORA DEP + REMITENTE  9mm == */
+  ry=Y;vl(ml+52,ry,ry+9);
+  lb('HORA DE DEPOSITO','Filing time',ml+1,ry+3,49);
+  cboxVal(D.dtg,ml+1,ry+5.2,6,3.5,3,7.5);
+  lb('REMITENTE','Originator',ml+53,ry+3,143);
+  vx(D.snd,ml+53,ry+8,8.5,138);tx('<<==',ml+W-8,ry+8,7,true,BK);
+  Y+=9;hl(Y);
+
+  /* == ID EXACTA  9mm == */
+  ry=Y;
+  lb('IDENTIFICACION EXACTA DEL (DE LOS) DESTINATARIO(S) Y/O DEL REMITENTE',
+     'Specific identification of addressee(s) and/or originator',ml+1,ry+3,196);
+  vx(D.sid,ml+1,ry+8.5,8,196);
+  Y+=9;hl(Y);
+
+  /* == SEP GRIS  2mm == */
+  doc.setFillColor('#dddddd');doc.rect(ml,Y,W,2,'F');Y+=2;hl(Y,ml,ml+W,0.4);
+
+  /* == ITEMS 3/7/8  14mm  c3=31 c7=65 c8=104 == */
+  ry=Y;const x7=ml+31,x8=ml+96;
+  vl(x7,ry,ry+14);vl(x8,ry,ry+14);
+  lb('3 TIPO DE MENSAJE','Message type',ml+1,ry+3,28);
+  tx('<<==',ml+1,ry+12.5,7.5,true,BK);tx('(FPL) -',ml+9,ry+12.5,9.5,true,BK);
+  lb('7 IDENTIFICACION AERONAVE','Aircraft identification',x7+1,ry+3,62);
+  cboxVal(D.acid,x7+1,ry+6.5,7,4.5,4,9);
+  lb('8 REGLAS DE VUELO','Flight rules',x8+1,ry+3,45);
+  cboxVal(D.rul,x8+1,ry+6.5,1,7,4.5,9.5);
+  const xt8=x8+25;lb('TIPO DE VUELO','Type of flight',xt8,ry+3,43);
+  cboxVal(D.ftp,xt8,ry+6.5,1,7,4.5,9.5);
+  tx('<<==',ml+W-8,ry+12.5,7,true,BK);
+  Y+=14;hl(Y);
+
+  /* == ITEMS 9/10  12mm  n9=12 t9=42 w9=26 e10=120 == */
+  ry=Y;const xt9=ml+12,xw9=ml+54,xe10=ml+80;
+  vl(xt9,ry,ry+12);vl(xw9,ry,ry+12);vl(xe10,ry,ry+12);
+  lb('9 NUM','Number',ml+1,ry+3,10);
+  cboxVal(D.num,ml+1,ry+6,2,4.5,4,8);
+  lb('TIPO DE AERONAVE','Type of aircraft',xt9+1,ry+3,40);
+  cboxVal(D.atp,xt9+1,ry+6,4,5,4,9);
+  tx('/',xw9-3,ry+11,9,true,BK);
+  lb('CAT.ESTELA TURB.','Wake turbulence cat.',xw9+1,ry+3,24);
+  cboxVal(D.wtc,xw9+1,ry+6,1,6,4,9);
+  tx('-',xe10-3,ry+10.5,8,true,BK);
+  const e10W=W-(xe10-ml)-2;
+  lb('10 EQUIPO','Equipment',xe10+1,ry+3,e10W-2);
+  const eqL=doc.splitTextToSize(safe(D.eq),e10W-3);
+  doc.setFontSize(8);doc.setTextColor(BL);doc.setFont('courier','bold');
+  doc.text(eqL.slice(0,2),xe10+1,ry+8);
+  tx('/  <<==',ml+W-11,ry+11,7,true,BK);
+  Y+=12;hl(Y);
+
+  /* == ITEM 13  11mm  dep=62 hor=52 dof=86 == */
+  ry=Y;const xhor=ml+62,xdof=ml+114;
+  vl(xhor,ry,ry+11);vl(xdof,ry,ry+11);
+  lb('13 AERODROMO DE SALIDA','Departure aerodrome',ml+1,ry+3,59);
+  tx('-',ml+1,ry+9.5,7,true,BK);cboxVal(D.dep,ml+4,ry+5.5,4,5,4,9.5);
+  lb('HORA','Time',xhor+1,ry+3,49);
+  cboxVal(D.obt,xhor+1,ry+5.5,4,4.5,4,9);tx('<<==',xhor+22,ry+9.5,7,true,BK);
+  lb('FECHA DOF','Date of flight',xdof+1,ry+3,83);vx(D.dof,xdof+1,ry+9.5,8.5,83);
+  Y+=11;hl(Y);
+
+  /* == ITEM 15 cabecera  9mm  spd=43 lvl=33 rte=124 == */
+  ry=Y;const xlvl=ml+43,xrte=ml+76;
+  vl(xlvl,ry,ry+9);vl(xrte,ry,ry+9);
+  lb('15 VELOCIDAD DE CRUCERO','Cruising speed',ml+1,ry+3,40);
+  tx('-',ml+1,ry+8,7,true,BK);cboxVal(D.spd,ml+4,ry+4.5,5,4,3.5,8);
+  lb('NIVEL','Level',xlvl+1,ry+3,30);
+  cboxVal(D.lvl,xlvl+1,ry+4.5,4,4.5,3.5,8);
+  lb('RUTA','Route',xrte+2,ry+3,120);tx('->',xrte+2,ry+8,8,true,BK);
+  Y+=9;hl(Y);
+
+  /* == ITEM 15 ruta  38mm == */
+  ry=Y;
+  const rteL=doc.splitTextToSize(safe(D.rte)||'',W-5);
+  doc.setFontSize(8.5);doc.setTextColor(BL);doc.setFont('helvetica','bold');
+  doc.text(rteL.slice(0,8),ml+3,ry+5);
+  tx('<<==',ml+W-8,ry+35.5,7,true,BK);
+  Y+=38;hl(Y);
+
+  /* == ITEM 16  12mm  des=40 eet=28 al1=52 al2=80 == */
+  ry=Y;const xeet=ml+40,xal1=ml+68,xal2=ml+120;
+  vl(xeet,ry,ry+12);vl(xal1,ry,ry+12);vl(xal2,ry,ry+12);
+  lb('16 AERODROMO DESTINO','Destination aerodrome',ml+1,ry+3,37);
+  tx('-',ml+1,ry+10.5,7,true,BK);cboxVal(D.des,ml+4,ry+6.5,4,5,4,9.5);
+  lb('EET TOTAL/Total EET','HR          MIN',xeet+1,ry+3,26);
+  cboxVal(D.eet,xeet+1,ry+6.5,4,4.5,4,9);tx('->',xeet+22,ry+10.5,7,true,BK);
+  lb('AERODROMO ALTERNO','Alternate aerodrome',xal1+1,ry+3,49);
+  tx('->',xal1+1,ry+10.5,7,true,BK);cboxVal(D.al1,xal1+6,ry+6.5,4,5,4,9.5);
+  lb('2o AERODROMO ALTERNO','2nd alternate aerodrome',xal2+1,ry+3,77);
+  tx('->',xal2+1,ry+10.5,7,true,BK);cboxVal(D.al2,xal2+6,ry+6.5,4,5,4,9.5);
+  tx('<<==',ml+W-8,ry+11.5,7,true,BK);
+  Y+=12;hl(Y);
+
+  /* == ITEM 18  26mm == */
+  ry=Y;
+  lb('18 OTROS DATOS / Other information',null,ml+1,ry+3,195);tx('-',ml+1,ry+8,7,true,BK);
+  hl(ry+6,ml,ml+W,0.12);
+  const i18L=doc.splitTextToSize(safe(D.i18||'0'),W-5);
+  doc.setFontSize(8);doc.setTextColor(BL);doc.setFont('helvetica','bold');
+  doc.text(i18L.slice(0,4),ml+3,ry+10);
+  tx(')<<==',ml+W-9,ry+23.5,7,true,BK);
+  Y+=26;hl(Y);
+
+  /* == BANNER 19  7mm == */
+  ry=Y;doc.setFillColor('#e8e8e8');doc.rect(ml,ry,W,7,'F');
+  tx('INFORMACION SUPLEMENTARIA (EN LOS MENSAJES FPL NO HAY QUE TRANSMITIR ESTOS DATOS)',PW/2,ry+3.2,5.5,true,BK,'center');
+  tx('Supplementary information (not be transmitted in FPL messages)',PW/2,ry+5.9,4.5,false,GY,'center');
+  Y+=7;hl(Y,ml,ml+W,0.4);
+
+  /* == 19 E/ P/ + R/  13mm == */
+  ry=Y;vl(ml+100,ry,ry+13);
+  lb('19       AUTONOMIA','Endurance',ml+1,ry+3,36);
+  tx('HR',ml+25,ry+6,4.5,false,GY);tx('MIN',ml+36,ry+6,4.5,false,GY);
+  tx('-E /',ml+1,ry+10.5,8.5,true,BK);cboxVal(D.end,ml+11,ry+7,4,4,3.5,7.5);
+  tx('-> P /',ml+35,ry+10.5,8.5,true,BK);
+  lb('PERSONAS A BORDO','Persons on board',ml+51,ry+3,46);
+  cboxVal(D.pob,ml+51,ry+7,3,4,3.5,7.5);
+  // R/
+  const xRd=ml+101;
+  lb('EQUIPO RADIO DE EMERGENCIA','Emergency radio',xRd,ry+3,95);
+  tx('-> R /',xRd,ry+10.5,8.5,true,BK);
+  let cx=xRd+18;
+  for(const[L,sub,on] of [['U','UHF',CK.rGrp.includes('U')],['V','VHF',CK.rGrp.includes('V')],['E','ELT',CK.rGrp.includes('E')]]){
+    tx(L,cx+2.8,ry+5.5,8.5,true,BK,'center');sqb(cx+0.5,ry+6.8,4.5,on);tx(sub,cx+2.8,ry+12.8,4,false,GY,'center');cx+=14;
+  }
+  Y+=13;hl(Y);
+
+  /* == 19 S/ + J/  13mm == */
+  ry=Y;vl(ml+100,ry,ry+13);
+  lb('EQUIPO DE SUPERVIVENCIA','Survival equipment',ml+1,ry+3,97);
+  tx('-> S /',ml+1,ry+10.5,8.5,true,BK);
+  let sx=ml+13;
+  for(const[L,esN,enN,on] of [['P','POLAR','Polar',CK.sGrp.includes('P')],['D','DESERTICO','Desert',CK.sGrp.includes('D')],['M','MARITIMO','Maritime',CK.sGrp.includes('M')],['J','SELVA','Jungle',CK.sGrp.includes('J')]]){
+    tx(esN,sx+4,ry+3,4.5,false,GY,'center');tx(enN,sx+4,ry+5.8,4,false,GY,'center');
+    sqb(sx+1,ry+7.5,5.5,on);
+    if(!on)tx(L,sx+4,ry+11.5,8.5,true,BK,'center');
+    sx+=16;
+  }
+  // J/
+  const xJc=ml+101;
+  lb('CHALECOS / Jackets',null,xJc,ry+3,95);
+  tx('-> J /',xJc,ry+10.5,8.5,true,BK);
+  let jx=xJc+13;
+  for(const[L,esN,enN,on] of [['L','LUZ','Light',CK.jGrp.includes('L')],['F','FLUOR','Fluores',CK.jGrp.includes('F')],['U','UHF','UHF',CK.jGrp.includes('U')],['V','VHF','VHF',CK.jGrp.includes('V')]]){
+    tx(esN,jx+3.5,ry+3,4.5,false,GY,'center');tx(enN,jx+3.5,ry+5.8,4,false,GY,'center');
+    sqb(jx+0.5,ry+7.5,5.5,on);
+    if(!on)tx(L,jx+3.5,ry+11.5,8.5,true,BK,'center');
+    jx+=14;
+  }
+  Y+=13;hl(Y);
+
+  /* == D/ BALSAS  10mm == */
+  ry=Y;
+  lb('BOTES NEUMATICOS / Dinghies',null,ml+1,ry+3,195);
+  tx('-> D /',ml+1,ry+8.8,8.5,true,BK);
+  // NUMERO — 2 boxes
+  tx('NUMERO',ml+21,ry+3,4.5,true,GY);tx('Number',ml+21,ry+5.8,4,false,GY);
+  tx('->',ml+18.5,ry+8.8,7,true,BK);cboxVal(D.dn,ml+21,ry+6,2,4.5,3.5,7);
+  // CAPACIDAD — 4 boxes
+  tx('CAPACIDAD',ml+37,ry+3,4.5,true,GY);tx('Capacity',ml+37,ry+5.8,4,false,GY);
+  tx('->',ml+35,ry+8.8,7,true,BK);cboxVal(D.dc,ml+37,ry+6,4,4.5,3.5,7);
+  // CUBIERTA — label + "-> C ->" + 1 box
+  tx('CUBIERTA',ml+63,ry+3,4.5,true,GY);tx('Cover',ml+63,ry+5.8,4,false,GY);
+  tx('-> C ->',ml+60,ry+8.8,7,true,BK);
+  cboxVal(D.dcover,ml+74,ry+6,1,5.5,3.5,8.5);
+  // COLOR — label + wide value box
+  tx('COLOR / Colour',ml+83,ry+3,4.5,true,GY);
+  // Draw color box border
+  doc.setFillColor(D.dcolor?'#eaf4ff':'#f5f5f5');
+  doc.setDrawColor('#5599cc');doc.setLineWidth(0.18);
+  doc.rect(ml+83,ry+6,ml+W-ml-83-3,3.5,'FD');
+  // Print color value inside the box
+  if(D.dcolor){
+    doc.setFontSize(7.5);doc.setTextColor('#003399');doc.setFont('courier','bold');
+    doc.text(safe(D.dcolor),ml+84,ry+9,{maxWidth:ml+W-ml-87});
+  }
+  tx('<<==',ml+W-8,ry+8.8,7,true,BK);
+  Y+=10;hl(Y);
+
+  /* == A/ COLOR Y MARCAS  9mm == */
+  ry=Y;lb('COLOR Y MARCAS DE LA AERONAVE','Aircraft colour and markings',ml+1,ry+3,195);
+  tx('A /',ml+1,ry+8,8.5,true,BK);vx(D.col,ml+9,ry+8.2,8.5,187);
+  Y+=9;hl(Y);
+
+  /* == N/ OBSERVACIONES  8mm == */
+  ry=Y;lb('OBSERVACIONES / Remarks',null,ml+1,ry+3,195);
+  tx('-> N /',ml+1,ry+7.5,8.5,true,BK);vx(D.rmk,ml+13,ry+7.8,8.5,178);
+  tx('<<==',ml+W-8,ry+7.5,7,true,BK);
+  Y+=8;hl(Y);
+
+  /* == C/ PILOTO  10mm == */
+  ry=Y;lb('PILOTO AL MANDO / Pilot in command',null,ml+1,ry+3,195);
+  tx('C /',ml+1,ry+8,8.5,true,BK);vx(D.pic,ml+9,ry+8.2,8.5,182);
+  tx('<<==',ml+W-8,ry+8,7,true,BK);
+  Y+=10;hl(Y);
+
+  /* == FILED BY  8mm == */
+  ry=Y;lb('PRESENTADO POR / Filed by',null,ml+1,ry+3,195);
+  vx(D.fby,ml+1,ry+7.5,8,195);
+  tx('<<==)',ml+W-9,ry+7.5,7,true,BK);
+  Y+=8;hl(Y,ml,ml+W,0.5);
+
+  // Save PDF
+  var acid = safe(D.acid)||'FPL';
+  var dep  = safe(D.dep)||'XXXX';
+  var des  = safe(D.des)||'XXXX';
+  doc.save('PlanVuelo_'+acid+'_'+dep+'_'+des+'.pdf');
+}
+</script>
+</body>
+</html>

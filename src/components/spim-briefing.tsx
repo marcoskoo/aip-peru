@@ -29,6 +29,8 @@ import {
   ListFilter,
   Cloud,
   Wifi,
+  Lock,
+  ClipboardList,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -54,6 +56,8 @@ import {
   formatCountdown,
 } from "@/lib/aviation/notam-parser"
 import { NotamCountdownClock, sortByExpiry } from "@/components/notam-countdown-clock"
+import { NotamListing } from "@/components/notam-listing"
+import { useAdminAuth } from "@/hooks/use-admin-auth"
 
 // ─── Types ──────────────────────────────────────────────────────────────
 
@@ -78,6 +82,7 @@ interface StatsResponse {
   metarCount: number
   tafCount: number
   notamCount: number
+  notamSource?: string | null
   stations: StationSummary[]
   generatedAt: string
 }
@@ -518,6 +523,7 @@ function DashboardView({ stats, loading, onRefresh, onIngested, onSelectStation 
   onSelectStation: (s: StationSummary) => void
 }) {
   const [search, setSearch] = useState("")
+  const { isAuthenticated } = useAdminAuth()
 
   const filteredStations = stats?.stations.filter((s) => {
     if (!search) return true
@@ -532,12 +538,35 @@ function DashboardView({ stats, loading, onRefresh, onIngested, onSelectStation 
         <StatCard icon={Plane} label="Aeródromos" value={stats?.totalStations ?? "—"} color="bg-blue-500/15 text-blue-600" />
         <StatCard icon={Wind} label="METAR" value={stats?.metarCount ?? "—"} color="bg-green-500/15 text-green-600" />
         <StatCard icon={Waves} label="TAF" value={stats?.tafCount ?? "—"} color="bg-orange-500/15 text-orange-600" />
-        <StatCard icon={FileText} label="NOTAMs" value={stats?.notamCount ?? "—"} color="bg-red-500/15 text-red-600" />
+        <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">NOTAMs</span>
+            <div className="rounded-lg p-1.5 bg-red-500/15 text-red-600">
+              <FileText className="size-4" />
+            </div>
+          </div>
+          <p className="text-2xl font-bold tabular-nums text-slate-900 dark:text-slate-100">{stats?.notamCount ?? "—"}</p>
+          {stats?.notamSource && (
+            <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 truncate" title={stats.notamSource}>
+              Fuente: {stats.notamSource}
+            </p>
+          )}
+        </div>
       </div>
 
-      {/* Pegado masivo */}
-      <NotamIngestDialog onIngested={onIngested} />
-      <NotamDeleteAllDialog onDeleted={onIngested} />
+      {/* Pegado masivo + Eliminar — solo visible para administradores */}
+      {isAuthenticated && (
+        <>
+          <NotamIngestDialog onIngested={onIngested} />
+          <NotamDeleteAllDialog onDeleted={onIngested} />
+        </>
+      )}
+      {!isAuthenticated && (
+        <div className="rounded-lg border border-dashed border-slate-300 dark:border-slate-700 p-3 text-center text-xs text-slate-500 dark:text-slate-400">
+          <Lock className="size-3.5 inline mr-1.5 opacity-60" />
+          Inicie sesión como administrador para pegar o eliminar NOTAMs en lote.
+        </div>
+      )}
 
       {/* Station list */}
       <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden">
@@ -1705,13 +1734,14 @@ function MultiStationBriefing() {
 
 // ─── Main Component ─────────────────────────────────────────────────────
 
-type MainTab = "gestion" | "briefing" | "agente" | "api"
+type MainTab = "gestion" | "notams" | "briefing" | "agente" | "api"
 
 export function SpimBriefing() {
   const [stats, setStats] = useState<StatsResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [selectedStation, setSelectedStation] = useState<StationSummary | null>(null)
   const [mainTab, setMainTab] = useState<MainTab>("gestion")
+  const { isAuthenticated } = useAdminAuth()
 
   const fetchStats = useCallback(async () => {
     try {
@@ -1801,9 +1831,10 @@ export function SpimBriefing() {
         </div>
 
         {/* Bottom nav tabs */}
-        <div className="flex border-t border-slate-200 dark:border-slate-700">
+        <div className="flex border-t border-slate-200 dark:border-slate-700 overflow-x-auto">
           {([
             { key: "gestion" as const, label: "Gestión", icon: Settings2 },
+            { key: "notams" as const, label: "NOTAMs", icon: ClipboardList },
             { key: "briefing" as const, label: "Briefing Múltiple", icon: Search },
             { key: "agente" as const, label: "Agente", icon: Bot },
             { key: "api" as const, label: "API", icon: Code2 },
@@ -1833,6 +1864,8 @@ export function SpimBriefing() {
         <StationDetailView station={selectedStation} onBack={() => setSelectedStation(null)} />
       ) : mainTab === "gestion" ? (
         <DashboardView stats={stats} loading={loading} onRefresh={refreshNow} onIngested={refreshNow} onSelectStation={setSelectedStation} />
+      ) : mainTab === "notams" ? (
+        <NotamListing isAdmin={isAuthenticated} />
       ) : mainTab === "briefing" ? (
         <MultiStationBriefing />
       ) : mainTab === "agente" ? (

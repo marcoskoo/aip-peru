@@ -19,6 +19,7 @@ import { RouteCalculator } from "@/components/route-calculator"
 import { AirwaysListing } from "@/components/airways-listing"
 import { GlobalSearch } from "@/components/global-search"
 import { ErrorBoundary } from "@/components/error-boundary"
+import { AdminGate } from "@/components/admin-gate"
 import type { Airport, Heliport, RoutePoint, RouteSummary } from "@/lib/types"
 
 // Dynamic imports for heavy components to reduce initial bundle
@@ -37,17 +38,6 @@ const AdminPanel = dynamic(
   () =>
     import("@/components/admin-panel").then(
       (mod) => mod.AdminPanel
-    ),
-  {
-    ssr: false,
-    loading: () => <Skeleton className="h-[600px] w-full" />,
-  }
-)
-
-const NotamListing = dynamic(
-  () =>
-    import("@/components/notam-listing").then(
-      (mod) => mod.NotamListing
     ),
   {
     ssr: false,
@@ -179,7 +169,8 @@ export default function Home() {
     } else if (result.type === "airway") {
       setViewMode("airways")
     } else if (result.type === "notam") {
-      setViewMode("notams")
+      // NOTAMs are now managed inside INFO SPIM — redirect there
+      setViewMode("spim-briefing")
     } else if (result.type === "airspace") {
       setViewMode("airspace")
     } else if (result.type === "abbreviation" || result.type === "regulation" || result.type === "authority" || result.type === "aipsection") {
@@ -189,11 +180,11 @@ export default function Home() {
 
   // Navigation buttons configuration
   // Each button always shows its own label. The active one is highlighted with amber styling.
+  // NOTAMs section is now integrated into INFO SPIM — the standalone NOTAMs tab is hidden.
   const navButtons = [
     { mode: "publications" as ViewMode, icon: BookOpen, label: "Publicaciones AIP" },
     { mode: "heliports" as ViewMode, icon: Crosshair, label: "Helipuertos" },
     { mode: "airways" as ViewMode, icon: Navigation2, label: "Rutas" },
-    { mode: "notams" as ViewMode, icon: AlertTriangle, label: "NOTAMs" },
     { mode: "spim-briefing" as ViewMode, icon: Bot, label: "INFO SPIM" },
     { mode: "airspace" as ViewMode, icon: Shield, label: "Zonas" },
     { mode: "chart" as ViewMode, icon: Map, label: "Carta Aeronáutica" },
@@ -363,25 +354,6 @@ export default function Home() {
           <AirwaysListing
             onViewChart={() => setViewMode("chart")}
           />
-        ) : viewMode === "notams" && !selectedAirport ? (
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <AlertTriangle className="size-6 text-amber-500" />
-              <div>
-                <h1 className="text-xl font-bold tracking-tight">
-                  NOTAMs — Avisos a los Aeronavegantes
-                </h1>
-                <p className="text-sm text-muted-foreground">
-                  Avisos que contienen información sobre el establecimiento, condición o modificación de cualquier componente del espacio aéreo — FIR Lima (SPIM)
-                </p>
-              </div>
-              <Badge variant="outline" className="hidden sm:inline-flex gap-1 text-xs text-amber-600 dark:text-amber-400 border-amber-300 dark:border-amber-700 ml-auto shrink-0">
-                <Plane className="size-3" />
-                Filtrar por Aeródromo
-              </Badge>
-            </div>
-            <NotamListing />
-          </div>
         ) : viewMode === "spim-briefing" && !selectedAirport ? (
           <SpimBriefing />
         ) : viewMode === "airspace" && !selectedAirport ? (
@@ -475,7 +447,9 @@ export default function Home() {
                 </p>
               </div>
             </div>
-            <AdminPanel />
+            <AdminGate>
+              <AdminPanel />
+            </AdminGate>
           </div>
         ) : selectedAirport ? (
           <AirportDetailView

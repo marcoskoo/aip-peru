@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, useSyncExternalStore } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   ShieldOff, ShieldAlert, AlertTriangle, Layers, Circle, Target,
@@ -29,6 +29,17 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import "leaflet/dist/leaflet.css"
+import {
+  MapContainer,
+  TileLayer,
+  Circle as LCircle,
+  Polygon,
+  Marker,
+  Popup,
+  useMap,
+} from "react-leaflet"
+import L from "leaflet"
 
 // ─── Types ────────────────────────────────────────────────────────
 
@@ -74,6 +85,356 @@ function getTypeConfig(type: string) {
     default:
       return { icon: Shield, bg: "bg-slate-100 dark:bg-slate-800", text: "text-slate-800 dark:text-slate-300", border: "border-slate-300 dark:border-slate-600", label: type, accent: "text-muted-foreground" }
   }
+}
+
+// ─── Map Helpers ──────────────────────────────────────────────────
+
+const PERU_CENTER: [number, number] = [-9.19, -75.0152]
+const PERU_ZOOM = 5
+const NM_TO_METERS = 1852
+
+const TYPE_COLORS: Record<string, string> = {
+  PROHIBITED: "#ef4444",
+  RESTRICTED: "#f97316",
+  DANGER: "#eab308",
+  TMA: "#3b82f6",
+  CTA: "#3b82f6",
+  CTR: "#3b82f6",
+}
+
+function getTypeColor(type: string): string {
+  return TYPE_COLORS[type] || "#64748b"
+}
+
+function isValidCoord(lat: unknown, lon: unknown): boolean {
+  return (
+    typeof lat === "number" &&
+    typeof lon === "number" &&
+    !isNaN(lat) &&
+    !isNaN(lon) &&
+    isFinite(lat) &&
+    isFinite(lon)
+  )
+}
+
+// Parse the polygon JSON string into an array of [lat, lon] pairs.
+// Returns null if the field is missing or not a valid polygon array.
+function parsePolygon(polygon: string | null | undefined): [number, number][] | null {
+  if (!polygon) return null
+  try {
+    const parsed = JSON.parse(polygon)
+    if (!Array.isArray(parsed)) return null
+    const positions: [number, number][] = []
+    for (const p of parsed) {
+      if (
+        p &&
+        typeof p.lat === "number" &&
+        typeof p.lon === "number" &&
+        !isNaN(p.lat) &&
+        !isNaN(p.lon)
+      ) {
+        positions.push([p.lat, p.lon])
+      }
+    }
+    return positions.length >= 3 ? positions : null
+  } catch {
+    return null
+  }
+}
+
+// Custom divIcon marker showing the zone designator label
+function createZoneIcon(designator: string, color: string) {
+  return L.divIcon({
+    className: "",
+    html: `
+      <div style="position:relative;display:flex;flex-direction:column;align-items:center;">
+        <div style="
+          width:14px;height:14px;
+          background:${color};
+          border:2px solid #ffffff;
+          border-radius:50%;
+          box-shadow:0 0 4px rgba(0,0,0,0.5);
+        "></div>
+        <span style="
+          position:absolute;top:14px;
+          font-size:9px;font-weight:700;
+          color:${color};white-space:nowrap;
+          text-shadow:1px 1px 1px #fff,-1px -1px 1px #fff,1px -1px 1px #fff,-1px 1px 1px #fff;
+          letter-spacing:0.5px;
+          pointer-events:none;
+        ">${designator}</span>
+      </div>
+    `,
+    iconSize: [14, 26],
+    iconAnchor: [7, 7],
+  })
+}
+
+// Popup content shared by both the overview map and the mini-maps.
+function ZonePopupContent({
+  restriction,
+  color,
+}: {
+  restriction: AirspaceRestriction
+  color: string
+}) {
+  return (
+    <div className="text-xs space-y-1 min-w-[200px]">
+      <div className="font-bold text-sm flex items-center gap-1.5">
+        <span
+          className="inline-block w-2.5 h-2.5 rounded-full"
+          style={{ backgroundColor: color }}
+        />
+        {restriction.designator}
+      </div>
+      <div className="text-muted-foreground">{restriction.name}</div>
+      <div className="flex gap-2 pt-1">
+        <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+          {restriction.type}
+        </Badge>
+        <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+          {restriction.status}
+        </Badge>
+      </div>
+      <div className="pt-1">
+        <span className="text-muted-foreground">Altitud: </span>
+        <span className="font-mono">
+          {restriction.lowerLimit} – {restriction.upperLimit}
+        </span>
+      </div>
+      <div className="font-mono text-[10px] text-muted-foreground">
+        {restriction.centerLat.toFixed(4)}°, {restriction.centerLon.toFixed(4)}°
+        {restriction.radius ? ` · R: ${restriction.radius}NM` : ""}
+      </div>
+      {restriction.restrictions && (
+        <div className="pt-1 border-t mt-1">
+          <div className="text-muted-foreground text-[10px] uppercase">Restricciones</div>
+          <div>{restriction.restrictions}</div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Renders the appropriate Leaflet shape (Polygon, Circle, or Marker)
+// for a single restriction. Used by both OverviewMap and ZoneMiniMap.
+function ZoneShape({
+  restriction,
+  color,
+}: {
+  restriction: AirspaceRestriction
+  color: string
+}) {
+  const positions = parsePolygon(restriction.polygon)
+  const center: [number, number] = [restriction.centerLat, restriction.centerLon]
+  const radiusMeters =
+    restriction.radius && restriction.radius > 0
+      ? restriction.radius * NM_TO_METERS
+      : null
+
+  if (positions) {
+    return (
+      <Polygon
+        positions={positions}
+        pathOptions={{
+          color,
+          weight: 2,
+          fillColor: color,
+          fillOpacity: 0.25,
+        }}
+      >
+        <Popup>
+          <ZonePopupContent restriction={restriction} color={color} />
+        </Popup>
+      </Polygon>
+    )
+  }
+
+  if (radiusMeters) {
+    return (
+      <LCircle
+        center={center}
+        radius={radiusMeters}
+        pathOptions={{
+          color,
+          weight: 2,
+          fillColor: color,
+          fillOpacity: 0.25,
+        }}
+      >
+        <Popup>
+          <ZonePopupContent restriction={restriction} color={color} />
+        </Popup>
+      </LCircle>
+    )
+  }
+
+  return (
+    <Marker
+      position={center}
+      icon={createZoneIcon(restriction.designator, color)}
+    >
+      <Popup>
+        <ZonePopupContent restriction={restriction} color={color} />
+      </Popup>
+    </Marker>
+  )
+}
+
+// Child component that auto-fits the map to the zone's bounds.
+function FitBounds({
+  positions,
+  center,
+  radius,
+}: {
+  positions?: [number, number][] | null
+  center: [number, number]
+  radius?: number | null
+}) {
+  const map = useMap()
+
+  useEffect(() => {
+    if (positions && positions.length > 0) {
+      const bounds = L.latLngBounds(positions)
+      map.fitBounds(bounds, { padding: [25, 25], maxZoom: 14 })
+    } else if (radius && radius > 0) {
+      const meters = radius * NM_TO_METERS
+      const latOffset = meters / 111111
+      const lonOffset =
+        meters / (111111 * Math.cos((center[0] * Math.PI) / 180))
+      const bounds = L.latLngBounds([
+        [center[0] - latOffset, center[1] - lonOffset],
+        [center[0] + latOffset, center[1] + lonOffset],
+      ])
+      map.fitBounds(bounds, { padding: [25, 25], maxZoom: 14 })
+    } else {
+      map.setView(center, 12)
+    }
+  }, [map, positions, center, radius])
+
+  return null
+}
+
+// Hook that returns true only after the component has mounted on the client.
+// Leaflet accesses `window`, so we must avoid rendering it during SSR.
+function useMounted(): boolean {
+  return useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  )
+}
+
+// Main overview map showing ALL restrictions across Peru.
+function OverviewMap({ restrictions }: { restrictions: AirspaceRestriction[] }) {
+  const mounted = useMounted()
+  const validRestrictions = restrictions.filter((r) =>
+    isValidCoord(r.centerLat, r.centerLon)
+  )
+
+  if (!mounted) {
+    return <Skeleton className="h-[300px] sm:h-[400px] rounded-2xl w-full" />
+  }
+
+  if (validRestrictions.length === 0) {
+    return (
+      <div className="h-[300px] sm:h-[400px] rounded-2xl border bg-muted/30 flex items-center justify-center text-sm text-muted-foreground">
+        Sin zonas para mostrar en el mapa
+      </div>
+    )
+  }
+
+  return (
+    <div className="relative rounded-2xl overflow-hidden border bg-muted/30 h-[300px] sm:h-[400px]">
+      <MapContainer
+        center={PERU_CENTER}
+        zoom={PERU_ZOOM}
+        className="h-full w-full z-0"
+        zoomControl={true}
+        scrollWheelZoom={true}
+        attributionControl={true}
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        {validRestrictions.map((r) => (
+          <ZoneShape
+            key={`ov-${r.id}`}
+            restriction={r}
+            color={r.color || getTypeColor(r.type)}
+          />
+        ))}
+      </MapContainer>
+
+      {/* Legend overlay */}
+      <div className="absolute bottom-3 left-3 z-[1000] bg-background/95 backdrop-blur-sm border rounded-lg shadow-lg p-2.5 space-y-1.5 max-w-[160px]">
+        <div className="font-semibold text-[11px] uppercase tracking-wide text-muted-foreground">
+          Leyenda
+        </div>
+        {[
+          { color: "#ef4444", label: "Prohibida" },
+          { color: "#f97316", label: "Restringida" },
+          { color: "#eab308", label: "Peligro" },
+          { color: "#3b82f6", label: "TMA / CTA / CTR" },
+        ].map((item) => (
+          <div key={item.color} className="flex items-center gap-1.5">
+            <span
+              className="inline-block w-3 h-3 rounded-sm border border-white/60"
+              style={{ backgroundColor: item.color }}
+            />
+            <span className="text-[11px] leading-tight">{item.label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// Mini-map rendered inside each card showing the single zone.
+function ZoneMiniMap({ restriction }: { restriction: AirspaceRestriction }) {
+  const mounted = useMounted()
+
+  if (!mounted) {
+    return <Skeleton className="h-[150px] w-full rounded-lg" />
+  }
+
+  if (!isValidCoord(restriction.centerLat, restriction.centerLon)) {
+    return (
+      <div className="h-[150px] rounded-lg border bg-muted/30 flex items-center justify-center">
+        <div className="text-center text-muted-foreground">
+          <MapPin className="size-5 mx-auto mb-1 opacity-40" />
+          <p className="text-[10px]">Coordenadas no disponibles</p>
+        </div>
+      </div>
+    )
+  }
+
+  const color = restriction.color || getTypeColor(restriction.type)
+  const positions = parsePolygon(restriction.polygon)
+  const center: [number, number] = [restriction.centerLat, restriction.centerLon]
+
+  return (
+    <div className="h-[150px] rounded-lg overflow-hidden border bg-muted/30">
+      <MapContainer
+        key={restriction.id}
+        center={center}
+        zoom={12}
+        className="h-full w-full z-0"
+        zoomControl={false}
+        scrollWheelZoom={false}
+        attributionControl={false}
+      >
+        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+        <ZoneShape restriction={restriction} color={color} />
+        <FitBounds
+          positions={positions}
+          center={center}
+          radius={restriction.radius ?? null}
+        />
+      </MapContainer>
+    </div>
+  )
 }
 
 // ─── Component ────────────────────────────────────────────────────
@@ -178,6 +539,9 @@ export function AirspaceRestrictions() {
           </div>
         </div>
       </div>
+
+      {/* Overview Map — shows all restrictions across Peru */}
+      {!loading && restrictions.length > 0 && <OverviewMap restrictions={restrictions} />}
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
@@ -359,16 +723,8 @@ export function AirspaceRestrictions() {
                                     )}
                                   </div>
 
-                                  {/* Map preview placeholder */}
-                                  <div className="h-[150px] rounded-lg bg-muted/30 border flex items-center justify-center">
-                                    <div className="text-center text-muted-foreground">
-                                      <MapPin className="size-6 mx-auto mb-1 opacity-40" />
-                                      <p className="text-[10px]">
-                                        {restriction.centerLat.toFixed(4)}°, {restriction.centerLon.toFixed(4)}°
-                                        {restriction.radius && ` · R: ${restriction.radius}NM`}
-                                      </p>
-                                    </div>
-                                  </div>
+                                  {/* Mini map showing this single zone */}
+                                  <ZoneMiniMap restriction={restriction} />
 
                                   {/* Remarks */}
                                   {restriction.remarks && (

@@ -6,6 +6,7 @@ import {
   type PeruvianStation,
 } from '@/lib/aviation/peru-stations'
 import { notExpiredFilter } from '@/lib/aviation/notam-filter'
+import { fetchLiveNotams } from '@/lib/aviation/faa-notams'
 
 // ─── Types ────────────────────────────────────────────────────────────
 
@@ -30,6 +31,7 @@ interface StatsResponse {
   metarCount: number
   tafCount: number
   notamCount: number
+  notamSource?: string | null
   stations: StationSummary[]
   generatedAt: string
 }
@@ -76,7 +78,7 @@ export async function GET() {
       _count: { id: true },
     })
 
-    // Map airportId → NOTAM count
+    // Map airportId → NOTAM count (from DB)
     const notamCountByAirport = new Map<string, number>()
     for (const g of notamGroups) {
       if (g.airportId) {
@@ -85,7 +87,36 @@ export async function GET() {
     }
 
     // Total active NOTAMs (including those without airportId — FIR-level)
-    const totalActiveNotams = await db.notam.count({ where: activeNotamWhere })
+    let totalActiveNotams = await db.notam.count({ where: activeNotamWhere })
+
+    // ── FAA live fallback ───────────────────────────────────────────────
+    // Si la DB local no tiene NOTAMs (pipeline email IMAP inactivo o DB
+    // vaciada), hacemos fallback a la FAA en vivo para que el dashboard
+    // muestre un conteo real en lugar de 0.
+    // Esto es consistente con el comportamiento de /api/notams que también
+    // hace fallback a FAA live cuando la DB está vacía.
+    const liveNotamCountByIcao = new Map<string, number>()
+    let liveNotamSource: string | null = null
+    if (totalActiveNotams === 0) {
+      try {
+        const liveNotams = await fetchLiveNotams(undefined, 'SPIM')
+        if (liveNotams.length > 0) {
+          totalActiveNotams = liveNotams.length
+          liveNotamSource = 'FAA USNS (live)'
+
+          // Build per-station counts from live data.
+          // liveNotams[].airport?.icaoCode gives the station ICAO.
+          for (const n of liveNotams) {
+            const icao = n.airport?.icaoCode
+            if (icao) {
+              liveNotamCountByIcao.set(icao, (liveNotamCountByIcao.get(icao) || 0) + 1)
+            }
+          }
+        }
+      } catch {
+        // silently ignore — stats will just show 0
+      }
+    }
 
     // Fetch all Peruvian airports from DB
     const dbAirports = await db.airport.findMany({
@@ -117,7 +148,8 @@ export async function GET() {
       seenIcao.add(icao)
 
       const meta: PeruvianStation | undefined = PERUVIAN_STATIONS_BY_ICAO.get(icao)
-      const notamCount = notamCountByAirport.get(a.id) || 0
+      // Use DB count if available; otherwise fall back to live FAA count
+      const notamCount = notamCountByAirport.get(a.id) || liveNotamCountByIcao.get(icao) || 0
 
       stations.push({
         icao,
@@ -151,7 +183,7 @@ export async function GET() {
         lat: meta?.lat ?? -12.0,
         lon: meta?.lon ?? -77.0,
         frequencies: meta?.frequencies,
-        notamCount: 0,
+        notamCount: liveNotamCountByIcao.get(icao) || 0,
         hasMetar: STATIONS_WITH_WEATHER.has(icao),
         hasTaf: STATIONS_WITH_WEATHER.has(icao),
       })
@@ -166,6 +198,7 @@ export async function GET() {
       metarCount,
       tafCount,
       notamCount: totalActiveNotams,
+      notamSource: liveNotamSource,
       stations,
       generatedAt: new Date().toISOString(),
     }

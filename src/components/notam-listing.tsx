@@ -73,6 +73,8 @@ interface NotamStats {
 interface NotamListingProps {
   onSelectNotam?: (notam: Notam) => void
   onSelectAirport?: (icaoCode: string) => void
+  /** When false (non-admin), the "Eliminar todos" button is hidden. */
+  isAdmin?: boolean
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────
@@ -147,7 +149,7 @@ function getCountdown(dateStr: string): { text: string; isExpired: boolean; isUr
 
 // ─── Component ────────────────────────────────────────────────────
 
-export function NotamListing({ onSelectNotam, onSelectAirport }: NotamListingProps) {
+export function NotamListing({ onSelectNotam, onSelectAirport, isAdmin = false }: NotamListingProps) {
   const [notams, setNotams] = useState<Notam[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
@@ -388,15 +390,17 @@ export function NotamListing({ onSelectNotam, onSelectAirport }: NotamListingPro
             onClear={() => setSelectedAerodrome(null)}
             className="shrink-0"
           />
-          <Button
-            variant="destructive"
-            size="sm"
-            className="h-10 gap-1.5 shrink-0"
-            onClick={() => setDeleteDialogOpen(true)}
-          >
-            <Trash2 className="size-3.5" />
-            Eliminar todos
-          </Button>
+          {isAdmin && (
+            <Button
+              variant="destructive"
+              size="sm"
+              className="h-10 gap-1.5 shrink-0"
+              onClick={() => setDeleteDialogOpen(true)}
+            >
+              <Trash2 className="size-3.5" />
+              Eliminar todos
+            </Button>
+          )}
         </div>
 
         {/* Row 2: advanced filters (wrap on mobile) */}

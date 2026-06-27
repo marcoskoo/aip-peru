@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { parseNotams, type ParsedNotam } from '@/lib/aviation/notam-parser'
 import { PERUVIAN_ICAOS } from '@/lib/aviation/peru-stations'
+import { requireAdmin } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -39,6 +40,11 @@ interface IngestBody {
 
 export async function POST(request: NextRequest) {
   try {
+    // ── Require admin authentication ────────────────────────────────
+    // Only authenticated admins can bulk-ingest NOTAMs.
+    const session = await requireAdmin()
+    if (session instanceof Response) return session
+
     const body: IngestBody = await request.json().catch(() => ({}))
     const text = typeof body.text === 'string' ? body.text : ''
 

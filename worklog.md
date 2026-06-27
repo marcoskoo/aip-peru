@@ -3543,3 +3543,125 @@ Stage Summary:
   2. SPHI dashboard badge now matches the detail view's NOTAM count (both show 3, previously badge showed 2 and detail showed 3)
   3. Upcoming NOTAMs (with effectiveFrom in the future) are now visible in the NotamListing and counted in the dashboard badge — previously they were hidden by the `effectiveFrom <= now` filter, causing the "125 of 138" confusion (the missing 13 were likely upcoming, not expired)
 - Ready for production deploy.
+
+---
+Task ID: 5-ZONAS-MAP
+Agent: general-purpose (Zonas Map)
+Task: Add interactive Leaflet map to Zonas de Espacio Aéreo Restringido section
+
+Work Log:
+- Read worklog.md, airspace-restrictions.tsx, aeronautical-chart.tsx, prisma schema, and seed data to understand existing patterns (Leaflet usage, AirspaceRestriction model with polygon JSON / radius NM fields).
+- Added leaflet imports: `leaflet/dist/leaflet.css`, `MapContainer`, `TileLayer`, `Circle as LCircle`, `Polygon`, `Marker`, `Popup`, `useMap` from react-leaflet, and `L from "leaflet"`. Aliased `Circle` and `Tooltip` to avoid conflicts with existing lucide-react `Circle` and shadcn/ui `Tooltip` imports.
+- Added `useSyncExternalStore`-based `useMounted()` hook to ensure maps only render on the client (Leaflet accesses `window`).
+- Added helper functions:
+  - `getTypeColor(type)` → returns hex color per type (PROHIBITED=#ef4444, RESTRICTED=#f97316, DANGER=#eab308, TMA/CTA/CTR=#3b82f6).
+  - `isValidCoord(lat, lon)` → numeric + finite check guarding all map rendering.
+  - `parsePolygon(polygon)` → safely JSON-parses the polygon string into `[lat, lon][]` (returns null for non-array / shape-label strings like "CIRCLE", and requires ≥3 valid points).
+  - `createZoneIcon(designator, color)` → `L.divIcon` with colored dot + designator label (bundler-safe marker, no broken default icon paths).
+  - `ZonePopupContent` → shared Popup markup (designator, name, type, status, altitude range, coords, radius, restrictions text).
+  - `ZoneShape` → picks Polygon (when `polygon` JSON valid), Circle (when `radius` NM set → converted to meters via `* 1852`), or Marker fallback. Wraps each in a Popup.
+  - `FitBounds` → child component using `useMap()` that calls `map.fitBounds()` to auto-zoom mini-maps to the zone's polygon / circle bounds, else `setView(center, 12)`.
+  - `OverviewMap` → full-width Peru-centered map (`[-9.19, -75.0152]`, zoom 5), responsive height `h-[300px] sm:h-[400px]`, OpenStreetMap tiles, renders ALL restrictions as Polygon/Circle/Marker with shared color scheme, plus a legend overlay (bottom-left) listing the 4 color meanings.
+  - `ZoneMiniMap` → per-card map with `key={restriction.id}` (unique MapContainer), `zoomControl={false}` + `scrollWheelZoom={false}` + `attributionControl={false}` to keep it compact, renders the single zone and uses `FitBounds` to auto-zoom.
+- Inserted `<OverviewMap>` between the hero section and the filters (rendered only after data loads and there is at least one restriction; skeleton shown while mounting, "Sin zonas" placeholder if none).
+- Replaced the old `h-[150px] rounded-lg bg-muted/30 border` placeholder div (formerly showing coords as text) with `<ZoneMiniMap restriction={restriction} />` inside each expanded card.
+- Preserved all existing UI: hero stats grid, search input, type filter Select, count text, grouped cards by type, collapsible details, restrictions/remarks sections.
+- Verified with `bun run lint` (clean, no errors) and `bunx tsc --noEmit` (zero errors in airspace-restrictions.tsx; remaining TS errors are all in pre-existing unrelated files like weather route, airport-detail, aip-sections-admin).
+
+Stage Summary:
+- Zonas section now has a full Peru overview map at the top (centered at -9.19, -75.0152, zoom 5) showing every restriction as a colored Polygon / Circle / Marker with popups and a legend.
+- Each expanded card renders its own compact mini-map (unique key, fit-bounds auto-zoom, no zoom control / scroll zoom) giving users an instant visual of where the zone sits.
+- Bundler-safe custom `L.divIcon` markers fix Leaflet's broken default icon path issue.
+- All existing functionality (hero stats, search, type filter, grouped cards, collapsible details) preserved unchanged.
+- Only `/home/z/my-project/src/components/airspace-restrictions.tsx` modified; lint passes cleanly.
+
+---
+Task ID: 7-FPL-IFRAME
+Agent: general-purpose (FPL Iframe)
+Task: Replace Plan de Vuelo section with the pasted HTML via iframe
+
+Work Log:
+- Read worklog.md to understand previous agents' work (1-6: airports integration, UI components, NOTAM/weather/airspace/search/calculator, station detail, sonner toast fix, zonas map).
+- Verified the source HTML file exists at `/home/z/my-project/upload/Pasted Content_1782597417045.txt` (165,192 bytes, 2530 lines) and the existing `src/components/flight-plan.tsx` was a large React implementation (~72KB).
+- Confirmed `page.tsx` imports `<FlightPlan initialRoute={flightPlanRoute} initialSummary={flightPlanSummary} />` and that `RoutePoint` / `RouteSummary` types exist in `src/lib/types.ts` — kept the prop interface intact for backward compatibility.
+- Confirmed `Skeleton` component exists at `src/components/ui/skeleton.tsx`.
+- Copied the HTML file to `/home/z/my-project/public/fpl.html` via `cp`. Verified: 2530 lines, starts with `<!DOCTYPE html>`, contains "Plan de Vuelo" (title + multiple references), references jsPDF and SMTP.js CDN scripts.
+- Rewrote `/home/z/my-project/src/components/flight-plan.tsx` as a small `"use client"` component:
+  * Keeps the `FlightPlanProps` interface (`initialRoute?` and `initialSummary?`) — destructured with leading underscore (`_initialRoute`, `_initialSummary`) so they're explicitly unused but preserve the API contract with `page.tsx`.
+  * Added a header row (`<FileText className="size-6 text-amber-500" />` + `<h1>` "Plan de Vuelo OACI / ICAO FPL" + subtitle "Formulario de plan de vuelo — OACI DOC 4444 PANS-ATM · Anexo 2") matching the visual style of other sections.
+  * Added a `loading` state (default `true`) and rendered a `<Skeleton className="h-[90vh] w-full" />` placeholder while the iframe loads.
+  * Rendered `<iframe src="/fpl.html" title="Plan de Vuelo OACI / ICAO FPL" className="w-full" style={{ minHeight: "90vh", border: 0, display: loading ? "none" : "block" }} onLoad={() => setLoading(false)} />` inside a `rounded-xl overflow-hidden border ... bg-[#050b14]` wrapper — the dark navy background matches AIP PERÚ's theme so there's no white flash before the iframe paints.
+  * Added a JSDoc comment block explaining the props are intentionally unused.
+- Ran `bun run lint` — exit code 0, no errors, no warnings.
+
+Stage Summary:
+- 2 files changed:
+  * `public/fpl.html` — NEW (165 KB, 2530 lines). Standalone ICAO FPL application with dark cyberpunk theme, Items 7-19 form, equipment chips, fuel calculator, cruise level selector, ICAO message generation, jsPDF export, SMTP.js email, UTC clock, localStorage database.
+  * `src/components/flight-plan.tsx` — REWRITTEN. From a 72 KB React implementation to a ~70-line iframe wrapper with loading skeleton.
+- The Plan de Vuelo section now loads the full standalone HTML app inside a responsive iframe (`w-full`, `min-height: 90vh`, `border: 0`) with a Skeleton shown during load.
+- Backward compatibility preserved: `page.tsx` still imports `<FlightPlan initialRoute={...} initialSummary={...} />` unchanged.
+- `bun run lint` clean (exit 0).
+
+---
+Task ID: 7-ADMIN-AUTH-SPIM-FILTERS-FPL-MAP
+Agent: main (Z.ai Code)
+Task: Admin auth + move NOTAM filters to INFO SPIM + fix NOTAM count + admin-only buttons + Zonas map + FPL iframe
+
+Work Log:
+- **Admin Authentication System (new)**:
+  * Added `AdminUser` model to `prisma/schema.prisma` (username, passwordHash, displayName, lastLoginAt)
+  * Created `src/lib/auth.ts` — HMAC-SHA256 signed session tokens via Node crypto, HTTP-only cookie `admin_session`, 7-day expiry, `setSessionCookie`/`clearSessionCookie`/`getSession`/`requireAdmin` helpers
+  * Created 4 API endpoints: `/api/admin/login` (POST, bcrypt verify), `/api/admin/logout` (POST), `/api/admin/session` (GET), `/api/admin/change-password` (POST, requires auth)
+  * Created `src/hooks/use-admin-auth.ts` — client hook that checks session on mount, provides `login`/`logout`/`isAuthenticated`
+  * Created `src/components/admin-gate.tsx` — login form gate (lock icon, Usuario/Contraseña fields, error display, logout bar when authenticated)
+  * Created `src/components/password-change-tab.tsx` — password change form (current/new/confirm, validation, success/error states)
+  * Seeded admin user `mkoo` with password `Mk/06612` via `scripts/seed-admin.ts`
+  * Wrapped `<AdminPanel>` with `<AdminGate>` in `page.tsx`
+  * Added "Seguridad" tab to AdminPanel for password change
+  * Secured DELETE `/api/notams` and POST `/api/spim-briefing/ingest` with `requireAdmin()`
+
+- **Move NOTAM filters to INFO SPIM + hide NOTAMs section**:
+  * Removed "NOTAMs" button from `navButtons` in `page.tsx` (standalone section hidden)
+  * Removed `viewMode === "notams"` render branch and `NotamListing` dynamic import from `page.tsx`
+  * Redirected NOTAM search results to "spim-briefing" viewMode
+  * Added "NOTAMs" tab to `SpimBriefing` (alongside Gestión, Briefing Múltiple, Agente, API)
+  * Tab renders `<NotamListing isAdmin={isAuthenticated} />` — all filters (search, aerodrome, Q-code, Location A, EST/PERM, E-text, scope, priority, active-only) now in INFO SPIM
+  * Added `isAdmin` prop to `NotamListing` — gates "Eliminar todos" button visibility
+
+- **Fix INFO SPIM Total NOTAMs count (was 0)**:
+  * Root cause: `/api/spim-agent/stats` only counted from DB; when DB empty (after delete-all), count was 0
+  * Fix: added FAA live fallback to stats endpoint — when `db.notam.count() === 0`, calls `fetchLiveNotams(undefined, 'SPIM')` and uses the live count
+  * Also populates per-station NOTAM counts from live data (maps `airport.icaoCode` → count)
+  * Added `notamSource` field to StatsResponse so frontend shows "Fuente: FAA USNS (live)"
+  * Updated SPIM dashboard NOTAMs stat card to display the source
+
+- **Admin-only Pegado masivo / Eliminar buttons**:
+  * In `DashboardView`: `NotamIngestDialog` and `NotamDeleteAllDialog` only render when `isAuthenticated`
+  * Non-admin users see a message: "Inicie sesión como administrador para pegar o eliminar NOTAMs en lote"
+  * In `NotamListing`: "Eliminar todos" button only renders when `isAdmin === true`
+
+- **Zonas map** (delegated to subagent Task 5-ZONAS-MAP):
+  * Added Leaflet overview map at top of `airspace-restrictions.tsx` showing all zones
+  * Replaced per-card placeholder divs with mini-maps
+  * Markers/circles/polygons colored by type (PROHIBITED=red, RESTRICTED=orange, DANGER=yellow, TMA/CTA/CTR=blue)
+
+- **Plan de Vuelo iframe** (delegated to subagent Task 7-FPL-IFRAME):
+  * Copied pasted HTML to `public/fpl.html` (2530-line standalone ICAO FPL app)
+  * Rewrote `src/components/flight-plan.tsx` to render via iframe with loading skeleton
+  * Preserves `initialRoute`/`initialSummary` props for backward compatibility
+
+- **Verification with Agent Browser** (all passed):
+  * Home page loads, NOTAMs nav button hidden, 10 nav buttons remain
+  * INFO SPIM: NOTAMs count = 30, source = "FAA USNS (live)", NOTAMs tab with all filters visible
+  * Non-admin: Pegado masivo / Eliminar hidden, admin login message shown
+  * Admin login (mkoo / Mk/06612): POST /api/admin/login 200, "Cerrar sesión" + "Seguridad" tab visible
+  * Admin SPIM: Pegado masivo / Eliminar buttons visible
+  * Zonas: interactive Leaflet map with zone markers (SPP01, SPP02, etc.) visible
+  * Plan de Vuelo: dark-themed FPL form rendered via iframe, UTC clock running, all form sections visible
+  * Lint: `bun run lint` clean, no errors
+
+Stage Summary:
+- 10 files modified: prisma/schema.prisma, src/app/page.tsx, src/components/spim-briefing.tsx, src/components/notam-listing.tsx, src/components/admin-panel.tsx, src/components/airspace-restrictions.tsx, src/components/flight-plan.tsx, src/app/api/spim-agent/stats/route.ts, src/app/api/notams/route.ts, src/app/api/spim-briefing/ingest/route.ts
+- 6 files created: src/lib/auth.ts, src/hooks/use-admin-auth.ts, src/components/admin-gate.tsx, src/components/password-change-tab.tsx, src/app/api/admin/{login,logout,session,change-password}/route.ts, scripts/seed-admin.ts, public/fpl.html
+- User now can: (1) Login as admin (mkoo/Mk/06612) to access Admin panel, (2) Change admin password from "Seguridad" tab, (3) See correct NOTAM count in INFO SPIM (30 from FAA live), (4) Filter NOTAMs in the new NOTAMs tab inside INFO SPIM, (5) Pegado masivo / Eliminar visible only when admin, (6) See zones on interactive map, (7) Use full ICAO FPL form via iframe
+- Ready for production deploy.

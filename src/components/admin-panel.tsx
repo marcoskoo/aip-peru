@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react"
 import { Plus, Pencil, Trash2, Search, X, Loader2, ChevronDown, ChevronRight } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { AipSectionsTab } from "@/components/aip-sections-admin"
+import { PasswordChangeTab } from "@/components/password-change-tab"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -688,13 +689,14 @@ export function AdminPanel() {
   return (
     <div className="w-full max-w-4xl mx-auto p-4">
       <Tabs defaultValue="aip-sections">
-        <TabsList className="grid w-full grid-cols-6 mb-4">
+        <TabsList className="grid w-full grid-cols-4 sm:grid-cols-7 mb-4">
           <TabsTrigger value="aip-sections" className="text-xs">AIP Secciones</TabsTrigger>
           <TabsTrigger value="waypoints" className="text-xs">Waypoints</TabsTrigger>
           <TabsTrigger value="navaids" className="text-xs">Radioayudas</TabsTrigger>
           <TabsTrigger value="airways" className="text-xs">Aerovías</TabsTrigger>
           <TabsTrigger value="fir" className="text-xs">FIR</TabsTrigger>
           <TabsTrigger value="adj-fir" className="text-xs">FIRs Adj.</TabsTrigger>
+          <TabsTrigger value="security" className="text-xs">Seguridad</TabsTrigger>
         </TabsList>
         <TabsContent value="aip-sections"><AipSectionsTab /></TabsContent>
         <TabsContent value="waypoints"><WaypointsTab /></TabsContent>
@@ -702,6 +704,7 @@ export function AdminPanel() {
         <TabsContent value="airways"><AirwaysTab /></TabsContent>
         <TabsContent value="fir"><FIRTab /></TabsContent>
         <TabsContent value="adj-fir"><AdjacentFIRsTab /></TabsContent>
+        <TabsContent value="security"><PasswordChangeTab /></TabsContent>
       </Tabs>
     </div>
   )

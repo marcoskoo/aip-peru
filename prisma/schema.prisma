@@ -482,3 +482,15 @@ model NationalRegulation {
 
   @@unique([code])
 }
+
+// ─── Admin Users ──────────────────────────────────────────────────
+
+model AdminUser {
+  id              String   @id @default(cuid())
+  username        String   @unique              // e.g. mkoo
+  passwordHash    String                        // bcrypt hash
+  displayName     String?                       // e.g. "Marcos Koo"
+  lastLoginAt     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}

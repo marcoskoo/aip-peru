@@ -2,6 +2,7 @@ import { db } from '@/lib/db'
 import { NextRequest, NextResponse } from 'next/server'
 import { fetchLiveNotams, type NormalizedNotam } from '@/lib/aviation/faa-notams'
 import { notExpiredFilter } from '@/lib/aviation/notam-filter'
+import { requireAdmin } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -428,6 +429,11 @@ export async function POST(request: NextRequest) {
 // empezar limpio para evitar duplicados antes de re-pegar.
 export async function DELETE(request: NextRequest) {
   try {
+    // ── Require admin authentication ────────────────────────────────
+    // Only authenticated admins can delete all NOTAMs.
+    const session = await requireAdmin()
+    if (session instanceof Response) return session
+
     const { searchParams } = request.nextUrl
     const fir = searchParams.get('fir')?.trim() || 'SPIM'
 
