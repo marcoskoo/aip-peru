@@ -964,95 +964,6 @@ footer span{color:var(--acc);}
   </div>
 </div>
 
-<!-- TOOLS SECTION -->
-<div class="sec">
-  <div class="sh"><span class="ino" style="background:var(--acc2);color:#000">TOOLS</span><h3>Herramientas de Vuelo / Flight Tools</h3></div>
-  <div class="sb">
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
-      <button type="button" class="btn tool-tab-btn active" data-tool="fuel"
-        style="background:rgba(244,166,0,.15);border:1px solid var(--acc2);color:var(--acc2);font-size:10px;padding:8px 16px;"
-        onclick="toolTab('fuel')">&#9981; Calculadora Combustible</button>
-      <button type="button" class="btn tool-tab-btn" data-tool="levels"
-        style="background:rgba(0,200,255,.08);border:1px solid var(--acc);color:var(--acc);font-size:10px;padding:8px 16px;"
-        onclick="toolTab('levels')">&#9992; Niveles de Crucero</button>
-    </div>
-
-    <!-- FUEL CALC -->
-    <div id="tool_fuel" class="tool-panel active">
-      <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--acc2);letter-spacing:2px;margin-bottom:10px;">&#9981; CALCULADORA DE COMBUSTIBLE / FUEL CALCULATOR (ICAO DOC 9976)</div>
-      <div class="fg c4" style="gap:8px;">
-        <div class="fgr">
-          <label>Consumo / Burn Rate <span class="hint">por hora</span></label>
-          <input type="number" id="fc_burn" placeholder="120" min="0">
-        </div>
-        <div class="fgr">
-          <label>Tiempo Vuelo / Flight Time <span class="hint">minutos</span></label>
-          <input type="number" id="fc_time" placeholder="90" min="0">
-        </div>
-        <div class="fgr">
-          <label>Taxi / Rodaje <span class="hint">unidades</span></label>
-          <input type="number" id="fc_taxi" placeholder="10" min="0" value="10">
-        </div>
-        <div class="fgr">
-          <label>Contingencia <span class="hint">%</span></label>
-          <input type="number" id="fc_cont" placeholder="5" min="0" max="20" value="5">
-        </div>
-        <div class="fgr">
-          <label>Combustible Alterno <span class="hint">unidades</span></label>
-          <input type="number" id="fc_alt" placeholder="0" min="0" value="0">
-        </div>
-        <div class="fgr">
-          <label>Reserva Final <span class="hint">minutos</span></label>
-          <input type="number" id="fc_res" placeholder="45" min="0" value="45">
-        </div>
-        <div class="fgr">
-          <label>Unidad / Unit</label>
-          <select id="fc_unit">
-            <option value="kg">Kilogramos (KG)</option>
-            <option value="L">Litros (L)</option>
-            <option value="USG">US Galones (USG)</option>
-            <option value="LB">Libras (LB)</option>
-          </select>
-        </div>
-        <div class="fgr" style="display:flex;align-items:flex-end;">
-          <button type="button" class="btn b-prev" style="padding:8px 20px;font-size:10px;" onclick="calcFuel()">&#9654; Calcular</button>
-        </div>
-      </div>
-      <div id="fuel_result" style="margin-top:10px;background:rgba(0,0,0,.35);border:1px solid var(--bdr);border-radius:6px;padding:14px;font-family:'Share Tech Mono',monospace;font-size:11px;line-height:2.1;display:none;"></div>
-    </div>
-
-    <!-- CRUISING LEVELS TABLE -->
-    <div id="tool_levels" class="tool-panel">
-      <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--acc2);letter-spacing:2px;margin-bottom:10px;">&#9992; TABLA DE NIVELES DE CRUCERO / CRUISING LEVELS — ICAO Annex 2 Table</div>
-      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px;align-items:flex-end;">
-        <div class="fgr" style="flex:0 0 auto;">
-          <label>Reglas</label>
-          <select id="cl_rules" onchange="renderCruiseLevels()">
-            <option value="IFR">IFR</option>
-            <option value="VFR">VFR</option>
-          </select>
-        </div>
-        <div class="fgr" style="flex:0 0 auto;">
-          <label>Rumbo magnético</label>
-          <select id="cl_mag" onchange="renderCruiseLevels()">
-            <option value="MAG">Magnético</option>
-            <option value="TRUE">Verdadero (zona polar)</option>
-          </select>
-        </div>
-        <div class="fgr" style="flex:0 0 auto;">
-          <label>Hasta nivel</label>
-          <select id="cl_max" onchange="renderCruiseLevels()">
-            <option value="200">FL 200</option>
-            <option value="300">FL 300</option>
-            <option value="450" selected>FL 450</option>
-          </select>
-        </div>
-      </div>
-      <div id="cruise_table" style="overflow-x:auto;max-height:400px;overflow-y:auto;"></div>
-    </div>
-  </div>
-</div>
-
 <!-- I18 HELP MODAL -->
 <div class="mo" id="moI18Help">
   <div class="md" style="max-width:700px;max-height:85vh;overflow-y:auto;">
@@ -1062,13 +973,8 @@ footer span{color:var(--acc);}
   </div>
 </div>
 
-<!-- OACI PREVIEW -->
-<div class="sec">
-  <div class="sh"><span class="ino">OACI</span><h3>Vista Previa Mensaje OACI / ICAO FPL Preview</h3></div>
-  <div class="sb">
-    <div class="ip"><div id="icaoText" style="white-space:pre;line-height:1.9">Complete los campos y haga clic en "Generar OACI" para ver el mensaje...</div></div>
-  </div>
-</div>
+<!-- OACI PREVIEW (seccion eliminada, #icaoText oculto para compatibilidad JS) -->
+<div id="icaoText" style="display:none"></div>
 
 <!-- BUTTONS -->
 <div class="bb">

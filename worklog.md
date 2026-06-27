@@ -3665,3 +3665,50 @@ Stage Summary:
 - 6 files created: src/lib/auth.ts, src/hooks/use-admin-auth.ts, src/components/admin-gate.tsx, src/components/password-change-tab.tsx, src/app/api/admin/{login,logout,session,change-password}/route.ts, scripts/seed-admin.ts, public/fpl.html
 - User now can: (1) Login as admin (mkoo/Mk/06612) to access Admin panel, (2) Change admin password from "Seguridad" tab, (3) See correct NOTAM count in INFO SPIM (30 from FAA live), (4) Filter NOTAMs in the new NOTAMs tab inside INFO SPIM, (5) Pegado masivo / Eliminar visible only when admin, (6) See zones on interactive map, (7) Use full ICAO FPL form via iframe
 - Ready for production deploy.
+
+---
+Task ID: 8-FPL-REMOVE-TOOLS-OACI
+Agent: main (Z.ai Code)
+Task: Eliminar la parte TOOLS (Herramientas de Vuelo / Flight Tools) y la sección OACI (Vista Previa Mensaje OACI / ICAO FPL Preview) de la sección Plan de Vuelo, y deployar a producción
+
+Work Log:
+- Leí worklog.md para entender el estado previo (Task 7-FPL-IFRAME creó public/fpl.html como app standalone ICAO FPL servida via iframe en src/components/flight-plan.tsx)
+- Localicé las 2 secciones a eliminar en public/fpl.html:
+  * TOOLS SECTION (líneas 967-1054): "Herramientas de Vuelo / Flight Tools" con Calculadora Combustible + Tabla Niveles de Crucero
+  * OACI PREVIEW (líneas 1065-1071): "Vista Previa Mensaje OACI / ICAO FPL Preview" con div#icaoText visible
+- Audité las dependencias JS antes de eliminar:
+  * genICAO() línea 1945 escribe a document.getElementById('icaoText').innerHTML SIN null-check → rompería si elimino el div
+  * clearAll() línea 1966 también escribe a #icaoText SIN null-check
+  * toolTab(), calcFuel(), renderCruiseLevels() todas usan optional chaining (?.) o null guards (if(!el) return, if(res), if(panel)) → seguras si se eliminan sus elementos
+  * DOMContentLoaded listener llama toolTab('fuel') + renderCruiseLevels() → no-ops seguros
+- Escribí script Python /tmp/fpl_surgery.py para cirugía precisa con regex:
+  * Removió completamente el bloque <!-- TOOLS SECTION --> ... (hasta <!-- I18 HELP MODAL -->), 4812 bytes eliminados
+  * Reemplazó el bloque <!-- OACI PREVIEW --> visible con un div oculto: <div id="icaoText" style="display:none"></div> para preservar compatibilidad JS
+- Verifiqué estructura HTML resultante: I18 HELP MODAL preservado, #icaoText oculto colocado antes de BUTTONS, estructura de divs válida
+- Smoke test contra dev server (bun run dev en localhost:3000):
+  * GET /fpl.html → HTTP 200, 160376 bytes
+  * grep "Herramientas de Vuelo" = 0, "Flight Tools" = 0, "Vista Previa Mensaje OACI" = 0, "ICAO FPL Preview" = 0
+  * grep '<!-- TOOLS SECTION -->' = 0 (comentario también removido)
+  * grep 'id="icaoText" style="display:none"' = 1 (div oculto preservado)
+- Deploy a producción con token nuevo [REDACTED_TOKEN]:
+  * Creé .vercel/project.json con projectId prj_8ydM0CPSuo2paVLKWLZxENQpPkmZ + orgId team_6HLie6Zx1YAeaPxG7mWLjkhW
+  * vercel deploy --prod --yes --token=... → Ready in 60s, aliased a https://aip-peru1.vercel.app
+- Verificación con Agent Browser contra PRODUCCIÓN (https://aip-peru1.vercel.app):
+  * Página carga correctamente, botón "Plan de Vuelo" visible (ref e13)
+  * Click en Plan de Vuelo → iframe carga el FPL con todas las secciones de formulario (Prioridad, Identificación, Reglas, Equipo, Aeródromos, Ruta, Otra Info, SAR)
+  * NO aparece "Herramientas de Vuelo / Flight Tools" en todo el DOM renderizado
+  * NO aparece "Vista Previa Mensaje OACI / ICAO FPL Preview" en todo el DOM renderizado
+  * Botones inferiores preservados: GENERAR OACI, DESCARGAR PDF, DESCARGAR OACI (.TXT), LIMPIAR, ENVIAR PDF
+  * Click en "GENERAR OACI" → modal "▶ MENSAJE FPL / OACI" se abre con botones Copiar/Cerrar, SIN errores JS
+  * Búsqueda en innerText del iframe: herramientas=0, flightTools=0, vistaPrevia=0, icaoPreview=0, generarOaciBtn=1, icaoTextHidden="none"
+  * agent-browser errors y console: vacíos (sin errores)
+  * Screenshot guardado en /home/z/my-project/fpl-verification.png
+- Lint: bun run lint clean (exit 0)
+
+Stage Summary:
+- 1 archivo modificado: public/fpl.html (4812 bytes eliminados)
+- 1 archivo creado: .vercel/project.json (para deploy con token nuevo)
+- Sección TOOLS ("Herramientas de Vuelo / Flight Tools" con Calculadora Combustible + Tabla Niveles) eliminada completamente
+- Sección OACI ("Vista Previa Mensaje OACI / ICAO FPL Preview") eliminada; reemplazada por div#icaoText oculto para mantener genICAO()/clearAll() funcionando sin errores
+- Función "GENERAR OACI" sigue operativa: abre el modal moICAO con el mensaje FPL generado y botones Copiar/Cerrar
+- Producción actualizada: https://aip-peru1.vercel.app — verificado con Agent Browser que ambas secciones no aparecen y el botón Generar OACI funciona sin errores JS
