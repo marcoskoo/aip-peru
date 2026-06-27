@@ -26,7 +26,13 @@ import { PERUVIAN_ICAOS } from './peru-stations'
 
 // Cabecera: "A1234/25 NOTAMN" | "A1234/25 NOTAMR A0999/25" | "A1234/25 NOTAMC A0999/25"
 // Acepta espacios flexibles.
-const NOTAM_HEADER_RE = /\b([A-Z]\d{3,4})\s*\/\s*(\d{2})\s+NOTAM([NRCA]?)\b/gi
+//
+// La palabra "NOTAM" es OPCIONAL: muchos boletines CORPAC enviados por correo
+// vienen solo con "A1234/25" seguido de "Q) SPIM/..." sin la palabra clave.
+// Para evitar falsos positivos (un número "A1234/25" mencionado en texto
+// normal), exigimos que en los próximos 300 caracteres aparezca "Q) XXXX/"
+// o "A) XXXX" (formato OACI).
+const NOTAM_HEADER_RE = /(?:^|\n)[ \t]*([A-Z]\d{3,4})\s*\/\s*(\d{2})(?:[ \t]+NOTAM([NRCA]?)\b)?(?=[\s\S]{0,300}?(?:Q\)\s*[A-Z]{4}\s*\/|A\)\s*[A-Z]{4}\b))/gi
 
 // Metadata inter-NOTAM del portal AIS Perú.
 // El portal inserta, antes de cada NOTAM, una línea con el formato:
