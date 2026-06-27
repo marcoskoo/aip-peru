@@ -3307,3 +3307,39 @@ Stage Summary:
 - Verified: 141-NOTAM ingest completes in ~8s (was timing out at 30s before)
 - Verified: INFO SPIM stations list scrolls correctly through all 65 stations
 - User can now paste their real 141-NOTAM email via "Pegado masivo" dialog and it will complete successfully
+
+---
+Task ID: 11
+Agent: Main Agent
+Task: Deploy fixes to production (aip-peru1.vercel.app) without GitHub access — user reported GitHub blocked by proxy
+
+Work Log:
+- User reported no bash access and GitHub URLs not loading (proxy blocking github.com)
+- Verified GitHub connectivity from sandbox: works from my environment but not from user's browser
+- Vercel CLI available (v54.18.0), Vercel domain not blocked
+- User provided Vercel access token (vcp_...)
+- Verified token: whoami → marcoskoo-5271
+- Listed projects: found "aip.pe" with production URL https://aip-peru1.vercel.app
+- Linked local project to Vercel project "aip.pe" via `vercel link --project=aip.pe`
+- Confirmed DATABASE_URL env var is configured in Vercel (Production, Preview, Development)
+- Deployed to production: `vercel --prod --yes --token=...`
+  * Build completed in 22s
+  * Deployment URL: https://aip-cby2pwfnm-marcos-koos-projects.vercel.app
+  * Alias: https://aip-peru1.vercel.app
+- Tested ingest endpoint in production with 141-NOTAM synthetic email: completed in 4.20s (was timing out at 30s before)
+- Verified with Agent Browser on production:
+  * INFO SPIM stations list: 65 stations, scrollHeight=4624px, clientHeight=675px, canScroll=true ✅
+  * NOTAMs tab: shows "141 Total" (was showing 27 before) ✅
+- Cleaned up 141 test NOTAMs from production DB so user can ingest their real email from scratch
+- Removed temporary _fix_*.txt files from public/ (no longer needed)
+
+Stage Summary:
+- Production deployed: https://aip-peru1.vercel.app
+- Both bugs fixed and verified in production:
+  * INFO SPIM stations list scrolls correctly (max-h-[80vh] overscroll-contain)
+  * NOTAM ingest endpoint handles 141+ NOTAMs in ~4s (bulk createMany+skipDuplicates, maxDuration=60)
+  * NotamListing shows real total from API (data.total) and passes limit=200
+- User can now:
+  1. Visit https://aip-peru1.vercel.app → INFO SPIM → scroll through all 65 stations
+  2. Click "Pegado masivo de NOTAMS" → paste their real 141-NOTAM email → complete in ~4s
+  3. Visit NOTAMs tab → see all 141 NOTAMs listed
