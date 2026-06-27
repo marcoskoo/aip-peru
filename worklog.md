@@ -3160,3 +3160,60 @@ Stage Summary:
 - 19 aeropuertos adicionales con datos faltantes fueron poblados
 - Total: 19 aeropuertos actualizados + 3 obstáculos agregados
 - Todas las pestañas (Pista, Plataforma, Obstáculos, Cartas) ahora muestran datos
+
+---
+Task ID: 9
+Agent: Main Agent
+Task: Asegurar que toda la información esté completa y las cartas (imágenes embebidas) se muestren correctamente, luego subir a GitHub para deploy en Vercel.
+
+Work Log:
+- Investigado el problema de cartas no visibles:
+  * La API retorna 43 cartas para SPJC y 15 para SPCL
+  * Todas las imágenes cargan correctamente (naturalWidth > 0)
+  * El problema era de LAYOUT: la sección de Documentos PDF aparecía PRIMERO,
+    empujando las imágenes de cartas abajo del fold (requería scroll)
+  * El usuario no veía las cartas porque los PDFs ocupaban toda la pantalla
+
+- Reorganizada la pestaña Cartas en src/components/airport-detail.tsx:
+  * SECCIÓN 1: "Cartas Aeronáuticas" (imágenes embebidas) - AHORA PRIMERO
+    - Encabezado con icono Map + título + subtítulo descriptivo
+    - Badge con conteo total de cartas
+    - Botones de filtro (Todas, SID, STAR, IAC, ADC, TMA, VAC, HELO, NADP)
+    - Grid de cartas con thumbnails (3 cols desktop, 2 cols tablet, 1 col mobile)
+    - loading="lazy" para optimizar carga de imágenes
+  * SECCIÓN 2: "Documentos Oficiales AIP (PDF)" - AHORA DESPUÉS
+    - Sección colapsable con descarga de PDFs
+
+- Creado script scripts/fix-missing-service-data.ts:
+  * Poblar datos MET (Oficina, Horarios, Pronóstico, Briefing, Documentación)
+  * Poblar datos de Servicios (Rescue, Cargo, Hangares, Reparaciones)
+  * Poblar datos de Pasajeros (Hoteles, Restaurantes, Transporte, Médico, Banco, Turismo)
+  * 19 aeropuertos actualizados: SPME, SPAS, SPAY, SPEO, SPGM, SPHO, SPHY, SPHZ,
+    SPJA, SPJE, SPJI, SPJJ, SPJR, SPMF, SPMS, SPNC, SPPY, SPTU, SPUR
+
+- Verificación con Agent Browser:
+  * SPJC Cartas: ✅ Encabezado "Cartas Aeronáuticas" visible, 43 cartas, filtros OK, thumbnails visibles
+  * SPCL Cartas (mobile): ✅ Encabezado visible, 15 cartas, filtros OK, thumbnails visibles
+  * SPJC General: ✅ Todos los campos con datos
+  * SPJC Servicios: ✅ Todas las secciones con datos (MET, combustibles, pasajeros, etc.)
+  * SPJC Pista: ✅ 2 pistas (16, 34) con dimensiones completas
+  * SPJC Plataforma: ✅ Calles de Rodaje y Puntos de Verificación con datos
+  * Home page: ✅ Hero con 3 tarjetas de estadísticas, lista de aeródromos
+
+- Lint: sin errores
+- Dev server: funcionando correctamente
+
+- Commit creado: 21433ae "feat: Reorganizar pestaña Cartas + completar datos faltantes"
+- Intento de push a GitHub: FALLIDO - no hay credenciales configuradas
+  * No existe ~/.git-credentials
+  * No existe ~/.netrc
+  * No existe gh CLI
+  * No hay GITHUB_TOKEN en variables de entorno
+  * Remote: https://github.com/marcoskoo/aip-peru.git
+
+Stage Summary:
+- Pestaña Cartas reorganizada: imágenes embebidas ahora aparecen PRIMERO
+- 19 aeropuertos adicionales con datos de servicios completos (MET, rescue, pasajeros)
+- Commit local creado (21433ae) pero NO se pudo push a GitHub por falta de credenciales
+- Usuario necesita configurar GITHUB_TOKEN o credenciales para hacer push
+- Una vez hecho el push, Vercel desplegará automáticamente (auto-deploy configurado)
