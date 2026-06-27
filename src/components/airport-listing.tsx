@@ -130,6 +130,10 @@ export function AirportListing({ onSelectAirport }: AirportListingProps) {
 
   const totalWithWeather = weatherIntl.length + weatherNatl.length
 
+  // Totales por categoría (independientemente de si tienen METAR o no)
+  const internationalAirports = airports.filter((a) => isInternationalAirport(a))
+  const nationalAirports = airports.filter((a) => !isInternationalAirport(a))
+
   const renderAirportGrid = (list: Airport[]) => {
     if (list.length === 0) {
       return (
@@ -213,32 +217,49 @@ export function AirportListing({ onSelectAirport }: AirportListingProps) {
               Consulte datos de aeródromos, pistas, servicios y obstáculos.
             </p>
 
-            {/* Stats row */}
-            <div className="mt-7 flex items-center justify-center gap-6 sm:gap-10">
-              <div className="text-center">
-                <div className="text-2xl sm:text-3xl font-bold text-white tabular-nums">
+            {/* Stats row — Total / Internacionales / Nacionales
+                Cada bloque muestra el total y, debajo, cuántos tienen METAR */}
+            <div className="mt-7 flex items-stretch justify-center gap-4 sm:gap-8">
+              {/* Total de Aeródromos */}
+              <div className="text-center px-2 sm:px-4">
+                <div className="text-3xl sm:text-4xl font-bold text-white tabular-nums leading-none">
                   {airports.length || 32}
                 </div>
-                <div className="text-[10px] uppercase tracking-wider text-slate-400 mt-0.5">
+                <div className="text-[10px] sm:text-xs uppercase tracking-wider text-slate-300 mt-1.5 font-semibold">
                   Aeródromos
                 </div>
-              </div>
-              <div className="h-10 w-px bg-white/15" />
-              <div className="text-center">
-                <div className="text-2xl sm:text-3xl font-bold text-amber-400 tabular-nums">
-                  {weatherIntl.length || 0}
-                </div>
-                <div className="text-[10px] uppercase tracking-wider text-slate-400 mt-0.5">
-                  Intl · METAR
+                <div className="text-[9px] sm:text-[10px] text-slate-500 mt-0.5">
+                  Total registrados
                 </div>
               </div>
-              <div className="h-10 w-px bg-white/15" />
-              <div className="text-center">
-                <div className="text-2xl sm:text-3xl font-bold text-emerald-400 tabular-nums">
-                  {weatherNatl.length || 0}
+
+              <div className="w-px bg-white/15" />
+
+              {/* Internacionales — total + cuántos con METAR */}
+              <div className="text-center px-2 sm:px-4">
+                <div className="text-3xl sm:text-4xl font-bold text-amber-400 tabular-nums leading-none">
+                  {internationalAirports.length || 0}
                 </div>
-                <div className="text-[10px] uppercase tracking-wider text-slate-400 mt-0.5">
-                  Nac · METAR
+                <div className="text-[10px] sm:text-xs uppercase tracking-wider text-amber-300/80 mt-1.5 font-semibold">
+                  Internacionales
+                </div>
+                <div className="text-[9px] sm:text-[10px] text-amber-400/70 mt-0.5">
+                  {weatherIntl.length} con METAR
+                </div>
+              </div>
+
+              <div className="w-px bg-white/15" />
+
+              {/* Nacionales — total + cuántos con METAR */}
+              <div className="text-center px-2 sm:px-4">
+                <div className="text-3xl sm:text-4xl font-bold text-emerald-400 tabular-nums leading-none">
+                  {nationalAirports.length || 0}
+                </div>
+                <div className="text-[10px] sm:text-xs uppercase tracking-wider text-emerald-300/80 mt-1.5 font-semibold">
+                  Nacionales
+                </div>
+                <div className="text-[9px] sm:text-[10px] text-emerald-400/70 mt-0.5">
+                  {weatherNatl.length} con METAR
                 </div>
               </div>
             </div>

@@ -3037,3 +3037,33 @@ Stage Summary:
 - Script src/scripts/seed-obstacles.ts creado para re-poblar si es necesario
 - Verificado end-to-end con Agent Browser que la pestaña "Obstáculos" de SPJC muestra correctamente los 4 obstáculos
 - Importante: el mismo fix debe aplicarse en Vercel — ejecutar `bun run src/scripts/seed-obstacles.ts` en producción para que los datos persistan en Neon
+
+---
+Task ID: 6
+Agent: Main Agent
+Task: Modificar las estadísticas del hero de airport-listing.tsx para mostrar: Total Aeródromos / Total Internacionales (con subfijo "X con METAR") / Total Nacionales (con subfijo "X con METAR").
+
+Work Log:
+- Analizada captura IMG_5953.png con VLM: confirmado que el hero actual mostraba "Aeródromos: 32 / Intl · METAR: 0 / Nac · METAR: 0" — no era lo que el usuario quería
+- Estructura solicitada por el usuario:
+  * Bloque 1: Total de aeródromos
+  * Bloque 2: Total de internacionales + debajo cuántos con METAR
+  * Bloque 3: Total de nacionales + debajo cuántos con METAR
+- Modificada la sección "Stats row" del hero en airport-listing.tsx:
+  * Bloque "Aeródromos" — número grande en blanco, label "Aeródromos", sub-texto "Total registrados"
+  * Bloque "Internacionales" — número grande en amber, label "Internacionales", sub-texto "{N} con METAR"
+  * Bloque "Nacionales" — número grande en emerald, label "Nacionales", sub-texto "{N} con METAR"
+  * Separadores verticales w-px bg-white/15 entre bloques
+  * Tipografía responsive (text-3xl mobile, text-4xl desktop)
+- Re-agregadas variables internationalAirports y nationalAirports (habían sido eliminadas en la refactorización anterior del Task ID 4)
+- Detectado y corregido error de runtime "internationalAirports is not defined" detectado por VLM en la primera verificación
+- Verificado con Agent Browser:
+  * Mobile (412x915): 33 Aeródromos / 12 Internacionales (12 con METAR) / 21 Nacionales (17 con METAR)
+  * Desktop (1280x800): Misma estructura, bien alineada y profesional
+- Lint pasa sin errores
+
+Stage Summary:
+- Hero stats rediseñado con 3 bloques: Total Aeródromos / Total Internacionales / Total Nacionales
+- Cada bloque muestra el total y debajo cuántos tienen METAR
+- Verificado en mobile y desktop con Agent Browser
+- Valores actuales: 33 Aeródromos, 12 Internacionales (12 con METAR), 21 Nacionales (17 con METAR)
