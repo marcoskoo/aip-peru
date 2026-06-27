@@ -5,6 +5,7 @@ import {
   PERUVIAN_STATIONS_BY_ICAO,
   type PeruvianStation,
 } from '@/lib/aviation/peru-stations'
+import { notExpiredFilter } from '@/lib/aviation/notam-filter'
 
 // ─── Types ────────────────────────────────────────────────────────────
 
@@ -58,11 +59,14 @@ export async function GET() {
   try {
     const now = new Date()
 
-    // Active NOTAMs for FIR SPIM
+    // Active NOTAMs for FIR SPIM.
+    // Filtro "no expirado": incluye activos + próximos (upcoming) + permanentes.
+    // Excluye solo los NOTAMs cuya fecha de fin ya pasó.
+    // Esto hace que el badge del dashboard coincida con el conteo del detalle
+    // de la estación (que también devuelve NOTAMs no expirados).
     const activeNotamWhere = {
       fir: 'SPIM',
-      effectiveFrom: { lte: now },
-      OR: [{ effectiveTo: { gte: now } }, { isPermanent: true }],
+      AND: [notExpiredFilter(now)],
     }
 
     // NOTAM counts grouped by airportId

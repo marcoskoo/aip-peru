@@ -3499,3 +3499,47 @@ Stage Summary:
 - 1 archivo creado: src/app/api/notams/filters/route.ts
 - Usuario ahora puede: (1) Eliminar todos los NOTAMs con 1 clic desde NOTAMs o INFO SPIM, (2) Filtrar por código Q, lugar A, vigencia PERM/EST/Finita, y texto de casilla E)
 - NOTAMs cargados ahora guardan qCode y locationA para filtros eficientes
+
+---
+Task ID: 6-FIX-DELETE-ALL-AND-COUNT-CONSISTENCY
+Agent: main (Z.ai Code)
+Task: Fix "Delete All button doesn't work" + SPHI count inconsistency (3 vs 2) + verify all code before deploy
+
+Work Log:
+- Investigated "Delete All button doesn't work" complaint:
+  * Verified DELETE /api/notams?fir=SPIM returns 200 OK with {ok:true, deleted:N}
+  * Used Agent Browser to click the button → DELETE call succeeds in dev.log
+  * But NO toast notification appeared → user perceives as "doesn't work"
+  * ROOT CAUSE: `src/app/layout.tsx` mounted `<Toaster />` from `@/components/ui/toaster` (old shadcn/ui toast system based on `useToast` hook), but `notam-listing.tsx` and `spim-briefing.tsx` import `toast` from `"sonner"` (different library). The sonner `<Toaster />` was NEVER mounted → all `toast.success(...)` calls were no-ops.
+  * FIX: Added `import { Toaster as SonnerToaster } from "@/components/ui/sonner"` and rendered `<SonnerToaster position="top-right" richColors closeButton />` alongside the existing `<Toaster />` in layout.tsx.
+- Investigated SPHI count inconsistency (badge says 2 but detail shows 3):
+  * Stats endpoint (`/api/spim-agent/stats`): filtered by `effectiveFrom <= now AND (effectiveTo >= now OR isPermanent)` → counts only ACTIVE NOTAMs (excludes upcoming)
+  * Station detail endpoint (`/api/spim-agent/station/[icao]`): NO filter → returns ALL NOTAMs (including upcoming and expired)
+  * For SPHI: 1 upcoming (A2217/26 starts 2026-07-01) + 1 active (A2239/26) + 1 perm (A1690/26) = 3 total, but stats said 2 because upcoming was excluded
+  * FIX: Created shared helper `src/lib/aviation/notam-filter.ts` exporting `notExpiredFilter(now)` — returns `{ OR: [{ effectiveTo: { gte: now } }, { isPermanent: true }, { effectiveTo: null }] }` (includes active + upcoming + perm, excludes only expired)
+  * Applied the filter consistently to:
+    - `/api/spim-agent/stats` (activeNotamWhere for notamCountByAirport + totalActiveNotams)
+    - `/api/notams` GET (active=true branch + activeWhere for activeStats)
+    - `/api/spim-agent/station/[icao]` GET (dbHasNotams count + dbNotams findMany)
+  * Now all 3 endpoints use the SAME filter → counts match across dashboard badge, NotamListing hero, and StationDetailView tab badge
+- Also discovered and fixed: Prisma client was OUT OF SYNC with schema (qCode/locationA columns added in Task 5 but prisma generate was never run locally). `bunx prisma generate` regenerated the client. Dev server had to be restarted with `env -u DATABASE_URL` because the shell had a stale `DATABASE_URL=file:/home/z/my-project/db/custom.db` (SQLite) overriding the .env's postgresql:// URL.
+- Verified with Agent Browser:
+  * NOTAMs section: Click "Eliminar todos" → dialog opens → click "Eliminar todos" → toast "Se eliminaron 1 NOTAMs" appears at top-right (visible 1-3s, then auto-dismiss)
+  * INFO SPIM section: Click "Eliminar todos los NOTAMs" card → dialog opens → click "Eliminar todos" → toast "Se eliminaron 3 NOTAMs" appears
+  * DB confirmed empty after both deletes (source=faa-live, total=30)
+  * Stats endpoint returns SPHI=3, station detail returns 3 NOTAMs (A9101/26 upcoming, A9102/26 active, A9103/26 perm) — CONSISTENT
+- Lint: `bun run lint` clean (no errors)
+- TypeScript: `bunx tsc --noEmit --skipLibCheck` shows only pre-existing errors in unrelated files (seed scripts, examples, station detail's pre-existing `variable` property issue). No new errors introduced by these changes.
+
+Stage Summary:
+- 4 files modified:
+  * `src/app/layout.tsx` — Added `<SonnerToaster />` mount (THE fix for "Delete All doesn't work")
+  * `src/lib/aviation/notam-filter.ts` — NEW shared helper `notExpiredFilter(now)` for consistent "not expired" filtering
+  * `src/app/api/spim-agent/stats/route.ts` — Use notExpiredFilter (was excluding upcoming NOTAMs)
+  * `src/app/api/notams/route.ts` — Use notExpiredFilter in active=true branch + activeWhere (was excluding upcoming)
+  * `src/app/api/spim-agent/station/[icao]/route.ts` — Apply notExpiredFilter to dbHasNotams + dbNotams queries (was returning expired NOTAMs too)
+- User-facing fixes:
+  1. "Eliminar todos" button now shows a toast "Se eliminaron N NOTAMs" after deleting (in both NOTAMs and INFO SPIM sections) — previously no feedback appeared
+  2. SPHI dashboard badge now matches the detail view's NOTAM count (both show 3, previously badge showed 2 and detail showed 3)
+  3. Upcoming NOTAMs (with effectiveFrom in the future) are now visible in the NotamListing and counted in the dashboard badge — previously they were hidden by the `effectiveFrom <= now` filter, causing the "125 of 138" confusion (the missing 13 were likely upcoming, not expired)
+- Ready for production deploy.

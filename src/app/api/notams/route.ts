@@ -1,6 +1,7 @@
 import { db } from '@/lib/db'
 import { NextRequest, NextResponse } from 'next/server'
 import { fetchLiveNotams, type NormalizedNotam } from '@/lib/aviation/faa-notams'
+import { notExpiredFilter } from '@/lib/aviation/notam-filter'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -212,22 +213,27 @@ export async function GET(request: NextRequest) {
         where.AND = andParts
       }
 
+      const now = new Date()
+
       if (active === 'true') {
-        const now = new Date()
+        // Filtro "no expirado": incluye activos + próximos (upcoming) + permanentes.
+        // Excluye solo los NOTAMs cuya fecha de fin ya pasó.
+        // Esto resuelve la inconsistencia donde el listado mostraba menos NOTAMs
+        // de los que el usuario esperaba (los "upcoming" estaban siendo ocultos
+        // por el filtro `effectiveFrom <= now` anterior).
         where.AND = [
           ...(where.AND ? (Array.isArray(where.AND) ? where.AND : [where.AND]) : []),
-          { effectiveFrom: { lte: now } },
-          { OR: [{ effectiveTo: { gte: now } }, { isPermanent: true }] },
+          notExpiredFilter(now),
         ]
       }
 
       const total = await db.notam.count({ where })
 
-      const now = new Date()
+      // activeWhere usa el mismo filtro "no expirado" para que el conteo
+      // activeStats sea consistente con el listado devuelto (where + active=true).
       const activeWhere = {
         fir,
-        effectiveFrom: { lte: now },
-        OR: [{ effectiveTo: { gte: now } }, { isPermanent: true }],
+        AND: [notExpiredFilter(now)],
       }
 
       const [activeTotal, activeUrgent, activeHigh] = await Promise.all([

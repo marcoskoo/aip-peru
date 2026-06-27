@@ -5,6 +5,7 @@ import {
   type PeruvianStation,
 } from '@/lib/aviation/peru-stations'
 import { notamStatus } from '@/lib/aviation/notam-parser'
+import { notExpiredFilter } from '@/lib/aviation/notam-filter'
 import { fetchLiveNotams } from '@/lib/aviation/faa-notams'
 
 // ─── Types ────────────────────────────────────────────────────────────
@@ -625,15 +626,25 @@ export async function GET(
     //   1) Si la DB tiene NOTAMs (pipeline email IMAP activo), se usan esos.
     //   2) Si la DB está vacía, se consulta en vivo la FAA USNS.
     // En ambos casos el texto crudo OACI se devuelve intacto en `text`.
+    //
+    // Filtro "no expirado": se devuelven los NOTAMs activos + próximos (upcoming)
+    // + permanentes. Se excluyen solo los NOTAMs cuya fecha de fin ya pasó.
+    // Esto hace que el conteo del tab badge coincida con el badge del dashboard
+    // (stats endpoint usa el mismo filtro).
     const now = new Date()
     let notams: StructuredNotam[] = []
 
     const dbHasNotams = dbAirport
       ? (await db.notam.count({
           where: {
-            OR: [
-              { airportId: dbAirport.id },
-              { fir: 'SPIM', airportId: null, text: { contains: code } },
+            AND: [
+              {
+                OR: [
+                  { airportId: dbAirport.id },
+                  { fir: 'SPIM', airportId: null, text: { contains: code } },
+                ],
+              },
+              notExpiredFilter(now),
             ],
           },
         })) > 0
@@ -642,9 +653,14 @@ export async function GET(
     if (dbHasNotams && dbAirport) {
       const dbNotams = await db.notam.findMany({
         where: {
-          OR: [
-            { airportId: dbAirport.id },
-            { fir: 'SPIM', airportId: null, text: { contains: code } },
+          AND: [
+            {
+              OR: [
+                { airportId: dbAirport.id },
+                { fir: 'SPIM', airportId: null, text: { contains: code } },
+              ],
+            },
+            notExpiredFilter(now),
           ],
         },
         include: { airport: { select: { icaoCode: true, name: true, city: true } } },
