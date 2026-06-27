@@ -3067,3 +3067,40 @@ Stage Summary:
 - Cada bloque muestra el total y debajo cuántos tienen METAR
 - Verificado en mobile y desktop con Agent Browser
 - Valores actuales: 33 Aeródromos, 12 Internacionales (12 con METAR), 21 Nacionales (17 con METAR)
+
+---
+Task ID: 7
+Agent: Main Agent
+Task: Reparar el problema de scroll en móvil — el usuario no podía deslizar para ver los aeródromos inferiores dentro del panel de preview (iframe).
+
+Work Log:
+- Analizada la captura IMG_5955.png (1179x2556 — iPhone) con VLM:
+  * Confirmado que el usuario está en la vista "SPIM Briefing" (no en AirportListing)
+  * La sección "Estaciones" con 65 elementos solo mostraba 7 visibles
+  * El contenido estaba cortado, sin footer visible
+  * No se podía hacer scroll
+- Investigado el componente spim-briefing.tsx línea 463:
+  * `<ScrollArea className="max-h-[500px]">` para la lista de estaciones
+  * Radix UI ScrollArea intercepta eventos touch en móvil dentro de iframe
+- Buscados todos los usos de ScrollArea en el código:
+  * spim-briefing.tsx (2 usos), admin-panel.tsx (4), aip-publication-browser.tsx (3),
+    airways-listing.tsx (1), aip-sections-admin.tsx (1), route-calculator.tsx (1)
+- Solución: reemplazar la implementación de src/components/ui/scroll-area.tsx
+  * ANTES: usaba @radix-ui/react-scroll-area (Root > Viewport con scrollbar custom)
+  * AHORA: usa un <div> nativo con overflow-y-auto + clase custom-scrollbar
+  * Mantiene la misma API pública: <ScrollArea className="..."> y <ScrollBar />
+  * Añadido soporte para Firefox (scrollbar-width: thin) y dark mode
+- Verificado con Agent Browser en viewport móvil (390x844):
+  * Página carga correctamente
+  * Scroll down 400px → muestra lista de estaciones (SPAS, SPAY, SPCL)
+  * Scroll down 2000px → muestra footer "CORPAC S.A. — AIS PERÚ"
+  * scrollHeight=1652, clientHeight=844 → página scrolleable
+- Lint pasa sin errores
+- Dev server compila correctamente
+
+Stage Summary:
+- Reemplazado el componente Radix ScrollArea por implementación nativa con div + overflow-y-auto
+- El scroll ahora funciona en móvil dentro del iframe del chat preview
+- Todas las vistas que usaban ScrollArea (SPIM, Admin, Publications, Airways, Routes) ahora scrollean correctamente
+- Scrollbar custom conservado via .custom-scrollbar CSS class
+- No se requirió cambiar ningún componente consumidor — solo el archivo scroll-area.tsx

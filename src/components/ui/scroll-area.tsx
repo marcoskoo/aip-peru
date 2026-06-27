@@ -1,58 +1,60 @@
 "use client"
 
 import * as React from "react"
-import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area"
 
 import { cn } from "@/lib/utils"
 
+/**
+ * Native scroll container (drop-in replacement for the Radix ScrollArea).
+ *
+ * Why native instead of Radix?
+ * -----------------------------
+ * The Radix `ScrollArea` component renders a custom scrollbar and uses
+ * `touch-none` on the scrollbar track plus several internal wrappers. On
+ * touch devices — and especially when the page is rendered inside an
+ * embedded iframe (e.g. the chat preview panel) — Radix's viewport can
+ * swallow wheel/touch events and the user is unable to scroll the
+ * content. See: https://github.com/radix-ui/primitives/issues/924
+ *
+ * This implementation keeps the exact same public API (`<ScrollArea
+ * className="max-h-[500px]">` + `<ScrollBar />`) but renders a plain
+ * `<div>` with `overflow-y: auto`, which works reliably on iOS Safari,
+ * Android Chrome, and inside iframes. Touch events are never
+ * intercepted.
+ */
 function ScrollArea({
   className,
   children,
   ...props
-}: React.ComponentProps<typeof ScrollAreaPrimitive.Root>) {
+}: React.ComponentProps<"div">) {
   return (
-    <ScrollAreaPrimitive.Root
+    <div
       data-slot="scroll-area"
-      className={cn("relative", className)}
-      {...props}
-    >
-      <ScrollAreaPrimitive.Viewport
-        data-slot="scroll-area-viewport"
-        className="focus-visible:ring-ring/50 size-full rounded-[inherit] transition-[color,box-shadow] outline-none focus-visible:ring-[3px] focus-visible:outline-1"
-      >
-        {children}
-      </ScrollAreaPrimitive.Viewport>
-      <ScrollBar />
-      <ScrollAreaPrimitive.Corner />
-    </ScrollAreaPrimitive.Root>
-  )
-}
-
-function ScrollBar({
-  className,
-  orientation = "vertical",
-  ...props
-}: React.ComponentProps<typeof ScrollAreaPrimitive.ScrollAreaScrollbar>) {
-  return (
-    <ScrollAreaPrimitive.ScrollAreaScrollbar
-      data-slot="scroll-area-scrollbar"
-      orientation={orientation}
       className={cn(
-        "flex touch-none p-px transition-colors select-none",
-        orientation === "vertical" &&
-          "h-full w-2.5 border-l border-l-transparent",
-        orientation === "horizontal" &&
-          "h-2.5 flex-col border-t border-t-transparent",
+        "relative overflow-y-auto custom-scrollbar",
+        // Smooth momentum scrolling on iOS
+        "[-webkit-overflow-scrolling:touch]",
         className
       )}
       {...props}
     >
-      <ScrollAreaPrimitive.ScrollAreaThumb
-        data-slot="scroll-area-thumb"
-        className="bg-border relative flex-1 rounded-full"
-      />
-    </ScrollAreaPrimitive.ScrollAreaScrollbar>
+      {children}
+    </div>
   )
+}
+
+/**
+ * Visual-only scrollbar customization hook.
+ * Kept for backwards compatibility — consumers can still render
+ * `<ScrollBar />` but it renders nothing because the native scrollbar
+ * is already styled via the `.custom-scrollbar` class in globals.css.
+ */
+function ScrollBar(
+  _props: React.ComponentProps<"div"> & {
+    orientation?: "vertical" | "horizontal"
+  }
+) {
+  return null
 }
 
 export { ScrollArea, ScrollBar }
