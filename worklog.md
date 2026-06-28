@@ -3778,3 +3778,66 @@ Stage Summary:
 - Producción actualizada: https://aip-peru1.vercel.app
 - Usuario ahora puede: (1) Enviar Plan de Vuelo por email desde aroais.pe@gmail.com con PDF adjunto, (2) El email llega con el mensaje OACI FPL en el cuerpo + PDF adjunto, (3) La contraseña de Gmail vive solo en el servidor (no expuesta en el navegador), (4) Botón "Probar Envio" envía email de prueba, (5) Si el envío falla, descarga el PDF localmente y abre mailto como fallback
 - Nota de seguridad: Para máxima seguridad, mover las credenciales a env vars de Vercel (GMAIL_USER, GMAIL_APP_PASSWORD) en lugar del fallback hardcoded en route.ts
+
+---
+Task ID: 10-FPL-PBN-RESET-FIX
+Agent: main (Z.ai Code)
+Task: Corregir bug en Plan de Vuelo casillero 18 — al dar click en Aceptar en PBN el sistema se reseteaba
+
+Work Log:
+- Leí worklog.md para entender contexto previo (Task 7-9: fpl.html standalone servida via iframe, secciones TOOLS/OACI removidas, email server-side con Nodemailer configurado para aroais.pe@gmail.com)
+- Reporte del usuario: "En la sección plan de vuelo, casillero 18, al dar click en aceptar en PBN, el sistema se resetea"
+- DIAGNÓSTICO RAÍZ:
+  * Busqué "PBN" en public/fpl.html — encontré panel PBN en líneas 746-789 con botones "Limpiar" (i18clear) y "Aceptar" (i18close)
+  * Encontré `<form id="fplForm">` en línea 428 SIN handler onsubmit
+  * CRÍTICO: Los botones `<button class="fcl">` y `<button class="fok">` NO tenían `type="button"`
+  * Por spec HTML, `<button>` sin type= por defecto es `type="submit"` → al hacer click se envía el formulario → la página se recarga → todos los campos se resetean
+  * El bug afectaba TODOS los paneles del Item 18 (STS, PBN, NAV, COM, SUR), no solo PBN — pero el usuario lo notó en PBN
+  * Confirmé con grep: 5 paneles × 2 botones (Limpiar/Aceptar) = 10 botones afectados, más otros botones de acción dentro del form (closeMo, email-cfg-link, testEmailConfig)
+
+- FIX APLICADO (script Python /tmp/fix_fpl_buttons.py):
+  1. Añadí `onsubmit="return false"` al `<form id="fplForm">` como red de seguridad — previene CUALQUIER envío accidental del formulario
+  2. Añadí `type="button"` a TODOS los `<button>` que tenían onclick= o clases de acción (fok, fcl, mc, db-btn, db-save, email-cfg-link) y no tenían type= ya
+  3. Verifiqué: 34/34 botones ahora tienen type="button", 0 botones sin type=
+
+- VERIFICACIÓN LOCAL (dev server localhost:3000):
+  * ACID="OB1234" llenado antes de abrir PBN
+  * PBN panel abierto, chips B2+D2+S1 seleccionados → pbn="B2 D2 S1"
+  * Click en botón Aceptar (el que causaba reset) → panel cerró
+  * ACID="OB1234" PRESERVADO después de Aceptar (antes se reseteaba)
+  * PBN="B2 D2 S1" persistido correctamente
+  * Item 18 auto-construido: "PBN/B2 D2 S1 DOF/260628"
+  * URL sin cambio (no recarga)
+  * genICAO() genera mensaje con "PBN/B2 D2 S1" incluido
+  * Limpiar button también funciona sin reset
+  * Todos los paneles (STS18, NAV18, COM18, SUR18) verificados — ACID sobrevive en todos
+  * 0 errores JS en consola
+
+- DEPLOY A PRODUCCIÓN:
+  * Detecté que .vercel/project.json tenía projectId incorrecto (prj_ebuPyMhzYNO2xOtYkVDDrDT6STiW → proyecto "my-project")
+  * Restauré projectId correcto: prj_8ydM0CPSuo2paVLKWLZxENQpPkmZ (proyecto "aip-peru1")
+  * npx vercel deploy --prod --yes → aliased a https://aip-peru1.vercel.app ✓ Ready in 58s
+
+- VERIFICACIÓN EN PRODUCCIÓN (https://aip-peru1.vercel.app/fpl.html) con Agent Browser:
+  * Form onsubmit="return false" confirmado en DOM
+  * ACID="OB1234" antes de PBN
+  * PBN abierto, B2+D2+S1 seleccionados → "B2 D2 S1"
+  * Click Aceptar → ACID="OB1234" PRESERVADO (bug corregido)
+  * PBN="B2 D2 S1" persistido
+  * Item 18 = "PBN/B2 D2 S1 DOF/260628"
+  * URL sin cambio
+  * GENERAR OACI → "PBN in ICAO: YES"
+  * Limpiar → limpia PBN, ACID sigue "OB1234"
+  * 0 errores JS
+  * Screenshot: /home/z/my-project/fpl-pbn-prod-verified.png
+
+- Lint: bun run lint clean (exit 0)
+
+Stage Summary:
+- 1 archivo modificado: public/fpl.html
+  * Añadido onsubmit="return false" al <form id="fplForm">
+  * Añadido type="button" a 34 botones de acción (Limpiar/Aceptar en STS/PBN/NAV/COM/SUR, botones de modales, email config, DB)
+- 1 archivo restaurado: .vercel/project.json (projectId correcto para aip-peru1)
+- Producción actualizada: https://aip-peru1.vercel.app — verificado con Agent Browser
+- BUG CORREGIDO: Al dar click en Aceptar (o Limpiar) en cualquier panel del Item 18 (PBN, STS, NAV, COM, SUR), el formulario ya NO se resetea. Todos los datos ingresados (ACID, aeródromos, ruta, etc.) se preservan y los valores seleccionados se guardan correctamente en el textarea del Item 18.
+- CAUSA RAÍZ: Botones HTML sin type="button" dentro de un <form> se comportan como type="submit" por defecto, enviando el formulario y recargando la página.

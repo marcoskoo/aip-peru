@@ -409,7 +409,7 @@ footer span{color:var(--acc);}
     ICAO &middot; OACI &middot; DOC 4444
   </span>
   <div class="scan"></div>
-  <button class="db-btn" onclick="openDB()">
+  <button type="button" class="db-btn" onclick="openDB()">
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg>
     BASE DE DATOS
   </button>
@@ -425,7 +425,7 @@ footer span{color:var(--acc);}
 
 <!-- FORM -->
 <div class="fw">
-<form id="fplForm" autocomplete="off">
+<form id="fplForm" autocomplete="off" onsubmit="return false">
 
 <!-- PRIORIDAD -->
 <div class="sec">
@@ -738,8 +738,8 @@ footer span{color:var(--acc);}
             <span class="i18chip" data-v="HOSP/MEDEVAC" onclick="i18pick(this,'sts18',0)">HOSP/MEDEVAC</span>
           </div>
           <div class="i18foot">
-            <button class="fcl" onclick="i18clear('sts18')">&#10005; Limpiar</button>
-            <button class="fok" onclick="i18close('sts18')">&#10003; Aceptar</button>
+            <button type="button" class="fcl" onclick="i18clear('sts18')">&#10005; Limpiar</button>
+            <button type="button" class="fok" onclick="i18close('sts18')">&#10003; Aceptar</button>
           </div>
         </div>
       </div>
@@ -782,8 +782,8 @@ footer span{color:var(--acc);}
             <span class="i18chip" data-v="T2" title="RNP-AR sin RF" onclick="i18pick(this,'pbn',1)">T2 RNP-AR/NoRF</span>
           </div>
           <div class="i18foot">
-            <button class="fcl" onclick="i18clear('pbn')">&#10005; Limpiar</button>
-            <button class="fok" onclick="i18close('pbn')">&#10003; Aceptar</button>
+            <button type="button" class="fcl" onclick="i18clear('pbn')">&#10005; Limpiar</button>
+            <button type="button" class="fok" onclick="i18close('pbn')">&#10003; Aceptar</button>
           </div>
         </div>
       </div>
@@ -808,8 +808,8 @@ footer span{color:var(--acc);}
             <span class="i18chip" data-v="ILS" onclick="i18pick(this,'nav18',0)">ILS</span>
           </div>
           <div class="i18foot">
-            <button class="fcl" onclick="i18clear('nav18')">&#10005; Limpiar</button>
-            <button class="fok" onclick="i18close('nav18')">&#10003; Aceptar</button>
+            <button type="button" class="fcl" onclick="i18clear('nav18')">&#10005; Limpiar</button>
+            <button type="button" class="fok" onclick="i18close('nav18')">&#10003; Aceptar</button>
           </div>
         </div>
       </div>
@@ -835,8 +835,8 @@ footer span{color:var(--acc);}
             <span class="i18chip" data-v="UHF" onclick="i18pick(this,'com18',1)">UHF</span>
           </div>
           <div class="i18foot">
-            <button class="fcl" onclick="i18clear('com18')">&#10005; Limpiar</button>
-            <button class="fok" onclick="i18close('com18')">&#10003; Aceptar</button>
+            <button type="button" class="fcl" onclick="i18clear('com18')">&#10005; Limpiar</button>
+            <button type="button" class="fok" onclick="i18close('com18')">&#10003; Aceptar</button>
           </div>
         </div>
       </div>
@@ -862,8 +862,8 @@ footer span{color:var(--acc);}
             <span class="i18chip" data-v="G1" title="ADS-C VDL Mode 2" onclick="i18pick(this,'sur18',1)">G1 VDL M2</span>
           </div>
           <div class="i18foot">
-            <button class="fcl" onclick="i18clear('sur18')">&#10005; Limpiar</button>
-            <button class="fok" onclick="i18close('sur18')">&#10003; Aceptar</button>
+            <button type="button" class="fcl" onclick="i18clear('sur18')">&#10005; Limpiar</button>
+            <button type="button" class="fok" onclick="i18close('sur18')">&#10003; Aceptar</button>
           </div>
         </div>
       </div>
@@ -960,7 +960,7 @@ footer span{color:var(--acc);}
   <div class="md" style="max-width:700px;max-height:85vh;overflow-y:auto;">
     <h2 id="i18HelpTitle">&#9654; AYUDA</h2>
     <div id="i18HelpBody" style="font-family:'Share Tech Mono',monospace;font-size:11px;line-height:1.85;color:var(--txt);"></div>
-    <button class="mc" onclick="closeMo('moI18Help')" style="margin-top:14px">&#x2715; Cerrar</button>
+    <button type="button" class="mc" onclick="closeMo('moI18Help')" style="margin-top:14px">&#x2715; Cerrar</button>
   </div>
 </div>
 
@@ -1001,7 +1001,7 @@ footer span{color:var(--acc);}
       DE: <b id="fromBadge" style="color:#fff">aroais.pe@gmail.com</b>
       &nbsp;<span id="cfgBadge" class="cfg-saved-badge" style="display:none">&#10003; CONFIGURADO</span>
     </div>
-    <button class="email-cfg-link" onclick="openEmailConfig()">&#9881; Configurar envio automatico</button>
+    <button type="button" class="email-cfg-link" onclick="openEmailConfig()">&#9881; Configurar envio automatico</button>
   </div>
 
   <div class="email-row">
@@ -1061,11 +1061,11 @@ footer span{color:var(--acc);}
     <div class="cfg-status" id="cfgStatus"></div>
 
     <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
-      <button class="db-save" onclick="testEmailConfig()"
+      <button type="button" class="db-save" onclick="testEmailConfig()"
         style="background:rgba(0,200,255,.08);border-color:var(--acc);color:var(--acc)">
         &#9654; Probar Envio
       </button>
-      <button class="mc" onclick="closeMo('moEmailCfg')" style="margin-top:0">&#x2715; Cerrar</button>
+      <button type="button" class="mc" onclick="closeMo('moEmailCfg')" style="margin-top:0">&#x2715; Cerrar</button>
     </div>
   </div>
 </div>
@@ -1078,8 +1078,8 @@ footer span{color:var(--acc);}
     <h2>&#9654; MENSAJE FPL / OACI</h2>
     <pre id="moPre"></pre>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
-      <button class="mc" onclick="copyICAO()">&#128203; Copiar</button>
-      <button class="mc" onclick="closeMo('moICAO')">&#x2715; Cerrar</button>
+      <button type="button" class="mc" onclick="copyICAO()">&#128203; Copiar</button>
+      <button type="button" class="mc" onclick="closeMo('moICAO')">&#x2715; Cerrar</button>
     </div>
   </div>
 </div>
@@ -1111,8 +1111,8 @@ footer span{color:var(--acc);}
         <div class="fgr full"><label>Item 18 (PBN/ NAV/ etc.)</label><input type="text" id="db_i18" style="font-size:12px" placeholder="PBN/A1 NAV/GNSS SUR/260B"></div>
       </div>
       <div style="display:flex;gap:8px;margin-top:8px">
-        <button class="db-save" onclick="dbSaveAircraft()">&#128190; Guardar Aeronave</button>
-        <button class="db-save" onclick="dbFromFormAircraft()" style="background:rgba(0,200,255,.1);border-color:var(--acc);color:var(--acc)">&#8593; Cargar desde formulario</button>
+        <button type="button" class="db-save" onclick="dbSaveAircraft()">&#128190; Guardar Aeronave</button>
+        <button type="button" class="db-save" onclick="dbFromFormAircraft()" style="background:rgba(0,200,255,.1);border-color:var(--acc);color:var(--acc)">&#8593; Cargar desde formulario</button>
       </div>
     </div>
 
@@ -1126,8 +1126,8 @@ footer span{color:var(--acc);}
         <div class="fgr full"><label>Contacto / Telefono</label><input type="text" id="db_pcontact" style="font-size:12px" placeholder="+51 999 000 111"></div>
       </div>
       <div style="display:flex;gap:8px;margin-top:8px">
-        <button class="db-save" onclick="dbSavePilot()">&#128190; Guardar Piloto</button>
-        <button class="db-save" onclick="dbFromFormPilot()" style="background:rgba(0,200,255,.1);border-color:var(--acc);color:var(--acc)">&#8593; Cargar desde formulario</button>
+        <button type="button" class="db-save" onclick="dbSavePilot()">&#128190; Guardar Piloto</button>
+        <button type="button" class="db-save" onclick="dbFromFormPilot()" style="background:rgba(0,200,255,.1);border-color:var(--acc);color:var(--acc)">&#8593; Cargar desde formulario</button>
       </div>
     </div>
 
@@ -1145,12 +1145,12 @@ footer span{color:var(--acc);}
         <div class="fgr full"><label>Ruta Completa</label><textarea id="db_rroute" rows="2" style="font-size:11px;text-transform:uppercase" placeholder="DCT CLA V1 TRU DCT"></textarea></div>
       </div>
       <div style="display:flex;gap:8px;margin-top:8px">
-        <button class="db-save" onclick="dbSaveRoute()">&#128190; Guardar Ruta</button>
-        <button class="db-save" onclick="dbFromFormRoute()" style="background:rgba(0,200,255,.1);border-color:var(--acc);color:var(--acc)">&#8593; Cargar desde formulario</button>
+        <button type="button" class="db-save" onclick="dbSaveRoute()">&#128190; Guardar Ruta</button>
+        <button type="button" class="db-save" onclick="dbFromFormRoute()" style="background:rgba(0,200,255,.1);border-color:var(--acc);color:var(--acc)">&#8593; Cargar desde formulario</button>
       </div>
     </div>
 
-    <button class="mc" onclick="closeMo('moDB')" style="margin-top:12px">&#x2715; Cerrar</button>
+    <button type="button" class="mc" onclick="closeMo('moDB')" style="margin-top:12px">&#x2715; Cerrar</button>
   </div>
 </div>
 
