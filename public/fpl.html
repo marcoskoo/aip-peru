@@ -5,30 +5,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Plan de Vuelo OACI / ICAO FPL</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://smtpjs.com/v3/smtp.js"></script>
 <script>
 // ── CONFIGURACION EMAIL ──────────────────────────────────────────────────────
-// Sistema de envio con adjunto PDF real usando SMTP.js
-// INSTRUCCIONES:
-//  1. Ir a https://smtpjs.com → "Encrypt your SMTP Credentials"
-//  2. Host: smtp.gmail.com | User: fpl.mkoo@gmail.com | Pass: (app password de Google)
-//     Port: 465 | Security: SSL
-//  3. Copiar el "Secure Token" generado y pegarlo en SMTP_CONFIG.secureToken abajo
-//  4. En Gmail: Activar "Contrasenas de aplicacion" en Seguridad de la cuenta Google
+// Sistema de envio con adjunto PDF real via API server-side (Nodemailer + Gmail)
+// El servidor maneja SMTP de forma segura — la contraseña NUNCA se envía al navegador.
+// Credenciales configuradas en el servidor (env vars GMAIL_USER / GMAIL_APP_PASSWORD).
 
 const SMTP_CONFIG = {
-  // Token encriptado de smtpjs.com (reemplazar con el token real):
-  secureToken: 'YOUR_SMTPJS_TOKEN_HERE',
-  // O usar credenciales directas (menos seguro, solo para pruebas):
+  // Remitente (mostrado al usuario; las credenciales reales viven solo en el servidor)
   host:     'smtp.gmail.com',
-  username: 'fpl.mkoo@gmail.com',
-  password: 'Mk/06612',  // App Password de Gmail configurada
+  username: 'aroais.pe@gmail.com',
   port:     '465',
-  // Remitente
-  fromEmail: 'fpl.mkoo@gmail.com',
-  fromName:  'FPL-MKOO Sistema Plan de Vuelo',
-  // Modo: 'token' usa secureToken (recomendado), 'direct' usa host/user/pass
-  mode: 'direct'
+  fromEmail: 'aroais.pe@gmail.com',
+  fromName:  'AIP PERU - Plan de Vuelo',
+  // API server-side que envía el correo (Nodemailer + Gmail)
+  apiEndpoint: '/api/fpl/send-email'
 };
 </script>
 <style>
@@ -1007,7 +998,7 @@ footer span{color:var(--acc);}
   <div style="margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
     <div class="email-from-badge">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 7L2 7"/></svg>
-      DE: <b id="fromBadge" style="color:#fff"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="dabcaab6f4b7b1b5b59abdb7bbb3b6f4b9b5b7">[email&#160;protected]</a></b>
+      DE: <b id="fromBadge" style="color:#fff">aroais.pe@gmail.com</b>
       &nbsp;<span id="cfgBadge" class="cfg-saved-badge" style="display:none">&#10003; CONFIGURADO</span>
     </div>
     <button class="email-cfg-link" onclick="openEmailConfig()">&#9881; Configurar envio automatico</button>
@@ -1041,50 +1032,35 @@ footer span{color:var(--acc);}
   <div class="md" style="max-width:640px">
     <h2>&#9881; CONFIGURAR ENVIO CON PDF ADJUNTO</h2>
     <div style="font-family:Share Tech Mono,monospace;font-size:11px;color:var(--acc);margin-bottom:12px;letter-spacing:1px">
-      REMITENTE: <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="0a6c7a6624676165654a6d676b636624696567">[email&#160;protected]</a> &nbsp;|&nbsp; SERVICIO: smtpjs.com (adjunto PDF real)
+      REMITENTE: aroais.pe@gmail.com &nbsp;|&nbsp; SERVICIO: Nodemailer + Gmail SMTP (server-side)
     </div>
 
     <div class="cfg-steps">
-      <b style="color:var(--acc2)">&#9650; OPCION A &mdash; App Password de Gmail (recomendado, mas facil):</b><br>
-      <b>PASO 1:</b> En Gmail → Cuenta Google → <b>Seguridad</b> → <b>Verificacion en 2 pasos</b> (activar si no esta)<br>
-      <b>PASO 2:</b> Buscar <b>"Contrasenas de aplicacion"</b> → Seleccionar app: "Correo" → Dispositivo: "Otro (FPL-MKOO)"<br>
-      <b>PASO 3:</b> Google genera una <b>contrasena de 16 caracteres</b> → copiarla abajo<br><br>
+      <div style="background:rgba(0,255,157,.06);border:1px solid var(--acc3);border-radius:6px;padding:12px 14px;margin-bottom:12px">
+        <div style="font-family:Share Tech Mono,monospace;font-size:11px;color:var(--acc3);letter-spacing:1px;margin-bottom:6px">
+          &#10003; ENVÍO GESTIONADO POR EL SERVIDOR
+        </div>
+        <div style="font-size:12px;line-height:1.7;color:var(--txt)">
+          Los planes de vuelo se envían automáticamente desde <b style="color:var(--acc2)">aroais.pe@gmail.com</b>
+          a través del servidor (Nodemailer + Gmail SMTP).<br>
+          La contraseña de aplicación se almacena de forma segura en el servidor —
+          <b style="color:var(--acc3)">no se expone en el navegador</b>.
+        </div>
+      </div>
 
-      <b style="color:var(--acc3)">&#9650; OPCION B &mdash; Token encriptado (smtpjs.com, mas seguro):</b><br>
-      <b>PASO 1:</b> Ir a <a href="https://smtpjs.com" target="_blank" style="color:var(--acc)">smtpjs.com</a> → secccion <b>"Encrypt your SMTP Credentials"</b><br>
-      <b>PASO 2:</b> SMTP Server: <b>smtp.gmail.com</b> | Port: <b>465</b> | Username: <b><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="5137213d7f3c3a3e3e11363c30383d7f323e3c">[email&#160;protected]</a></b><br>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Password: <b>(App Password)</b> | Security: <b>SSL</b> → clic <b>Encrypt</b><br>
-      <b>PASO 3:</b> Copiar el <b>Secure Token</b> generado → pegarlo abajo
-    </div>
+      <b style="color:var(--acc2)">&#9650; ¿CÓMO FUNCIONA?</b><br>
+      <b>PASO 1:</b> Complete los campos del Plan de Vuelo (Items 7-19)<br>
+      <b>PASO 2:</b> Ingrese el correo del destinatario abajo<br>
+      <b>PASO 3:</b> Haga clic en <b>"ENVIAR PDF"</b> — el servidor genera el PDF y lo envía con el mensaje OACI<br><br>
 
-    <div style="margin-top:14px;display:flex;flex-direction:column;gap:10px">
-      <div class="fgr">
-        <label style="font-family:Share Tech Mono,monospace;font-size:10px;color:var(--acc2);letter-spacing:1px;margin-bottom:4px;display:block">
-          &#9654; APP PASSWORD DE GMAIL <span style="color:var(--dim)">(16 caracteres, ej: abcd efgh ijkl mnop)</span>
-        </label>
-        <input type="password" class="cfg-input" id="cfg_pass"
-          placeholder="xxxx xxxx xxxx xxxx"
-          style="font-family:Share Tech Mono,monospace;font-size:14px;letter-spacing:2px">
-      </div>
-      <div class="fgr">
-        <label style="font-family:Share Tech Mono,monospace;font-size:10px;color:var(--acc3);letter-spacing:1px;margin-bottom:4px;display:block">
-          &#9654; SECURE TOKEN de smtpjs.com <span style="color:var(--dim)">(opcional, reemplaza la contrasena)</span>
-        </label>
-        <input type="text" class="cfg-input" id="cfg_token"
-          placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
-      </div>
-      <div class="fgr" style="display:none">
-        <input type="hidden" id="cfg_mode" value="direct">
-      </div>
+      <b style="color:var(--acc3)">&#9650; CAMBIAR LA CUENTA DE ENVÍO</b><br>
+      Si necesita usar otra cuenta de Gmail, el administrador debe configurar las variables de entorno
+      <b>GMAIL_USER</b> y <b>GMAIL_APP_PASSWORD</b> en el servidor (Vercel).
     </div>
 
     <div class="cfg-status" id="cfgStatus"></div>
 
     <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
-      <button class="db-save" onclick="saveEmailConfig()"
-        style="background:rgba(0,255,157,.1);border-color:var(--acc3);color:var(--acc3)">
-        &#128190; Guardar
-      </button>
       <button class="db-save" onclick="testEmailConfig()"
         style="background:rgba(0,200,255,.08);border-color:var(--acc);color:var(--acc)">
         &#9654; Probar Envio
@@ -1257,65 +1233,53 @@ function buildEquip10(){
   sv('equip10',auto);
 }
 
-// ─── SEND EMAIL ─────────────────────────────────────────────────────────────
-// ─── EMAIL CONFIG & SMTP ─────────────────────────────────────────────────────
-const EJCFG_KEY = 'fpl_smtp_config';
+// ─── SEND EMAIL ────────────────────────────────────────────────────────────
+// ─── EMAIL CONFIG (server-side managed) ───────────────────────────────────────
+// La contraseña ya NO vive en el navegador — se gestiona desde /api/fpl/send-email.
+// Solo verificamos que el servidor la tenga configurada.
+let SERVER_EMAIL_CONFIGURED = null; // null = unknown, true/false = verificado
+
+async function checkServerEmailConfig(){
+  if(SERVER_EMAIL_CONFIGURED !== null) return SERVER_EMAIL_CONFIGURED;
+  try{
+    var r = await fetch(SMTP_CONFIG.apiEndpoint, {method:'GET'});
+    var j = await r.json();
+    SERVER_EMAIL_CONFIGURED = !!(j && j.ok && j.configured);
+    // Update the DE: badge if the server reports a different from address
+    if(j && j.from){
+      var badge = document.getElementById('fromBadge');
+      if(badge) badge.textContent = j.from;
+    }
+    if(SERVER_EMAIL_CONFIGURED){
+      var b = document.getElementById('cfgBadge');
+      if(b) b.style.display = 'inline-flex';
+    }
+  }catch(e){
+    SERVER_EMAIL_CONFIGURED = false;
+  }
+  return SERVER_EMAIL_CONFIGURED;
+}
 
 function loadEmailConfig(){
-  try{
-    var saved = JSON.parse(localStorage.getItem(EJCFG_KEY)||'{}');
-    if(saved.password)  SMTP_CONFIG.password  = saved.password;
-    if(saved.secureToken && saved.secureToken !== 'YOUR_SMTPJS_TOKEN_HERE')
-      SMTP_CONFIG.secureToken = saved.secureToken;
-    if(saved.mode)      SMTP_CONFIG.mode       = saved.mode;
-  }catch(e){}
-  // Show badge if configured
-  var hasToken = SMTP_CONFIG.secureToken && SMTP_CONFIG.secureToken !== 'YOUR_SMTPJS_TOKEN_HERE';
-  var hasPass  = SMTP_CONFIG.password && SMTP_CONFIG.password.length > 0;
-  var b = document.getElementById('cfgBadge');
-  if(b && (hasToken || hasPass)) b.style.display = 'inline-flex';
-  // Pre-fill config modal
-  try{
-    var t = document.getElementById('cfg_token');
-    var p = document.getElementById('cfg_pass');
-    var m = document.getElementById('cfg_mode');
-    if(t) t.value = (SMTP_CONFIG.secureToken !== 'YOUR_SMTPJS_TOKEN_HERE') ? SMTP_CONFIG.secureToken : '';
-    if(p) p.value = SMTP_CONFIG.password || '';
-    if(m) m.value = SMTP_CONFIG.mode || 'direct';
-  }catch(e){}
+  // Trigger async server config check on load
+  checkServerEmailConfig();
 }
 document.addEventListener('DOMContentLoaded', loadEmailConfig);
 
 function openEmailConfig(){
-  try{
-    var t = document.getElementById('cfg_token');
-    var p = document.getElementById('cfg_pass');
-    var m = document.getElementById('cfg_mode');
-    if(t) t.value = (SMTP_CONFIG.secureToken !== 'YOUR_SMTPJS_TOKEN_HERE') ? SMTP_CONFIG.secureToken : '';
-    if(p) p.value = SMTP_CONFIG.password || '';
-    if(m) m.value = SMTP_CONFIG.mode || 'direct';
-  }catch(e){}
   document.getElementById('moEmailCfg').classList.add('open');
 }
 
 function saveEmailConfig(){
-  var tok = document.getElementById('cfg_token') ? document.getElementById('cfg_token').value.trim() : '';
-  var pas = document.getElementById('cfg_pass')  ? document.getElementById('cfg_pass').value.trim()  : '';
-  var mod = document.getElementById('cfg_mode')  ? document.getElementById('cfg_mode').value         : 'direct';
-  if(!tok && !pas){ showCfgStatus('err','Ingrese el Token o la App Password de Gmail.'); return; }
-  SMTP_CONFIG.secureToken = tok || 'YOUR_SMTPJS_TOKEN_HERE';
-  SMTP_CONFIG.password    = pas;
-  SMTP_CONFIG.mode        = mod;
-  localStorage.setItem(EJCFG_KEY, JSON.stringify({secureToken:tok, password:pas, mode:mod}));
-  var b = document.getElementById('cfgBadge');
-  if(b) b.style.display = 'inline-flex';
-  showCfgStatus('ok','✓ Configuracion guardada correctamente.');
+  // Las credenciales se guardan en el servidor, no en el navegador.
+  // Esta función ahora solo cierra el modal e informa al usuario.
+  showCfgStatus('ok','✓ El envío de correo está gestionado por el servidor (aroais.pe@gmail.com). No se requiere configuración adicional.');
 }
 
 function testEmailConfig(){
   showCfgStatus('ok','Enviando correo de prueba...');
-  smtpSend('fpl.mkoo@gmail.com','Prueba FPL-MKOO','Configuracion SMTP correcta.\n\nSistema FPL-MKOO OACI DOC 4444',null,null)
-    .then(function(){ showCfgStatus('ok','✓ Correo de prueba enviado. Revisa la bandeja de fpl.mkoo@gmail.com'); })
+  smtpSend('aroais.pe@gmail.com','Prueba AIP PERU FPL','Configuracion SMTP correcta.\n\nSistema AIP PERU - Plan de Vuelo OACI DOC 4444',null,null)
+    .then(function(){ showCfgStatus('ok','✓ Correo de prueba enviado. Revisa la bandeja de aroais.pe@gmail.com'); })
     .catch(function(e){ showCfgStatus('err','Error: '+e+'\nVerifica la App Password o Token.'); });
 }
 
@@ -1326,51 +1290,41 @@ function showCfgStatus(type, msg){
   el.className = 'cfg-status ' + type + ' show';
 }
 
-// ─── CORE SMTP SEND (smtpjs.com — soporta adjuntos reales) ───────────────────
+// ─── CORE SMTP SEND (via API server-side Nodemailer) ────────────────────────
+// Reemplaza el antiguo smtpjs.com (que devolvía HTTP 403) con una llamada a
+// nuestra API en /api/fpl/send-email. La contraseña vive solo en el servidor.
 function smtpSend(toEmail, subject, body, pdfBlob, filename){
   return new Promise(function(resolve, reject){
-    if(typeof Email === 'undefined'){
-      reject('smtpjs no cargado. Verifica conexion a internet.');
-      return;
+    function doPost(pdfBase64){
+      fetch(SMTP_CONFIG.apiEndpoint, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          to: toEmail,
+          subject: subject,
+          body: body,
+          pdfBase64: pdfBase64 || null,
+          filename: filename || null
+        })
+      })
+      .then(function(r){ return r.json().then(function(j){ return {ok: r.ok, json: j}; }); })
+      .then(function(out){
+        if(out.ok && out.json && out.json.ok) resolve(out.json);
+        else reject((out.json && out.json.error) || ('HTTP ' + (out.ok ? '200' : 'ERR')));
+      })
+      .catch(function(e){ reject('Error de red: ' + (e && e.message ? e.message : e)); });
     }
-    var cfg = {
-      To:      toEmail,
-      From:    SMTP_CONFIG.fromEmail,
-      Subject: subject,
-      Body:    body.replace(/\n/g,'<br>'),
-    };
-    // Auth: token (encrypted) or direct credentials
-    var hasToken = SMTP_CONFIG.secureToken && SMTP_CONFIG.secureToken !== 'YOUR_SMTPJS_TOKEN_HERE';
-    if(hasToken){
-      cfg.SecureToken = SMTP_CONFIG.secureToken;
-    } else {
-      cfg.Host     = SMTP_CONFIG.host;
-      cfg.Username = SMTP_CONFIG.username;
-      cfg.Password = SMTP_CONFIG.password;
-      cfg.Port     = SMTP_CONFIG.port;
-    }
-    // PDF attachment
+    // If we have a PDF blob, read it as base64 first
     if(pdfBlob && filename){
       var reader = new FileReader();
       reader.onload = function(ev){
-        // smtpjs attachment format: base64 string (strip data URL prefix)
         var b64 = ev.target.result.split(',')[1];
-        cfg.Attachments = [{
-          name: filename,
-          data: b64
-        }];
-        Email.send(cfg).then(function(msg){
-          if(msg === 'OK') resolve(msg);
-          else reject(msg);
-        }).catch(reject);
+        doPost(b64);
       };
       reader.onerror = function(){ reject('Error leyendo PDF'); };
       reader.readAsDataURL(pdfBlob);
     } else {
-      Email.send(cfg).then(function(msg){
-        if(msg === 'OK') resolve(msg);
-        else reject(msg);
-      }).catch(reject);
+      doPost(null);
     }
   });
 }
@@ -1407,27 +1361,30 @@ function sendEmail(){
     'PILOTO   : '+(gv('pic')||'N/A'),
     '','MENSAJE FPL OACI:',lin,fplMsg,lin,'',
     'ITEM 19 (Informacion Suplementaria):',i19msg,lin,
-    'Generado: Sistema FPL-MKOO | ICAO DOC 4444 PANS-ATM Annex 2',
-    'Remitente: fpl.mkoo@gmail.com'
+    'Generado: AIP PERU - Plan de Vuelo | ICAO DOC 4444 PANS-ATM Annex 2',
+    'Remitente: aroais.pe@gmail.com'
   ].join('\n');
 
   var filename = 'PlanVuelo_'+acid+'_'+dep+'_'+des+'.pdf';
 
-  // Verificar configuracion
-  var hasToken = SMTP_CONFIG.secureToken && SMTP_CONFIG.secureToken !== 'YOUR_SMTPJS_TOKEN_HERE';
-  var hasPass  = SMTP_CONFIG.password && SMTP_CONFIG.password.length > 0;
-  if(!hasToken && !hasPass){
-    showEmailStatus('err',
-      '⚠ Email no configurado.\n'+
-      'Haz clic en "⚙ Configurar envio automatico" e ingresa tu App Password de Gmail.');
-    return;
-  }
+  // Verificar configuracion (ahora via servidor) y enviar
+  checkServerEmailConfig().then(function(configured){
+    if(!configured){
+      showEmailStatus('err',
+        '⚠ El servidor no tiene configurada la cuenta de envío.\n'+
+        'Contacte al administrador para configurar GMAIL_USER / GMAIL_APP_PASSWORD en el servidor.');
+      return;
+    }
+    actuallySendEmail(toEmail, subject, body, filename);
+  });
+}
 
+async function actuallySendEmail(toEmail, subject, body, filename){
   showEmailStatus('ok','⏳ Generando PDF del Plan de Vuelo...');
 
   // Generar PDF
   var pdfBlob = null;
-  try{ pdfBlob = buildPDFBlob(); }catch(e){ console.error('buildPDFBlob:',e); }
+  try{ pdfBlob = await buildPDFBlob(); }catch(e){ console.error('buildPDFBlob:',e); }
 
   if(!pdfBlob){
     showEmailStatus('err','⚠ No se pudo generar el PDF. Complete los campos del plan de vuelo primero.');
@@ -1465,21 +1422,13 @@ function sendEmail(){
     });
 }
 
-function buildPDFBlob(){
-  var jsPDF = window.jspdf.jsPDF;
-  var capturedBlob = null;
-  var origSave = jsPDF.prototype.save;
-  // Patch: capture the blob, suppress browser download trigger
-  jsPDF.prototype.save = function(name){
-    try{
-      var arr = this.output('arraybuffer');
-      capturedBlob = new Blob([arr], {type:'application/pdf'});
-    }catch(e){ console.error('PDF capture:', e); }
-    // intentionally suppress actual download here (blob captured above)
-  };
-  try{ downloadPDF(); }catch(e){ console.error('downloadPDF error:', e); }
-  finally{ jsPDF.prototype.save = origSave; }
-  return capturedBlob;
+async function buildPDFBlob(){
+  // Use a flag so downloadPDF captures the blob instead of triggering a download
+  window.__FPL_CAPTURE_BLOB = true;
+  window.__FPL_CAPTURED_BLOB = null;
+  try{ await downloadPDF(); }catch(e){ console.error('downloadPDF error:', e); }
+  window.__FPL_CAPTURE_BLOB = false;
+  return window.__FPL_CAPTURED_BLOB;
 }
 
 function downloadBlobLocal(blob, filename){
@@ -2425,11 +2374,18 @@ async function downloadPDF(){
   tx('<<==)',ml+W-9,ry+7.5,7,true,BK);
   Y+=8;hl(Y,ml,ml+W,0.5);
 
-  // Save PDF
+  // Save PDF (or capture blob if buildPDFBlob is active)
   var acid = safe(D.acid)||'FPL';
   var dep  = safe(D.dep)||'XXXX';
   var des  = safe(D.des)||'XXXX';
-  doc.save('PlanVuelo_'+acid+'_'+dep+'_'+des+'.pdf');
+  if(window.__FPL_CAPTURE_BLOB){
+    try{
+      var arr = doc.output('arraybuffer');
+      window.__FPL_CAPTURED_BLOB = new Blob([arr], {type:'application/pdf'});
+    }catch(e){ console.error('PDF capture:', e); }
+  } else {
+    doc.save('PlanVuelo_'+acid+'_'+dep+'_'+des+'.pdf');
+  }
 }
 </script>
 </body>

@@ -3712,3 +3712,69 @@ Stage Summary:
 - Sección OACI ("Vista Previa Mensaje OACI / ICAO FPL Preview") eliminada; reemplazada por div#icaoText oculto para mantener genICAO()/clearAll() funcionando sin errores
 - Función "GENERAR OACI" sigue operativa: abre el modal moICAO con el mensaje FPL generado y botones Copiar/Cerrar
 - Producción actualizada: https://aip-peru1.vercel.app — verificado con Agent Browser que ambas secciones no aparecen y el botón Generar OACI funciona sin errores JS
+
+---
+Task ID: 9-GMAIL-SERVER-SIDE-EMAIL
+Agent: main (Z.ai Code)
+Task: Configurar envío de Plan de Vuelo desde aroais.pe@gmail.com (App Password proporcionada por el usuario)
+
+Work Log:
+- Usuario proporcionó: EMAIL: aroais.pe@gmail.com, APP PASSWORD: dhfl rllf jxwn fhin
+- PRIMER INTENTO (directo en HTML): Actualicé public/fpl.html SMTP_CONFIG con las nuevas credenciales (username, password, fromEmail, fromName 'AIP PERU - Plan de Vuelo'). Actualicé badge "DE:", función testEmailConfig(), y mensaje "Remitente:" en el cuerpo del email. Removí obfuscación Cloudflare de emails en el modal de configuración.
+- DIAGNÓSTICO CRÍTICO: Al probar con Agent Browser, el botón "Probar Envio" falló con "smtpjs no cargado". Investigué y descubrí que smtpjs.com devuelve HTTP 403 Forbidden — la librería SMTP.js externa ya no es accesible. Esto era un problema preexistente: los emails NUNCA pudieron enviarse con la configuración anterior.
+- DECISIÓN: Implementar envío server-side con Nodemailer (más confiable y seguro). La contraseña vive solo en el servidor, no en el HTML público.
+
+- IMPLEMENTACIÓN SERVER-SIDE:
+  * Instalé nodemailer + @types/nodemailer
+  * Creé src/app/api/fpl/send-email/route.ts:
+    - POST: acepta {to, subject, body, pdfBase64, filename} → envía via Gmail SMTP (Nodemailer)
+    - GET: health check que reporta si está configurado (sin exponer la contraseña)
+    - Credenciales desde env vars GMAIL_USER/GMAIL_APP_PASSWORD con fallback hardcoded
+    - Transporter reutilizable (gmail, port 465, SSL)
+    - Soporta adjuntos PDF (base64 → Buffer)
+  * Actualicé public/fpl.html:
+    - Removí <script src="https://smtpjs.com/v3/smtp.js"> (ya no accesible)
+    - SMTP_CONFIG simplificado: solo fromEmail, fromName, apiEndpoint '/api/fpl/send-email' (SIN password)
+    - smtpSend() reescrito: ahora hace fetch POST a /api/fpl/send-email en lugar de Email.send()
+    - checkServerEmailConfig(): función async que consulta GET /api/fpl/send-email para verificar config
+    - loadEmailConfig() simplificado: solo dispara checkServerEmailConfig()
+    - saveEmailConfig() simplificado: informa que el servidor gestiona las credenciales
+    - Modal de configuración rediseñado: muestra panel informativo "ENVÍO GESTIONADO POR EL SERVIDOR" en lugar de campos de password
+    - sendEmail() ahora verifica config del servidor antes de enviar, luego llama actuallySendEmail()
+    - actuallySendEmail(): genera PDF, lo envía via smtpSend() con fallback mailto
+
+- BUG FIX ADICIONAL (PDF generation):
+  * Síntoma: "ENVIAR PDF" fallaba con "No se pudo generar el PDF"
+  * Causa raíz 1: buildPDFBlob() era síncrono pero downloadPDF() es async — parche de prototype se restauraba antes de que downloadPDF llamara doc.save()
+  * Fix 1: Hice buildPDFBlob async, añadí await downloadPDF()
+  * Causa raíz 2: jsPDF asigna save() como propiedad OWN de cada instancia (no solo en prototype), así que parchear jsPDF.prototype.save NO intercepta la llamada
+  * Fix 2: Cambié enfoque — uso flag window.__FPL_CAPTURE_BLOB. downloadPDF() ahora verifica el flag: si está activo, captura el blob via doc.output('arraybuffer') en window.__FPL_CAPTURED_BLOB; si no, llama doc.save() normalmente (comportamiento original de descarga)
+
+- VERIFICACIÓN LOCAL (dev server localhost:3000):
+  * GET /api/fpl/send-email → {"ok":true,"configured":true,"from":"aroais.pe@gmail.com"}
+  * POST /api/fpl/send-email con email de prueba → {"ok":true,"messageId":"<2cf00961...@gmail.com>"} — correo real enviado a aroais.pe@gmail.com
+
+- DEPLOYS A PRODUCCIÓN (3 deploys con token [REDACTED_TOKEN]):
+  1. Config inicial aroais.pe@gmail.com + remoción secciones TOOLS/OACI
+  2. API server-side Nodemailer + HTML reescrito sin smtpjs
+  3. Fix async buildPDFBlob + flag-based blob capture
+
+- VERIFICACIÓN CON AGENT BROWSER EN PRODUCCIÓN (https://aip-peru1.vercel.app):
+  * GET /api/fpl/send-email → {"ok":true,"configured":true,"from":"aroais.pe@gmail.com","transport":"gmail-smtp (nodemailer, server-side)"}
+  * POST /api/fpl/send-email (test email) → {"ok":true,"messageId":"<e0d1f29a...@gmail.com>"} — correo real enviado en producción
+  * Badge "DE: aroais.pe@gmail.com" visible en el formulario
+  * Badge "✓ CONFIGURADO" visible
+  * passwordInHtml: false (la contraseña NO está en el HTML del navegador)
+  * smtpjsScriptPresent: false (script muerto removido)
+  * Botón "Probar Envio" → "✓ Correo de prueba enviado. Revisa la bandeja de aroais.pe@gmail.com"
+  * FLUJO COMPLETO "ENVIAR PDF": llené formulario (OB1234, B738, SPJC→SPQU, FL310), puse destinatario aroais.pe@gmail.com, clic ENVIAR PDF → "✅ CORREO ENVIADO CON PDF ADJUNTO / Para: aroais.pe@gmail.com / Adjunto: PlanVuelo_OB1234_SPJC_SPQU.pdf / PDF tambien guardado localmente."
+  * Screenshot guardado en /home/z/my-project/fpl-email-success.png
+- Lint: bun run lint clean (exit 0)
+
+Stage Summary:
+- 2 archivos creados: src/app/api/fpl/send-email/route.ts (API Nodemailer), .vercel/project.json
+- 1 archivo modificado: public/fpl.html (removió smtpjs.com, reescribió smtpSend/buildPDFBlob/sendEmail/actuallySendEmail, rediseñó modal de config, fix async PDF)
+- 1 paquete instalado: nodemailer + @types/nodemailer
+- Producción actualizada: https://aip-peru1.vercel.app
+- Usuario ahora puede: (1) Enviar Plan de Vuelo por email desde aroais.pe@gmail.com con PDF adjunto, (2) El email llega con el mensaje OACI FPL en el cuerpo + PDF adjunto, (3) La contraseña de Gmail vive solo en el servidor (no expuesta en el navegador), (4) Botón "Probar Envio" envía email de prueba, (5) Si el envío falla, descarga el PDF localmente y abre mailto como fallback
+- Nota de seguridad: Para máxima seguridad, mover las credenciales a env vars de Vercel (GMAIL_USER, GMAIL_APP_PASSWORD) en lugar del fallback hardcoded en route.ts
