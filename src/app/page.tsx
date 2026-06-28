@@ -20,7 +20,10 @@ import { AirwaysListing } from "@/components/airways-listing"
 import { GlobalSearch } from "@/components/global-search"
 import { ErrorBoundary } from "@/components/error-boundary"
 import { AdminGate } from "@/components/admin-gate"
+import { PERUVIAN_AIRPORTS } from "@/lib/aviation/peru-airports-static"
 import type { Airport, Heliport, RoutePoint, RouteSummary } from "@/lib/types"
+
+const PERUVIAN_AIRPORTS_COUNT = PERUVIAN_AIRPORTS.length
 
 // Dynamic imports for heavy components to reduce initial bundle
 const AeronauticalChart = dynamic(
@@ -100,7 +103,18 @@ const SpimBriefing = dynamic(
   }
 )
 
-type ViewMode = "airports" | "heliports" | "chart" | "flight-plan" | "route-calculator" | "airways" | "admin" | "notams" | "airspace" | "calculator" | "publications" | "spim-briefing"
+const InteractiveMap = dynamic(
+  () =>
+    import("@/components/interactive-map").then(
+      (mod) => mod.InteractiveMap
+    ),
+  {
+    ssr: false,
+    loading: () => <Skeleton className="h-[600px] w-full" />,
+  }
+)
+
+type ViewMode = "airports" | "heliports" | "chart" | "interactive-map" | "flight-plan" | "route-calculator" | "airways" | "admin" | "notams" | "airspace" | "calculator" | "publications" | "spim-briefing"
 
 export default function Home() {
   const [selectedAirport, setSelectedAirport] = useState<Airport | null>(null)
@@ -187,6 +201,7 @@ export default function Home() {
     { mode: "airways" as ViewMode, icon: Navigation2, label: "Rutas" },
     { mode: "spim-briefing" as ViewMode, icon: Bot, label: "INFO SPIM" },
     { mode: "airspace" as ViewMode, icon: Shield, label: "Zonas" },
+    { mode: "interactive-map" as ViewMode, icon: Map, label: "Mapa Interactivo" },
     { mode: "chart" as ViewMode, icon: Map, label: "Carta Aeronáutica" },
     { mode: "route-calculator" as ViewMode, icon: Route, label: "Calculadora" },
     { mode: "calculator" as ViewMode, icon: Calculator, label: "Calc. Aero" },
@@ -401,6 +416,25 @@ export default function Home() {
             onNavigateAirways={() => setViewMode("airways")}
             onNavigateAirspace={() => setViewMode("airspace")}
           />
+        ) : viewMode === "interactive-map" && !selectedAirport ? (
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <Map className="size-6 text-amber-500" />
+              <div>
+                <h1 className="text-xl font-bold tracking-tight">
+                  Mapa Interactivo
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                  Radioayudas, waypoints, aerovías, construcción de rutas y cálculo de distancias — FIR Lima (SPIM)
+                </p>
+              </div>
+              <Badge variant="outline" className="hidden sm:inline-flex gap-1 text-xs text-amber-600 dark:text-amber-400 border-amber-300 dark:border-amber-700 ml-auto shrink-0">
+                <Navigation2 className="size-3" />
+                {PERUVIAN_AIRPORTS_COUNT} Aeródromos · Radioayudas · Waypoints
+              </Badge>
+            </div>
+            <InteractiveMap />
+          </div>
         ) : viewMode === "chart" && !selectedAirport ? (
           <div className="space-y-4">
             <div className="flex items-center gap-3">

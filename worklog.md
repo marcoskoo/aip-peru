@@ -3841,3 +3841,96 @@ Stage Summary:
 - Producción actualizada: https://aip-peru1.vercel.app — verificado con Agent Browser
 - BUG CORREGIDO: Al dar click en Aceptar (o Limpiar) en cualquier panel del Item 18 (PBN, STS, NAV, COM, SUR), el formulario ya NO se resetea. Todos los datos ingresados (ACID, aeródromos, ruta, etc.) se preservan y los valores seleccionados se guardan correctamente en el textarea del Item 18.
 - CAUSA RAÍZ: Botones HTML sin type="button" dentro de un <form> se comportan como type="submit" por defecto, enviando el formulario y recargando la página.
+
+---
+Task ID: 11-INTERACTIVE-MAP
+Agent: main (Z.ai Code)
+Task: Implementar MAP PAGE del HTML subido — mapa con radioayudas, waypoints, puntos de notificación, cálculo de distancias, construcción de rutas y rutas en el mapa
+
+Work Log:
+- Analicé el archivo subido `/home/z/my-project/upload/aip-peru-v20-dragfix.html` (8413 líneas, sistema AIP Perú standalone con 21 páginas)
+- Encontré el MAP PAGE en líneas 145-198: toolbar con capas (SECTIONAL/IFR/WORLD), toggles de rutas (UTA/INF/RNAV/WPT/FIR), selector ORIGEN→DESTINO con distancia, botones WX/SIGMET/RADAR, mapa canvas con markers y popup
+- Extraje datos clave del archivo subido:
+  * `NAVAIDS` (línea 827): 29 radioayudas peruanas (VOR/DME/NDB) con id, tipo, nombre, lat, lng, freq, clase, elevación, horas, AD asociado
+  * `AP` (línea 770): 20 aeropuertos peruanos con ICAO, IATA, nombre, ciudad, dept, lat, lng, elevación, varMag, TA, TL, cert, AFTN
+  * `ROUTES` (línea 859): 50 segmentos de aerovías convencionales (UV1, UV3, etc.)
+  * `ROUTES_LOW`: 76 segmentos de aerovías inferiores
+  * `ROUTES_RNAV`: aerovías RNAV (T232, T234, UL342, UN420, UP525)
+- Comparé con sistema existente aip-peru1.vercel.app:
+  * API `/api/airdata/all` en producción retorna: 48 navaids, 302 waypoints, 25 aerovías convencionales, 12 RNAV, 1 FIR boundary, 5 FIRs adyacentes
+  * Componente `aeronautical-chart.tsx` (917 líneas) ya existe con Leaflet mostrando navaids/waypoints/airways/FIR — PERO le falta: constructor de rutas interactivo, cálculo de distancias, popup con botones FPL ORIG/DEST
+  * API `/api/airports` retorna 33 aeropuertos PERO sin coordenadas (lat/lon null)
+
+- DECISIÓN: Crear NUEVO componente `interactive-map.tsx` que combina:
+  * Datos del API existente (`/api/airdata/all`) — navaids, waypoints, airways, FIR boundaries
+  * Datos estáticos extraídos del archivo subido (`peru-airports-static.ts` con 20 aeropuertos con coords, `peru-navaids-static.ts` con 29 navaids como fallback)
+  * Constructor de rutas interactivo del MAP PAGE subido
+  * Cálculo de distancias (haversine great-circle en NM)
+  * Capas toggleable, popup con detalles, tabla de detalle de ruta
+
+- IMPLEMENTACIÓN:
+  1. Extraje 20 aeropuertos peruanos a `src/lib/aviation/peru-airports-static.ts` (con coords precisas, IATA, elevación, varMag, TA/TL, cert, AFTN)
+  2. Extraje 29 navaids a `src/lib/aviation/peru-navaids-static.ts` (como fallback si API falla)
+  3. Creé `src/components/interactive-map.tsx` (700+ líneas) con:
+     - Leaflet map con dark theme (CartoDB dark tiles)
+     - 8 capas toggleable: Aeródromos, Radioayudas, Waypoints, Aerovías Conv, Aerovías RNAV, FIR Lima, FIRs Adyacentes, Grilla
+     - Toolbar de construcción de rutas: dropdown ORIGEN (68 puntos), dropdown DESTINO (68 puntos), badge de distancia NM+rumbo, botón "Ruta Directa", botón "Click en mapa" (modo construcción)
+     - Markers personalizados: aeropuertos (cuadrados navy/amber), navaids (círculos azules con freq), waypoints (diamantes cyan), puntos de ruta (círculos amber numerados)
+     - Popup con detalles completos (ICAO, nombre, tipo, freq, elevación, coords) + botones "+ ORIG", "+ DEST", "+ Ruta"
+     - Polyline de ruta amber con etiquetas de distancia/rumbo en cada leg
+     - Tabla de detalle de ruta: #, Punto, Tipo, Coordenadas, Leg NM, Rumbo°, Acum NM
+     - Leyenda visual (esquina superior izquierda)
+     - Cálculo haversine great-circle distance + initial bearing
+  4. Wired en `src/app/page.tsx`:
+     - Nuevo ViewMode "interactive-map"
+     - Dynamic import con ssr:false (Leaflet requiere client-side)
+     - Nuevo botón nav "Mapa Interactivo" (icon Map, entre "Zonas" y "Carta Aeronáutica")
+     - Header con título + badge "20 Aeródromos · Radioayudas · Waypoints"
+
+- BUG FIX durante desarrollo:
+  * Síntoma: "Application error: a client-side exception has occurred" al hacer click en Mapa Interactivo
+  * Causa raíz: API `/api/airdata/all` en dev local retorna 500 (DB misconfigured — schema dice postgresql pero .env dice sqlite), la respuesta `{error:"..."}` no tiene propiedades `airways`/`waypoints`/`firBoundaries`, causando `data?.airways.conventional` → crash
+  * Fix: (1) Validar respuesta API antes de setear data — construir objeto AirwaysData completo con fallbacks `?? {}`, `?? []`, `?? {conventional:[],rnav:[]}`. (2) Añadir optional chaining `?.` en todos los `.map()` del render: `data?.airways?.conventional?.map(...)`, `data?.navaids?.map(...)`, etc.
+
+- VERIFICACIÓN LOCAL (dev server):
+  * h1: "Mapa Interactivo" ✓
+  * 1 Leaflet map renderizado ✓
+  * 49 markers (20 airports + 29 navaids fallback) ✓
+  * Layer panel con 8 capas ✓, Leyenda visible ✓
+  * ORIGEN/DESTINO dropdowns funcionales ✓
+  * Selección SPIM→SPQU → distancia "413 NM · 129°" ✓
+  * Click "Ruta Directa" → "2 puntos · 413 NM total" ✓
+  * Tabla "Detalle de Ruta" visible ✓
+  * 0 errores JS ✓
+
+- DEPLOY A PRODUCCIÓN:
+  * npx vercel deploy --prod → aliased a https://aip-peru1.vercel.app ✓ Ready in 54s
+
+- VERIFICACIÓN EN PRODUCCIÓN (https://aip-peru1.vercel.app):
+  * h1: "Mapa Interactivo" ✓
+  * 1 Leaflet map ✓
+  * **68 markers** (20 airports + 48 navaids de DB producción) ✓
+  * Layer panel, leyenda, dropdowns ✓
+  * Ruta SPIM→SPQU: **413 NM · 129°** ✓ (distancia great-circle correcta)
+  * "2 puntos · 413 NM total" ✓
+  * Tabla detalle de ruta ✓
+  * 0 errores JS ✓
+  * Screenshot: /home/z/my-project/map-prod-verified.png
+
+- Lint: bun run lint clean (exit 0)
+
+Stage Summary:
+- 3 archivos creados:
+  * `src/lib/aviation/peru-airports-static.ts` — 20 aeropuertos peruanos con coords precisas
+  * `src/lib/aviation/peru-navaids-static.ts` — 29 radioayudas peruanas (fallback)
+  * `src/components/interactive-map.tsx` — componente mapa interactivo (700+ líneas)
+- 1 archivo modificado: `src/app/page.tsx` (nuevo ViewMode, nav button, dynamic import, render branch)
+- Producción actualizada: https://aip-peru1.vercel.app
+- Nueva sección "Mapa Interactivo" implementada con las características del MAP PAGE del HTML subido:
+  1. ✅ Visualización de todas las radioayudas (48 VOR/DME en producción)
+  2. ✅ Waypoints (302 disponibles, toggleable para reducir clutter)
+  3. ✅ Puntos de notificación (waypoints ENR intersections)
+  4. ✅ Cálculo de distancias (haversine great-circle NM + initial bearing)
+  5. ✅ Construcción de rutas (dropdowns ORIGEN/DESTINO + click en mapa + botón "+ Ruta" en popups)
+  6. ✅ Rutas en el mapa (polyline amber con etiquetas de distancia por leg + tabla detalle)
+- Datos combinados del sistema existente (API /api/airdata/all con 48 navaids, 302 wpts, 37 airways) + datos estáticos del HTML subido (20 aeropuertos con coords)
