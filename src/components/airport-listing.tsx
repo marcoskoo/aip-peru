@@ -40,13 +40,26 @@ export function AirportListing({ onSelectAirport }: AirportListingProps) {
         setDepartments(depts.sort())
       } else {
         const errData = await response.json().catch(() => ({}))
-        const msg = errData?.detail || errData?.error || `Error HTTP ${response.status}`
+        // Nunca exponer el detalle técnico crudo (stack trace de Prisma, etc.)
+        // al usuario. Si viene un detail técnico, mostramos un mensaje amigable.
+        const rawDetail = (errData?.detail || errData?.error || '') as string
+        const isTechnical =
+          /prisma|datasource|postgresql|sqlite|schema\.prisma|validation error/i.test(rawDetail) ||
+          rawDetail.length > 120
+        const msg = isTechnical
+          ? 'No se pudo conectar con la base de datos. Intente nuevamente en unos momentos.'
+          : (rawDetail || `Error HTTP ${response.status}`)
         setError(msg)
         console.error('[AirportListing] API error:', response.status, errData)
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Error de red'
-      setError(msg)
+      const isTechnical = /prisma|datasource|postgresql|sqlite|schema\.prisma/i.test(msg)
+      setError(
+        isTechnical
+          ? 'No se pudo conectar con la base de datos. Intente nuevamente en unos momentos.'
+          : 'Error de red. Verifique su conexión e intente nuevamente.'
+      )
       console.error('[AirportListing] fetch error:', e)
     } finally {
       setLoading(false)

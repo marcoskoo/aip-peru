@@ -4168,3 +4168,59 @@ Stage Summary:
 - Coordenadas verificadas: 31 radioayudas con coords precisas del AIP PERÚ ENR 4.1
 - Mapa completo localmente: 31 navaids + 20 airports + 297 waypoints + 63 aerovías
 - Verificado con Agent Browser: popups muestran "VOR DME" / "DVOR DME" correctamente
+
+---
+Task ID: 15-AERODROMOS-FALLBACK-FIX
+Agent: main (Z.ai Code)
+Task: Revisar captura IMG_5972.png — la página de Aeródromos mostraba "Error al cargar aeródromos / Invalid" con traza técnica de Prisma (provider=postgresql vs DATABASE_URL=file:sqlite) y "0 aeródromos encontrados".
+
+Work Log:
+- Analicé IMG_5972.png con VLM: confirmé que la página / (Aeródromos) mostraba:
+  * "0 aeródromos encontrados"
+  * "Error al cargar aeródromos" / "Invalid"
+  * Traza técnica cruda de Prisma: "Error validating datasource 'db': the URL must start with the protocol 'postgresql://' or 'postgres://'" + "schema.prisma:10 | provider = \"postgresql\""
+- Diagnóstico raíz:
+  * prisma/schema.prisma declara `provider = "postgresql"`
+  * .env tiene `DATABASE_URL=file:/home/z/my-project/db/custom.db` (SQLite)
+  * → Prisma lanza PrismaClientInitializationError al instanciar findMany
+  * El mismo problema ya estaba mitigado en interactive-map.tsx (Task 13) con fallback a PERUVIAN_AIRPORTS/PERUVIAN_NAVAIDS/PERUVIAN_AIRWAYS, pero la página Aeródromos (AirportListing) y el AerodromeSelector todavía dependían 100% del endpoint /api/airports que caía con 500.
+- Reescribí /home/z/my-project/src/app/api/airports/route.ts:
+  * Si DATABASE_URL empieza con "postgres" → usa Prisma findMany como antes (producción/Vercel/Neon)
+  * Si NO (entorno local con SQLite) → salta directo al fallback estático, SIN tocar Prisma (evita el throw)
+  * Try/catch alrededor del bloque Prisma: si falla por cualquier otro motivo, cae al fallback estático en lugar de devolver 500
+  * Fallback: usa PERUVIAN_AIRPORTS (20 aeropuertos del AIP PERÚ), aplica filtros search/department case-insensitive, mapea al shape del frontend (icaoCode, name, city, department, elevation "X m / Y ft", authorizedTraffic, category INTERNACIONAL/NACIONAL, arpLatitude, arpLongitude), ordena por categoría desc + ICAO asc (igual que el orderBy de Prisma)
+  * Función helper staticToAirportShape() — convierte elev (ft) → "X m / Y ft" con ambas unidades
+  * Función helper filterStaticAirports() — busca en icao/iata/name/city/short + filtra por dept
+- Actualicé /home/z/my-project/src/components/airport-listing.tsx (manejo de errores):
+  * En rama `response.ok === false`: si el detalle del error coincide con regex /prisma|datasource|postgresql|sqlite|schema\.prisma|validation error/i O supera 120 caracteres, muestra "No se pudo conectar con la base de datos. Intente nuevamente en unos momentos." en vez de la traza técnica cruda
+  * En rama catch (error de red): mismo filtro + mensaje "Error de red. Verifique su conexión e intente nuevamente."
+  * Esto asegura que NUNCA se exponga un stack trace técnico al usuario final, incluso si el fallback estático también fallara
+
+- VERIFICACIÓN CON AGENT BROWSER (dev server localhost:3000):
+  * GET /api/airports directo (curl): 20 aeropuertos, sin error, primer item SPCL con shape correcto ✓
+  * GET /api/airports?search=lim → 1 aeropuerto (SPIM Jorge Chávez) ✓
+  * GET /api/airports?department=Cusco → 1 aeropuerto (SPZO Velasco Astete) ✓
+  * GET /api/airports?search=iquitos → 1 aeropuerto (SPQT Secada Vignetta) ✓
+  * Página / cargada en browser: H1 "Publicación de Información Aeronáutica" ✓
+  * Dropdown departamentos: 18 departamentos visibles (Amazonas, Apurímac, Arequipa, ..., Ucayali) ✓
+  * Contador: "20 aeródromos encontrados" (antes era "0 aeródromos encontrados") ✓
+  * Body NO contiene "Error al cargar aeródromos" ✓
+  * Body NO contiene "Invalid" ✓
+  * Body NO contiene "prisma" / "postgresql" / "schema.prisma" ✓
+  * Sección AEROPUERTOS INTERNACIONALES visible con cards (SPCL, SPHI, SPIM, SPJL, SPQT, SPQU, SPRU, SPTN, SPTU, SPUR, SPYL) ✓
+  * Sección AEROPUERTOS NACIONALES visible con cards (SPHY, SPRU, SPME, SPAS, SPMR, SPCH, SPIL, SPXT, ...) ✓
+  * Búsqueda "cusco": "1 aeródromo encontrado" → SPZO ✓
+  * Screenshot final: aerodromos-final.png
+  * VLM confirmó: "no [error], 20, sí [cards], sí [secciones]" ✓
+
+- Lint: bun run lint clean (exit 0)
+
+Stage Summary:
+- 2 archivos modificados:
+  * src/app/api/airports/route.ts — reescrito con fallback estático (PERUVIAN_AIRPORTS) cuando DATABASE_URL no es postgres o Prisma falla; filtros search/department aplicados al fallback; mapeo al shape del frontend
+  * src/components/airport-listing.tsx — manejo de errores mejorado: regex detecta trazas técnicas de Prisma y muestra mensaje amigable en vez del stack trace crudo
+- Página Aeródromos (/) ahora carga 20 aeropuertos del AIP PERÚ localmente (antes: 0 + error técnico visible)
+- Filtros búsqueda y departamento funcionales sobre el fallback estático
+- AerodromeSelector (componente de búsqueda global) también se beneficia automáticamente del fix en /api/airports
+- Cero exposición de trazas técnicas al usuario final
+- Verificado con Agent Browser + VLM: contador "20 aeródromos encontrados", secciones Internacionales+Nacionales con cards, sin errores visibles
