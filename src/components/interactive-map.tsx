@@ -13,6 +13,7 @@ import {
   CircleMarker,
   useMap,
   useMapEvents,
+  ZoomControl,
 } from "react-leaflet"
 import L from "leaflet"
 import { Button } from "@/components/ui/button"
@@ -97,6 +98,43 @@ const C = {
 // ─── Constants ───────────────────────────────────────────────────
 const MAP_CENTER: [number, number] = [-9.19, -75.0]
 const MAP_ZOOM = 6
+
+// ─── Basemap tile providers (SkyVector-style) ────────────────────
+// World Hi  → CARTO light_all       (cleanest, white land / pale blue water — high IFR chart)
+// World Lo  → CARTO voyager         (slightly more colorful detail — low IFR chart)
+// World VFR → OpenTopoMap           (tan/beige topographic — VFR sectional feel)
+type BasemapId = "hi" | "lo" | "vfr"
+
+interface BasemapConfig {
+  url: string
+  attribution: string
+  maxZoom: number
+  subdomains?: string
+}
+
+const BASEMAPS: Record<BasemapId, BasemapConfig> = {
+  hi: {
+    url: "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+    attribution:
+      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    maxZoom: 19,
+    subdomains: "abcd",
+  },
+  lo: {
+    url: "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+    attribution:
+      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    maxZoom: 19,
+    subdomains: "abcd",
+  },
+  vfr: {
+    url: "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
+    attribution:
+      'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, SRTM | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (CC-BY-SA)',
+    maxZoom: 17,
+    subdomains: "abc",
+  },
+}
 
 // ─── Types ───────────────────────────────────────────────────────
 interface RoutePoint {
@@ -351,6 +389,8 @@ export function InteractiveMap() {
   const [routeMode, setRouteMode] = useState(false)
   const [editMode, setEditMode] = useState(false)
   const [history, setHistory] = useState<RoutePoint[][]>([])
+  // SkyVector-style basemap selector ("World Hi" / "World Lo" / "World VFR")
+  const [basemap, setBasemap] = useState<BasemapId>("hi")
 
   // Refs to avoid stale closures in drag handlers (updated in effect, not during render)
   const routeRef = useRef(route)
@@ -794,10 +834,15 @@ export function InteractiveMap() {
           zoom={MAP_ZOOM}
           className="w-full h-full"
           style={{ background: C.mapBg }}
+          zoomControl={false}
         >
+          <ZoomControl position="bottomleft" />
           <TileLayer
-            attribution='&copy; OpenStreetMap'
-            url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+            key={basemap}
+            url={BASEMAPS[basemap].url}
+            attribution={BASEMAPS[basemap].attribution}
+            maxZoom={BASEMAPS[basemap].maxZoom}
+            subdomains={BASEMAPS[basemap].subdomains ?? "abc"}
           />
           <MapClickHandler onMapClick={handleMapClick} />
 
@@ -809,9 +854,9 @@ export function InteractiveMap() {
             <Polygon
               key={fir.name}
               positions={fir.polygon.map((p) => [p.lat, p.lon] as [number, number])}
-              pathOptions={{ color: C.fir, weight: 2, dashArray: "6,4", opacity: 0.7, fillColor: C.fir, fillOpacity: 0.04 }}
+              pathOptions={{ color: C.fir, weight: 2, dashArray: "8,4", opacity: 0.75, fillColor: C.fir, fillOpacity: 0.04 }}
             >
-              <Tooltip sticky>{fir.name} ({fir.type})</Tooltip>
+              <Tooltip sticky className="leaflet-tooltip-skyvector">{fir.name} ({fir.type})</Tooltip>
             </Polygon>
           ))}
 
@@ -821,9 +866,9 @@ export function InteractiveMap() {
               <Polygon
                 key={fir.icao}
                 positions={fir.borderPoints.map((p) => [p.lat, p.lon] as [number, number])}
-                pathOptions={{ color: C.adjacentFir, weight: 1, dashArray: "3,3", opacity: 0.5, fillColor: C.adjacentFir, fillOpacity: 0.02 }}
+                pathOptions={{ color: C.adjacentFir, weight: 1, dashArray: "4,4", opacity: 0.6, fillColor: C.adjacentFir, fillOpacity: 0.02 }}
               >
-                <Tooltip sticky>{fir.icao} — {fir.name} ({fir.country})</Tooltip>
+                <Tooltip sticky className="leaflet-tooltip-skyvector">{fir.icao} — {fir.name} ({fir.country})</Tooltip>
               </Polygon>
             ) : null
           ))}
@@ -844,9 +889,9 @@ export function InteractiveMap() {
               <Polyline
                 key={aw.designator + "-" + aw.type}
                 positions={positions}
-                pathOptions={{ color: C.airwayConv, weight: 1.5, opacity: 0.55 }}
+                pathOptions={{ color: C.airwayConv, weight: 1.5, opacity: 0.7 }}
               >
-                <Tooltip sticky>{aw.designator} ({aw.type}, {aw.level})</Tooltip>
+                <Tooltip sticky className="leaflet-tooltip-skyvector">{aw.designator} ({aw.type}, {aw.level})</Tooltip>
               </Polyline>
             )
           })}
@@ -867,9 +912,9 @@ export function InteractiveMap() {
               <Polyline
                 key={aw.designator + "-" + aw.type}
                 positions={positions}
-                pathOptions={{ color: C.airwayRnav, weight: 1.5, opacity: 0.5, dashArray: "5,3" }}
+                pathOptions={{ color: C.airwayRnav, weight: 1.5, opacity: 0.7, dashArray: "6,4" }}
               >
-                <Tooltip sticky>{aw.designator} (RNAV, {aw.level})</Tooltip>
+                <Tooltip sticky className="leaflet-tooltip-skyvector">{aw.designator} (RNAV, {aw.level})</Tooltip>
               </Polyline>
             )
           })}
@@ -1026,13 +1071,13 @@ export function InteractiveMap() {
               {/* Glow underlay */}
               <Polyline
                 positions={route.map((p) => [p.lat, p.lon] as [number, number])}
-                pathOptions={{ color: C.routeGlow, weight: 10, opacity: 0.2, lineCap: "round" }}
+                pathOptions={{ color: C.routeGlow, weight: 8, opacity: 0.25, lineCap: "round" }}
                 interactive={false}
               />
-              {/* Main line */}
+              {/* Main line — solid magenta (SkyVector-style highlighted route) */}
               <Polyline
                 positions={route.map((p) => [p.lat, p.lon] as [number, number])}
-                pathOptions={{ color: C.route, weight: 3, opacity: 0.9, dashArray: editMode ? undefined : "8,4", lineCap: "round" }}
+                pathOptions={{ color: C.route, weight: 3, opacity: 0.95, lineCap: "round" }}
               />
               {/* Route point markers — draggable when editMode is ON */}
               {route.map((p, i) => (
@@ -1101,8 +1146,8 @@ export function InteractiveMap() {
                         font-size:9px;font-weight:700;font-family:monospace;
                         padding:1px 5px;border-radius:3px;
                         border:1px solid ${C.white};white-space:nowrap;
-                        box-shadow:0 0 4px ${C.routeGlow}88;
-                      ">${leg.nm} NM / ${leg.brg}°</div>`,
+                        box-shadow:0 0 4px ${C.routeGlow}aa;
+                      ">${leg.brg}° / ${leg.nm}nm</div>`,
                       iconSize: [60, 14],
                       iconAnchor: [30, 7],
                     })}
@@ -1119,15 +1164,45 @@ export function InteractiveMap() {
           WGS84 · ICAO · CORPAC Perú
         </div>
 
+        {/* SkyVector-style basemap toggle (top-left, horizontal stack) */}
+        <div className="absolute top-2 left-2 flex flex-col gap-1 z-[500]">
+          <div className="flex flex-row bg-white/95 backdrop-blur rounded border border-[#cbd5e1] shadow-sm overflow-hidden">
+            {([
+              { id: "hi" as BasemapId, label: "World Hi" },
+              { id: "lo" as BasemapId, label: "World Lo" },
+              { id: "vfr" as BasemapId, label: "World VFR" },
+            ]).map(({ id, label }) => {
+              const active = basemap === id
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => setBasemap(id)}
+                  className={`text-[10px] font-bold tracking-wide px-2 py-1 transition-colors ${
+                    active
+                      ? "bg-[#1e40af] text-white"
+                      : "bg-white text-slate-600 hover:bg-[#eef2ff] hover:text-[#1e40af]"
+                  }`}
+                  aria-pressed={active}
+                  title={`Basemap: ${label}`}
+                >
+                  {label}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
         {/* Legend */}
-        <div className="absolute top-2 left-2 bg-white/90 text-slate-600 text-[10px] font-mono px-3 py-2 rounded border border-[#cbd5e1] space-y-1 max-w-[190px] backdrop-blur">
-          <div className="font-bold text-[#1e40af] mb-1" style={{ textShadow: "0 0 3px #1e40af" }}>LEYENDA</div>
+        <div className="absolute top-2 right-2 bg-white/90 text-slate-600 text-[10px] font-mono px-3 py-2 rounded border border-[#cbd5e1] space-y-1 max-w-[190px] backdrop-blur z-[500]">
+          <div className="font-bold text-[#1e40af] mb-1">LEYENDA</div>
           <div className="flex items-center gap-1.5"><span className="w-3 h-3 bg-[#1e40af] border-2 border-[#1e3a8a] inline-block rounded-full"></span> Aeródromo Intl</div>
           <div className="flex items-center gap-1.5"><span className="w-3 h-3 bg-[#3b82f6] border-2 border-[#1e3a8a] inline-block rounded-full"></span> Aeródromo Nacional</div>
           <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full border-2 border-[#1d4ed8] inline-block"></span> Radioayuda (VOR DME)</div>
           <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 border border-[#16a34a] inline-block transform rotate-45"></span> Waypoint</div>
           <div className="flex items-center gap-1.5"><span className="w-4 h-0.5 bg-[#1e3c78] inline-block"></span> Aerovía Conv.</div>
           <div className="flex items-center gap-1.5"><span className="w-4 h-0.5 bg-[#64748b] inline-block border-dashed"></span> Aerovía RNAV</div>
+          <div className="flex items-center gap-1.5"><span className="w-4 h-0.5 bg-[#475569] inline-block" style={{ borderTop: "2px dashed #475569" }}></span> FIR Lima</div>
           <div className="flex items-center gap-1.5"><span className="w-4 h-0.5 bg-[#c026d3] inline-block"></span> Ruta construida</div>
           {editMode && <div className="flex items-center gap-1.5 pt-1 border-t border-slate-200 text-[#ea580c]"><Move className="size-2.5" /> Arrastrar puntos</div>}
         </div>

@@ -237,7 +237,32 @@
   border-right-color: #cbd5e1 !important;
 }
 
+/* SkyVector-style tooltip — light, no neon glow */
+.leaflet-tooltip-skyvector {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 3px !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.15) !important;
+  font-family: monospace !important;
+  font-size: 10px !important;
+  padding: 2px 6px !important;
+}
+.leaflet-tooltip-skyvector.leaflet-tooltip-top:before,
+.leaflet-tooltip-skyvector.leaflet-tooltip-bottom:before,
+.leaflet-tooltip-skyvector.leaflet-tooltip-left:before,
+.leaflet-tooltip-skyvector.leaflet-tooltip-right:before {
+  border-top-color: #cbd5e1 !important;
+  border-bottom-color: #cbd5e1 !important;
+  border-left-color: #cbd5e1 !important;
+  border-right-color: #cbd5e1 !important;
+}
+
 /* Leaflet zoom controls — light */
+.leaflet-bar {
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.12) !important;
+}
 .leaflet-bar a {
   background: #ffffff !important;
   color: #1e40af !important;

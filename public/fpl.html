@@ -25,23 +25,19 @@ const SMTP_CONFIG = {
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@300;400;600;700&display=swap');
 :root{
-  --bg:#050b14;--panel:#0a1628;--card:#0d1f3c;--inp:#071020;
-  --bdr:#1a3a6b;--glow:#2557a7;--acc:#00c8ff;--acc2:#f4a600;--acc3:#00ff9d;
-  --txt:#c8deff;--dim:#5a7aaa;--lbl:#7ab3ff;--red:#ff4444;
-  --sh:0 0 20px rgba(0,200,255,.15);
+  --bg:#F0F0F0;--panel:#FFFFFF;--card:#FFFFFF;--inp:#FFFFFF;
+  --bdr:#CCCCCC;--glow:#0066CC;--acc:#004499;--acc2:#336699;--acc3:#0d9488;
+  --txt:#333333;--dim:#666666;--lbl:#0066CC;--red:#dc2626;
+  --sh:0 1px 3px rgba(0,0,0,.08);
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--txt);font-family:'Rajdhani',sans-serif;min-height:100vh;
-  background-image:radial-gradient(ellipse at 20% 10%,rgba(0,80,180,.12) 0%,transparent 60%),
-  radial-gradient(ellipse at 80% 90%,rgba(0,100,200,.08) 0%,transparent 60%),
-  repeating-linear-gradient(0deg,transparent,transparent 39px,rgba(26,58,107,.15) 40px),
-  repeating-linear-gradient(90deg,transparent,transparent 39px,rgba(26,58,107,.15) 40px);}
+body{background:var(--bg);color:var(--txt);font-family:'Rajdhani',sans-serif;min-height:100vh;}
 /* ── ITEM 18 SELECTOR CHIPS ─────────────────────────────────────── */
 .i18sw{position:relative;display:flex;flex-direction:column;gap:4px;}
 .i18panel{display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:600;
-  background:#040e1e;border:1px solid var(--acc);border-radius:8px;
+  background:var(--panel);border:1px solid var(--acc);border-radius:8px;
   padding:12px 14px;min-width:300px;max-width:500px;
-  box-shadow:0 4px 32px rgba(0,200,255,.3);}
+  box-shadow:0 4px 16px rgba(0,0,0,.12);}
 .i18panel.open{display:block;}
 .i18panel-title{font-family:'Orbitron',monospace;font-size:9px;color:var(--acc);
   letter-spacing:2px;margin-bottom:8px;text-transform:uppercase;}
@@ -54,14 +50,14 @@ body{background:var(--bg);color:var(--txt);font-family:'Rajdhani',sans-serif;min
   background:var(--inp);border:1px solid var(--bdr);color:var(--dim);
   transition:all .15s;user-select:none;white-space:nowrap;}
 .i18chip:hover{border-color:var(--acc);color:var(--acc);}
-.i18chip.on{background:rgba(0,200,255,.18);border-color:var(--acc);color:#fff;font-weight:700;}
+.i18chip.on{background:rgba(0,68,153,.10);border-color:var(--acc);color:var(--acc);font-weight:700;}
 .i18chip.on::before{content:'\2713 ';}
 .i18foot{display:flex;justify-content:flex-end;gap:6px;
   border-top:1px solid var(--bdr);padding-top:8px;margin-top:6px;}
 .i18foot button{font-family:'Share Tech Mono',monospace;font-size:10px;
   padding:4px 12px;border-radius:3px;cursor:pointer;}
-.i18foot .fcl{background:rgba(255,60,60,.1);color:#ff6666;border:1px solid #ff4444;}
-.i18foot .fok{background:rgba(0,200,255,.15);color:var(--acc);border:1px solid var(--acc);}
+.i18foot .fcl{background:rgba(220,38,38,.08);color:var(--red);border:1px solid var(--red);}
+.i18foot .fok{background:rgba(0,68,153,.08);color:var(--acc);border:1px solid var(--acc);}
 .i18btn{display:flex;align-items:center;justify-content:space-between;gap:6px;
   background:var(--inp);border:1px solid var(--bdr);border-radius:4px;
   color:var(--txt);cursor:pointer;font-family:'Share Tech Mono',monospace;
@@ -72,37 +68,37 @@ body{background:var(--bg);color:var(--txt);font-family:'Rajdhani',sans-serif;min
 .i18val.mt{color:var(--dim);opacity:.5;}
 .i18arr{font-size:9px;color:var(--dim);}
 /* TOP BAR */
-.top-bar{background:linear-gradient(90deg,#020a18,#071428 40%,#020a18);border-bottom:1px solid var(--glow);
-  padding:6px 20px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 20px rgba(0,100,255,.2);}
+.top-bar{background:linear-gradient(90deg,#FFFFFF,#F0F0F0 40%,#FFFFFF);border-bottom:1px solid var(--bdr);
+  padding:6px 20px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 3px rgba(0,0,0,.08);}
 .top-bar .logo{font-family:'Orbitron',monospace;font-size:11px;letter-spacing:3px;color:var(--acc);opacity:.7;}
-.top-bar .scan{flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--glow),transparent);}
-.top-bar .utc{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--acc3);letter-spacing:2px;}
+.top-bar .scan{flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--bdr),transparent);}
+.top-bar .utc{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--lbl);letter-spacing:2px;}
 /* HEADER */
 .mh{padding:20px 24px 16px;text-align:center;position:relative;}
 .mh::after{content:'';position:absolute;bottom:0;left:10%;right:10%;height:1px;
   background:linear-gradient(90deg,transparent,var(--acc),var(--acc2),var(--acc),transparent);}
 .mh .sub{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--acc);letter-spacing:5px;margin-bottom:6px;opacity:.8;}
-.mh h1{font-family:'Orbitron',monospace;font-size:clamp(16px,3vw,28px);font-weight:900;color:#fff;
-  text-shadow:0 0 30px rgba(0,200,255,.5);letter-spacing:4px;}
+.mh h1{font-family:'Orbitron',monospace;font-size:clamp(16px,3vw,28px);font-weight:900;color:var(--txt);
+  text-shadow:none;letter-spacing:4px;}
 .mh .ref{margin-top:4px;font-size:11px;color:var(--dim);letter-spacing:2px;font-family:'Share Tech Mono',monospace;}
 /* DB BUTTON */
 .db-btn{display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:4px;
-  background:rgba(244,166,0,.12);border:1px solid var(--acc2);color:var(--acc2);
+  background:#FFFFFF;border:1px solid var(--acc);color:var(--acc);
   font-family:'Orbitron',monospace;font-size:10px;letter-spacing:1px;cursor:pointer;transition:all .15s;}
-.db-btn:hover{background:rgba(244,166,0,.22);}
+.db-btn:hover{background:rgba(0,68,153,.08);}
 /* FORM WRAPPER */
 .fw{max-width:1100px;margin:0 auto;padding:16px 16px 40px;}
 /* SECTION */
 .sec{background:var(--card);border:1px solid var(--bdr);border-radius:8px;margin-bottom:12px;
   overflow:hidden;box-shadow:var(--sh);transition:border-color .2s;}
 .sec:hover{border-color:var(--glow);}
-.sh{background:linear-gradient(90deg,rgba(0,80,180,.3),rgba(0,40,100,.2));
+.sh{background:linear-gradient(90deg,#E8E8E8,#F0F0F0);
   border-bottom:1px solid var(--bdr);padding:8px 16px;display:flex;align-items:center;gap:10px;}
 .sh .ino{font-family:'Orbitron',monospace;font-size:10px;font-weight:700;
-  background:var(--acc);color:#000;padding:2px 8px;border-radius:3px;letter-spacing:1px;min-width:50px;text-align:center;}
+  background:var(--acc);color:#FFFFFF;padding:2px 8px;border-radius:3px;letter-spacing:1px;min-width:50px;text-align:center;}
 .sh .ino.o{background:var(--acc2);}
 .sh .ino.g{background:var(--acc3);}
-.sh h3{font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;color:var(--lbl);text-transform:uppercase;letter-spacing:2px;}
+.sh h3{font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;color:var(--txt);text-transform:uppercase;letter-spacing:2px;}
 .sb{padding:12px 16px;}
 /* GRID */
 .fg{display:grid;gap:10px;}
@@ -117,14 +113,14 @@ body{background:var(--bg);color:var(--txt);font-family:'Rajdhani',sans-serif;min
 label{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim);
   letter-spacing:1.5px;text-transform:uppercase;display:flex;align-items:center;gap:6px;}
 label .req{color:var(--red);font-size:12px;}
-label .hint{color:var(--acc);font-size:9px;opacity:.7;background:rgba(0,200,255,.1);padding:1px 5px;border-radius:2px;}
+label .hint{color:var(--lbl);font-size:9px;opacity:.8;background:rgba(0,102,204,.1);padding:1px 5px;border-radius:2px;}
 /* INPUTS */
 input[type=text],select,textarea{
   background:var(--inp);border:1px solid var(--bdr);border-radius:4px;color:var(--txt);
   font-family:'Share Tech Mono',monospace;font-size:13px;padding:6px 10px;width:100%;outline:none;
   transition:border-color .2s,box-shadow .2s;text-transform:uppercase;}
 input:focus,select:focus,textarea:focus{
-  border-color:var(--acc);box-shadow:0 0 0 2px rgba(0,200,255,.15),inset 0 0 8px rgba(0,200,255,.05);}
+  border-color:var(--acc);box-shadow:0 0 0 2px rgba(0,102,204,.15);}
 input::placeholder{color:var(--dim);opacity:.5;text-transform:none;}
 textarea{resize:vertical;min-height:60px;text-transform:none;}
 select option{background:var(--panel);}
@@ -135,7 +131,7 @@ select option{background:var(--panel);}
 .ac-drop.open{display:block;}
 .ac-item{padding:6px 10px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--txt);
   display:flex;flex-direction:column;gap:2px;border-bottom:1px solid var(--bdr);}
-.ac-item:hover{background:rgba(0,200,255,.12);color:var(--acc);}
+.ac-item:hover{background:rgba(0,68,153,.08);color:var(--acc);}
 .ac-item span{font-size:9px;color:var(--dim);}
 /* CHECKBOXES */
 .cg{display:flex;flex-wrap:wrap;gap:6px;padding:4px 0;}
@@ -144,12 +140,12 @@ select option{background:var(--panel);}
   border-radius:4px;padding:3px 8px;transition:all .15s;user-select:none;}
 .ci:hover{border-color:var(--acc);color:var(--acc);}
 .ci input[type=checkbox]{display:none;}
-.ci.active{background:rgba(0,200,255,.12);border-color:var(--acc);color:var(--acc);}
+.ci.active{background:rgba(0,68,153,.10);border-color:var(--acc);color:var(--acc);}
 .ci .box{width:14px;height:14px;border:1px solid currentColor;border-radius:2px;
   display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;}
 /* ROUTE VISUAL */
-.rv{display:flex;align-items:center;gap:8px;background:rgba(0,200,255,.04);
-  border:1px solid rgba(0,200,255,.15);border-radius:6px;padding:6px 12px;margin-bottom:8px;
+.rv{display:flex;align-items:center;gap:8px;background:rgba(0,102,204,.04);
+  border:1px solid rgba(0,102,204,.15);border-radius:6px;padding:6px 12px;margin-bottom:8px;
   font-family:'Share Tech Mono',monospace;font-size:12px;}
 .rd{width:10px;height:10px;border-radius:50%;background:var(--acc);flex-shrink:0;}
 .rd.d{background:var(--acc2);}
@@ -159,9 +155,9 @@ select option{background:var(--panel);}
 .dl{flex:1;height:1px;background:var(--bdr);}
 .dlt{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim);letter-spacing:2px;}
 /* ICAO PREVIEW */
-.ip{background:#020c1a;border:1px solid var(--acc);border-radius:6px;padding:12px 16px;margin-top:12px;
-  font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--acc3);line-height:1.8;
-  position:relative;overflow:hidden;box-shadow:0 0 20px rgba(0,200,255,.1);}
+.ip{background:#F8F8F8;border:1px solid var(--bdr);border-radius:6px;padding:12px 16px;margin-top:12px;
+  font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--acc);line-height:1.8;
+  position:relative;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.08);}
 .ip::before{content:'FORMATO OACI / ICAO MESSAGE';position:absolute;top:8px;right:12px;
   font-size:9px;color:var(--dim);letter-spacing:2px;}
 /* BUTTONS */
@@ -173,47 +169,45 @@ select option{background:var(--panel);}
 .btn:hover::after{opacity:1;}
 .btn:hover{transform:translateY(-1px);}
 .btn svg{width:15px;height:15px;}
-.b-prev{background:linear-gradient(135deg,#0d3060,#1a5299);color:var(--acc);border:1px solid var(--acc);box-shadow:0 0 16px rgba(0,200,255,.2);}
-.b-prev:hover{box-shadow:0 0 28px rgba(0,200,255,.45);}
-.b-pdf{background:linear-gradient(135deg,#5a1a00,#9e3200);color:#ffb347;border:1px solid var(--acc2);box-shadow:0 0 16px rgba(244,166,0,.2);}
-.b-pdf:hover{box-shadow:0 0 28px rgba(244,166,0,.45);}
-.b-icao{background:linear-gradient(135deg,#003820,#006040);color:var(--acc3);border:1px solid var(--acc3);box-shadow:0 0 16px rgba(0,255,157,.2);}
-.b-icao:hover{box-shadow:0 0 28px rgba(0,255,157,.45);}
-.b-clr{background:linear-gradient(135deg,#1a0a0a,#3a1010);color:#ff6666;border:1px solid var(--red);}
+.b-prev{background:linear-gradient(135deg,#004499,#0066CC);color:#FFFFFF;border:1px solid var(--acc);box-shadow:0 2px 6px rgba(0,68,153,.2);}
+.b-prev:hover{box-shadow:0 4px 12px rgba(0,68,153,.3);}
+.b-pdf{background:linear-gradient(135deg,#9C2A00,#D97706);color:#FFFFFF;border:1px solid #D97706;box-shadow:0 2px 6px rgba(217,119,6,.2);}
+.b-pdf:hover{box-shadow:0 4px 12px rgba(217,119,6,.3);}
+.b-icao{background:linear-gradient(135deg,#0D6E4F,#0d9488);color:#FFFFFF;border:1px solid var(--acc3);box-shadow:0 2px 6px rgba(13,148,136,.2);}
+.b-icao:hover{box-shadow:0 4px 12px rgba(13,148,136,.3);}
+.b-clr{background:linear-gradient(135deg,#7F1D1D,#dc2626);color:#FFFFFF;border:1px solid var(--red);box-shadow:0 2px 6px rgba(220,38,38,.2);}
 /* MODAL */
-.mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;align-items:center;justify-content:center;}
+.mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center;}
 .mo.open{display:flex;}
-.md{background:var(--panel);border:1px solid var(--acc);border-radius:10px;padding:20px 24px;
-  max-width:700px;width:95%;box-shadow:0 0 60px rgba(0,200,255,.25);max-height:85vh;overflow-y:auto;}
+.md{background:var(--panel);border:1px solid var(--bdr);border-radius:10px;padding:20px 24px;
+  max-width:700px;width:95%;box-shadow:0 4px 24px rgba(0,0,0,.15);max-height:85vh;overflow-y:auto;}
 .md h2{font-family:'Orbitron',monospace;font-size:13px;color:var(--acc);letter-spacing:3px;margin-bottom:12px;}
-.md pre{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--acc3);background:#020c1a;
+.md pre{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--acc);background:#F8F8F8;
   border:1px solid var(--bdr);border-radius:6px;padding:12px;white-space:pre-wrap;word-break:break-all;line-height:1.7;}
-.mc{margin-top:12px;padding:8px 20px;background:rgba(0,200,255,.1);border:1px solid var(--acc);
+.mc{margin-top:12px;padding:8px 20px;background:rgba(0,68,153,.08);border:1px solid var(--acc);
   border-radius:4px;color:var(--acc);font-family:'Orbitron',monospace;font-size:10px;cursor:pointer;letter-spacing:2px;}
 /* DB MODAL */
 .db-md{max-width:900px;}
 .db-tabs{display:flex;gap:4px;margin-bottom:16px;}
 .db-tab{padding:6px 16px;border:1px solid var(--bdr);border-radius:4px;cursor:pointer;
   font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--dim);background:var(--inp);}
-.db-tab.active{border-color:var(--acc);color:var(--acc);background:rgba(0,200,255,.1);}
+.db-tab.active{border-color:var(--acc);color:var(--acc);background:rgba(0,68,153,.08);}
 .db-panel{display:none;}
 .db-panel.active{display:block;}
 .db-list{display:flex;flex-direction:column;gap:6px;max-height:280px;overflow-y:auto;margin-bottom:12px;}
 .db-row{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--inp);
   border:1px solid var(--bdr);border-radius:4px;cursor:pointer;transition:all .15s;}
-.db-row:hover{border-color:var(--acc);background:rgba(0,200,255,.06);}
+.db-row:hover{border-color:var(--acc);background:rgba(0,68,153,.04);}
 .db-row .dr-main{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--acc);font-weight:700;flex:0 0 80px;}
 .db-row .dr-sub{font-size:11px;color:var(--dim);flex:1;}
 .db-row .dr-del{margin-left:auto;color:var(--red);font-size:16px;cursor:pointer;padding:0 4px;line-height:1;}
 .db-form{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;}
 .db-form .full{grid-column:span 2;}
-.db-save{margin-top:10px;padding:8px 20px;background:rgba(0,255,157,.1);border:1px solid var(--acc3);
+.db-save{margin-top:10px;padding:8px 20px;background:rgba(13,148,136,.1);border:1px solid var(--acc3);
   border-radius:4px;color:var(--acc3);font-family:'Orbitron',monospace;font-size:10px;cursor:pointer;letter-spacing:2px;}
 /* SCANLINE */
 @keyframes sl{0%{transform:translateY(-100%)}100%{transform:translateY(100vh)}}
-.sl{position:fixed;top:0;left:0;width:100%;height:3px;
-  background:linear-gradient(transparent,rgba(0,200,255,.1),transparent);
-  animation:sl 8s linear infinite;pointer-events:none;z-index:999;}
+.sl{display:none;}
 /* RESPONSIVE */
 @media(max-width:700px){.fg.c3,.fg.c4{grid-template-columns:1fr 1fr;}.fgr.s3,.fgr.s4{grid-column:span 2;}.fg.c2{grid-template-columns:1fr;}}
 footer{border-top:1px solid var(--bdr);margin-top:24px;padding:12px 20px;text-align:center;
@@ -225,10 +219,10 @@ footer span{color:var(--acc);}
 .ci-tt .ci-tooltip{
   display:none;position:absolute;z-index:2000;
   bottom:calc(100% + 8px);left:0;
-  background:#020c1a;border:1px solid var(--acc);border-radius:6px;
+  background:#FFFFFF;border:1px solid var(--bdr);border-radius:6px;
   padding:9px 13px;min-width:230px;max-width:320px;
   font-family:'Share Tech Mono',monospace;font-size:10px;line-height:1.6;
-  color:var(--txt);box-shadow:0 0 22px rgba(0,200,255,.3);
+  color:var(--txt);box-shadow:0 4px 12px rgba(0,0,0,.12);
   pointer-events:none;white-space:normal;
 }
 .ci-tt .ci-tooltip::after{
@@ -241,7 +235,7 @@ footer span{color:var(--acc);}
 /* SSR multi: now multi-select like comNav */
 /* ── EMAIL SECTION ──────────────────────────────────────── */
 .email-sec{
-  background:linear-gradient(135deg,rgba(13,31,60,.95),rgba(8,18,36,.9));
+  background:linear-gradient(135deg,#FFFFFF,#F8F8F8);
   border:1px solid var(--bdr);border-radius:8px;
   padding:18px 20px;margin-top:14px;box-shadow:var(--sh);
 }
@@ -259,17 +253,17 @@ footer span{color:var(--acc);}
   color:var(--txt);font-family:'Share Tech Mono',monospace;font-size:13px;
   padding:8px 12px;width:100%;outline:none;transition:border-color .2s,box-shadow .2s;
 }
-.email-field input:focus{border-color:var(--acc2);box-shadow:0 0 0 2px rgba(244,166,0,.15);}
+.email-field input:focus{border-color:var(--acc);box-shadow:0 0 0 2px rgba(0,102,204,.15);}
 .email-field input::placeholder{color:var(--dim);opacity:.4;}
 .b-email{
-  background:linear-gradient(135deg,#1a2800,#2e5000);
-  color:#aaff44;border:1px solid #66cc22;
-  box-shadow:0 0 14px rgba(100,200,0,.2);flex-shrink:0;
+  background:linear-gradient(135deg,#0D6E4F,#0d9488);
+  color:#FFFFFF;border:1px solid var(--acc3);
+  box-shadow:0 2px 6px rgba(13,148,136,.2);flex-shrink:0;
 }
-.b-email:hover{box-shadow:0 0 26px rgba(100,220,0,.4);}
+.b-email:hover{box-shadow:0 4px 12px rgba(13,148,136,.3);}
 .email-note{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim);
   margin-top:10px;padding:8px 12px;border:1px solid var(--bdr);border-radius:4px;
-  background:rgba(0,0,0,.3);line-height:1.6;}
+  background:#F8F8F8;line-height:1.6;}
 .email-note b{color:var(--acc3);}
 /* EMAIL STATUS */
 .email-status{
@@ -281,12 +275,12 @@ footer span{color:var(--acc);}
   padding:10px 14px;max-height:100px;opacity:1;
 }
 .email-status.ok{
-  background:rgba(0,200,100,.12);border:1px solid rgba(0,200,100,.4);
-  color:#44ee88;
+  background:rgba(13,148,136,.12);border:1px solid rgba(13,148,136,.4);
+  color:#0d9488;
 }
 .email-status.err{
-  background:rgba(255,60,60,.12);border:1px solid rgba(255,60,60,.4);
-  color:#ff6666;
+  background:rgba(220,38,38,.12);border:1px solid rgba(220,38,38,.4);
+  color:#dc2626;
 }
 /* TOOLTIP IMPROVEMENTS — flip upward if near bottom */
 .ci-tt:last-child .ci-tooltip,
@@ -302,10 +296,10 @@ footer span{color:var(--acc);}
 .inp-tt .inp-help{
   display:none;position:absolute;z-index:1500;
   top:calc(100% + 6px);left:0;
-  background:#020c1a;border:1px solid var(--acc);border-radius:6px;
+  background:#FFFFFF;border:1px solid var(--bdr);border-radius:6px;
   padding:9px 13px;min-width:240px;max-width:340px;
   font-family:'Share Tech Mono',monospace;font-size:10px;line-height:1.65;
-  color:var(--txt);box-shadow:0 0 22px rgba(0,200,255,.3);
+  color:var(--txt);box-shadow:0 4px 12px rgba(0,0,0,.12);
   pointer-events:none;white-space:normal;
 }
 .inp-tt .inp-help::before{
@@ -322,7 +316,7 @@ footer span{color:var(--acc);}
 /* EMAIL CONFIG BADGE */
 .email-from-badge{
   display:inline-flex;align-items:center;gap:6px;
-  background:rgba(0,200,255,.08);border:1px solid rgba(0,200,255,.2);
+  background:rgba(0,102,204,.08);border:1px solid rgba(0,102,204,.2);
   border-radius:4px;padding:3px 10px;
   font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--acc);
   margin-bottom:10px;
@@ -333,7 +327,7 @@ footer span{color:var(--acc);}
   color:var(--acc2);cursor:pointer;text-decoration:underline;
   background:none;border:none;padding:0;
 }
-.email-cfg-link:hover{color:#fff;}
+.email-cfg-link:hover{color:var(--acc);}
 /* CONFIG MODAL */
 .cfg-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
 .cfg-grid .full{grid-column:span 2;}
@@ -348,10 +342,10 @@ footer span{color:var(--acc);}
   padding:8px 12px;border-radius:4px;margin-top:8px;display:none;
 }
 .cfg-status.show{display:block;}
-.cfg-status.ok{background:rgba(0,255,157,.1);border:1px solid var(--acc3);color:var(--acc3);}
-.cfg-status.err{background:rgba(255,60,60,.1);border:1px solid var(--red);color:#ff8888;}
+.cfg-status.ok{background:rgba(13,148,136,.1);border:1px solid var(--acc3);color:var(--acc3);}
+.cfg-status.err{background:rgba(220,38,38,.1);border:1px solid var(--red);color:var(--red);}
 .cfg-steps{
-  background:rgba(0,0,0,.3);border:1px solid var(--bdr);border-radius:6px;
+  background:#F8F8F8;border:1px solid var(--bdr);border-radius:6px;
   padding:12px 14px;margin-top:10px;
   font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim);
   line-height:1.8;
@@ -361,43 +355,43 @@ footer span{color:var(--acc);}
 .cfg-steps a:hover{text-decoration:underline;}
 .cfg-saved-badge{
   display:inline-flex;align-items:center;gap:5px;
-  background:rgba(0,255,157,.12);border:1px solid var(--acc3);
+  background:rgba(13,148,136,.12);border:1px solid var(--acc3);
   border-radius:3px;padding:2px 8px;
   font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--acc3);
 }
 /* TOOLS */
-.tool-tab-btn.active{background:rgba(244,166,0,.25)!important;border-color:var(--acc2)!important;color:var(--acc2)!important;}
+.tool-tab-btn.active{background:rgba(0,68,153,.1)!important;border-color:var(--acc)!important;color:var(--acc)!important;}
 .tool-panel{display:none;}
 .tool-panel.active{display:block;}
 .tool-panel{animation:fadein .2s ease;}
 @keyframes fadein{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
 /* CRUISE TABLE */
 .cruise-tbl{border-collapse:collapse;width:100%;font-family:Share Tech Mono,monospace;font-size:11px;}
-.cruise-tbl th{background:#0a1a30;color:var(--acc);padding:5px 10px;border:1px solid var(--bdr);text-align:center;letter-spacing:1px;}
+.cruise-tbl th{background:#E8E8E8;color:var(--txt);padding:5px 10px;border:1px solid var(--bdr);text-align:center;letter-spacing:1px;}
 .cruise-tbl td{padding:4px 10px;border:1px solid var(--bdr);text-align:center;color:var(--txt);}
-.cruise-tbl tr:hover td{background:rgba(0,200,255,.06);}
+.cruise-tbl tr:hover td{background:rgba(0,68,153,.04);}
 .cruise-tbl td.hi{color:var(--acc);font-weight:700;}
 /* I18 HELP */
 .i18-help-ico{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;
-  border-radius:50%;background:rgba(244,166,0,.2);border:1px solid var(--acc2);
-  color:var(--acc2);font-size:9px;font-weight:700;cursor:pointer;font-family:Share Tech Mono,monospace;
+  border-radius:50%;background:rgba(0,68,153,.15);border:1px solid var(--acc);
+  color:var(--acc);font-size:9px;font-weight:700;cursor:pointer;font-family:Share Tech Mono,monospace;
   transition:background .15s;vertical-align:middle;}
-.i18-help-ico:hover{background:rgba(244,166,0,.4);}
+.i18-help-ico:hover{background:rgba(0,68,153,.3);}
 .i18-help-table{width:100%;border-collapse:collapse;margin-top:8px;font-size:10px;}
-.i18-help-table th{background:#0a1a30;color:var(--acc);padding:5px 8px;border:1px solid var(--bdr);letter-spacing:1px;}
+.i18-help-table th{background:#E8E8E8;color:var(--txt);padding:5px 8px;border:1px solid var(--bdr);letter-spacing:1px;}
 .i18-help-table td{padding:4px 8px;border:1px solid var(--bdr);color:var(--txt);vertical-align:top;}
-.i18-help-table td:first-child{color:var(--acc2);font-weight:700;white-space:nowrap;}
-.i18-help-table tr:hover td{background:rgba(0,200,255,.05);}
+.i18-help-table td:first-child{color:var(--acc);font-weight:700;white-space:nowrap;}
+.i18-help-table tr:hover td{background:rgba(0,68,153,.03);}
 /* HELP ICON on labels */
 .help-ico{
   display:inline-flex;align-items:center;justify-content:center;
   width:14px;height:14px;border-radius:50%;
-  background:rgba(0,200,255,.15);border:1px solid rgba(0,200,255,.35);
+  background:rgba(0,102,204,.15);border:1px solid rgba(0,102,204,.35);
   color:var(--acc);font-size:9px;font-weight:700;cursor:help;
   font-family:'Share Tech Mono',monospace;flex-shrink:0;
   transition:background .15s;
 }
-.help-ico:hover{background:rgba(0,200,255,.3);}
+.help-ico:hover{background:rgba(0,102,204,.3);}
 </style>
 </head>
 <body>
@@ -998,7 +992,7 @@ footer span{color:var(--acc);}
   <div style="margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
     <div class="email-from-badge">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 7L2 7"/></svg>
-      DE: <b id="fromBadge" style="color:#fff">aroais.pe@gmail.com</b>
+      DE: <b id="fromBadge" style="color:var(--acc)">aroais.pe@gmail.com</b>
       &nbsp;<span id="cfgBadge" class="cfg-saved-badge" style="display:none">&#10003; CONFIGURADO</span>
     </div>
     <button type="button" class="email-cfg-link" onclick="openEmailConfig()">&#9881; Configurar envio automatico</button>
@@ -1021,7 +1015,7 @@ footer span{color:var(--acc);}
 
   <div class="email-note" style="margin-top:8px">
     <b>&#9432; Dos modos de envio:</b>
-    <br>&#9654; <b style="color:var(--acc3)">Automatico (recomendado):</b> Configura tu App Password de Gmail una sola vez y el <b style="color:#fff">PDF se envia como adjunto real</b> directamente desde <b><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="ff998f93d192949090bf98929e9693d19c9092">[email&#160;protected]</a></b>.
+    <br>&#9654; <b style="color:var(--acc3)">Automatico (recomendado):</b> Configura tu App Password de Gmail una sola vez y el <b style="color:var(--acc)">PDF se envia como adjunto real</b> directamente desde <b><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="ff998f93d192949090bf98929e9693d19c9092">[email&#160;protected]</a></b>.
     <br>&#9654; <b style="color:var(--acc)">Manual:</b> Si no esta configurado, se descarga el PDF y se abre tu cliente de correo para adjuntarlo.
   </div>
   <div class="email-status" id="emailStatus"></div>
@@ -1036,7 +1030,7 @@ footer span{color:var(--acc);}
     </div>
 
     <div class="cfg-steps">
-      <div style="background:rgba(0,255,157,.06);border:1px solid var(--acc3);border-radius:6px;padding:12px 14px;margin-bottom:12px">
+      <div style="background:rgba(13,148,136,.06);border:1px solid var(--acc3);border-radius:6px;padding:12px 14px;margin-bottom:12px">
         <div style="font-family:Share Tech Mono,monospace;font-size:11px;color:var(--acc3);letter-spacing:1px;margin-bottom:6px">
           &#10003; ENVÍO GESTIONADO POR EL SERVIDOR
         </div>
@@ -1062,7 +1056,7 @@ footer span{color:var(--acc);}
 
     <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
       <button type="button" class="db-save" onclick="testEmailConfig()"
-        style="background:rgba(0,200,255,.08);border-color:var(--acc);color:var(--acc)">
+        style="background:rgba(0,68,153,.08);border-color:var(--acc);color:var(--acc)">
         &#9654; Probar Envio
       </button>
       <button type="button" class="mc" onclick="closeMo('moEmailCfg')" style="margin-top:0">&#x2715; Cerrar</button>
@@ -1112,7 +1106,7 @@ footer span{color:var(--acc);}
       </div>
       <div style="display:flex;gap:8px;margin-top:8px">
         <button type="button" class="db-save" onclick="dbSaveAircraft()">&#128190; Guardar Aeronave</button>
-        <button type="button" class="db-save" onclick="dbFromFormAircraft()" style="background:rgba(0,200,255,.1);border-color:var(--acc);color:var(--acc)">&#8593; Cargar desde formulario</button>
+        <button type="button" class="db-save" onclick="dbFromFormAircraft()" style="background:rgba(0,68,153,.08);border-color:var(--acc);color:var(--acc)">&#8593; Cargar desde formulario</button>
       </div>
     </div>
 
@@ -1127,7 +1121,7 @@ footer span{color:var(--acc);}
       </div>
       <div style="display:flex;gap:8px;margin-top:8px">
         <button type="button" class="db-save" onclick="dbSavePilot()">&#128190; Guardar Piloto</button>
-        <button type="button" class="db-save" onclick="dbFromFormPilot()" style="background:rgba(0,200,255,.1);border-color:var(--acc);color:var(--acc)">&#8593; Cargar desde formulario</button>
+        <button type="button" class="db-save" onclick="dbFromFormPilot()" style="background:rgba(0,68,153,.08);border-color:var(--acc);color:var(--acc)">&#8593; Cargar desde formulario</button>
       </div>
     </div>
 
@@ -1146,7 +1140,7 @@ footer span{color:var(--acc);}
       </div>
       <div style="display:flex;gap:8px;margin-top:8px">
         <button type="button" class="db-save" onclick="dbSaveRoute()">&#128190; Guardar Ruta</button>
-        <button type="button" class="db-save" onclick="dbFromFormRoute()" style="background:rgba(0,200,255,.1);border-color:var(--acc);color:var(--acc)">&#8593; Cargar desde formulario</button>
+        <button type="button" class="db-save" onclick="dbFromFormRoute()" style="background:rgba(0,68,153,.08);border-color:var(--acc);color:var(--acc)">&#8593; Cargar desde formulario</button>
       </div>
     </div>
 
@@ -1589,7 +1583,7 @@ function calcFuel(){
 <span style="color:var(--dim)">Combustible alternado:</span>              <b style="color:var(--acc)">${altFuel.toFixed(1)} ${unit}</b><br>
 <span style="color:var(--dim)">Reserva final (${resFuel} min):</span>         <b style="color:var(--acc)">${resv.toFixed(1)} ${unit}</b><br>
 <span style="color:var(--bdr)">──────────────────────────────────────</span><br>
-<span style="color:var(--acc2);font-size:13px">TOTAL REQUERIDO:  <b style="color:#fff;font-size:15px">${total.toFixed(1)} ${unit}</b></span>
+<span style="color:var(--acc2);font-size:13px">TOTAL REQUERIDO:  <b style="color:var(--acc);font-size:15px">${total.toFixed(1)} ${unit}</b></span>
     `;
     // Auto-fill endurance
     const endH = Math.floor(flightMin/60);
@@ -1631,18 +1625,18 @@ function renderCruiseLevels(){
 
   const ths = `<th style="min-width:80px">FL</th><th style="min-width:90px">Pies (ft)</th><th style="min-width:80px">Metros (m)</th>`;
   let html = `<table style="width:100%;border-collapse:collapse;font-family:'Share Tech Mono',monospace;font-size:10px;">
-    <thead><tr style="background:rgba(0,100,200,.25);color:var(--acc);">
+    <thead><tr style="background:rgba(0,68,153,.08);color:var(--acc);">
       <th colspan="3" style="padding:6px 10px;text-align:left;letter-spacing:2px;font-size:10px;">RUMBO ${rows[0].label}</th>
       <th colspan="3" style="padding:6px 10px;text-align:left;letter-spacing:2px;font-size:10px;">RUMBO ${rows[1].label}</th>
     </tr>
-    <tr style="background:rgba(0,0,0,.3);color:var(--dim);">${ths}${ths}</tr></thead><tbody>`;
+    <tr style="background:#E8E8E8;color:var(--dim);">${ths}${ths}</tr></thead><tbody>`;
 
   const maxLen = Math.max(rows[0].levs.length, rows[1].levs.length);
   for(let i = 0; i < maxLen; i++){
     const L = rows[0].levs[i];
     const R = rows[1].levs[i];
     const even = i%2===0;
-    const bg = even ? 'rgba(0,0,0,.15)' : 'rgba(0,50,100,.12)';
+    const bg = even ? 'rgba(0,0,0,.02)' : 'rgba(0,68,153,.04)';
     const cellL = L
       ? `<td style="padding:4px 10px;color:var(--acc2)"><b>FL${String(L.fl).padStart(3,'0')}</b></td>
          <td style="padding:4px 10px;color:var(--txt)">${L.ft.toLocaleString()}</td>
