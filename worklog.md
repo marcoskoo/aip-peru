@@ -4961,3 +4961,74 @@ Stage Summary:
 - Fix: restarted dev server using double-fork daemon pattern for persistence
 - All sections verified working via Agent Browser with no errors
 - Dev server now running persistently on port 3000 (PID 6977)
+
+---
+Task ID: 20-WORLD-AIRWAYS
+Agent: Main Agent
+Task: Copiar todos los puntos de notificación, puntos de transferencia, waypoints, rutas y radioayudas DE TODO EL MUNDO al mapa interactivo, con énfasis especial en la construcción de rutas (basado en SkyVector.com).
+
+Work Log:
+- Verifiqué el estado actual: world-airports.json y world-navaids.json estaban vacíos (0 bytes)
+- Ejecuté scripts/process-world-aviation.mjs para poblar los JSON desde OurAirports CSV:
+  * 3,508 aeropuertos mundiales (large + medium scheduled + all PE)
+  * 11,009 radioayudas mundiales (VOR/DME/NDB/TACAN)
+  * 238 países
+- Creé scripts/generate-world-airways.mjs que genera:
+  * 164 aerovías curadas REALES con designadores reales (J1-J146, V1-V50, Q1-Q100, T1-T230, UZ1-UZ300, UM1-UM728, A1-A10, B1-B5, R1-R599, A1AF-A8AF, M1-M4, NAT-A/B/C/Z, PAC1-3, UZ1CA-UZ3CA)
+  * 1,690 aerovías procedurales (conectores regionales R500-R2189 entre aeropuertos large dentro de 1500 NM)
+  * 157 waypoints extra (NAT/PACOT entry-exit, FIR transfers US/CA/MX/EU/Africa/ME/Asia/Oceania/SAM, US/CA/MX VORs faltantes en OurAirports)
+- Total: 1,854 aerovías + 157 waypoints extra
+- Actualicé src/lib/aviation/world-data.ts:
+  * Añadí tipos WorldAirwayCompact, WorldWaypointExtra, WorldAirwayResolved
+  * Añadí loaders loadAirways() y loadExtraWaypoints()
+  * Implementé CoordEntry con campo country (para resolver colisiones de ident)
+  * Añadí resolveIdentNearest() con estrategia "sequential nearest" + preferredCountry
+  * Añadí inferPreferredCountry() basado en designador (J/V/Q/T→US, UZ/UM→EU, etc.)
+  * Implementé getAirwaysInBBox() con resolución secuencial y margen de 2°
+  * Implementé getExtraWaypointsInBBox()
+  * Actualicé getWorldCounts() para incluir airways y waypoints
+- Creé 2 nuevos endpoints API:
+  * /api/world/airways?bbox=minLat,minLon,maxLat,maxLon → devuelve aerovías con coords resueltas
+  * /api/world/waypoints?bbox=... → devuelve waypoints extra (FIR transfers, notif)
+- Actualicé src/components/interactive-map.tsx:
+  * Añadí tipos WorldAirwayFeature y WorldWaypointFeature
+  * Añadí estado worldAirwaysData y worldExtraWaypoints
+  * Actualicé handleViewportChange para también fetch airways y waypoints
+  * worldLayersEnabled ahora incluye worldAirways y worldWaypoints
+  * coordLookup ahora indexa: worldExtraWaypoints + todos los puntos de worldAirwaysData
+  * airwayIndex ahora combina: peruvian + WORLD_AIRWAYS estático + worldAirwaysData API
+  * allPoints ahora incluye worldExtraWaypoints (para combobox Origen/Destino)
+  * Activé worldWaypoints layer por defecto (ahora tiene 157+ puntos útiles)
+  * Añadí renderer para worldAirwaysData (1854 aerovías) con tooltips detallados
+  * Mantuve renderer para WORLD_AIRWAYS estático como fallback
+  * Añadí renderer para worldExtraWaypoints (FIR transfers, oceanic fixes)
+  * Panel de capas muestra conteos: aeródromos, radioayudas, aerovías, waypoints, países
+  * Añadí "En viewport:" contador en tiempo real
+  * Añadí función findAirwayPath() — BFS pathfinder a través de red de aerovías (máx 4 legs)
+  * Añadí buildAirwayRoute() — botón "Ruta por Aerovía" que busca automáticamente
+  * handleMapClick ahora incluye worldExtraWaypoints en búsqueda nearest-point
+  * Actualicé badge inferior: "AIP Perú + OurAirports (CC0) + Worldwide Airways"
+- Manejo de colisiones de ident OurAirports:
+  * Detecté 22 idents con colisión (MIA, BNA, ATL, BOS, etc. existen en múltiples países)
+  * Añadí 32 VORs US faltantes (MIA, ORD, DFW, MCO, PHX, DTW, PHL, BWI, IAD, HOU, TPA, SAN, ANA, RNO, SLC, OMA, MSY, JAX, BHM, CMH, IND, CLE, PIT, GAGE, IRON, ZBV, AOK, KEED, TLH, GRR, PAH, GBD)
+  * Añadí 3 VORs CA (YYZ, YZT, YYG) + 1 extra (YQT)
+  * Añadí 3 VORs MX (PEPEE, CRUZ, FRE)
+  * Sequential-nearest resolution: para cada aerovía, el primer ident usa preferredCountry, los siguientes usan el punto anterior como referencia
+  * Verificado: J6 ahora resuelve MIA→Miami US (25.79, -80.29) correctamente, no Mildura AU
+
+Stage Summary:
+- Datos mundiales completos cargados en el mapa:
+  * 3,508 aeropuertos (worldwide, viewport-filtered)
+  * 11,009 radioayudas (worldwide, viewport-filtered)
+  * 1,854 aerovías (164 curadas + 1690 procedurales, viewport-filtered)
+  * 157 waypoints extra (FIR transfers, oceanic fixes, VORs faltantes)
+  * 238 países
+- 4 capas mundiales en panel: Aeródromos, Radioayudas, Waypoints/Transf., Aerovías
+- Conteos en tiempo real: total mundial + en viewport actual
+- Construcción de rutas mejorada:
+  * airwayIndex combina 3 fuentes (peruanas + estáticas + API)
+  * ICAO route string builder detecta automáticamente designadores de aerovía
+  * Nuevo botón "Ruta por Aerovía" con BFS pathfinder (máx 4 legs)
+  * Si no encuentra ruta por aerovía, usa ruta directa como fallback
+- Manejo robusto de colisiones de ident (22 idents conflictivos resueltos)
+- Verificación: lint pasa limpio, dev server compila sin errores

@@ -1,0 +1,954 @@
+{
+  "US": {
+    "airports": 505,
+    "navaids": 2804
+  },
+  "AG": {
+    "airports": 2,
+    "navaids": 3
+  },
+  "SB": {
+    "airports": 2,
+    "navaids": 2
+  },
+  "NR": {
+    "airports": 1,
+    "navaids": 2
+  },
+  "AR": {
+    "airports": 44,
+    "navaids": 158
+  },
+  "AU": {
+    "airports": 118,
+    "navaids": 374
+  },
+  "CN": {
+    "airports": 224,
+    "navaids": 277
+  },
+  "PG": {
+    "airports": 21,
+    "navaids": 37
+  },
+  "GL": {
+    "airports": 10,
+    "navaids": 37
+  },
+  "IS": {
+    "airports": 8,
+    "navaids": 44
+  },
+  "XK": {
+    "airports": 1,
+    "navaids": 0
+  },
+  "BR": {
+    "airports": 95,
+    "navaids": 323
+  },
+  "BZ": {
+    "airports": 8,
+    "navaids": 2
+  },
+  "CA": {
+    "airports": 145,
+    "navaids": 622
+  },
+  "DZ": {
+    "airports": 28,
+    "navaids": 70
+  },
+  "BJ": {
+    "airports": 1,
+    "navaids": 5
+  },
+  "BF": {
+    "airports": 2,
+    "navaids": 6
+  },
+  "GH": {
+    "airports": 6,
+    "navaids": 9
+  },
+  "CI": {
+    "airports": 5,
+    "navaids": 27
+  },
+  "NG": {
+    "airports": 26,
+    "navaids": 42
+  },
+  "NE": {
+    "airports": 2,
+    "navaids": 10
+  },
+  "TN": {
+    "airports": 9,
+    "navaids": 21
+  },
+  "TG": {
+    "airports": 2,
+    "navaids": 6
+  },
+  "BE": {
+    "airports": 5,
+    "navaids": 31
+  },
+  "DE": {
+    "airports": 29,
+    "navaids": 225
+  },
+  "EE": {
+    "airports": 5,
+    "navaids": 13
+  },
+  "EG": {
+    "airports": 18,
+    "navaids": 34
+  },
+  "FI": {
+    "airports": 20,
+    "navaids": 58
+  },
+  "GB": {
+    "airports": 40,
+    "navaids": 177
+  },
+  "GG": {
+    "airports": 2,
+    "navaids": 4
+  },
+  "JE": {
+    "airports": 1,
+    "navaids": 1
+  },
+  "IM": {
+    "airports": 1,
+    "navaids": 2
+  },
+  "FK": {
+    "airports": 1,
+    "navaids": 4
+  },
+  "NL": {
+    "airports": 5,
+    "navaids": 35
+  },
+  "IE": {
+    "airports": 6,
+    "navaids": 24
+  },
+  "DK": {
+    "airports": 10,
+    "navaids": 23
+  },
+  "FO": {
+    "airports": 1,
+    "navaids": 4
+  },
+  "LU": {
+    "airports": 1,
+    "navaids": 5
+  },
+  "NO": {
+    "airports": 40,
+    "navaids": 143
+  },
+  "PL": {
+    "airports": 15,
+    "navaids": 58
+  },
+  "SE": {
+    "airports": 34,
+    "navaids": 67
+  },
+  "LV": {
+    "airports": 2,
+    "navaids": 6
+  },
+  "LT": {
+    "airports": 3,
+    "navaids": 10
+  },
+  "ZA": {
+    "airports": 23,
+    "navaids": 151
+  },
+  "BW": {
+    "airports": 4,
+    "navaids": 14
+  },
+  "CG": {
+    "airports": 2,
+    "navaids": 7
+  },
+  "SZ": {
+    "airports": 1,
+    "navaids": 2
+  },
+  "CF": {
+    "airports": 1,
+    "navaids": 10
+  },
+  "GQ": {
+    "airports": 4,
+    "navaids": 4
+  },
+  "SH": {
+    "airports": 2,
+    "navaids": 2
+  },
+  "MU": {
+    "airports": 2,
+    "navaids": 6
+  },
+  "CM": {
+    "airports": 5,
+    "navaids": 25
+  },
+  "ZM": {
+    "airports": 5,
+    "navaids": 20
+  },
+  "KM": {
+    "airports": 2,
+    "navaids": 4
+  },
+  "YT": {
+    "airports": 1,
+    "navaids": 2
+  },
+  "RE": {
+    "airports": 2,
+    "navaids": 4
+  },
+  "MG": {
+    "airports": 13,
+    "navaids": 29
+  },
+  "AO": {
+    "airports": 14,
+    "navaids": 32
+  },
+  "GA": {
+    "airports": 5,
+    "navaids": 21
+  },
+  "ST": {
+    "airports": 2,
+    "navaids": 3
+  },
+  "MZ": {
+    "airports": 11,
+    "navaids": 19
+  },
+  "SC": {
+    "airports": 2,
+    "navaids": 4
+  },
+  "TD": {
+    "airports": 2,
+    "navaids": 7
+  },
+  "ZW": {
+    "airports": 4,
+    "navaids": 34
+  },
+  "MW": {
+    "airports": 2,
+    "navaids": 10
+  },
+  "LS": {
+    "airports": 1,
+    "navaids": 3
+  },
+  "NA": {
+    "airports": 9,
+    "navaids": 15
+  },
+  "CD": {
+    "airports": 16,
+    "navaids": 53
+  },
+  "ML": {
+    "airports": 5,
+    "navaids": 15
+  },
+  "GM": {
+    "airports": 1,
+    "navaids": 2
+  },
+  "ES": {
+    "airports": 41,
+    "navaids": 180
+  },
+  "SL": {
+    "airports": 1,
+    "navaids": 3
+  },
+  "GW": {
+    "airports": 1,
+    "navaids": 2
+  },
+  "LR": {
+    "airports": 2,
+    "navaids": 4
+  },
+  "MA": {
+    "airports": 15,
+    "navaids": 36
+  },
+  "EH": {
+    "airports": 3,
+    "navaids": 4
+  },
+  "SN": {
+    "airports": 4,
+    "navaids": 14
+  },
+  "MR": {
+    "airports": 3,
+    "navaids": 13
+  },
+  "GN": {
+    "airports": 1,
+    "navaids": 16
+  },
+  "CV": {
+    "airports": 6,
+    "navaids": 7
+  },
+  "ET": {
+    "airports": 15,
+    "navaids": 19
+  },
+  "BI": {
+    "airports": 2,
+    "navaids": 9
+  },
+  "SO": {
+    "airports": 4,
+    "navaids": 0
+  },
+  "DJ": {
+    "airports": 1,
+    "navaids": 3
+  },
+  "ER": {
+    "airports": 1,
+    "navaids": 4
+  },
+  "SS": {
+    "airports": 3,
+    "navaids": 3
+  },
+  "KE": {
+    "airports": 11,
+    "navaids": 35
+  },
+  "LY": {
+    "airports": 8,
+    "navaids": 52
+  },
+  "RW": {
+    "airports": 2,
+    "navaids": 8
+  },
+  "SD": {
+    "airports": 7,
+    "navaids": 18
+  },
+  "TZ": {
+    "airports": 9,
+    "navaids": 24
+  },
+  "UG": {
+    "airports": 5,
+    "navaids": 7
+  },
+  "ID": {
+    "airports": 71,
+    "navaids": 216
+  },
+  "IN": {
+    "airports": 105,
+    "navaids": 175
+  },
+  "KG": {
+    "airports": 6,
+    "navaids": 18
+  },
+  "KH": {
+    "airports": 6,
+    "navaids": 10
+  },
+  "LA": {
+    "airports": 4,
+    "navaids": 11
+  },
+  "AL": {
+    "airports": 1,
+    "navaids": 3
+  },
+  "BG": {
+    "airports": 4,
+    "navaids": 29
+  },
+  "CY": {
+    "airports": 4,
+    "navaids": 7
+  },
+  "HR": {
+    "airports": 8,
+    "navaids": 34
+  },
+  "FR": {
+    "airports": 52,
+    "navaids": 182
+  },
+  "PM": {
+    "airports": 1,
+    "navaids": 3
+  },
+  "GR": {
+    "airports": 25,
+    "navaids": 115
+  },
+  "HU": {
+    "airports": 5,
+    "navaids": 54
+  },
+  "IT": {
+    "airports": 42,
+    "navaids": 166
+  },
+  "SI": {
+    "airports": 2,
+    "navaids": 9
+  },
+  "CZ": {
+    "airports": 6,
+    "navaids": 32
+  },
+  "IL": {
+    "airports": 3,
+    "navaids": 14
+  },
+  "MT": {
+    "airports": 1,
+    "navaids": 6
+  },
+  "AT": {
+    "airports": 6,
+    "navaids": 28
+  },
+  "PT": {
+    "airports": 18,
+    "navaids": 49
+  },
+  "BA": {
+    "airports": 4,
+    "navaids": 17
+  },
+  "RO": {
+    "airports": 16,
+    "navaids": 40
+  },
+  "CH": {
+    "airports": 5,
+    "navaids": 17
+  },
+  "TR": {
+    "airports": 48,
+    "navaids": 136
+  },
+  "MD": {
+    "airports": 1,
+    "navaids": 5
+  },
+  "MK": {
+    "airports": 2,
+    "navaids": 7
+  },
+  "GI": {
+    "airports": 1,
+    "navaids": 1
+  },
+  "RS": {
+    "airports": 3,
+    "navaids": 36
+  },
+  "ME": {
+    "airports": 2,
+    "navaids": 0
+  },
+  "SK": {
+    "airports": 4,
+    "navaids": 21
+  },
+  "TC": {
+    "airports": 4,
+    "navaids": 5
+  },
+  "DO": {
+    "airports": 8,
+    "navaids": 17
+  },
+  "GT": {
+    "airports": 4,
+    "navaids": 13
+  },
+  "HN": {
+    "airports": 6,
+    "navaids": 12
+  },
+  "JM": {
+    "airports": 4,
+    "navaids": 4
+  },
+  "MX": {
+    "airports": 59,
+    "navaids": 103
+  },
+  "NI": {
+    "airports": 3,
+    "navaids": 4
+  },
+  "PA": {
+    "airports": 7,
+    "navaids": 12
+  },
+  "CR": {
+    "airports": 10,
+    "navaids": 9
+  },
+  "SV": {
+    "airports": 2,
+    "navaids": 4
+  },
+  "HT": {
+    "airports": 4,
+    "navaids": 7
+  },
+  "CU": {
+    "airports": 15,
+    "navaids": 42
+  },
+  "KY": {
+    "airports": 2,
+    "navaids": 3
+  },
+  "BS": {
+    "airports": 22,
+    "navaids": 17
+  },
+  "CK": {
+    "airports": 1,
+    "navaids": 6
+  },
+  "FJ": {
+    "airports": 3,
+    "navaids": 13
+  },
+  "TO": {
+    "airports": 3,
+    "navaids": 4
+  },
+  "TV": {
+    "airports": 1,
+    "navaids": 1
+  },
+  "KI": {
+    "airports": 2,
+    "navaids": 4
+  },
+  "NU": {
+    "airports": 1,
+    "navaids": 1
+  },
+  "WF": {
+    "airports": 1,
+    "navaids": 3
+  },
+  "NP": {
+    "airports": 9,
+    "navaids": 25
+  },
+  "WS": {
+    "airports": 1,
+    "navaids": 2
+  },
+  "AS": {
+    "airports": 1,
+    "navaids": 3
+  },
+  "PF": {
+    "airports": 25,
+    "navaids": 29
+  },
+  "VU": {
+    "airports": 3,
+    "navaids": 5
+  },
+  "NC": {
+    "airports": 9,
+    "navaids": 16
+  },
+  "NZ": {
+    "airports": 26,
+    "navaids": 66
+  },
+  "AF": {
+    "airports": 6,
+    "navaids": 6
+  },
+  "BH": {
+    "airports": 1,
+    "navaids": 4
+  },
+  "SA": {
+    "airports": 30,
+    "navaids": 54
+  },
+  "IR": {
+    "airports": 42,
+    "navaids": 132
+  },
+  "JO": {
+    "airports": 3,
+    "navaids": 12
+  },
+  "KW": {
+    "airports": 1,
+    "navaids": 4
+  },
+  "LB": {
+    "airports": 1,
+    "navaids": 5
+  },
+  "OM": {
+    "airports": 5,
+    "navaids": 15
+  },
+  "AE": {
+    "airports": 8,
+    "navaids": 16
+  },
+  "PK": {
+    "airports": 19,
+    "navaids": 51
+  },
+  "IQ": {
+    "airports": 7,
+    "navaids": 14
+  },
+  "SY": {
+    "airports": 4,
+    "navaids": 19
+  },
+  "QA": {
+    "airports": 2,
+    "navaids": 3
+  },
+  "YE": {
+    "airports": 8,
+    "navaids": 15
+  },
+  "PE": {
+    "airports": 209,
+    "navaids": 50
+  },
+  "MP": {
+    "airports": 3,
+    "navaids": 2
+  },
+  "GU": {
+    "airports": 1,
+    "navaids": 3
+  },
+  "MH": {
+    "airports": 2,
+    "navaids": 4
+  },
+  "FM": {
+    "airports": 4,
+    "navaids": 4
+  },
+  "PW": {
+    "airports": 1,
+    "navaids": 1
+  },
+  "UM": {
+    "airports": 1,
+    "navaids": 2
+  },
+  "TW": {
+    "airports": 14,
+    "navaids": 51
+  },
+  "JP": {
+    "airports": 84,
+    "navaids": 219
+  },
+  "KR": {
+    "airports": 15,
+    "navaids": 51
+  },
+  "PH": {
+    "airports": 40,
+    "navaids": 57
+  },
+  "RU": {
+    "airports": 137,
+    "navaids": 460
+  },
+  "CL": {
+    "airports": 17,
+    "navaids": 64
+  },
+  "EC": {
+    "airports": 12,
+    "navaids": 45
+  },
+  "PY": {
+    "airports": 3,
+    "navaids": 14
+  },
+  "CO": {
+    "airports": 42,
+    "navaids": 101
+  },
+  "BO": {
+    "airports": 13,
+    "navaids": 44
+  },
+  "SR": {
+    "airports": 1,
+    "navaids": 1
+  },
+  "GF": {
+    "airports": 3,
+    "navaids": 7
+  },
+  "UY": {
+    "airports": 3,
+    "navaids": 22
+  },
+  "VE": {
+    "airports": 20,
+    "navaids": 86
+  },
+  "GY": {
+    "airports": 4,
+    "navaids": 5
+  },
+  "BB": {
+    "airports": 1,
+    "navaids": 2
+  },
+  "DM": {
+    "airports": 2,
+    "navaids": 2
+  },
+  "MQ": {
+    "airports": 1,
+    "navaids": 2
+  },
+  "MF": {
+    "airports": 1,
+    "navaids": 0
+  },
+  "BL": {
+    "airports": 1,
+    "navaids": 0
+  },
+  "GP": {
+    "airports": 2,
+    "navaids": 4
+  },
+  "GD": {
+    "airports": 1,
+    "navaids": 2
+  },
+  "VI": {
+    "airports": 2,
+    "navaids": 3
+  },
+  "PR": {
+    "airports": 8,
+    "navaids": 7
+  },
+  "KN": {
+    "airports": 2,
+    "navaids": 1
+  },
+  "LC": {
+    "airports": 2,
+    "navaids": 3
+  },
+  "TM": {
+    "airports": 6,
+    "navaids": 15
+  },
+  "AW": {
+    "airports": 1,
+    "navaids": 2
+  },
+  "BQ": {
+    "airports": 3,
+    "navaids": 6
+  },
+  "CW": {
+    "airports": 1,
+    "navaids": 0
+  },
+  "SX": {
+    "airports": 1,
+    "navaids": 0
+  },
+  "AI": {
+    "airports": 1,
+    "navaids": 1
+  },
+  "MS": {
+    "airports": 1,
+    "navaids": 1
+  },
+  "TT": {
+    "airports": 2,
+    "navaids": 4
+  },
+  "VG": {
+    "airports": 2,
+    "navaids": 1
+  },
+  "VC": {
+    "airports": 5,
+    "navaids": 2
+  },
+  "BM": {
+    "airports": 1,
+    "navaids": 1
+  },
+  "KZ": {
+    "airports": 21,
+    "navaids": 83
+  },
+  "AZ": {
+    "airports": 5,
+    "navaids": 17
+  },
+  "AM": {
+    "airports": 2,
+    "navaids": 12
+  },
+  "GE": {
+    "airports": 5,
+    "navaids": 15
+  },
+  "UA": {
+    "airports": 12,
+    "navaids": 125
+  },
+  "BY": {
+    "airports": 4,
+    "navaids": 21
+  },
+  "TJ": {
+    "airports": 4,
+    "navaids": 11
+  },
+  "UZ": {
+    "airports": 12,
+    "navaids": 41
+  },
+  "LK": {
+    "airports": 7,
+    "navaids": 10
+  },
+  "BD": {
+    "airports": 8,
+    "navaids": 17
+  },
+  "HK": {
+    "airports": 1,
+    "navaids": 6
+  },
+  "MO": {
+    "airports": 1,
+    "navaids": 2
+  },
+  "VN": {
+    "airports": 21,
+    "navaids": 46
+  },
+  "BT": {
+    "airports": 1,
+    "navaids": 2
+  },
+  "MV": {
+    "airports": 7,
+    "navaids": 7
+  },
+  "TH": {
+    "airports": 33,
+    "navaids": 93
+  },
+  "MM": {
+    "airports": 17,
+    "navaids": 40
+  },
+  "MY": {
+    "airports": 26,
+    "navaids": 59
+  },
+  "BN": {
+    "airports": 1,
+    "navaids": 3
+  },
+  "TL": {
+    "airports": 4,
+    "navaids": 2
+  },
+  "SG": {
+    "airports": 2,
+    "navaids": 8
+  },
+  "CC": {
+    "airports": 1,
+    "navaids": 3
+  },
+  "CX": {
+    "airports": 1,
+    "navaids": 1
+  },
+  "NF": {
+    "airports": 1,
+    "navaids": 2
+  },
+  "KP": {
+    "airports": 4,
+    "navaids": 5
+  },
+  "MN": {
+    "airports": 12,
+    "navaids": 23
+  },
+  "AQ": {
+    "airports": 0,
+    "navaids": 12
+  },
+  "PS": {
+    "airports": 0,
+    "navaids": 3
+  },
+  "IO": {
+    "airports": 0,
+    "navaids": 2
+  },
+  "TK": {
+    "airports": 0,
+    "navaids": 1
+  }
+}

@@ -58,6 +58,11 @@ import { INTERNATIONAL_NAVAIDS, type IntlNavaid } from "@/lib/aviation/peru-nava
 import { PERUVIAN_WAYPOINTS, PERUVIAN_AIRWAYS, type PeruvianWaypointExt } from "@/lib/aviation/peru-airways-static"
 import { FIR_TRANSFERS, TRANSFER_POINT_IDS, type FirTransfer } from "@/lib/aviation/peru-fir-transfers"
 import { TMA_SECTORS_DATA, RESTRICTED_AIRSPACE } from "@/lib/aviation/peru-airspace"
+import {
+  WORLD_WAYPOINTS,
+  WORLD_AIRWAYS,
+  type WorldWaypoint,
+} from "@/lib/aviation/world-waypoints-static"
 
 // ─── Color Palette (Light Aeronautical Chart Theme) ─────────────
 // Based on classic aviation charts: white land, dark blue airways,
@@ -163,6 +168,11 @@ interface LayerState {
   tmaSectors: boolean
   restricted: boolean
   grid: boolean
+  // World layers (loaded via API on viewport change)
+  worldAirports: boolean
+  worldNavaids: boolean
+  worldWaypoints: boolean
+  worldAirways: boolean
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────
@@ -311,6 +321,70 @@ function buildIcaoRouteString(
     tokens.push(cur.id)
   }
   return tokens.join(" ")
+}
+
+// ─── Airway Network Graph & BFS Path Finder ────────────────────────────
+// Build a node→[neighbors] graph from the airway pair index, then use BFS
+// to find the shortest path (in number of legs) between two idents.
+// Each edge stores the airway designator so we can reconstruct the route.
+//
+// Example: findAirwayPath("SPJC", "SPCL", idx) might return:
+//   ["SPJC", "V5", "TAP", "V5", "ISRES", "V321", "SPCL"]
+// which is then turned into the ICAO string "SPJC V5 TAP ISRES V321 SPCL".
+
+interface AirwayGraph {
+  // node ident → list of { neighbor, designator }
+  edges: Map<string, { neighbor: string; designator: string }[]>
+}
+
+function buildAirwayGraph(idx: AirwayIndex): AirwayGraph {
+  const g: AirwayGraph = { edges: new Map() }
+  for (const [k, airs] of idx.pair) {
+    const [from, to] = k.split("→")
+    if (!from || !to) continue
+    // Use the first airway designator (pair index already dedupes)
+    const designator = airs[0]?.designator || "DCT"
+    if (!g.edges.has(from)) g.edges.set(from, [])
+    g.edges.get(from)!.push({ neighbor: to, designator })
+  }
+  return g
+}
+
+/**
+ * BFS pathfinder through the airway network.
+ * Returns the sequence of idents to visit (without airway designators),
+ * or null if no path found within maxDepth legs.
+ *
+ * The result includes intermediate waypoints that the route should pass
+ * through. The caller can then look up coordinates for each ident via
+ * coordLookup and build a RoutePoint[] for display.
+ */
+function findAirwayPath(
+  start: string,
+  end: string,
+  idx: AirwayIndex,
+  maxDepth = 4
+): string[] | null {
+  if (start === end) return [start]
+  const g = buildAirwayGraph(idx)
+  if (!g.edges.has(start) || !g.edges.has(end)) return null
+
+  // BFS with path tracking
+  const queue: { node: string; path: string[] }[] = [{ node: start, path: [start] }]
+  const visited = new Set<string>([start])
+  while (queue.length > 0) {
+    const { node, path } = queue.shift()!
+    if (path.length - 1 >= maxDepth) continue
+    const edges = g.edges.get(node) || []
+    for (const edge of edges) {
+      if (visited.has(edge.neighbor)) continue
+      const newPath = [...path, edge.neighbor]
+      if (edge.neighbor === end) return newPath
+      visited.add(edge.neighbor)
+      queue.push({ node: edge.neighbor, path: newPath })
+    }
+  }
+  return null
 }
 
 // ─── Icons ───────────────────────────────────────────────────────
@@ -634,6 +708,43 @@ function MapClickHandler({
   return null
 }
 
+// ─── Viewport Tracker ────────────────────────────────────────────
+// Fires onMapMove callback whenever the map is moved/zoomed.
+// Used to fetch world airports/navaids in the new viewport.
+function ViewportTracker({ onMapMove, enabled }: {
+  onMapMove: (bbox: { minLat: number; maxLat: number; minLon: number; maxLon: number }, zoom: number) => void
+  enabled: boolean
+}) {
+  const map = useMap()
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    if (!enabled) return
+    const handler = () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+      debounceRef.current = setTimeout(() => {
+        const b = map.getBounds()
+        onMapMove({
+          minLat: b.getSouth(),
+          maxLat: b.getNorth(),
+          minLon: b.getWest(),
+          maxLon: b.getEast(),
+        }, map.getZoom())
+      }, 350)
+    }
+    // Initial fire on mount
+    handler()
+    map.on("moveend", handler)
+    map.on("zoomend", handler)
+    return () => {
+      map.off("moveend", handler)
+      map.off("zoomend", handler)
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+    }
+  }, [map, onMapMove, enabled])
+  return null
+}
+
 // ─── Main Component ──────────────────────────────────────────────
 interface InteractiveMapProps {
   onSendToFlightPlan?: (route: RoutePoint[], summary: RouteSummary) => void
@@ -654,6 +765,11 @@ export function InteractiveMap({ onSendToFlightPlan }: InteractiveMapProps = {})
     tmaSectors: false, // TMA/CTR polygons — off by default
     restricted: false, // restricted/prohibited/danger zones — off by default
     grid: false,
+    // World layers — on by default so worldwide data shows when panning away from Peru
+    worldAirports: true,
+    worldNavaids: true,
+    worldWaypoints: true, // now includes 157+ FIR transfer/notif points + curated set
+    worldAirways: true,
   })
   const [route, setRoute] = useState<RoutePoint[]>([])
   const [origin, setOrigin] = useState<string>("")
@@ -665,6 +781,61 @@ export function InteractiveMap({ onSendToFlightPlan }: InteractiveMapProps = {})
   const [history, setHistory] = useState<RoutePoint[][]>([])
   // SkyVector-style basemap selector ("World Hi" / "World Lo" / "World VFR")
   const [basemap, setBasemap] = useState<BasemapId>("hi")
+
+  // ─── World data state (loaded via API based on viewport) ─────────
+  // These are worldwide airports/navaids that load when the user pans
+  // outside Peru. They're fetched from /api/world/* with bbox filtering.
+  interface WorldAirportFeature {
+    icao: string
+    name: string
+    country: string
+    type: string
+    lat: number
+    lon: number
+    elevation: number | null
+    iata: string | null
+    city: string | null
+  }
+  interface WorldNavaidFeature {
+    ident: string
+    name: string
+    type: string
+    frequency: string
+    country: string
+    lat: number
+    lon: number
+    elevation: number | null
+  }
+  // World airway (resolved with coordinates) returned by /api/world/airways
+  interface WorldAirwayFeature {
+    designator: string
+    type: "CONVENTIONAL" | "RNAV"
+    level: "LOWER" | "UPPER" | "BOTH"
+    points: { ident: string; lat: number; lon: number }[]
+    totalDistance: number
+  }
+  // World extra waypoint (FIR transfer / notification / oceanic fix)
+  // returned by /api/world/waypoints
+  interface WorldWaypointFeature {
+    id: string
+    name: string
+    lat: number
+    lon: number
+    country: string
+    region: string
+    description: string
+    transfer: boolean
+    notif: boolean
+  }
+  const [worldAirports, setWorldAirports] = useState<WorldAirportFeature[]>([])
+  const [worldNavaids, setWorldNavaids] = useState<WorldNavaidFeature[]>([])
+  const [worldAirwaysData, setWorldAirwaysData] = useState<WorldAirwayFeature[]>([])
+  const [worldExtraWaypoints, setWorldExtraWaypoints] = useState<WorldWaypointFeature[]>([])
+  const [worldCounts, setWorldCounts] = useState<{ airports: number; navaids: number; airways: number; waypoints: number; countries: number } | null>(null)
+  // Track the current viewport bbox to avoid redundant fetches
+  const lastFetchedBboxRef = useRef<string>("")
+  // Track if world data layers are enabled (so we don't fetch when all are off)
+  const worldLayersEnabled = layers.worldAirports || layers.worldNavaids || layers.worldAirways || layers.worldWaypoints
 
   // Refs to avoid stale closures in drag handlers (updated in effect, not during render)
   const routeRef = useRef(route)
@@ -735,14 +906,132 @@ export function InteractiveMap({ onSendToFlightPlan }: InteractiveMapProps = {})
     const m = buildCoordLookup(data.waypoints, data.navaids, PERUVIAN_AIRPORTS)
     // Also index international navaids so airways crossing the border resolve
     for (const nv of INTERNATIONAL_NAVAIDS) m.set(nv.id, { lat: nv.lat, lon: nv.lon })
+    // Index world airports and navaids so world airways segments resolve too
+    for (const a of worldAirports) m.set(a.icao, { lat: a.lat, lon: a.lon })
+    for (const n of worldNavaids) m.set(n.ident, { lat: n.lat, lon: n.lon })
+    // Index world waypoints (curated set)
+    for (const w of WORLD_WAYPOINTS) m.set(w.id, { lat: w.lat, lon: w.lon })
+    // Index world extra waypoints (FIR transfers, oceanic fixes from API)
+    for (const w of worldExtraWaypoints) m.set(w.id, { lat: w.lat, lon: w.lon })
+    // Index all points from world airways (so any airway endpoint is resolvable)
+    for (const aw of worldAirwaysData) {
+      for (const p of aw.points) m.set(p.ident, { lat: p.lat, lon: p.lon })
+    }
     return m
-  }, [data])
+  }, [data, worldAirports, worldNavaids, worldExtraWaypoints, worldAirwaysData])
+
+  // ─── World data fetcher (viewport-based) ────────────────────────
+  // Fetches worldwide airports/navaids/airways/waypoints in the current viewport.
+  // Skips if bbox hasn't changed meaningfully. Also fetches total counts once.
+  const handleViewportChange = useCallback((bbox: { minLat: number; maxLat: number; minLon: number; maxLon: number }, _zoom: number) => {
+    // Build a coarse bbox key to avoid refetching on tiny moves
+    const round = (v: number) => Math.round(v * 10) / 10
+    const key = `${round(bbox.minLat)},${round(bbox.minLon)},${round(bbox.maxLat)},${round(bbox.maxLon)}`
+    if (key === lastFetchedBboxRef.current) return
+    lastFetchedBboxRef.current = key
+
+    const bboxStr = `${bbox.minLat.toFixed(3)},${bbox.minLon.toFixed(3)},${bbox.maxLat.toFixed(3)},${bbox.maxLon.toFixed(3)}`
+
+    // Fetch airports in viewport (if layer enabled)
+    if (layers.worldAirports) {
+      fetch(`/api/world/airports?bbox=${bboxStr}`)
+        .then(r => r.json())
+        .then(j => {
+          if (j && Array.isArray(j.airports)) {
+            setWorldAirports(j.airports as WorldAirportFeature[])
+          }
+        })
+        .catch(err => console.error("[world-airports] fetch failed:", err))
+    }
+    // Fetch navaids in viewport (if layer enabled)
+    if (layers.worldNavaids) {
+      fetch(`/api/world/navaids?bbox=${bboxStr}`)
+        .then(r => r.json())
+        .then(j => {
+          if (j && Array.isArray(j.navaids)) {
+            setWorldNavaids(j.navaids as WorldNavaidFeature[])
+          }
+        })
+        .catch(err => console.error("[world-navaids] fetch failed:", err))
+    }
+    // Fetch airways in viewport (if layer enabled)
+    if (layers.worldAirways) {
+      fetch(`/api/world/airways?bbox=${bboxStr}`)
+        .then(r => r.json())
+        .then(j => {
+          if (j && Array.isArray(j.airways)) {
+            setWorldAirwaysData(j.airways as WorldAirwayFeature[])
+          }
+        })
+        .catch(err => console.error("[world-airways] fetch failed:", err))
+    }
+    // Fetch extra waypoints in viewport (if layer enabled)
+    if (layers.worldWaypoints) {
+      fetch(`/api/world/waypoints?bbox=${bboxStr}`)
+        .then(r => r.json())
+        .then(j => {
+          if (j && Array.isArray(j.waypoints)) {
+            setWorldExtraWaypoints(j.waypoints as WorldWaypointFeature[])
+          }
+        })
+        .catch(err => console.error("[world-waypoints] fetch failed:", err))
+    }
+  }, [layers.worldAirports, layers.worldNavaids, layers.worldAirways, layers.worldWaypoints])
+
+  // Fetch total world counts once on mount
+  useEffect(() => {
+    fetch("/api/world/counts")
+      .then(r => r.json())
+      .then(j => {
+        if (j && typeof j.airports === "number") {
+          setWorldCounts(j)
+        }
+      })
+      .catch(err => console.error("[world-counts] fetch failed:", err))
+  }, [])
 
   // Airway pair index (used for ICAO route string construction)
+  // Includes: Peruvian airways (static) + curated WORLD_AIRWAYS (static)
+  // + world airways from the API (fetched per viewport, much more comprehensive)
   const airwayIndex = useMemo<AirwayIndex>(() => {
     if (!data) return { pair: new Map() }
-    return buildAirwayIndex(data.airways)
-  }, [data])
+    const peruvianIdx = buildAirwayIndex(data.airways)
+    const worldStaticIdx = buildAirwayIndex({ conventional: WORLD_AIRWAYS, rnav: [] })
+    // Build index from world airways fetched via API (resolved with coords already)
+    const worldApiIdx: AirwayIndex = { pair: new Map() }
+    for (const aw of worldAirwaysData) {
+      for (let i = 0; i < aw.points.length - 1; i++) {
+        const from = aw.points[i].ident
+        const to = aw.points[i + 1].ident
+        const k1 = `${from}→${to}`
+        const k2 = `${to}→${from}`
+        const entry = { designator: aw.designator, level: aw.level, type: aw.type }
+        for (const k of [k1, k2]) {
+          if (!worldApiIdx.pair.has(k)) worldApiIdx.pair.set(k, [])
+          const arr = worldApiIdx.pair.get(k)!
+          if (!arr.some(e => e.designator === entry.designator)) arr.push(entry)
+        }
+      }
+    }
+    // Merge all three indexes: peruvian + world static + world API
+    const merged: AirwayIndex = { pair: new Map() }
+    for (const [k, v] of peruvianIdx.pair) merged.pair.set(k, [...v])
+    for (const [k, v] of worldStaticIdx.pair) {
+      const existing = merged.pair.get(k) || []
+      for (const e of v) {
+        if (!existing.some(x => x.designator === e.designator)) existing.push(e)
+      }
+      merged.pair.set(k, existing)
+    }
+    for (const [k, v] of worldApiIdx.pair) {
+      const existing = merged.pair.get(k) || []
+      for (const e of v) {
+        if (!existing.some(x => x.designator === e.designator)) existing.push(e)
+      }
+      merged.pair.set(k, existing)
+    }
+    return merged
+  }, [data, worldAirwaysData])
 
   // ICAO route string built from current route points (e.g. "SPJC DCT TAP V5 ISRES V321 SPCL")
   const icaoRouteString = useMemo(
@@ -751,6 +1040,8 @@ export function InteractiveMap({ onSendToFlightPlan }: InteractiveMapProps = {})
   )
 
   // All selectable points for dropdowns
+  // Includes Peruvian airports/navaids/waypoints + world airports/navaids in viewport
+  // + world waypoints (curated) + international navaids (adjacent FIRs)
   const allPoints = useMemo<RoutePoint[]>(() => {
     const pts: RoutePoint[] = []
     for (const ap of PERUVIAN_AIRPORTS) {
@@ -781,12 +1072,44 @@ export function InteractiveMap({ onSendToFlightPlan }: InteractiveMapProps = {})
         })
       }
     }
+    // World airports (loaded via API in current viewport)
+    for (const a of worldAirports) {
+      if (a.country === "PE") continue // already in PERUVIAN_AIRPORTS
+      pts.push({
+        id: a.icao, name: `${a.icao} — ${a.name}${a.city ? ` (${a.city})` : ""} [${a.country}]`,
+        type: "AIRPORT", lat: a.lat, lon: a.lon,
+      })
+    }
+    // World navaids (loaded via API in current viewport)
+    for (const n of worldNavaids) {
+      if (n.country === "PE") continue // already in PERUVIAN_NAVAIDS
+      pts.push({
+        id: n.ident, name: `${n.ident} — ${n.name} [${n.country}]`,
+        type: "NAVAID", lat: n.lat, lon: n.lon,
+      })
+    }
+    // World waypoints (curated global set)
+    for (const w of WORLD_WAYPOINTS) {
+      pts.push({
+        id: w.id, name: `${w.id}${w.description ? ` — ${w.description}` : ""}${w.country ? ` [${w.country}]` : ""}`,
+        type: "WAYPOINT", lat: w.lat, lon: w.lon,
+      })
+    }
+    // World extra waypoints from API (FIR transfers, oceanic fixes, major intersections)
+    for (const w of worldExtraWaypoints) {
+      // Skip if already added (e.g., duplicate with WORLD_WAYPOINTS)
+      if (pts.some(p => p.id === w.id)) continue
+      pts.push({
+        id: w.id, name: `${w.id}${w.description ? ` — ${w.description}` : ""} [${w.country}]`,
+        type: "WAYPOINT", lat: w.lat, lon: w.lon,
+      })
+    }
     // Deduplicate by id (in case waypoints overlap with navaids/airports)
     const seen = new Set<string>()
     return pts
       .filter((p) => (seen.has(p.id) ? false : (seen.add(p.id), true)))
       .sort((a, b) => a.id.localeCompare(b.id))
-  }, [data])
+  }, [data, worldAirports, worldNavaids, worldExtraWaypoints])
 
   // Route calculations
   const routeStats = useMemo(() => {
@@ -916,14 +1239,95 @@ export function InteractiveMap({ onSendToFlightPlan }: InteractiveMapProps = {})
     }
   }, [origin, dest, allPoints, route.length])
 
+  // Smart route: find a path through the airway network between origin and dest.
+  // Uses BFS (max depth 4 legs) to find intermediate waypoints.
+  // Falls back to direct route if no airway path found.
+  const buildAirwayRoute = useCallback(() => {
+    if (!origin || !dest) return
+    const a = allPoints.find((p) => p.id === origin)
+    const b = allPoints.find((p) => p.id === dest)
+    if (!a || !b) return
+    // Try to find a path through airways
+    const path = findAirwayPath(origin, dest, airwayIndex, 4)
+    if (!path || path.length < 2) {
+      // No airway path — fall back to direct
+      if (route.length > 0) setHistory((h) => [...h, routeRef.current])
+      setRoute([a, b])
+      return
+    }
+    // Resolve each ident in the path to a RoutePoint
+    const newRoute: RoutePoint[] = []
+    for (const ident of path) {
+      if (ident === origin) {
+        newRoute.push(a)
+      } else if (ident === dest) {
+        newRoute.push(b)
+      } else {
+        // Look up coordinates for the intermediate ident
+        const c = coordLookup.get(ident)
+        if (c) {
+          // Find the original point to get its type/name
+          const original = allPoints.find(p => p.id === ident)
+          newRoute.push({
+            id: ident,
+            name: original?.name || ident,
+            type: original?.type || "WAYPOINT",
+            lat: c.lat,
+            lon: c.lon,
+          })
+        }
+      }
+    }
+    if (newRoute.length >= 2) {
+      if (route.length > 0) setHistory((h) => [...h, routeRef.current])
+      setRoute(newRoute)
+    } else {
+      // Fallback to direct
+      if (route.length > 0) setHistory((h) => [...h, routeRef.current])
+      setRoute([a, b])
+    }
+  }, [origin, dest, allPoints, airwayIndex, coordLookup, route.length])
+
   // Handle map click in route mode — find nearest point
+  // Searches Peruvian + world airports/navaids + waypoints
   const handleMapClick = useCallback((lat: number, lon: number) => {
     if (!routeMode || !data) return
-    const nearest = findNearestPoint(lat, lon, PERUVIAN_AIRPORTS, data.navaids, data.waypoints || [], 0.5)
+    // Build a combined list of world airports/navaids for nearest-point search
+    const worldAirportsAsPeruvian: PeruvianAirport[] = worldAirports.map(a => ({
+      icao: a.icao, name: a.name, city: a.city || "",
+      dept: "",
+      lat: a.lat, lng: a.lon,
+      elev: a.elevation ?? undefined,
+      cert: a.type === "large_airport" ? "INTERNACIONAL" : "NACIONAL",
+    }))
+    const worldNavaidsAsNavaid: Navaid[] = worldNavaids.map(n => ({
+      id: n.ident, name: n.name, type: n.type,
+      frequency: n.frequency, lat: n.lat, lon: n.lon,
+    }))
+    // Combine Peruvian + world (Peruvian first for priority)
+    const allAirports = [...PERUVIAN_AIRPORTS, ...worldAirportsAsPeruvian]
+    const allNavaids = [...data.navaids, ...worldNavaidsAsNavaid]
+    // Combine Peruvian waypoints + world waypoints + world extra waypoints
+    const worldWpsAsWaypoint: Waypoint[] = WORLD_WAYPOINTS.map(w => ({
+      id: w.id, name: w.name, type: w.type, lat: w.lat, lon: w.lon, description: w.description,
+    }))
+    const worldExtraWpsAsWaypoint: Waypoint[] = worldExtraWaypoints.map(w => ({
+      id: w.id, name: w.id, type: "WAYPOINT", lat: w.lat, lon: w.lon, description: w.description,
+    }))
+    const allWaypoints = [...(data.waypoints || []), ...worldWpsAsWaypoint, ...worldExtraWpsAsWaypoint]
+    const nearest = findNearestPoint(lat, lon, allAirports, allNavaids, allWaypoints, 0.5)
     if (nearest) {
       addToRoute(nearest)
+    } else {
+      // No nearby navaid/airport — add as custom coordinate point
+      addToRoute({
+        id: `${lat.toFixed(2)}N ${lon.toFixed(2)}W`,
+        name: `Lat ${lat.toFixed(4)}° Lon ${lon.toFixed(4)}°`,
+        type: "CUSTOM",
+        lat, lon,
+      })
     }
-  }, [routeMode, data, addToRoute])
+  }, [routeMode, data, addToRoute, worldAirports, worldNavaids, worldExtraWaypoints])
 
   if (loading) {
     return <Skeleton className="h-[600px] w-full" />
@@ -964,6 +1368,19 @@ export function InteractiveMap({ onSendToFlightPlan }: InteractiveMapProps = {})
             >
               <MapPin className="size-3 mr-1" />
               Ruta Directa
+            </Button>
+
+            {/* RUTA POR AEROVÍA — uses BFS pathfinder through the airway network */}
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={buildAirwayRoute}
+              disabled={!origin || !dest}
+              className="h-8 text-xs border-[#0e7490]/50 text-[#0e7490] hover:bg-[#0e7490]/15 hover:text-[#0e7490] bg-[#ecfeff]/40"
+              title="Busca automáticamente una ruta a través de la red de aerovías (BFS, máx. 4 legs). Si no encuentra ruta, usa directa."
+            >
+              <Route className="size-3 mr-1" />
+              Ruta por Aerovía
             </Button>
 
             {/* EDITAR RUTA toggle — enables drag-and-drop of route points */}
@@ -1128,10 +1545,10 @@ export function InteractiveMap({ onSendToFlightPlan }: InteractiveMapProps = {})
           <CardContent className="p-3">
             <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2">
               {([
-                { key: "aerodromos", label: "Aeródromos", icon: Plane },
-                { key: "navaids", label: "Radioayudas", icon: Radio },
+                { key: "aerodromos", label: "Aeródromos PE", icon: Plane },
+                { key: "navaids", label: "Radioayudas PE", icon: Radio },
                 { key: "intlNavaids", label: "Radioay. Intl", icon: Radio },
-                { key: "waypoints", label: "Waypoints", icon: Navigation2 },
+                { key: "waypoints", label: "Waypoints PE", icon: Navigation2 },
                 { key: "transferPoints", label: "Pts. Notificac.", icon: Crosshair },
                 { key: "convAirways", label: "Aerovías Conv.", icon: Route },
                 { key: "rnavAirways", label: "Aerovías RNAV", icon: Route },
@@ -1153,6 +1570,43 @@ export function InteractiveMap({ onSendToFlightPlan }: InteractiveMapProps = {})
                   </Label>
                 </div>
               ))}
+            </div>
+            {/* World layers — separate row for clarity */}
+            <div className="mt-2 pt-2 border-t border-slate-200">
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className="text-[9px] font-bold text-[#0e7490] tracking-wider uppercase">🌐 Datos Mundiales</span>
+                {worldCounts && (
+                  <span className="text-[9px] font-mono text-slate-500">
+                    {worldCounts.airports.toLocaleString()} aeródromos · {worldCounts.navaids.toLocaleString()} radioayudas · {worldCounts.airways.toLocaleString()} aerovías · {worldCounts.waypoints} waypoints · {worldCounts.countries} países
+                  </span>
+                )}
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2">
+                {([
+                  { key: "worldAirports", label: "Aeródromos Mundo", icon: Plane },
+                  { key: "worldNavaids", label: "Radioayudas Mundo", icon: Radio },
+                  { key: "worldWaypoints", label: "Waypoints / Transf.", icon: Navigation2 },
+                  { key: "worldAirways", label: "Aerovías Mundo", icon: Route },
+                ] as const).map(({ key, label, icon: Icon }) => (
+                  <div key={key} className="flex items-center gap-1.5">
+                    <Checkbox
+                      id={`layer-${key}`}
+                      checked={layers[key]}
+                      onCheckedChange={(v) => setLayers((prev) => ({ ...prev, [key]: !!v }))}
+                    />
+                    <Label htmlFor={`layer-${key}`} className="text-[10px] cursor-pointer flex items-center gap-1 leading-tight text-slate-600">
+                      <Icon className="size-3 text-[#0e7490]" />
+                      {label}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+              {/* Live counts for current viewport */}
+              {(worldAirwaysData.length > 0 || worldExtraWaypoints.length > 0 || worldAirports.length > 0 || worldNavaids.length > 0) && (
+                <div className="mt-1.5 text-[9px] font-mono text-slate-400">
+                  En viewport: {worldAirports.filter(a => a.country !== "PE").length} aeródromos · {worldNavaids.filter(n => n.country !== "PE").length} radioayudas · {worldAirwaysData.length} aerovías · {worldExtraWaypoints.length} waypoints
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -1176,6 +1630,7 @@ export function InteractiveMap({ onSendToFlightPlan }: InteractiveMapProps = {})
             subdomains={BASEMAPS[basemap].subdomains ?? "abc"}
           />
           <MapClickHandler onMapClick={handleMapClick} />
+          <ViewportTracker onMapMove={handleViewportChange} enabled={worldLayersEnabled} />
 
           {/* Grid */}
           {layers.grid && <GridLayer />}
@@ -1275,6 +1730,283 @@ export function InteractiveMap({ onSendToFlightPlan }: InteractiveMapProps = {})
               >
                 <Tooltip sticky className="leaflet-tooltip-skyvector">{aw.designator} (RNAV, {aw.level})</Tooltip>
               </Polyline>
+            )
+          })}
+
+          {/* World Airways — fetched via API based on viewport.
+              Includes 1854+ airways covering all major world routes:
+              US J/V/Q/T routes, Europe UZ/UM routes, Asia A/B/R routes,
+              Africa A routes, Middle East M routes, South America UZ/A routes,
+              NAT/PACOT oceanic tracks, plus procedural regional connectors. */}
+          {layers.worldAirways && worldAirwaysData.map((aw, idx) => {
+            if (aw.points.length < 2) return null
+            const positions: [number, number][] = aw.points.map(p => [p.lat, p.lon] as [number, number])
+            const isRnav = aw.type === "RNAV"
+            const isLow = aw.level === "LOWER"
+            return (
+              <Polyline
+                key={`world-aw-${aw.designator}-${idx}`}
+                positions={positions}
+                pathOptions={{
+                  color: isRnav ? C.airwayRnav : "#0e7490",
+                  weight: isLow ? 1 : 1.5,
+                  opacity: 0.55,
+                  dashArray: isRnav ? "6,4" : undefined,
+                }}
+              >
+                <Tooltip sticky className="leaflet-tooltip-skyvector">
+                  <div className="font-mono">
+                    <div className="font-bold">{aw.designator}</div>
+                    <div>{aw.type} · {aw.level} · {aw.totalDistance} NM · {aw.points.length} pts</div>
+                    <div className="text-[10px] text-slate-500 mt-0.5">
+                      {aw.points.slice(0, 6).map(p => p.ident).join(" → ")}
+                      {aw.points.length > 6 ? ` → … → ${aw.points[aw.points.length - 1].ident}` : ""}
+                    </div>
+                  </div>
+                </Tooltip>
+              </Polyline>
+            )
+          })}
+
+          {/* World Airways (curated static global routes — NAT, PACOT, EUR, NAM, SAM).
+              Kept as a fallback/supplement for routes not in the API-fetched set. */}
+          {layers.worldAirways && WORLD_AIRWAYS.map((aw) => {
+            const positions: [number, number][] = []
+            for (const seg of aw.segments) {
+              const fromC = coordLookup.get(seg.from)
+              const toC = coordLookup.get(seg.to)
+              if (fromC && toC) {
+                if (positions.length === 0) positions.push([fromC.lat, fromC.lon])
+                positions.push([toC.lat, toC.lon])
+              }
+            }
+            if (positions.length < 2) return null
+            const isRnav = aw.type === "RNAV"
+            return (
+              <Polyline
+                key={`world-aw-static-${aw.designator}`}
+                positions={positions}
+                pathOptions={{
+                  color: isRnav ? C.airwayRnav : "#0e7490",
+                  weight: 1.5,
+                  opacity: 0.6,
+                  dashArray: isRnav ? "6,4" : undefined,
+                }}
+              >
+                <Tooltip sticky className="leaflet-tooltip-skyvector">
+                  {aw.designator} ({aw.type}, {aw.level}) — World
+                </Tooltip>
+              </Polyline>
+            )
+          })}
+
+          {/* World Airports (loaded via API based on viewport) */}
+          {layers.worldAirports && worldAirports.map((a, idx) => {
+            // Skip Peruvian airports (they're rendered above with full AIP data)
+            if (a.country === "PE") return null
+            const isInRoute = route.some((r) => r.id === a.icao)
+            const isLarge = a.type === "large_airport"
+            return (
+              <Marker
+                key={`world-ap-${a.icao}-${idx}-${a.lat.toFixed(3)}`}
+                position={[a.lat, a.lon]}
+                icon={createAirportIcon(a.icao, isLarge, isInRoute)}
+              >
+                <Popup>
+                  <div className="min-w-[200px]">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-bold text-sm text-[#1e40af]">{a.icao}</span>
+                      <Badge variant="outline" className="text-[9px] border-[#0e7490]/40 text-[#0e7490]">
+                        {a.country} · {a.type.replace("_", " ")}
+                      </Badge>
+                    </div>
+                    <p className="text-xs font-semibold mb-1 text-slate-600">{a.name}</p>
+                    {a.city && <p className="text-[10px] text-slate-600/70 mb-2">{a.city}</p>}
+                    <div className="grid grid-cols-2 gap-1 text-[10px] font-mono text-slate-600">
+                      <span><b className="text-[#1e40af]">IATA:</b> {a.iata || "—"}</span>
+                      <span><b className="text-[#1e40af]">Elev:</b> {a.elevation ?? "—"} ft</span>
+                    </div>
+                    <div className="text-[9px] font-mono text-slate-600/60 mt-2 pt-2 border-t border-slate-200">
+                      {a.lat.toFixed(4)}, {a.lon.toFixed(4)}
+                    </div>
+                    <div className="flex gap-1 mt-2">
+                      <Button
+                        size="sm" variant="outline"
+                        className="h-6 text-[10px] px-2 border-[#1e40af]/40 text-[#1e40af] hover:bg-[#1e40af]/15"
+                        onClick={() => setOrigin(a.icao)}
+                      >+ ORIG</Button>
+                      <Button
+                        size="sm" variant="outline"
+                        className="h-6 text-[10px] px-2 border-[#1e40af]/40 text-[#1e40af] hover:bg-[#1e40af]/15"
+                        onClick={() => setDest(a.icao)}
+                      >+ DEST</Button>
+                      <Button
+                        size="sm" variant="outline"
+                        className="h-6 text-[10px] px-2 border-[#1e40af]/40 text-[#1e40af] hover:bg-[#1e40af]/15"
+                        onClick={() => addToRoute({ id: a.icao, name: a.name, type: "AIRPORT", lat: a.lat, lon: a.lon })}
+                      >+ Ruta</Button>
+                    </div>
+                  </div>
+                </Popup>
+              </Marker>
+            )
+          })}
+
+          {/* World Navaids (loaded via API based on viewport) */}
+          {layers.worldNavaids && worldNavaids.map((n, idx) => {
+            // Skip Peruvian navaids (they're rendered above with full AIP data)
+            if (n.country === "PE") return null
+            const isInRoute = route.some((r) => r.id === n.ident)
+            return (
+              <Marker
+                key={`world-nav-${n.ident}-${n.country}-${idx}-${n.lat.toFixed(3)}`}
+                position={[n.lat, n.lon]}
+                icon={createIntlNavaidIcon(n.ident, n.frequency, isInRoute)}
+              >
+                <Popup>
+                  <div className="min-w-[200px]">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-bold text-sm text-[#0e7490]">{n.ident}</span>
+                      <Badge variant="outline" className="text-[9px] border-[#0e7490]/50 text-[#0e7490]">
+                        {n.country} · {n.type}
+                      </Badge>
+                    </div>
+                    <p className="text-xs font-semibold mb-1 text-slate-600">{n.name}</p>
+                    <div className="grid grid-cols-2 gap-1 text-[10px] font-mono text-slate-600">
+                      <span><b className="text-[#0e7490]">Freq:</b> {n.frequency}</span>
+                      <span><b className="text-[#0e7490]">Elev:</b> {n.elevation ?? "—"}</span>
+                    </div>
+                    <div className="text-[9px] font-mono text-slate-600/60 mt-2 pt-2 border-t border-slate-200">
+                      {n.lat.toFixed(4)}, {n.lon.toFixed(4)}
+                    </div>
+                    <div className="flex gap-1 mt-2">
+                      <Button
+                        size="sm" variant="outline"
+                        className="h-6 text-[10px] px-2 border-[#0e7490]/40 text-[#0e7490] hover:bg-[#0e7490]/10"
+                        onClick={() => setOrigin(n.ident)}
+                      >+ ORIG</Button>
+                      <Button
+                        size="sm" variant="outline"
+                        className="h-6 text-[10px] px-2 border-[#0e7490]/40 text-[#0e7490] hover:bg-[#0e7490]/10"
+                        onClick={() => setDest(n.ident)}
+                      >+ DEST</Button>
+                      <Button
+                        size="sm" variant="outline"
+                        className="h-6 text-[10px] px-2 border-[#0e7490]/40 text-[#0e7490] hover:bg-[#0e7490]/10"
+                        onClick={() => addToRoute({ id: n.ident, name: n.name, type: "NAVAID", lat: n.lat, lon: n.lon })}
+                      >+ Ruta</Button>
+                    </div>
+                  </div>
+                </Popup>
+              </Marker>
+            )
+          })}
+
+          {/* World Waypoints (curated global set — NAT, PACOT, EUR, NAM, etc.) */}
+          {layers.worldWaypoints && WORLD_WAYPOINTS.map((wp) => {
+            // Skip Peruvian waypoints (rendered above)
+            if (wp.country === "PE") return null
+            const isInRoute = route.some((r) => r.id === wp.id)
+            return (
+              <Marker
+                key={`world-wp-${wp.id}-${wp.region}`}
+                position={[wp.lat, wp.lon]}
+                icon={createWaypointIcon(wp.id, isInRoute, wp.notif, wp.transfer)}
+              >
+                <Popup>
+                  <div className="min-w-[180px]">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-bold text-sm text-[#0e7490]">{wp.id}</span>
+                      <Badge variant="outline" className="text-[9px] border-[#0e7490]/50 text-[#0e7490]">
+                        {wp.region}{wp.country ? ` · ${wp.country}` : ""}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-slate-600">{wp.name}</p>
+                    {wp.description && <p className="text-[10px] text-slate-600/70 mt-1">{wp.description}</p>}
+                    {wp.transfer && (
+                      <Badge className="text-[9px] bg-[#dc2626] text-white mt-1">TRANSFERENCIA FIR</Badge>
+                    )}
+                    {wp.notif && (
+                      <Badge className="text-[9px] bg-[#ea580c] text-white mt-1">NOTIFICACIÓN</Badge>
+                    )}
+                    <div className="text-[9px] font-mono text-slate-600/60 mt-2 pt-2 border-t border-slate-200">
+                      {wp.lat.toFixed(4)}, {wp.lon.toFixed(4)}
+                    </div>
+                    <div className="flex gap-1 mt-2 flex-wrap">
+                      <Button
+                        size="sm" variant="outline"
+                        className="h-6 text-[10px] px-2 border-[#0e7490]/40 text-[#0e7490] hover:bg-[#0e7490]/10"
+                        onClick={() => setOrigin(wp.id)}
+                      >+ ORIG</Button>
+                      <Button
+                        size="sm" variant="outline"
+                        className="h-6 text-[10px] px-2 border-[#0e7490]/40 text-[#0e7490] hover:bg-[#0e7490]/10"
+                        onClick={() => setDest(wp.id)}
+                      >+ DEST</Button>
+                      <Button
+                        size="sm" variant="outline"
+                        className="h-6 text-[10px] px-2 border-[#0e7490]/40 text-[#0e7490] hover:bg-[#0e7490]/10"
+                        onClick={() => addToRoute({ id: wp.id, name: wp.name, type: "WAYPOINT", lat: wp.lat, lon: wp.lon })}
+                      >+ Ruta</Button>
+                    </div>
+                  </div>
+                </Popup>
+              </Marker>
+            )
+          })}
+
+          {/* World Extra Waypoints (FIR transfers, oceanic fixes, major intersections
+              from the comprehensive worldwide dataset — 157+ waypoints loaded via API
+              based on viewport. Includes NAT/PACOT entry-exit fixes, US/CA/MX border
+              crossings, Europe FIR transfers, Africa/ME/Asia/Oceania transfer points. */}
+          {layers.worldWaypoints && worldExtraWaypoints.map((wp) => {
+            // Skip if already in WORLD_WAYPOINTS static set (avoid duplicate markers)
+            if (WORLD_WAYPOINTS.some(w => w.id === wp.id)) return null
+            const isInRoute = route.some((r) => r.id === wp.id)
+            return (
+              <Marker
+                key={`world-xwp-${wp.id}-${wp.country}`}
+                position={[wp.lat, wp.lon]}
+                icon={createWaypointIcon(wp.id, isInRoute, wp.notif, wp.transfer)}
+              >
+                <Popup>
+                  <div className="min-w-[200px]">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-bold text-sm text-[#0e7490]">{wp.id}</span>
+                      <Badge variant="outline" className="text-[9px] border-[#0e7490]/50 text-[#0e7490]">
+                        {wp.region} · {wp.country}
+                      </Badge>
+                    </div>
+                    {wp.description && <p className="text-[10px] text-slate-600/70 mt-1">{wp.description}</p>}
+                    {wp.transfer && (
+                      <Badge className="text-[9px] bg-[#dc2626] text-white mt-1">TRANSFERENCIA FIR ★</Badge>
+                    )}
+                    {wp.notif && (
+                      <Badge className="text-[9px] bg-[#ea580c] text-white mt-1">NOTIFICACIÓN</Badge>
+                    )}
+                    <div className="text-[9px] font-mono text-slate-600/60 mt-2 pt-2 border-t border-slate-200">
+                      {wp.lat.toFixed(4)}, {wp.lon.toFixed(4)}
+                    </div>
+                    <div className="flex gap-1 mt-2 flex-wrap">
+                      <Button
+                        size="sm" variant="outline"
+                        className="h-6 text-[10px] px-2 border-[#0e7490]/40 text-[#0e7490] hover:bg-[#0e7490]/10"
+                        onClick={() => setOrigin(wp.id)}
+                      >+ ORIG</Button>
+                      <Button
+                        size="sm" variant="outline"
+                        className="h-6 text-[10px] px-2 border-[#0e7490]/40 text-[#0e7490] hover:bg-[#0e7490]/10"
+                        onClick={() => setDest(wp.id)}
+                      >+ DEST</Button>
+                      <Button
+                        size="sm" variant="outline"
+                        className="h-6 text-[10px] px-2 border-[#0e7490]/40 text-[#0e7490] hover:bg-[#0e7490]/10"
+                        onClick={() => addToRoute({ id: wp.id, name: wp.id, type: "WAYPOINT", lat: wp.lat, lon: wp.lon })}
+                      >+ Ruta</Button>
+                    </div>
+                  </div>
+                </Popup>
+              </Marker>
             )
           })}
 
@@ -1615,7 +2347,7 @@ export function InteractiveMap({ onSendToFlightPlan }: InteractiveMapProps = {})
 
         {/* Map info badge */}
         <div className="absolute bottom-2 right-2 bg-white/90 text-slate-500 text-[9px] font-mono px-2 py-1 rounded border border-[#cbd5e1] pointer-events-none">
-          WGS84 · ICAO · CORPAC Perú
+          WGS84 · ICAO · AIP Perú + OurAirports (CC0) + Worldwide Airways
         </div>
 
         {/* SkyVector-style basemap toggle (top-left, horizontal stack) */}
@@ -1648,17 +2380,18 @@ export function InteractiveMap({ onSendToFlightPlan }: InteractiveMapProps = {})
         </div>
 
         {/* Legend */}
-        <div className="absolute top-2 right-2 bg-white/90 text-slate-600 text-[10px] font-mono px-3 py-2 rounded border border-[#cbd5e1] space-y-1 max-w-[210px] backdrop-blur z-[500]">
+        <div className="absolute top-2 right-2 bg-white/90 text-slate-600 text-[10px] font-mono px-3 py-2 rounded border border-[#cbd5e1] space-y-1 max-w-[220px] backdrop-blur z-[500] max-h-[80vh] overflow-y-auto custom-scroll">
           <div className="font-bold text-[#1e40af] mb-1">LEYENDA</div>
-          <div className="flex items-center gap-1.5"><span className="w-3 h-3 bg-[#1e40af] border-2 border-[#1e3a8a] inline-block rounded-full"></span> Aeródromo Intl</div>
-          <div className="flex items-center gap-1.5"><span className="w-3 h-3 bg-[#3b82f6] border-2 border-[#1e3a8a] inline-block rounded-full"></span> Aeródromo Nacional</div>
-          <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full border-2 border-[#1d4ed8] inline-block"></span> Radioayuda (VOR/DME)</div>
-          <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full border-2 border-dashed border-[#0e7490] inline-block"></span> Radioayuda Intl</div>
-          <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 border border-[#16a34a] inline-block transform rotate-45"></span> Waypoint</div>
-          <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-[#dc2626] border border-[#7f1d1d] inline-block transform rotate-45"></span> Punto Transferencia FIR ★</div>
-          <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-[#ea580c] border border-[#7c2d12] inline-block transform rotate-45"></span> Punto Notificación</div>
-          <div className="flex items-center gap-1.5"><span className="w-4 h-0.5 bg-[#1e3c78] inline-block"></span> Aerovía Conv.</div>
-          <div className="flex items-center gap-1.5"><span className="w-4 h-0.5 bg-[#64748b] inline-block border-dashed"></span> Aerovía RNAV</div>
+          <div className="flex items-center gap-1.5"><span className="w-3 h-3 bg-[#1e40af] border-2 border-[#1e3a8a] inline-block rounded-full"></span> Aeródromo Intl PE</div>
+          <div className="flex items-center gap-1.5"><span className="w-3 h-3 bg-[#3b82f6] border-2 border-[#1e3a8a] inline-block rounded-full"></span> Aeródromo Nacional PE</div>
+          <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full border-2 border-[#1d4ed8] inline-block"></span> Radioayuda (VOR/DME) PE</div>
+          <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full border-2 border-dashed border-[#0e7490] inline-block"></span> Radioayuda Mundo</div>
+          <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 border border-[#16a34a] inline-block transform rotate-45"></span> Waypoint PE</div>
+          <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-[#dc2626] border border-[#7f1d1d] inline-block transform rotate-45"></span> Pto. Transferencia FIR ★</div>
+          <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-[#ea580c] border border-[#7c2d12] inline-block transform rotate-45"></span> Pto. Notificación</div>
+          <div className="flex items-center gap-1.5"><span className="w-4 h-0.5 bg-[#1e3c78] inline-block"></span> Aerovía Conv. PE</div>
+          <div className="flex items-center gap-1.5"><span className="w-4 h-0.5 bg-[#64748b] inline-block border-dashed"></span> Aerovía RNAV PE</div>
+          <div className="flex items-center gap-1.5"><span className="w-4 h-0.5 bg-[#0e7490] inline-block"></span> Aerovía Mundo</div>
           <div className="flex items-center gap-1.5"><span className="w-4 h-0.5 bg-[#475569] inline-block" style={{ borderTop: "2px dashed #475569" }}></span> FIR Lima</div>
           <div className="flex items-center gap-1.5"><span className="w-4 h-0.5 bg-[#7c3aed] inline-block" style={{ borderTop: "2px dashed #7c3aed" }}></span> TMA / CTR</div>
           <div className="flex items-center gap-1.5"><span className="w-4 h-0.5 bg-[#c026d3] inline-block"></span> Ruta construida</div>
