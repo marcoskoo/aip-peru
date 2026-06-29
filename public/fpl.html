@@ -2411,18 +2411,35 @@ window.addEventListener('message', function(ev) {
     adesEl.dispatchEvent(new Event('input', {bubbles: true}));
   }
 
-  // 3. Route string: join intermediate points with DCT
-  // ICAO format: route field contains everything between ADEP and ADES.
-  // If only 2 points (direct), route = "DCT".
-  // If 3+ points, route = "DCT WP1 DCT WP2 DCT ... DCT" (excluding ADEP and ADES).
+  // 3. Route string (F15c) — formato OACI Doc 4444.
+  // El segmento de ruta se construye así:
+  //   Radioayuda/waypoint/coordenadas + designador de aerovía (ej: V1) + Radioayuda/waypoint/coordenadas + ...
+  // El campo Ruta contiene SOLO lo que está ENTRE ADEP y ADES (ambos excluidos).
+  // - route[i].airwayUsed = aerovía que conecta route[i-1] → route[i]
+  // - Si no hay aerovía entre dos puntos, se usa DCT (directo).
+  // ej: SPIM → LIM(V1) → AQP(V2) → CUS → SPZO  ⇒  "V1 LIM V2 AQP DCT CUS DCT"
+  //     (V1 de SPIM a LIM, V2 de LIM a AQP, DCT de AQP a CUS, DCT de CUS a SPZO)
   var routeEl = document.getElementById('route');
   if (routeEl) {
-    var middlePoints = route.slice(1, -1);
     var routeStr;
-    if (middlePoints.length === 0) {
-      routeStr = 'DCT';
+    if (route.length === 2) {
+      // Solo ADEP y ADES: ruta directa
+      var awDirect = route[1].airwayUsed;
+      routeStr = awDirect ? awDirect : 'DCT';
     } else {
-      routeStr = 'DCT ' + middlePoints.map(function(p) { return p.id; }).join(' DCT ') + ' DCT';
+      // 3+ puntos: construir "AIRWAY WP AIRWAY WP ... AIRWAY"
+      // route[1].airwayUsed = aerovía ADEP→route[1]
+      // route[k].airwayUsed = aerovía route[k-1]→route[k]  (para k = último, es route[last-1]→ADES)
+      var parts = [];
+      for (var i = 1; i < route.length; i++) {
+        var aw = route[i].airwayUsed;
+        parts.push(aw ? String(aw).toUpperCase() : 'DCT');
+        // Agregar el ID del punto salvo el último (ADES no va en el campo Ruta)
+        if (i < route.length - 1) {
+          parts.push(String(route[i].id).toUpperCase());
+        }
+      }
+      routeStr = parts.join(' ');
     }
     routeEl.value = routeStr;
     routeEl.classList.add('fpl-auto-filled');

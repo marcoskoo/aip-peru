@@ -1,0 +1,754 @@
+     1→     1→"use client"
+     2→     2→
+     3→     3→import { useEffect, useState, useCallback, useRef } from "react"
+     4→     4→import { motion, AnimatePresence } from "framer-motion"
+     5→     5→import {
+     6→     6→  AlertCircle, Search, Filter, RefreshCw, ChevronDown, ChevronUp,
+     7→     7→  Clock, MapPin, Plane, Radio, ShieldAlert, Activity, Trash2, Loader2
+     8→     8→} from "lucide-react"
+     9→     9→import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+    10→    10→import { Badge } from "@/components/ui/badge"
+    11→    11→import { Button } from "@/components/ui/button"
+    12→    12→import { Input } from "@/components/ui/input"
+    13→    13→import { Skeleton } from "@/components/ui/skeleton"
+    14→    14→import {
+    15→    15→  Select,
+    16→    16→  SelectContent,
+    17→    17→  SelectItem,
+    18→    18→  SelectTrigger,
+    19→    19→  SelectValue,
+    20→    20→} from "@/components/ui/select"
+    21→    21→import {
+    22→    22→  Collapsible,
+    23→    23→  CollapsibleContent,
+    24→    24→  CollapsibleTrigger,
+    25→    25→} from "@/components/ui/collapsible"
+    26→    26→import {
+    27→    27→  Dialog,
+    28→    28→  DialogContent,
+    29→    29→  DialogHeader,
+    30→    30→  DialogTitle,
+    31→    31→  DialogDescription,
+    32→    32→} from "@/components/ui/dialog"
+    33→    33→import { toast } from "sonner"
+    34→    34→import { AerodromeSelector, type AerodromeOption } from "@/components/aerodrome-selector"
+    35→    35→
+    36→    36→// ─── Types ────────────────────────────────────────────────────────
+    37→    37→
+    38→    38→interface Notam {
+    39→    39→  id: string
+    40→    40→  notamId: string
+    41→    41→  type: string
+    42→    42→  replacesId?: string | null
+    43→    43→  fir: string
+    44→    44→  effectiveFrom: string
+    45→    45→  effectiveTo?: string | null
+    46→    46→  isPermanent: boolean
+    47→    47→  scope?: string | null
+    48→    48→  subject: string
+    49→    49→  condition: string
+    50→    50→  text: string
+    51→    51→  coordinates?: string | null
+    52→    52→  lat?: number | null
+    53→    53→  lon?: number | null
+    54→    54→  radius?: number | null
+    55→    55→  lowerLimit?: string | null
+    56→    56→  upperLimit?: string | null
+    57→    57→  airportId?: string | null
+    58→    58→  priority: string
+    59→    59→  source?: string | null
+    60→    60→  verified: boolean
+    61→    61→  airport?: { icaoCode: string; name: string } | null
+    62→    62→  createdAt: string
+    63→    63→  updatedAt: string
+    64→    64→}
+    65→    65→
+    66→    66→interface NotamStats {
+    67→    67→  total: number
+    68→    68→  active: number
+    69→    69→  byScope: { A: number; E: number; W: number }
+    70→    70→  byPriority: { LOW: number; MEDIUM: number; HIGH: number; URGENT: number }
+    71→    71→}
+    72→    72→
+    73→    73→interface NotamListingProps {
+    74→    74→  onSelectNotam?: (notam: Notam) => void
+    75→    75→  onSelectAirport?: (icaoCode: string) => void
+    76→    76→  /** When false (non-admin), the "Eliminar todos" button is hidden. */
+    77→    77→  isAdmin?: boolean
+    78→    78→}
+    79→    79→
+    80→    80→// ─── Helpers ──────────────────────────────────────────────────────
+    81→    81→
+    82→    82→function getPriorityConfig(priority: string) {
+    83→    83→  switch (priority) {
+    84→    84→    case "URGENT":
+    85→    85→      return { bg: "bg-red-100 dark:bg-red-950/50", text: "text-red-800 dark:text-red-300", border: "border-red-200 dark:border-red-800", label: "URGENTE" }
+    86→    86→    case "HIGH":
+    87→    87→      return { bg: "bg-orange-100 dark:bg-orange-950/50", text: "text-orange-800 dark:text-orange-300", border: "border-orange-200 dark:border-orange-800", label: "ALTA" }
+    88→    88→    case "MEDIUM":
+    89→    89→      return { bg: "bg-yellow-100 dark:bg-yellow-950/50", text: "text-yellow-800 dark:text-yellow-300", border: "border-yellow-200 dark:border-yellow-800", label: "MEDIA" }
+    90→    90→    case "LOW":
+    91→    91→      return { bg: "bg-green-100 dark:bg-green-950/50", text: "text-green-800 dark:text-green-300", border: "border-green-200 dark:border-green-800", label: "BAJA" }
+    92→    92→    default:
+    93→    93→      return { bg: "bg-slate-100 dark:bg-slate-800", text: "text-slate-800 dark:text-slate-300", border: "border-slate-200 dark:border-slate-700", label: priority }
+    94→    94→  }
+    95→    95→}
+    96→    96→
+    97→    97→function getScopeConfig(scope?: string | null) {
+    98→    98→  switch (scope) {
+    99→    99→    case "A":
+   100→   100→      return { label: "Aeródromo", bg: "bg-blue-100 dark:bg-blue-950/50", text: "text-blue-800 dark:text-blue-300", icon: Plane }
+   101→   101→    case "E":
+   102→   102→      return { label: "En-ruta", bg: "bg-purple-100 dark:bg-purple-950/50", text: "text-purple-800 dark:text-purple-300", icon: Radio }
+   103→   103→    case "W":
+   104→   104→      return { label: "Aviso", bg: "bg-amber-100 dark:bg-amber-950/50", text: "text-amber-800 dark:text-amber-300", icon: ShieldAlert }
+   105→   105→    default:
+   106→   106→      return { label: scope || "N/A", bg: "bg-slate-100 dark:bg-slate-800", text: "text-slate-800 dark:text-slate-300", icon: AlertCircle }
+   107→   107→  }
+   108→   108→}
+   109→   109→
+   110→   110→function getTypeBadge(type: string) {
+   111→   111→  switch (type) {
+   112→   112→    case "NOTAMN":
+   113→   113→      return { label: "NUEVO", bg: "bg-emerald-100 dark:bg-emerald-950/50", text: "text-emerald-800 dark:text-emerald-300" }
+   114→   114→    case "NOTAMR":
+   115→   115→      return { label: "REEMPLAZO", bg: "bg-blue-100 dark:bg-blue-950/50", text: "text-blue-800 dark:text-blue-300" }
+   116→   116→    case "NOTAMC":
+   117→   117→      return { label: "CANCELACIÓN", bg: "bg-red-100 dark:bg-red-950/50", text: "text-red-800 dark:text-red-300" }
+   118→   118→    default:
+   119→   119→      return { label: type, bg: "bg-slate-100 dark:bg-slate-800", text: "text-slate-800 dark:text-slate-300" }
+   120→   120→  }
+   121→   121→}
+   122→   122→
+   123→   123→function formatDateTimeUTC(dateStr: string) {
+   124→   124→  try {
+   125→   125→    const d = new Date(dateStr)
+   126→   126→    return d.toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "UTC" }) + " UTC"
+   127→   127→  } catch {
+   128→   128→    return dateStr
+   129→   129→  }
+   130→   130→}
+   131→   131→
+   132→   132→function getCountdown(dateStr: string): { text: string; isExpired: boolean; isUrgent: boolean } {
+   133→   133→  try {
+   134→   134→    const target = new Date(dateStr).getTime()
+   135→   135→    const now = Date.now()
+   136→   136→    const diff = target - now
+   137→   137→    if (diff <= 0) return { text: "Expirado", isExpired: true, isUrgent: false }
+   138→   138→    const hours = Math.floor(diff / (1000 * 60 * 60))
+   139→   139→    const days = Math.floor(hours / 24)
+   140→   140→    const isUrgent = hours < 24
+   141→   141→    if (days > 0) return { text: `${days}d ${hours % 24}h restantes`, isExpired: false, isUrgent }
+   142→   142→    if (hours > 0) return { text: `${hours}h restantes`, isExpired: false, isUrgent }
+   143→   143→    const minutes = Math.floor(diff / (1000 * 60))
+   144→   144→    return { text: `${minutes}m restantes`, isExpired: false, isUrgent: true }
+   145→   145→  } catch {
+   146→   146→    return { text: "—", isExpired: false, isUrgent: false }
+   147→   147→  }
+   148→   148→}
+   149→   149→
+   150→   150→// ─── Component ────────────────────────────────────────────────────
+   151→   151→
+   152→   152→export function NotamListing({ onSelectNotam, onSelectAirport, isAdmin = false }: NotamListingProps) {
+   153→   153→  const [notams, setNotams] = useState<Notam[]>([])
+   154→   154→  const [loading, setLoading] = useState(true)
+   155→   155→  const [search, setSearch] = useState("")
+   156→   156→  const [scopeFilter, setScopeFilter] = useState<string>("all")
+   157→   157→  const [priorityFilter, setPriorityFilter] = useState<string>("all")
+   158→   158→  const [activeOnly, setActiveOnly] = useState(true)
+   159→   159→  const [visibleCount, setVisibleCount] = useState(10)
+   160→   160→  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
+   161→   161→  const [lastRefresh, setLastRefresh] = useState<Date>(new Date())
+   162→   162→  const [isRefreshing, setIsRefreshing] = useState(false)
+   163→   163→  const [stats, setStats] = useState<NotamStats | null>(null)
+   164→   164→  const [selectedAerodrome, setSelectedAerodrome] = useState<AerodromeOption | null>(null)
+   165→   165→
+   166→   166→  // ── Nuevos filtros (Q, Lugar A, Vigencia, Texto E) ──
+   167→   167→  const [qCodeFilter, setQCodeFilter] = useState<string>("all")
+   168→   168→  const [locationFilter, setLocationFilter] = useState<string>("all")
+   169→   169→  const [validityFilter, setValidityFilter] = useState<string>("all")
+   170→   170→  const [textEFilter, setTextEFilter] = useState<string>("")
+   171→   171→  // textEInput es el valor inmediato del input; textEFilter es el valor debounced.
+   172→   172→  const [textEInput, setTextEInput] = useState<string>("")
+   173→   173→  const [qCodeOptions, setQCodeOptions] = useState<{ value: string; count: number }[]>([])
+   174→   174→  const [locationOptions, setLocationOptions] = useState<{ value: string; count: number }[]>([])
+   175→   175→
+   176→   176→  // ── Delete-all dialog state ──
+   177→   177→  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+   178→   178→  const [deleting, setDeleting] = useState(false)
+   179→   179→
+   180→   180→  const refreshTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+   181→   181→
+   182→   182→  const fetchNotams = useCallback(async () => {
+   183→   183→    try {
+   184→   184→      const params = new URLSearchParams()
+   185→   185→      if (search) params.set("search", search)
+   186→   186→      if (scopeFilter && scopeFilter !== "all") params.set("scope", scopeFilter)
+   187→   187→      if (priorityFilter && priorityFilter !== "all") params.set("priority", priorityFilter)
+   188→   188→      if (activeOnly) params.set("active", "true")
+   189→   189→      if (selectedAerodrome?.id) params.set("airportId", selectedAerodrome.id)
+   190→   190→      // ── Nuevos filtros solicitados por el usuario ──
+   191→   191→      if (qCodeFilter && qCodeFilter !== "all") params.set("qCode", qCodeFilter)
+   192→   192→      if (locationFilter && locationFilter !== "all") params.set("locationA", locationFilter)
+   193→   193→      if (validityFilter && validityFilter !== "all") params.set("validity", validityFilter)
+   194→   194→      if (textEFilter) params.set("textE", textEFilter)
+   195→   195→      // Pedir hasta 200 NOTAMs (máximo que permite la API) para que el
+   196→   196→      // listado muestre el boletín completo en vez de solo los primeros 50.
+   197→   197→      params.set("limit", "200")
+   198→   198→      const response = await fetch(`/api/notams?${params.toString()}`)
+   199→   199→      if (response.ok) {
+   200→   200→        const data = await response.json()
+   201→   201→        const list: Notam[] = Array.isArray(data) ? data : data.notams || []
+   202→   202→        setNotams(list)
+   203→   203→
+   204→   204→        // El servidor devuelve el total real en `data.total` (puede ser > list.length
+   205→   205→        // cuando hay más de 200). Para stats por scope/prioridad, usamos la lista
+   206→   206→        // que sí tenemos en memoria; para total, preferimos data.total.
+   207→   207→        const serverTotal: number = typeof data.total === "number" ? data.total : list.length
+   208→   208→        const serverActiveStats = data.activeStats as
+   209→   209→          | { total: number; urgent: number; high: number }
+   210→   210→          | undefined
+   211→   211→
+   212→   212→        const activeNotams = list.filter((n: Notam) => {
+   213→   213→          if (!n.effectiveTo || n.isPermanent) return true
+   214→   214→          return new Date(n.effectiveTo) > new Date()
+   215→   215→        })
+   216→   216→        setStats({
+   217→   217→          total: serverTotal,
+   218→   218→          active: serverActiveStats?.total ?? activeNotams.length,
+   219→   219→          byScope: {
+   220→   220→            A: list.filter((n: Notam) => n.scope === "A").length,
+   221→   221→            E: list.filter((n: Notam) => n.scope === "E").length,
+   222→   222→            W: list.filter((n: Notam) => n.scope === "W").length,
+   223→   223→          },
+   224→   224→          byPriority: {
+   225→   225→            LOW: list.filter((n: Notam) => n.priority === "LOW").length,
+   226→   226→            MEDIUM: list.filter((n: Notam) => n.priority === "MEDIUM").length,
+   227→   227→            HIGH: list.filter((n: Notam) => n.priority === "HIGH").length,
+   228→   228→            URGENT: list.filter((n: Notam) => n.priority === "URGENT").length,
+   229→   229→          },
+   230→   230→        })
+   231→   231→      }
+   232→   232→    } catch {
+   233→   233→      // silently handle
+   234→   234→    } finally {
+   235→   235→      setLoading(false)
+   236→   236→      setIsRefreshing(false)
+   237→   237→      setLastRefresh(new Date())
+   238→   238→    }
+   239→   239→  }, [search, scopeFilter, priorityFilter, activeOnly, selectedAerodrome, qCodeFilter, locationFilter, validityFilter, textEFilter])
+   240→   240→
+   241→   241→  useEffect(() => {
+   242→   242→    fetchNotams()
+   243→   243→  }, [fetchNotams])
+   244→   244→
+   245→   245→  // ── Fetch distinct Q-codes and locations on mount ──
+   246→   246→  // Populates the dropdowns for Código Q and Lugar (A) filters.
+   247→   247→  useEffect(() => {
+   248→   248→    let cancelled = false
+   249→   249→    async function loadFilters() {
+   250→   250→      try {
+   251→   251→        const res = await fetch("/api/notams/filters?fir=SPIM")
+   252→   252→        if (!res.ok) return
+   253→   253→        const data = await res.json()
+   254→   254→        if (cancelled) return
+   255→   255→        if (Array.isArray(data.qCodes)) setQCodeOptions(data.qCodes)
+   256→   256→        if (Array.isArray(data.locations)) setLocationOptions(data.locations)
+   257→   257→      } catch {
+   258→   258→        // silently ignore — filters just won't have options
+   259→   259→      }
+   260→   260→    }
+   261→   261→    loadFilters()
+   262→   262→    return () => {
+   263→   263→      cancelled = true
+   264→   264→    }
+   265→   265→  }, [])
+   266→   266→
+   267→   267→  // ── Debounce textE input (300ms) ──
+   268→   268→  // textEInput se actualiza inmediatamente; textEFilter se actualiza
+   269→   269→  // 300ms después de la última pulsación para no spammear la API.
+   270→   270→  useEffect(() => {
+   271→   271→    const t = setTimeout(() => setTextEFilter(textEInput), 300)
+   272→   272→    return () => clearTimeout(t)
+   273→   273→  }, [textEInput])
+   274→   274→
+   275→   275→  // ── Delete all NOTAMs handler ──
+   276→   276→  const handleDeleteAll = async () => {
+   277→   277→    setDeleting(true)
+   278→   278→    try {
+   279→   279→      const res = await fetch("/api/notams?fir=SPIM", { method: "DELETE" })
+   280→   280→      const data = await res.json()
+   281→   281→      if (data.ok) {
+   282→   282→        toast.success(`Se eliminaron ${data.deleted} NOTAMs`)
+   283→   283→        setDeleteDialogOpen(false)
+   284→   284→        fetchNotams()
+   285→   285→      } else {
+   286→   286→        toast.error(data.error || "Error al eliminar NOTAMs")
+   287→   287→      }
+   288→   288→    } catch {
+   289→   289→      toast.error("Error de conexión")
+   290→   290→    } finally {
+   291→   291→      setDeleting(false)
+   292→   292→    }
+   293→   293→  }
+   294→   294→
+   295→   295→  // Auto-refresh every 5 minutes
+   296→   296→  useEffect(() => {
+   297→   297→    refreshTimerRef.current = setInterval(() => {
+   298→   298→      setIsRefreshing(true)
+   299→   299→      fetchNotams()
+   300→   300→    }, 300000)
+   301→   301→    return () => {
+   302→   302→      if (refreshTimerRef.current) clearInterval(refreshTimerRef.current)
+   303→   303→    }
+   304→   304→  }, [fetchNotams])
+   305→   305→
+   306→   306→  const toggleExpanded = (id: string) => {
+   307→   307→    setExpandedIds(prev => {
+   308→   308→      const next = new Set(prev)
+   309→   309→      if (next.has(id)) next.delete(id)
+   310→   310→      else next.add(id)
+   311→   311→      return next
+   312→   312→    })
+   313→   313→  }
+   314→   314→
+   315→   315→  const visibleNotams = notams.slice(0, visibleCount)
+   316→   316→  const hasMore = visibleCount < notams.length
+   317→   317→
+   318→   318→  return (
+   319→   319→    <div className="space-y-6">
+   320→   320→      {/* Hero Section */}
+   321→   321→      <div className="relative bg-navy rounded-2xl overflow-hidden">
+   322→   322→        <div className="absolute inset-0 bg-gradient-to-br from-navy-dark via-navy to-navy-light opacity-95" />
+   323→   323→        <div className="absolute inset-0 opacity-5">
+   324→   324→          <AlertCircle className="absolute top-4 right-8 size-32 text-white rotate-12" />
+   325→   325→        </div>
+   326→   326→        <div className="relative px-6 py-8 sm:px-10 sm:py-10">
+   327→   327→          <div className="flex items-center justify-center gap-3 mb-3">
+   328→   328→            <div className="h-px w-12 bg-amber-500" />
+   329→   329→            <AlertCircle className="size-6 text-amber-500" />
+   330→   330→            <div className="h-px w-12 bg-amber-500" />
+   331→   331→          </div>
+   332→   332→          <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight text-center">
+   333→   333→            NOTAMs
+   334→   334→          </h1>
+   335→   335→          <p className="text-slate-300 text-sm text-center mt-1 max-w-2xl mx-auto">
+   336→   336→            Notices to Airmen — Avisos a los Aeronavegantes
+   337→   337→          </p>
+   338→   338→
+   339→   339→          {/* Stats Row */}
+   340→   340→          {stats && (
+   341→   341→            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6">
+   342→   342→              <div className="bg-white/10 rounded-lg p-3 text-center backdrop-blur-sm">
+   343→   343→                <div className="text-2xl font-bold text-white">{stats.total}</div>
+   344→   344→                <div className="text-xs text-slate-300">Total</div>
+   345→   345→              </div>
+   346→   346→              <div className="bg-emerald-500/20 rounded-lg p-3 text-center backdrop-blur-sm">
+   347→   347→                <div className="text-2xl font-bold text-emerald-300">{stats.active}</div>
+   348→   348→                <div className="text-xs text-slate-300">Activos</div>
+   349→   349→              </div>
+   350→   350→              <div className="bg-blue-500/20 rounded-lg p-3 text-center backdrop-blur-sm">
+   351→   351→                <div className="text-xs text-slate-400 mb-1">Por Alcance</div>
+   352→   352→                <div className="flex justify-center gap-2 text-xs">
+   353→   353→                  <span className="text-blue-300 font-semibold">A:{stats.byScope.A}</span>
+   354→   354→                  <span className="text-purple-300 font-semibold">E:{stats.byScope.E}</span>
+   355→   355→                  <span className="text-amber-300 font-semibold">W:{stats.byScope.W}</span>
+   356→   356→                </div>
+   357→   357→              </div>
+   358→   358→              <div className="bg-amber-500/20 rounded-lg p-3 text-center backdrop-blur-sm">
+   359→   359→                <div className="text-xs text-slate-400 mb-1">Por Prioridad</div>
+   360→   360→                <div className="flex justify-center gap-1.5 text-xs flex-wrap">
+   361→   361→                  <span className="text-green-300 font-semibold">L:{stats.byPriority.LOW}</span>
+   362→   362→                  <span className="text-yellow-300 font-semibold">M:{stats.byPriority.MEDIUM}</span>
+   363→   363→                  <span className="text-orange-300 font-semibold">H:{stats.byPriority.HIGH}</span>
+   364→   364→                  <span className="text-red-300 font-semibold">U:{stats.byPriority.URGENT}</span>
+   365→   365→                </div>
+   366→   366→              </div>
+   367→   367→            </div>
+   368→   368→          )}
+   369→   369→        </div>
+   370→   370→      </div>
+   371→   371→
+   372→   372→      {/* Filter Bar */}
+   373→   373→      <div className="space-y-3">
+   374→   374→        {/* Row 1: search + aerodrome + delete-all */}
+   375→   375→        <div className="flex flex-col sm:flex-row gap-3">
+   376→   376→          <div className="relative flex-1">
+   377→   377→            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+   378→   378→            <Input
+   379→   379→              placeholder="Buscar NOTAM por ID, texto, asunto..."
+   380→   380→              value={search}
+   381→   381→              onChange={(e) => setSearch(e.target.value)}
+   382→   382→              className="pl-10 h-10"
+   383→   383→            />
+   384→   384→          </div>
+   385→   385→          <AerodromeSelector
+   386→   386→            onSelect={(aero) => setSelectedAerodrome(aero)}
+   387→   387→            value={selectedAerodrome?.icaoCode}
+   388→   388→            placeholder="Filtrar por aeródromo..."
+   389→   389→            showClear
+   390→   390→            onClear={() => setSelectedAerodrome(null)}
+   391→   391→            className="shrink-0"
+   392→   392→          />
+   393→   393→          {isAdmin && (
+   394→   394→            <Button
+   395→   395→              variant="destructive"
+   396→   396→              size="sm"
+   397→   397→              className="h-10 gap-1.5 shrink-0"
+   398→   398→              onClick={() => setDeleteDialogOpen(true)}
+   399→   399→            >
+   400→   400→              <Trash2 className="size-3.5" />
+   401→   401→              Eliminar todos
+   402→   402→            </Button>
+   403→   403→          )}
+   404→   404→        </div>
+   405→   405→
+   406→   406→        {/* Row 2: advanced filters (wrap on mobile) */}
+   407→   407→        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+   408→   408→          {/* Texto E) — debounced 300ms */}
+   409→   409→          <Input
+   410→   410→            placeholder="Buscar en casilla E)..."
+   411→   411→            value={textEInput}
+   412→   412→            onChange={(e) => setTextEInput(e.target.value)}
+   413→   413→            className="h-10"
+   414→   414→          />
+   415→   415→          {/* Código Q — dinámico desde /api/notams/filters */}
+   416→   416→          <Select value={qCodeFilter} onValueChange={setQCodeFilter}>
+   417→   417→            <SelectTrigger className="w-full h-10">
+   418→   418→              <SelectValue placeholder="Código Q" />
+   419→   419→            </SelectTrigger>
+   420→   420→            <SelectContent>
+   421→   421→              <SelectItem value="all">Todos los Q</SelectItem>
+   422→   422→              {qCodeOptions.map((opt) => (
+   423→   423→                <SelectItem key={opt.value} value={opt.value}>
+   424→   424→                  {opt.value} ({opt.count})
+   425→   425→                </SelectItem>
+   426→   426→              ))}
+   427→   427→            </SelectContent>
+   428→   428→          </Select>
+   429→   429→          {/* Lugar (A) — dinámico desde /api/notams/filters */}
+   430→   430→          <Select value={locationFilter} onValueChange={setLocationFilter}>
+   431→   431→            <SelectTrigger className="w-full h-10">
+   432→   432→              <SelectValue placeholder="Lugar (A)" />
+   433→   433→            </SelectTrigger>
+   434→   434→            <SelectContent>
+   435→   435→              <SelectItem value="all">Todos los lugares</SelectItem>
+   436→   436→              {locationOptions.map((opt) => (
+   437→   437→                <SelectItem key={opt.value} value={opt.value}>
+   438→   438→                  {opt.value} ({opt.count})
+   439→   439→                </SelectItem>
+   440→   440→              ))}
+   441→   441→            </SelectContent>
+   442→   442→          </Select>
+   443→   443→          {/* Vigencia — opciones fijas */}
+   444→   444→          <Select value={validityFilter} onValueChange={setValidityFilter}>
+   445→   445→            <SelectTrigger className="w-full h-10">
+   446→   446→              <SelectValue placeholder="Vigencia" />
+   447→   447→            </SelectTrigger>
+   448→   448→            <SelectContent>
+   449→   449→              <SelectItem value="all">Todas</SelectItem>
+   450→   450→              <SelectItem value="PERM">PERM</SelectItem>
+   451→   451→              <SelectItem value="EST">EST</SelectItem>
+   452→   452→              <SelectItem value="FINITE">Finita</SelectItem>
+   453→   453→            </SelectContent>
+   454→   454→          </Select>
+   455→   455→          {/* Alcance (filtro existente) */}
+   456→   456→          <Select value={scopeFilter} onValueChange={setScopeFilter}>
+   457→   457→            <SelectTrigger className="w-full h-10">
+   458→   458→              <Filter className="size-3.5 mr-1.5" />
+   459→   459→              <SelectValue placeholder="Alcance" />
+   460→   460→            </SelectTrigger>
+   461→   461→            <SelectContent>
+   462→   462→              <SelectItem value="all">Todos</SelectItem>
+   463→   463→              <SelectItem value="A">A — Aeródromo</SelectItem>
+   464→   464→              <SelectItem value="E">E — En-ruta</SelectItem>
+   465→   465→              <SelectItem value="W">W — Aviso Nav.</SelectItem>
+   466→   466→            </SelectContent>
+   467→   467→          </Select>
+   468→   468→          {/* Prioridad (filtro existente) */}
+   469→   469→          <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+   470→   470→            <SelectTrigger className="w-full h-10">
+   471→   471→              <SelectValue placeholder="Prioridad" />
+   472→   472→            </SelectTrigger>
+   473→   473→            <SelectContent>
+   474→   474→              <SelectItem value="all">Todas</SelectItem>
+   475→   475→              <SelectItem value="URGENT">Urgente</SelectItem>
+   476→   476→              <SelectItem value="HIGH">Alta</SelectItem>
+   477→   477→              <SelectItem value="MEDIUM">Media</SelectItem>
+   478→   478→              <SelectItem value="LOW">Baja</SelectItem>
+   479→   479→            </SelectContent>
+   480→   480→          </Select>
+   481→   481→        </div>
+   482→   482→
+   483→   483→        {/* Row 3: active-only toggle */}
+   484→   484→        <div className="flex items-center gap-2">
+   485→   485→          <Button
+   486→   486→            variant={activeOnly ? "default" : "outline"}
+   487→   487→            size="sm"
+   488→   488→            className="h-10 gap-1.5 text-xs"
+   489→   489→            onClick={() => setActiveOnly(!activeOnly)}
+   490→   490→          >
+   491→   491→            <Activity className="size-3.5" />
+   492→   492→            {activeOnly ? "Solo Activos" : "Todos"}
+   493→   493→          </Button>
+   494→   494→        </div>
+   495→   495→      </div>
+   496→   496→
+   497→   497→      {/* Auto-refresh indicator */}
+   498→   498→      <div className="flex items-center justify-between text-xs text-muted-foreground">
+   499→   499→        <div className="flex items-center gap-2">
+   500→   500→          <RefreshCw className={`size-3 ${isRefreshing ? "animate-spin" : ""}`} />
+   501→   501→          <span>
+   502→   502→            {isRefreshing ? "Actualizando..." : `Última actualización: ${lastRefresh.toLocaleTimeString("es-PE")}`}
+   503→   503→          </span>
+   504→   504→          {selectedAerodrome && (
+   505→   505→            <Badge className="bg-navy/10 dark:bg-navy/30 text-navy dark:text-amber-400 text-[10px] gap-1">
+   506→   506→              <Plane className="size-2.5" />
+   507→   507→              {selectedAerodrome.icaoCode}
+   508→   508→            </Badge>
+   509→   509→          )}
+   510→   510→        </div>
+   511→   511→        <span>{notams.length} NOTAM{notams.length !== 1 ? "s" : ""}</span>
+   512→   512→      </div>
+   513→   513→
+   514→   514→      {/* NOTAM Cards */}
+   515→   515→      {loading ? (
+   516→   516→        <div className="space-y-4">
+   517→   517→          {Array.from({ length: 5 }).map((_, i) => (
+   518→   518→            <Card key={i} className="py-4">
+   519→   519→              <CardContent className="space-y-3">
+   520→   520→                <div className="flex items-center gap-3">
+   521→   521→                  <Skeleton className="h-6 w-24" />
+   522→   522→                  <Skeleton className="h-5 w-16" />
+   523→   523→                  <Skeleton className="h-5 w-14" />
+   524→   524→                </div>
+   525→   525→                <Skeleton className="h-4 w-3/4" />
+   526→   526→                <Skeleton className="h-4 w-1/2" />
+   527→   527→              </CardContent>
+   528→   528→            </Card>
+   529→   529→          ))}
+   530→   530→        </div>
+   531→   531→      ) : notams.length === 0 ? (
+   532→   532→        <div className="text-center py-16">
+   533→   533→          <AlertCircle className="size-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+   534→   534→          <h3 className="text-lg font-medium">No se encontraron NOTAMs</h3>
+   535→   535→          <p className="text-muted-foreground mt-1">Intente con otros filtros de búsqueda</p>
+   536→   536→        </div>
+   537→   537→      ) : (
+   538→   538→        <div className="space-y-3">
+   539→   539→          <AnimatePresence mode="popLayout">
+   540→   540→            {visibleNotams.map((notam, index) => {
+   541→   541→              const priorityConf = getPriorityConfig(notam.priority)
+   542→   542→              const scopeConf = getScopeConfig(notam.scope)
+   543→   543→              const typeConf = getTypeBadge(notam.type)
+   544→   544→              const isExpanded = expandedIds.has(notam.id)
+   545→   545→              const countdown = notam.effectiveTo ? getCountdown(notam.effectiveTo) : null
+   546→   546→              const ScopeIcon = scopeConf.icon
+   547→   547→              const isActive = !notam.effectiveTo || notam.isPermanent || new Date(notam.effectiveTo) > new Date()
+   548→   548→
+   549→   549→              return (
+   550→   550→                <motion.div
+   551→   551→                  key={notam.id}
+   552→   552→                  initial={{ opacity: 0, y: 10 }}
+   553→   553→                  animate={{ opacity: 1, y: 0 }}
+   554→   554→                  exit={{ opacity: 0, y: -10 }}
+   555→   555→                  transition={{ delay: index * 0.03 }}
+   556→   556→                >
+   557→   557→                  <Card
+   558→   558→                    className={`transition-all duration-200 hover:shadow-md cursor-pointer ${
+   559→   559→                      isActive
+   560→   560→                        ? "border-l-4 border-l-amber-500"
+   561→   561→                        : "border-l-4 border-l-slate-300 dark:border-l-slate-600 opacity-60"
+   562→   562→                    }`}
+   563→   563→                    onClick={() => onSelectNotam?.(notam)}
+   564→   564→                  >
+   565→   565→                    <Collapsible
+   566→   566→                      open={isExpanded}
+   567→   567→                      onOpenChange={() => toggleExpanded(notam.id)}
+   568→   568→                    >
+   569→   569→                      <CardHeader className="pb-2">
+   570→   570→                        <div className="flex items-center flex-wrap gap-2">
+   571→   571→                          <span className="font-mono font-bold text-sm bg-navy text-white px-2.5 py-1 rounded">
+   572→   572→                            {notam.notamId}
+   573→   573→                          </span>
+   574→   574→                          <Badge className={`${typeConf.bg} ${typeConf.text} text-[10px] font-bold tracking-wider`}>
+   575→   575→                            {typeConf.label}
+   576→   576→                          </Badge>
+   577→   577→                          <Badge className={`${scopeConf.bg} ${scopeConf.text} text-[10px] gap-1`}>
+   578→   578→                            <ScopeIcon className="size-2.5" />
+   579→   579→                            {notam.scope || "—"}
+   580→   580→                          </Badge>
+   581→   581→                          <Badge className={`${priorityConf.bg} ${priorityConf.text} text-[10px] font-bold`}>
+   582→   582→                            {priorityConf.label}
+   583→   583→                          </Badge>
+   584→   584→                          {notam.verified && (
+   585→   585→                            <Badge className="bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 text-[10px]">
+   586→   586→                              Verificado
+   587→   587→                            </Badge>
+   588→   588→                          )}
+   589→   589→                        </div>
+   590→   590→                      </CardHeader>
+   591→   591→                      <CardContent className="space-y-3">
+   592→   592→                        {/* TEXTO CRUDO OACI — siempre visible, sin truncar, primero y prominente.
+   593→   593→                            El texto se muestra EXACTAMENTE como lo emite la fuente (FAA USNS en vivo
+   594→   594→                            o AIS Perú manual). NO hay interpretación, resumen ni transformación del sistema. */}
+   595→   595→                        <div>
+   596→   596→                          <div className="flex items-center justify-between mb-1.5">
+   597→   597→                            <span className="text-[10px] font-bold tracking-wider text-amber-600 dark:text-amber-400 uppercase flex items-center gap-1">
+   598→   598→                              <AlertCircle className="size-3" />
+   599→   599→                              Texto OACI original · sin interpretación
+   600→   600→                            </span>
+   601→   601→                            {notam.source && (
+   602→   602→                              <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-900">
+   603→   603→                                {notam.source}
+   604→   604→                              </span>
+   605→   605→                            )}
+   606→   606→                          </div>
+   607→   607→                          <div className="bg-slate-900 dark:bg-slate-950 rounded-lg p-3 border border-slate-700 dark:border-slate-800">
+   608→   608→                            <p className="text-[11px] font-mono text-slate-100 dark:text-slate-200 whitespace-pre-wrap break-words leading-relaxed">{notam.text}</p>
+   609→   609→                          </div>
+   610→   610→                        </div>
+   611→   611→
+   612→   612→                        <div className="flex items-start justify-between gap-3">
+   613→   613→                          <div className="flex-1 min-w-0">
+   614→   614→                            <CollapsibleTrigger asChild>
+   615→   615→                              <Button variant="ghost" size="sm" className="shrink-0 h-7 gap-1 text-xs">
+   616→   616→                                {isExpanded ? (
+   617→   617→                                  <><ChevronUp className="size-4" /> Ocultar metadatos</>
+   618→   618→                                ) : (
+   619→   619→                                  <><ChevronDown className="size-4" /> Ver metadatos</>
+   620→   620→                                )}
+   621→   621→                              </Button>
+   622→   622→                            </CollapsibleTrigger>
+   623→   623→                          </div>
+   624→   624→                        </div>
+   625→   625→
+   626→   626→                        <CollapsibleContent>
+   627→   627→                          <div className="mt-3 space-y-3">
+   628→   628→                            {/* Q-code de referencia (derivado del texto, no interpretación) */}
+   629→   629→                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+   630→   630→                              <span>Q-code (ref.):</span>
+   631→   631→                              <span className="font-mono">{notam.subject}{notam.condition ? ` / ${notam.condition}` : ""}</span>
+   632→   632→                            </div>
+   633→   633→
+   634→   634→                            {/* Altitude limits */}
+   635→   635→                            {(notam.lowerLimit || notam.upperLimit) && (
+   636→   636→                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+   637→   637→                                <span>Altitud:</span>
+   638→   638→                                <span className="font-mono">{notam.lowerLimit || "SFC"} — {notam.upperLimit || "UNL"}</span>
+   639→   639→                              </div>
+   640→   640→                            )}
+   641→   641→
+   642→   642→                            {/* Coordinates */}
+   643→   643→                            {notam.coordinates && (
+   644→   644→                              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+   645→   645→                                <MapPin className="size-3" />
+   646→   646→                                <span className="font-mono">{notam.coordinates}</span>
+   647→   647→                              </div>
+   648→   648→                            )}
+   649→   649→                          </div>
+   650→   650→                        </CollapsibleContent>
+   651→   651→
+   652→   652→                        {/* Footer row */}
+   653→   653→                        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground pt-2 border-t">
+   654→   654→                          <div className="flex items-center gap-1.5">
+   655→   655→                            <Clock className="size-3" />
+   656→   656→                            <span>Desde: {formatDateTimeUTC(notam.effectiveFrom)}</span>
+   657→   657→                          </div>
+   658→   658→                          <div className="flex items-center gap-1.5">
+   659→   659→                            <Clock className="size-3" />
+   660→   660→                            <span>
+   661→   661→                              {notam.isPermanent
+   662→   662→                                ? "Permanente"
+   663→   663→                                : notam.effectiveTo
+   664→   664→                                  ? `Hasta: ${formatDateTimeUTC(notam.effectiveTo)}`
+   665→   665→                                  : "Sin fecha fin"}
+   666→   666→                            </span>
+   667→   667→                          </div>
+   668→   668→                          {countdown && !countdown.isExpired && (
+   669→   669→                            <span className={`font-semibold ${countdown.isUrgent ? "text-red-600 dark:text-red-400" : "text-amber-600 dark:text-amber-400"}`}>
+   670→   670→                              {countdown.text}
+   671→   671→                            </span>
+   672→   672→                          )}
+   673→   673→                          {countdown?.isExpired && (
+   674→   674→                            <span className="font-semibold text-slate-500">Expirado</span>
+   675→   675→                          )}
+   676→   676→                          {notam.airport && (
+   677→   677→                            <button
+   678→   678→                              className="flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:underline font-medium"
+   679→   679→                              onClick={(e) => {
+   680→   680→                                e.stopPropagation()
+   681→   681→                                onSelectAirport?.(notam.airport!.icaoCode)
+   682→   682→                              }}
+   683→   683→                            >
+   684→   684→                              <Plane className="size-3" />
+   685→   685→                              {notam.airport.icaoCode}
+   686→   686→                            </button>
+   687→   687→                          )}
+   688→   688→                          <div className="flex items-center gap-1.5">
+   689→   689→                            <Radio className="size-3" />
+   690→   690→                            <span>FIR: {notam.fir}</span>
+   691→   691→                          </div>
+   692→   692→                        </div>
+   693→   693→                      </CardContent>
+   694→   694→                    </Collapsible>
+   695→   695→                  </Card>
+   696→   696→                </motion.div>
+   697→   697→              )
+   698→   698→            })}
+   699→   699→          </AnimatePresence>
+   700→   700→
+   701→   701→          {/* Load More */}
+   702→   702→          {hasMore && (
+   703→   703→            <div className="flex justify-center pt-4">
+   704→   704→              <Button
+   705→   705→                variant="outline"
+   706→   706→                onClick={() => setVisibleCount(prev => prev + 10)}
+   707→   707→                className="gap-2"
+   708→   708→              >
+   709→   709→                <ChevronDown className="size-4" />
+   710→   710→                Cargar más ({notams.length - visibleCount} restantes)
+   711→   711→              </Button>
+   712→   712→            </div>
+   713→   713→          )}
+   714→   714→        </div>
+   715→   715→      )}
+   716→   716→
+   717→   717→      {/* Delete All Confirmation Dialog */}
+   718→   718→      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+   719→   719→        <DialogContent className="max-w-md">
+   720→   720→          <DialogHeader>
+   721→   721→            <DialogTitle className="flex items-center gap-2 text-red-600">
+   722→   722→              <Trash2 className="size-5" />
+   723→   723→              Eliminar todos los NOTAMs
+   724→   724→            </DialogTitle>
+   725→   725→            <DialogDescription className="text-sm">
+   726→   726→              Se eliminarán <strong>TODOS</strong> los NOTAMs de FIR SPIM de la base de datos local. Esta acción no se puede deshacer.
+   727→   727→              <br /><br />
+   728→   728→              Útil para limpiar duplicados antes de pegar un boletín nuevo.
+   729→   729→            </DialogDescription>
+   730→   730→          </DialogHeader>
+   731→   731→          <div className="flex justify-end gap-2 mt-4">
+   732→   732→            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} disabled={deleting}>
+   733→   733→              Cancelar
+   734→   734→            </Button>
+   735→   735→            <Button variant="destructive" onClick={handleDeleteAll} disabled={deleting}>
+   736→   736→              {deleting ? (
+   737→   737→                <>
+   738→   738→                  <Loader2 className="size-4 animate-spin mr-1.5" />
+   739→   739→                  Eliminando...
+   740→   740→                </>
+   741→   741→              ) : (
+   742→   742→                <>
+   743→   743→                  <Trash2 className="size-4 mr-1.5" />
+   744→   744→                  Eliminar todos
+   745→   745→                </>
+   746→   746→              )}
+   747→   747→            </Button>
+   748→   748→          </div>
+   749→   749→        </DialogContent>
+   750→   750→      </Dialog>
+   751→   751→    </div>
+   752→   752→  )
+   753→   753→}
+   754→   754→

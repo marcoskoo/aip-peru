@@ -3,10 +3,10 @@
 import { useEffect, useState, useCallback, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
-  AlertCircle, Search, Filter, RefreshCw, ChevronDown, ChevronUp,
-  Clock, MapPin, Plane, Radio, ShieldAlert, Activity, Trash2, Loader2
+  AlertCircle, Search, Filter, RefreshCw, ChevronDown,
+  Clock, Plane, Activity, Trash2, Loader2
 } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -18,11 +18,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible"
 import {
   Dialog,
   DialogContent,
@@ -79,47 +74,6 @@ interface NotamListingProps {
 
 // ─── Helpers ──────────────────────────────────────────────────────
 
-function getPriorityConfig(priority: string) {
-  switch (priority) {
-    case "URGENT":
-      return { bg: "bg-red-100 dark:bg-red-950/50", text: "text-red-800 dark:text-red-300", border: "border-red-200 dark:border-red-800", label: "URGENTE" }
-    case "HIGH":
-      return { bg: "bg-orange-100 dark:bg-orange-950/50", text: "text-orange-800 dark:text-orange-300", border: "border-orange-200 dark:border-orange-800", label: "ALTA" }
-    case "MEDIUM":
-      return { bg: "bg-yellow-100 dark:bg-yellow-950/50", text: "text-yellow-800 dark:text-yellow-300", border: "border-yellow-200 dark:border-yellow-800", label: "MEDIA" }
-    case "LOW":
-      return { bg: "bg-green-100 dark:bg-green-950/50", text: "text-green-800 dark:text-green-300", border: "border-green-200 dark:border-green-800", label: "BAJA" }
-    default:
-      return { bg: "bg-slate-100 dark:bg-slate-800", text: "text-slate-800 dark:text-slate-300", border: "border-slate-200 dark:border-slate-700", label: priority }
-  }
-}
-
-function getScopeConfig(scope?: string | null) {
-  switch (scope) {
-    case "A":
-      return { label: "Aeródromo", bg: "bg-blue-100 dark:bg-blue-950/50", text: "text-blue-800 dark:text-blue-300", icon: Plane }
-    case "E":
-      return { label: "En-ruta", bg: "bg-purple-100 dark:bg-purple-950/50", text: "text-purple-800 dark:text-purple-300", icon: Radio }
-    case "W":
-      return { label: "Aviso", bg: "bg-amber-100 dark:bg-amber-950/50", text: "text-amber-800 dark:text-amber-300", icon: ShieldAlert }
-    default:
-      return { label: scope || "N/A", bg: "bg-slate-100 dark:bg-slate-800", text: "text-slate-800 dark:text-slate-300", icon: AlertCircle }
-  }
-}
-
-function getTypeBadge(type: string) {
-  switch (type) {
-    case "NOTAMN":
-      return { label: "NUEVO", bg: "bg-emerald-100 dark:bg-emerald-950/50", text: "text-emerald-800 dark:text-emerald-300" }
-    case "NOTAMR":
-      return { label: "REEMPLAZO", bg: "bg-blue-100 dark:bg-blue-950/50", text: "text-blue-800 dark:text-blue-300" }
-    case "NOTAMC":
-      return { label: "CANCELACIÓN", bg: "bg-red-100 dark:bg-red-950/50", text: "text-red-800 dark:text-red-300" }
-    default:
-      return { label: type, bg: "bg-slate-100 dark:bg-slate-800", text: "text-slate-800 dark:text-slate-300" }
-  }
-}
-
 function formatDateTimeUTC(dateStr: string) {
   try {
     const d = new Date(dateStr)
@@ -157,7 +111,6 @@ export function NotamListing({ onSelectNotam, onSelectAirport, isAdmin = false }
   const [priorityFilter, setPriorityFilter] = useState<string>("all")
   const [activeOnly, setActiveOnly] = useState(true)
   const [visibleCount, setVisibleCount] = useState(10)
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date())
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [stats, setStats] = useState<NotamStats | null>(null)
@@ -302,15 +255,6 @@ export function NotamListing({ onSelectNotam, onSelectAirport, isAdmin = false }
       if (refreshTimerRef.current) clearInterval(refreshTimerRef.current)
     }
   }, [fetchNotams])
-
-  const toggleExpanded = (id: string) => {
-    setExpandedIds(prev => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
-  }
 
   const visibleNotams = notams.slice(0, visibleCount)
   const hasMore = visibleCount < notams.length
@@ -538,12 +482,7 @@ export function NotamListing({ onSelectNotam, onSelectAirport, isAdmin = false }
         <div className="space-y-3">
           <AnimatePresence mode="popLayout">
             {visibleNotams.map((notam, index) => {
-              const priorityConf = getPriorityConfig(notam.priority)
-              const scopeConf = getScopeConfig(notam.scope)
-              const typeConf = getTypeBadge(notam.type)
-              const isExpanded = expandedIds.has(notam.id)
               const countdown = notam.effectiveTo ? getCountdown(notam.effectiveTo) : null
-              const ScopeIcon = scopeConf.icon
               const isActive = !notam.effectiveTo || notam.isPermanent || new Date(notam.effectiveTo) > new Date()
 
               return (
@@ -562,136 +501,77 @@ export function NotamListing({ onSelectNotam, onSelectAirport, isAdmin = false }
                     }`}
                     onClick={() => onSelectNotam?.(notam)}
                   >
-                    <Collapsible
-                      open={isExpanded}
-                      onOpenChange={() => toggleExpanded(notam.id)}
-                    >
-                      <CardHeader className="pb-2">
-                        <div className="flex items-center flex-wrap gap-2">
+                    <CardContent className="space-y-3 pt-4">
+                      {/* Encabezado mínimo: ID + fuente + estado activo/expirado.
+                          No se muestran badges de tipo/alcance/prioridad porque esa
+                          información ya está contenida en el texto OACI crudo (Q), NOTAMN/R/C). */}
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <div className="flex items-center gap-2">
                           <span className="font-mono font-bold text-sm bg-navy text-white px-2.5 py-1 rounded">
                             {notam.notamId}
                           </span>
-                          <Badge className={`${typeConf.bg} ${typeConf.text} text-[10px] font-bold tracking-wider`}>
-                            {typeConf.label}
-                          </Badge>
-                          <Badge className={`${scopeConf.bg} ${scopeConf.text} text-[10px] gap-1`}>
-                            <ScopeIcon className="size-2.5" />
-                            {notam.scope || "—"}
-                          </Badge>
-                          <Badge className={`${priorityConf.bg} ${priorityConf.text} text-[10px] font-bold`}>
-                            {priorityConf.label}
-                          </Badge>
-                          {notam.verified && (
+                          {isActive ? (
                             <Badge className="bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 text-[10px]">
-                              Verificado
+                              Activo
                             </Badge>
+                          ) : (
+                            <Badge variant="secondary" className="text-[10px]">Expirado</Badge>
                           )}
                         </div>
-                      </CardHeader>
-                      <CardContent className="space-y-3">
-                        {/* TEXTO CRUDO OACI — siempre visible, sin truncar, primero y prominente.
-                            El texto se muestra EXACTAMENTE como lo emite la fuente (FAA USNS en vivo
-                            o AIS Perú manual). NO hay interpretación, resumen ni transformación del sistema. */}
-                        <div>
-                          <div className="flex items-center justify-between mb-1.5">
-                            <span className="text-[10px] font-bold tracking-wider text-amber-600 dark:text-amber-400 uppercase flex items-center gap-1">
-                              <AlertCircle className="size-3" />
-                              Texto OACI original · sin interpretación
-                            </span>
-                            {notam.source && (
-                              <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-900">
-                                {notam.source}
-                              </span>
-                            )}
-                          </div>
-                          <div className="bg-slate-900 dark:bg-slate-950 rounded-lg p-3 border border-slate-700 dark:border-slate-800">
-                            <p className="text-[11px] font-mono text-slate-100 dark:text-slate-200 whitespace-pre-wrap break-words leading-relaxed">{notam.text}</p>
-                          </div>
+                        {notam.source && (
+                          <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-900">
+                            {notam.source}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* TEXTO CRUDO OACI — único contenido mostrado.
+                          Se presenta EXACTAMENTE como lo emite la fuente (FAA USNS en vivo
+                          o AIS Perú manual). Sin interpretación, resumen, ni campos parseados.
+                          Todos los campos (Q, A, B, C, D, E) están incluidos en este texto. */}
+                      <div className="bg-slate-900 dark:bg-slate-950 rounded-lg p-3 border border-slate-700 dark:border-slate-800">
+                        <p className="text-[11px] font-mono text-slate-100 dark:text-slate-200 whitespace-pre-wrap break-words leading-relaxed">{notam.text}</p>
+                      </div>
+
+                      {/* Pie mínimo: vigencia (campos B)/C) del NOTAM, factual) y aeródromo asociado.
+                          No se muestra FIR, Q-code, altitud ni coordenadas: todo está en el texto crudo. */}
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground pt-2 border-t">
+                        <div className="flex items-center gap-1.5">
+                          <Clock className="size-3" />
+                          <span>Desde: {formatDateTimeUTC(notam.effectiveFrom)}</span>
                         </div>
-
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex-1 min-w-0">
-                            <CollapsibleTrigger asChild>
-                              <Button variant="ghost" size="sm" className="shrink-0 h-7 gap-1 text-xs">
-                                {isExpanded ? (
-                                  <><ChevronUp className="size-4" /> Ocultar metadatos</>
-                                ) : (
-                                  <><ChevronDown className="size-4" /> Ver metadatos</>
-                                )}
-                              </Button>
-                            </CollapsibleTrigger>
-                          </div>
+                        <div className="flex items-center gap-1.5">
+                          <Clock className="size-3" />
+                          <span>
+                            {notam.isPermanent
+                              ? "Permanente"
+                              : notam.effectiveTo
+                                ? `Hasta: ${formatDateTimeUTC(notam.effectiveTo)}`
+                                : "Sin fecha fin"}
+                          </span>
                         </div>
-
-                        <CollapsibleContent>
-                          <div className="mt-3 space-y-3">
-                            {/* Q-code de referencia (derivado del texto, no interpretación) */}
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                              <span>Q-code (ref.):</span>
-                              <span className="font-mono">{notam.subject}{notam.condition ? ` / ${notam.condition}` : ""}</span>
-                            </div>
-
-                            {/* Altitude limits */}
-                            {(notam.lowerLimit || notam.upperLimit) && (
-                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                <span>Altitud:</span>
-                                <span className="font-mono">{notam.lowerLimit || "SFC"} — {notam.upperLimit || "UNL"}</span>
-                              </div>
-                            )}
-
-                            {/* Coordinates */}
-                            {notam.coordinates && (
-                              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                                <MapPin className="size-3" />
-                                <span className="font-mono">{notam.coordinates}</span>
-                              </div>
-                            )}
-                          </div>
-                        </CollapsibleContent>
-
-                        {/* Footer row */}
-                        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground pt-2 border-t">
-                          <div className="flex items-center gap-1.5">
-                            <Clock className="size-3" />
-                            <span>Desde: {formatDateTimeUTC(notam.effectiveFrom)}</span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <Clock className="size-3" />
-                            <span>
-                              {notam.isPermanent
-                                ? "Permanente"
-                                : notam.effectiveTo
-                                  ? `Hasta: ${formatDateTimeUTC(notam.effectiveTo)}`
-                                  : "Sin fecha fin"}
-                            </span>
-                          </div>
-                          {countdown && !countdown.isExpired && (
-                            <span className={`font-semibold ${countdown.isUrgent ? "text-red-600 dark:text-red-400" : "text-amber-600 dark:text-amber-400"}`}>
-                              {countdown.text}
-                            </span>
-                          )}
-                          {countdown?.isExpired && (
-                            <span className="font-semibold text-slate-500">Expirado</span>
-                          )}
-                          {notam.airport && (
-                            <button
-                              className="flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:underline font-medium"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                onSelectAirport?.(notam.airport!.icaoCode)
-                              }}
-                            >
-                              <Plane className="size-3" />
-                              {notam.airport.icaoCode}
-                            </button>
-                          )}
-                          <div className="flex items-center gap-1.5">
-                            <Radio className="size-3" />
-                            <span>FIR: {notam.fir}</span>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Collapsible>
+                        {countdown && !countdown.isExpired && (
+                          <span className={`font-semibold ${countdown.isUrgent ? "text-red-600 dark:text-red-400" : "text-amber-600 dark:text-amber-400"}`}>
+                            {countdown.text}
+                          </span>
+                        )}
+                        {countdown?.isExpired && (
+                          <span className="font-semibold text-slate-500">Expirado</span>
+                        )}
+                        {notam.airport && (
+                          <button
+                            className="flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              onSelectAirport?.(notam.airport!.icaoCode)
+                            }}
+                          >
+                            <Plane className="size-3" />
+                            {notam.airport.icaoCode}
+                          </button>
+                        )}
+                      </div>
+                    </CardContent>
                   </Card>
                 </motion.div>
               )

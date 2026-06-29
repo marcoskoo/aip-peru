@@ -57,6 +57,11 @@ export function FlightPlan({
             type: p.type,
             lat: p.lat,
             lon: p.lon,
+            // airwayUsed = designador de la aerovía que conecta el punto ANTERIOR con este.
+            // Se usa para construir el campo Ruta (F15c) en formato OACI:
+            //   Radioayuda/WP/Coord + Aerovía + Radioayuda/WP/Coord + ...
+            // ej: DCT LIM V1 AQP V2 CUS DCT  (en lugar de DCT LIM DCT AQP DCT CUS DCT)
+            airwayUsed: p.airwayUsed,
           })),
           summary: data.summary
             ? {

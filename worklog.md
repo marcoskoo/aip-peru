@@ -5442,3 +5442,41 @@ Stage Summary:
 - Leyenda ahora es colapsable/minimizable con chip compacto (icono Info) cuando está colapsada y botón EyeOff cuando está expandida
 - Vista móvil mejorada: leyenda colapsada por defecto, panel de capas oculto por defecto, toolbar con solo iconos, basemap toggle con etiquetas cortas, altura de mapa optimizada
 - Vista desktop mantiene el comportamiento original (leyenda expandida, toolbar completa) con la nueva capacidad de colapsar la leyenda
+
+---
+Task ID: NOTAM-RAW-ROUTE-FORMAT
+Agent: Main Agent
+Task: (1) En la sección de NOTAM mostrar solo texto crudo (sin interpretación/metadata). (2) Construir el segmento de ruta como Radioayuda/WP + Aerovía + Radioayuda/WP... (ej: V1) en lugar de DCT WP DCT WP.
+
+Work Log:
+- Analicé imagen IMG_5980.jpeg (NOTAM A1427/26 SPJC) con VLM para entender el formato esperado
+- Simplifiqué src/components/notam-listing.tsx:
+  * Removí badges de tipo (NOTAMN/R/C), alcance (A/E/W), prioridad (URGENT/HIGH/MEDIUM/LOW), verificado
+  * Removí sección colapsable "Ver metadatos" con Q-code, altitud, coordenadas
+  * Removí FIR del footer
+  * Conservé: ID NOTAM, estado Activo/Expirado, fuente (FAA USNS live), texto crudo OACI en bloque oscuro, fechas B)/C), countdown, aeródromo asociado
+  * Limpié imports/funciones helper no usadas (getPriorityConfig, getScopeConfig, getTypeBadge, Collapsible, CardHeader, expandedIds, toggleExpanded, iconos ChevronUp/MapPin/Radio/ShieldAlert)
+- Simplifiqué src/components/notam-detail.tsx:
+  * Removí badges de prioridad/alcance/tipo/verificado del header
+  * Removí sección colapsable "Metadata parseada (campos del Q-code)" con Tipo/Alcance/FIR/Estado/Asunto/Condición/Fuente/Reemplaza
+  * Removí sección de Límites de Altitud y Coordenadas
+  * Removí tarjeta de Mapa (dependía de coordenadas parseadas)
+  * Removí sub-componente InfoRow no usado
+  * Conservé: tarjeta "Texto OACI completo (crudo)" prominente, Período de Vigencia (campos B)/C)), aeródromo relacionado, NOTAMs relacionados (solo ID + estado)
+  * Limpié imports: dynamic/NotamMap, getPriorityConfig, getScopeConfig, getTypeBadge, iconos Clock/MapPin/Radio/ShieldAlert/CheckCircle2
+- Actualicé src/components/flight-plan.tsx: agregué campo airwayUsed al postMessage enviado al iframe FPL
+- Actualicé public/fpl.html (postMessage listener):
+  * Cambié constructor de ruta de "DCT WP1 DCT WP2 DCT" a formato OACI: "AIRWAY WP AIRWAY WP..."
+  * route[i].airwayUsed = aerovía que conecta route[i-1] → route[i]
+  * Si no hay aerovía, usa DCT
+  * ej: CLA→PALOP(V1)→TRU ⇒ "V1 PALOP V1"
+- Verifiqué con Agent Browser:
+  * NOTAM listing: confirmado via VLM — solo texto crudo, sin badges de metadata
+  * Route calculator: CLA→TRU detecta aerovía V1 (vía PALOP intermedio)
+  * FPL route field: valor exacto "V1 PALOP V1" (confirmado con `agent-browser get value`)
+- Lint: sin errores. Dev log: sin errores.
+
+Stage Summary:
+- NOTAMs se muestran en texto crudo OACI exclusivamente (sin interpretación ni campos parseados)
+- El segmento de ruta ahora sigue el formato OACI: Radioayuda/WP + Aerovía + Radioayuda/WP... (ej: V1 PALOP V1)
+- Verificado end-to-end con navegador
