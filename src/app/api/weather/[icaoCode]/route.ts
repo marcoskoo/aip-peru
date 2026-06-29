@@ -35,6 +35,7 @@ interface WeatherCacheEntry {
   data: {
     icaoCode: string
     metar: ParsedMetar | null
+    speci: ParsedMetar[]
     taf: { raw: string; time: string; periods: TafPeriod[] } | null
     fetchedAt: string
     source: string
@@ -81,14 +82,22 @@ function getFlightCategory(visibility: number, ceiling: number | null): "VFR" | 
   return "VFR"
 }
 
-// ─── Simple METAR Parser ─────────────────────────────────────────
+// ─── Simple METAR/SPECI Parser ────────────────────────────────────
 
-function parseMetar(raw: string): ParsedMetar {
+interface ParsedObservation extends ParsedMetar {
+  type: "METAR" | "SPECI"
+}
+
+function parseObservation(raw: string): ParsedObservation {
   const parts = raw.trim().split(/\s+/)
   let idx = 0
 
-  // Saltar prefijo "METAR" o "SPECI" si está presente (aviationweather.gov lo incluye)
-  if (parts[idx] === "METAR" || parts[idx] === "SPECI") idx++
+  // Detectar prefijo "METAR" o "SPECI" si está presente (aviationweather.gov lo incluye)
+  let type: "METAR" | "SPECI" = "METAR"
+  if (parts[idx] === "METAR" || parts[idx] === "SPECI") {
+    type = parts[idx] as "METAR" | "SPECI"
+    idx++
+  }
 
   // ICAO code
   if (/^[A-Z]{4}$/.test(parts[idx])) idx++
@@ -96,6 +105,9 @@ function parseMetar(raw: string): ParsedMetar {
   // Auto
   const isAuto = parts[idx] === "AUTO"
   if (isAuto) idx++
+
+  // COR (correction indicator)
+  if (parts[idx] === "COR") idx++
 
   // Time
   const timeStr = parts[idx]
@@ -206,6 +218,7 @@ function parseMetar(raw: string): ParsedMetar {
 
   return {
     raw,
+    type,
     time: isoTime,
     wind,
     visibility,
@@ -219,6 +232,12 @@ function parseMetar(raw: string): ParsedMetar {
     auto: isAuto,
     cavok: raw.includes("CAVOK"),
   }
+}
+
+// Backwards-compatible wrapper
+function parseMetar(raw: string): ParsedMetar {
+  const { type, ...rest } = parseObservation(raw)
+  return rest
 }
 
 // ─── Simple TAF Period Parser ────────────────────────────────────
@@ -502,21 +521,32 @@ export async function GET(
       return NextResponse.json(cached.data)
     }
 
-    // Look up airport for elevation info
-    const airport = await db.airport.findUnique({
-      where: { icaoCode: code },
-      select: { elevation: true, city: true },
-    })
+    // Look up airport for elevation info (opcional — la BD puede no estar disponible)
+    let airport: { elevation: number | null; city: string | null } | null = null
+    try {
+      airport = await db.airport.findUnique({
+        where: { icaoCode: code },
+        select: { elevation: true, city: true },
+      })
+    } catch {
+      // Prisma puede fallar si DATABASE_URL no está configurada correctamente
+      // (mismatch postgresql/sqlite en este sandbox). Continuamos sin datos del aeródromo.
+      airport = null
+    }
 
-    // Try fetching real METAR/TAF from aviationweather.gov API
+    // Try fetching real METAR/SPECI/TAF from aviationweather.gov API
     let metarRaw: string | null = null
     let tafRaw: string | null = null
+    const allObservations: string[] = []
     let source = 'simulated'
 
     try {
+      // Pedimos 3 horas de observaciones (incluye METAR y SPECI).
+      // SPECI se emite fuera de schedule cuando hay cambios significativos,
+      // por eso necesitamos un rango de varias horas para capturarlos.
       const [metarResponse, tafResponse] = await Promise.all([
         fetchWithTimeout(
-          `https://aviationweather.gov/api/data/metar?ids=${code}&format=json`,
+          `https://aviationweather.gov/api/data/metar?ids=${code}&format=json&hours=3`,
           8000
         ),
         fetchWithTimeout(
@@ -526,13 +556,21 @@ export async function GET(
       ])
 
       // Aviationweather.gov API response fields:
-      //   METAR endpoint → returns objects with `rawOb` (the raw METAR string)
+      //   METAR endpoint → returns objects with `rawOb` (the raw METAR/SPECI string)
       //   TAF endpoint   → returns objects with `rawTAF` (the raw TAF string)
       // Older API versions used `rawText` for both — kept as fallback for resilience.
       if (metarResponse?.ok) {
         const metarData = await metarResponse.json()
         if (Array.isArray(metarData) && metarData.length > 0) {
-          metarRaw = metarData[0].rawOb || metarData[0].rawText || metarData[0].rawObs || null
+          // Recoger todas las observaciones crudas (METAR + SPECI)
+          for (const obs of metarData) {
+            const raw = obs.rawOb || obs.rawText || obs.rawObs || null
+            if (raw && typeof raw === 'string') {
+              allObservations.push(raw)
+            }
+          }
+          // La primera del array es la más reciente
+          metarRaw = allObservations[0] || null
         }
       }
 
@@ -566,8 +604,40 @@ export async function GET(
       }
     }
 
-    // Parse METAR and TAF
+    // Parse METAR/SPECI: separar la observación más reciente (METAR o SPECI) de
+    // los SPECI históricos. Si la más reciente es un SPECI, también entra como
+    // "current" en `metar` para mantener compatibilidad con la UI existente.
     const parsedMetar = metarRaw ? parseMetar(metarRaw) : null
+
+    const parsedSpeci: ParsedMetar[] = []
+    if (allObservations.length > 0) {
+      // La API devuelve más reciente primero. Saltamos la [0] (ya en metar) y
+      // guardamos los SPECI posteriores como historial.
+      for (let i = 1; i < allObservations.length; i++) {
+        const parsed = parseObservation(allObservations[i])
+        if (parsed.type === "SPECI") {
+          // Eliminar el campo `type` para cumplir con ParsedMetar
+          const { type: _t, ...rest } = parsed
+          void _t
+          parsedSpeci.push(rest)
+        }
+      }
+      // Si la observación más reciente también es SPECI, incluyirla al inicio
+      // del historial para que el usuario la vea como el último SPECI emitido.
+      if (metarRaw) {
+        const latest = parseObservation(metarRaw)
+        if (latest.type === "SPECI") {
+          const { type: _t, ...rest } = latest
+          void _t
+          // Evitar duplicado si ya estaba
+          if (!parsedSpeci.some(s => s.raw === rest.raw)) {
+            parsedSpeci.unshift(rest)
+          }
+        }
+      }
+    }
+
+    // Parse TAF
     const parsedTaf = tafRaw
       ? { raw: tafRaw, time: new Date().toISOString(), periods: parseTafPeriods(tafRaw) }
       : null
@@ -575,6 +645,7 @@ export async function GET(
     const result = {
       icaoCode: code,
       metar: parsedMetar,
+      speci: parsedSpeci,
       taf: parsedTaf,
       fetchedAt: new Date().toISOString(),
       source,

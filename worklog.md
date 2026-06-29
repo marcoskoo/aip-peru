@@ -5032,3 +5032,76 @@ Stage Summary:
   * Si no encuentra ruta por aerovía, usa ruta directa como fallback
 - Manejo robusto de colisiones de ident (22 idents conflictivos resueltos)
 - Verificación: lint pasa limpio, dev server compila sin errores
+
+---
+Task ID: 21-SPECI-NO-CHART
+Agent: Main Agent
+Task: 1) Agregar información SPECI a la información meteorológica. 2) Eliminar ficha "Carta Aeronáutica".
+
+Work Log:
+- Leí worklog.md y exploré la estructura del proyecto (weather-panel.tsx, aeronautical-chart.tsx, page.tsx, api/weather/[icaoCode]/route.ts)
+- Verifiqué que aeronautical-chart.tsx también es usado por notam-detail.tsx (como NotamMap), así que solo removería la ficha de navegación, no el archivo
+
+Tarea 1 — Eliminar ficha "Carta Aeronáutica":
+- Edité src/app/page.tsx:
+  * Removí `"chart"` del tipo `ViewMode`
+  * Removí el dynamic import de `AeronauticalChart`
+  * Removí el botón de navegación `{ mode: "chart", label: "Carta Aeronáutica" }` del array navButtons
+  * Removí la rama condicional `viewMode === "chart"` que renderizaba `<AeronauticalChart />`
+  * Removí la prop `onViewChart={() => setViewMode("chart")}` de `<AirwaysListing>` (la prop es opcional, sigue presente en el componente)
+  * Limpié imports no usados (AlertTriangle, X)
+- Verifiqué con Agent Browser: el botón "Carta Aeronáutica" ya no aparece en la barra de navegación (desktop ni mobile sheet)
+
+Tarea 2 — Agregar SPECI a información meteorológica:
+
+Backend (src/app/api/weather/[icaoCode]/route.ts):
+- Renombré `parseMetar` → `parseObservation` que devuelve `ParsedObservation` (extiende ParsedMetar con campo `type: "METAR" | "SPECI"`)
+- El parser detecta el prefijo "METAR" o "SPECI" al inicio del raw string y lo registra
+- Añadí soporte para el indicador "COR" (correction) que aparece tras AUTO en algunos reportes
+- Mantuve `parseMetar` como wrapper backwards-compatible (elimina el campo `type`)
+- Actualicé WeatherCacheEntry para incluir `speci: ParsedMetar[]`
+- Modifiqué el fetch a aviationweather.gov: ahora pide `hours=3` para obtener todas las observaciones de las últimas 3 horas (METAR + SPECI)
+- Recojo todas las observaciones crudas en `allObservations[]`; la [0] es la más reciente → `metar`
+- Itero sobre las restantes y separo las que tienen prefijo "SPECI" → `parsedSpeci[]`
+- Si la observación más reciente también es SPECI, la incluyo al inicio del historial (sin duplicar)
+- Añadí `speci: parsedSpeci` al resultado retornado por la API
+- Hice resiliente el `db.airport.findUnique` con try/catch — Prisma falla en este sandbox por mismatch postgresql/sqlite (DATABASE_URL); el campo `airport` era asignado pero nunca usado, así que ahora es safe-optional
+- Verifiqué con curl:
+  * SPJC: 0 SPECI (clima estable, normal)
+  * KLAX: 1 SPECI ("SPECI KLAX 291407Z 00000KT 10SM FEW015 SCT025 OVC032 18/13 A2989...") — correctamente detectado y separado del METAR routine
+  * KMIA, KJFK, KBOS: 0 SPECI
+
+Frontend (src/components/weather-panel.tsx):
+- Añadí `speci?: ParsedMetar[]` a la interfaz WeatherData
+- Añadí `fetchedAt?: string` a WeatherData y actualicé el display "Última actualización" para usar `fetchedAt || lastUpdated` (fix de bug pre-existente)
+- Añadí import del icono `Zap` de lucide-react
+- Añadí estado `showSpeciDetails` (default true) para contraer/expandir la lista de SPECI
+- Añadí `const speci = weather.speci || []` junto a metar/taf
+- Inserté nueva tarjeta SPECI entre la tarjeta METAR y la tarjeta TAF:
+  * Solo se renderiza cuando `speci.length > 0` (no muestra tarjeta vacía)
+  * Borde ámbar distintivo (border-amber-300)
+  * Header con icono Zap + título "SPECI — {ICAO}" + badge "N REPORTES" + botón Contraer/Expandir
+  * Descripción: "Reportes especiales emitidos por cambios significativos en las condiciones meteorológicas (últimas 3 h)"
+  * Lista scrollable (max-h-80 overflow-y-auto) con cada SPECI como tarjeta individual
+  * Cada SPECI muestra: badge "SPECI" mono, hora, badge AUTO/CAVOK si aplica, badge flight category (VFR/MVFR/IFR/LIFR)
+  * Datos decodificados: viento, visibilidad, temperatura/punto rocío, QNH, nubes, fenómenos meteorológicos
+  * Raw SPECI al final en font-mono para referencia
+  * Animación framer-motion (slide-in)
+- Verifiqué con Agent Browser + VLM:
+  * SPJC (0 SPECI): tarjeta SPECI no se muestra (comportamiento correcto)
+  * Inyecté un SPECI de prueba vía fetch interception en el browser → tarjeta SPECI apareció con todos los detalles: viento 180° 15 kt G25, visibilidad 4000 m, temp 22/19°C, QNH 1011 hPa, nubes BKN 800 ft + OVC 1500 ft, fenómeno -RA, badge "1 REPORTE", botón "Contraer"
+  * Sin errores de consola ni de runtime
+
+Lint: bun run lint pasa limpio (0 errores)
+Dev server: corriendo en puerto 3000, HTTP 200, sin errores en dev.log
+
+Stage Summary:
+- 3 archivos modificados:
+  * src/app/page.tsx — removida ficha "Carta Aeronáutica" (ViewMode type, dynamic import, nav button, conditional render, onViewChart prop, imports no usados)
+  * src/app/api/weather/[icaoCode]/route.ts — renombrado parser a parseObservation con detección de tipo METAR/SPECI, fetch de 3 h de observaciones, separación SPECI/METAR, campo `speci` en respuesta, db.airport.findUnique resiliente
+  * src/components/weather-panel.tsx — nueva tarjeta SPECI con detalles decodificados, icono Zap, badge de conteo, contraer/expandir, animación; fix bug lastUpdated→fetchedAt
+- Ficha "Carta Aeronáutica" eliminada de navegación desktop y mobile
+- SPECI se obtiene en tiempo real desde aviationweather.gov (3 h de historial)
+- Tarjeta SPECI solo aparece cuando hay reportes especiales (no muestra tarjeta vacía)
+- SPECI muestra datos decodificados completos + raw + flight category + badges AUTO/CAVOK
+- Verificado con Agent Browser + VLM: SPECI card renderiza correctamente con todos los datos

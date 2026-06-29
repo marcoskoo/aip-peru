@@ -3,7 +3,7 @@
 import { useState, useCallback, Suspense } from "react"
 import { useToast } from "@/hooks/use-toast"
 import dynamic from "next/dynamic"
-import { Moon, Sun, Plane, Map, FileText, Route, Settings, Crosshair, Navigation2, AlertTriangle, Shield, Calculator, Search, BookOpen, Menu, X, Bot } from "lucide-react"
+import { Moon, Sun, Plane, Map, FileText, Route, Settings, Crosshair, Navigation2, Shield, Calculator, Search, BookOpen, Menu, Bot } from "lucide-react"
 import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -26,17 +26,6 @@ import type { Airport, Heliport, RoutePoint, RouteSummary } from "@/lib/types"
 const PERUVIAN_AIRPORTS_COUNT = PERUVIAN_AIRPORTS.length
 
 // Dynamic imports for heavy components to reduce initial bundle
-const AeronauticalChart = dynamic(
-  () =>
-    import("@/components/aeronautical-chart").then(
-      (mod) => mod.AeronauticalChart
-    ),
-  {
-    ssr: false,
-    loading: () => <Skeleton className="h-[600px] w-full" />,
-  }
-)
-
 const AdminPanel = dynamic(
   () =>
     import("@/components/admin-panel").then(
@@ -114,7 +103,7 @@ const InteractiveMap = dynamic(
   }
 )
 
-type ViewMode = "airports" | "heliports" | "chart" | "interactive-map" | "flight-plan" | "route-calculator" | "airways" | "admin" | "notams" | "airspace" | "calculator" | "publications" | "spim-briefing"
+type ViewMode = "airports" | "heliports" | "interactive-map" | "flight-plan" | "route-calculator" | "airways" | "admin" | "notams" | "airspace" | "calculator" | "publications" | "spim-briefing"
 
 export default function Home() {
   const [selectedAirport, setSelectedAirport] = useState<Airport | null>(null)
@@ -202,7 +191,6 @@ export default function Home() {
     { mode: "spim-briefing" as ViewMode, icon: Bot, label: "INFO SPIM" },
     { mode: "airspace" as ViewMode, icon: Shield, label: "Zonas" },
     { mode: "interactive-map" as ViewMode, icon: Map, label: "Mapa Interactivo" },
-    { mode: "chart" as ViewMode, icon: Map, label: "Carta Aeronáutica" },
     { mode: "route-calculator" as ViewMode, icon: Route, label: "Calculadora" },
     { mode: "calculator" as ViewMode, icon: Calculator, label: "Calc. Aero" },
     { mode: "flight-plan" as ViewMode, icon: FileText, label: "Plan de Vuelo" },
@@ -366,9 +354,7 @@ export default function Home() {
         ) : viewMode === "heliports" && !selectedHeliport ? (
           <HeliportListing onSelectHeliport={handleSelectHeliport} />
         ) : viewMode === "airways" && !selectedAirport ? (
-          <AirwaysListing
-            onViewChart={() => setViewMode("chart")}
-          />
+          <AirwaysListing />
         ) : viewMode === "spim-briefing" && !selectedAirport ? (
           <SpimBriefing />
         ) : viewMode === "airspace" && !selectedAirport ? (
@@ -434,22 +420,6 @@ export default function Home() {
               </Badge>
             </div>
             <InteractiveMap onSendToFlightPlan={handleGenerateFlightPlan} />
-          </div>
-        ) : viewMode === "chart" && !selectedAirport ? (
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <Map className="size-6 text-amber-500" />
-              <div>
-                <h1 className="text-xl font-bold tracking-tight">
-                  Carta Aeronáutica
-                </h1>
-                <p className="text-sm text-muted-foreground">
-                  Aerovías, waypoints, radioayudas y límites FIR – Región de
-                  información de vuelo Lima (SPIM)
-                </p>
-              </div>
-            </div>
-            <AeronauticalChart />
           </div>
         ) : viewMode === "route-calculator" && !selectedAirport ? (
           <div className="space-y-4">

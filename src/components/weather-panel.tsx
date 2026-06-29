@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   Cloud, Sun, CloudRain, Wind, Eye, Thermometer, Gauge,
-  RefreshCw, ChevronDown, ChevronUp, AlertTriangle, CloudFog, CloudSnow, CloudLightning
+  RefreshCw, ChevronDown, ChevronUp, AlertTriangle, CloudFog, CloudSnow, CloudLightning, Zap
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -36,6 +36,21 @@ interface WeatherData {
     auto?: boolean
     cavok?: boolean
   }
+  speci?: {
+    raw: string
+    time: string
+    wind: { direction: number; speed: number; gust?: number; variable?: boolean; varFrom?: number; varTo?: number }
+    visibility: { value: number; unit: string }
+    clouds: { quantity: string; height: number; type?: string }[]
+    temperature: number
+    dewpoint: number
+    qnh: number
+    flightCategory: "VFR" | "MVFR" | "IFR" | "LIFR"
+    weather?: string[]
+    remarks?: string
+    auto?: boolean
+    cavok?: boolean
+  }[]
   taf?: {
     raw: string
     time: string
@@ -51,7 +66,8 @@ interface WeatherData {
       flightCategory?: "VFR" | "MVFR" | "IFR" | "LIFR"
     }[]
   }
-  lastUpdated: string
+  lastUpdated?: string
+  fetchedAt?: string
 }
 
 interface WeatherPanelProps {
@@ -124,6 +140,7 @@ export function WeatherPanel({ icaoCode, showSelector = false }: WeatherPanelPro
   const [error, setError] = useState<string | null>(null)
   const [showRawMetar, setShowRawMetar] = useState(false)
   const [showRawTaf, setShowRawTaf] = useState(false)
+  const [showSpeciDetails, setShowSpeciDetails] = useState(true)
   const [activeIcao, setActiveIcao] = useState(icaoCode)
 
   // Sync icaoCode prop to internal state
@@ -191,6 +208,7 @@ export function WeatherPanel({ icaoCode, showSelector = false }: WeatherPanelPro
 
   const metar = weather.metar
   const taf = weather.taf
+  const speci = weather.speci || []
   const catConfig = getFlightCategoryConfig(metar.flightCategory)
 
   return (
@@ -346,6 +364,136 @@ export function WeatherPanel({ icaoCode, showSelector = false }: WeatherPanelPro
         </CardContent>
       </Card>
 
+      {/* SPECI Card — Reportes Especiales */}
+      {speci.length > 0 && (
+        <Card className="border-amber-300 dark:border-amber-700/60">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Zap className="size-5 text-amber-500" />
+                SPECI — {activeIcao}
+              </CardTitle>
+              <div className="flex items-center gap-2">
+                <Badge className="bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700 text-[10px] font-bold">
+                  {speci.length} REPORTE{speci.length !== 1 ? "S" : ""}
+                </Badge>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowSpeciDetails(!showSpeciDetails)}
+                  className="h-7 px-2 text-xs gap-1"
+                >
+                  {showSpeciDetails ? <ChevronUp className="size-3" /> : <ChevronDown className="size-3" />}
+                  {showSpeciDetails ? "Contraer" : "Expandir"}
+                </Button>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Reportes especiales emitidos por cambios significativos en las condiciones meteorológicas (últimas 3 h)
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {showSpeciDetails && (
+              <div className="max-h-80 overflow-y-auto space-y-2 pr-1">
+                {speci.map((s, i) => {
+                  const sCat = getFlightCategoryConfig(s.flightCategory)
+                  return (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: Math.min(i * 0.05, 0.3) }}
+                      className="rounded-lg border border-amber-200 dark:border-amber-800/40 bg-amber-50/50 dark:bg-amber-950/10 p-3 space-y-2"
+                    >
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Badge variant="outline" className="text-[10px] font-mono border-amber-400 dark:border-amber-600 text-amber-700 dark:text-amber-300">
+                            SPECI
+                          </Badge>
+                          <span className="text-xs text-muted-foreground font-medium">
+                            {formatWeatherTime(s.time)}
+                          </span>
+                          {s.auto && (
+                            <Badge variant="outline" className="text-[9px] h-4">AUTO</Badge>
+                          )}
+                          {s.cavok && (
+                            <Badge className="bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 text-[9px] h-4 px-1">
+                              CAVOK
+                            </Badge>
+                          )}
+                        </div>
+                        <Badge className={`${sCat.bg} ${sCat.text} border ${sCat.border} text-[9px] h-4 px-1.5 font-bold`}>
+                          {sCat.label}
+                        </Badge>
+                      </div>
+                      <div className="flex flex-wrap gap-3 text-xs">
+                        <span className="flex items-center gap-1">
+                          <Wind className="size-3 text-muted-foreground" />
+                          <span className="font-medium">
+                            {s.wind.variable ? "VRB" : `${s.wind.direction}°`} {s.wind.speed} kt
+                            {s.wind.gust && ` G${s.wind.gust}`}
+                          </span>
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Eye className="size-3 text-muted-foreground" />
+                          <span className="font-medium">
+                            {s.visibility.value >= 9999 ? ">10 km" : `${s.visibility.value} ${s.visibility.unit}`}
+                          </span>
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Thermometer className="size-3 text-muted-foreground" />
+                          <span className="font-medium">{s.temperature}°C</span>
+                          <span className="text-muted-foreground">/ {s.dewpoint}°C</span>
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Gauge className="size-3 text-muted-foreground" />
+                          <span className="font-medium">{s.qnh} hPa</span>
+                        </span>
+                      </div>
+                      {s.clouds.length > 0 && (
+                        <div className="flex flex-wrap gap-2 text-xs">
+                          {s.clouds.map((cloud, ci) => {
+                            const CloudIcon = getCloudIcon(cloud.quantity)
+                            return (
+                              <span key={ci} className="flex items-center gap-1">
+                                <CloudIcon className="size-3 text-muted-foreground" />
+                                <span className="font-medium">{getCloudLabel(cloud.quantity)}</span>
+                                <span className="text-muted-foreground">{cloud.height * 100} ft</span>
+                                {cloud.type && (
+                                  <Badge variant="outline" className="text-[9px] h-4 px-1">{cloud.type}</Badge>
+                                )}
+                              </span>
+                            )
+                          })}
+                        </div>
+                      )}
+                      {s.weather && s.weather.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {s.weather.map((w, wi) => (
+                            <Badge key={wi} variant="outline" className="text-[9px] h-4 px-1 gap-0.5">
+                              {getWeatherIcon(w)}
+                              {w}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                      <div className="bg-muted/40 dark:bg-muted/20 rounded-md p-2 mt-1">
+                        <p className="text-[11px] font-mono text-muted-foreground break-all">{s.raw}</p>
+                      </div>
+                    </motion.div>
+                  )
+                })}
+              </div>
+            )}
+            {!showSpeciDetails && (
+              <div className="text-xs text-muted-foreground italic">
+                {speci.length} reporte{speci.length !== 1 ? "s" : ""} especial{speci.length !== 1 ? "es" : ""} en las últimas 3 horas — Expanda para ver detalles
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* TAF Card */}
       {taf && (
         <Card>
@@ -445,7 +593,7 @@ export function WeatherPanel({ icaoCode, showSelector = false }: WeatherPanelPro
       {/* Last updated + Refresh */}
       <div className="flex items-center justify-between text-xs text-muted-foreground">
         <span>
-          Última actualización: {weather.lastUpdated ? new Date(weather.lastUpdated).toLocaleTimeString("es-PE") : "—"}
+          Última actualización: {(weather.fetchedAt || weather.lastUpdated) ? new Date(weather.fetchedAt || weather.lastUpdated!).toLocaleTimeString("es-PE") : "—"}
         </span>
         <Button variant="ghost" size="sm" onClick={fetchWeather} className="gap-1.5 h-7 text-xs">
           <RefreshCw className="size-3" />
