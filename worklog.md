@@ -5511,3 +5511,28 @@ Stage Summary:
 - Las secciones "Sujeto/Q-code", "Vigencia", "Coordenadas" y "Campos OACI parseados (referenciales)" fueron removidas completamente de airport-detail.tsx y spim-briefing.tsx
 - Ahora todas las vistas de NOTAM (listing, detail, airport detail, briefing múltiple) muestran SOLO el texto crudo OACI con un header mínimo (ID + estado)
 - Formato coincide con IMG_5980 (solo texto crudo) y IMG_5983 (header mínimo + texto crudo)
+
+---
+Task ID: DEPLOY-VERIFY
+Agent: Main Agent
+Task: Hacer deploy — verificar que la aplicación esté desplegada y accesible con todos los cambios recientes.
+
+Work Log:
+- Verifiqué el proceso del dev server: `next dev -p 3000` corriendo (PID 18378)
+- Verifiqué respuesta HTTP: `GET /` → 200 OK en ~54ms
+- Ejecuté `bun run lint` → sin errores, código limpio
+- Verificación end-to-end con Agent Browser:
+  * Página principal (/) renderiza correctamente con todos los aeropuertos (internacionales + nacionales)
+  * Navegué a detalle de SPJC (Jorge Chávez) → carga correctamente con todas las pestañas (General, Pista, Plataforma, Servicios, Obstáculos, Cartas, NOTAMs 10, Clima)
+  * Pestaña NOTAMs verificada: 10 NOTAMs activos desde FAA USNS (live), cada uno mostrando SOLO texto crudo OACI (sin Sujeto/Q-code/Vigencia/Campos parseados/Coordenadas)
+  * Confirmado: header mínimo (ID + estado + fuente FAA USNS live) + "Texto OACI completo (crudo)" + bloque con texto crudo
+  * Footer sticky en bottom (contentinfo)
+- Capturas de pantalla tomadas: deploy-verify.png (desktop full), deploy-mobile.png (390x844 móvil)
+- Console: sin errores, solo mensajes HMR normales de Next.js dev
+- Errores de página: ninguno
+
+Stage Summary:
+- Aplicación AIP PERÚ desplegada y accesible en http://localhost:3000 (puerto 3000)
+- Todos los cambios recientes están live: NOTAMs en texto crudo OACI, ruta con formato aerovía (V1 PALOP V1), leyenda colapsable, vista móvil optimizada
+- Sin errores de lint, runtime, ni consola
+- Aplicación 100% funcional y verificada end-to-end
