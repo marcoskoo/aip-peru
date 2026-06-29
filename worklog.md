@@ -5289,3 +5289,82 @@ Stage Summary:
 - Información meteorológica (METAR/SPECI/TAF) funcionando con datos en tiempo real desde aviationweather.gov
 - Speci Aeronáutica eliminada de la navegación (verificado, no aparece)
 - Aplicación 100% funcional, lista para usar
+
+---
+Task ID: 24-ADD-NOTAM-TAB
+Agent: Main Agent
+Task: User reported "reparar en esta sección se debe mostrar los NOTAM" with 2 screenshots showing NOTAMs displayed in the INFO SPIM station detail (SPCL with A0006/25, SPHI with A0014/25). The NOTAMs were working in INFO SPIM but NOT in the main AIP PERÚ airport detail page.
+
+Work Log:
+- Analicé las 2 capturas de pantalla del usuario con VLM:
+  * Captura 1: SPCL station detail en INFO SPIM con NOTAM tab activo mostrando A0006/25
+  * Captura 2: SPHI station detail en INFO SPIM con NOTAM tab activo mostrando A0014/25
+- Verifiqué que la API /api/spim-agent/station/[icao] ya devuelve NOTAMs correctamente
+- Verifiqué que el tab NOTAM en INFO SPIM funciona (SPCL muestra A0006/25, SPJC muestra 6 NOTAMs)
+- Identifiqué la sección faltante: el componente AirportDetailView (src/components/airport-detail.tsx) que se muestra al hacer clic en un aeropuerto desde la página principal de AIP PERÚ — tiene 7 tabs (General, Pista, Plataforma, Servicios, Obstáculos, Cartas, Clima) pero NO tiene tab de NOTAMs
+
+Fix 1 — Crear endpoint dedicado /api/airports/[icaoCode]/notams:
+- Nuevo archivo: src/app/api/airports/[icaoCode]/notams/route.ts
+- Replica la lógica de /api/spim-agent/station/[icao] para fetch de NOTAMs:
+  * Resuelve el aeropuerto en la BD por ICAO code
+  * Si la BD tiene NOTAMs para ese aeródromo (por airportId O por texto que contiene el código ICAO), los devuelve
+  * Si no hay en BD, consulta FAA USNS en vivo como fallback
+  * Filtro "no expirado": activos + próximos + permanentes
+  * Parser de campos OACI Q/A/B/C/D/E (referenciales)
+  * Devuelve: { airportIcaoCode, notams[], total, active, upcoming, source, fetchedAt }
+- Helper toStructured() DRY para mapear NOTAMs de BD y de FAA al mismo formato
+
+Fix 2 — Añadir tab NOTAMs al AirportDetailView:
+- Añadí imports: Bell, CalendarClock, CheckCircle2, AlertCircle de lucide-react
+- Añadí tipos: AirportNotam (estructura completa del NOTAM) y NotamsResponse
+- Añadí estado: notamsData (NotamsResponse | null), notamsLoading (boolean)
+- Añadí useEffect para fetch /api/airports/[icao]/notams al montar el componente
+- Añadí TabsTrigger "notams" entre "cartas" y "clima":
+  * Icono Bell
+  * Badge con conteo (naranja/ámbar) cuando notamsData.total > 0
+- Añadí TabsContent "notams" con:
+  * Card header con icono Bell, título "NOTAMs para {ICAO}", badges de activos/próximos, badge de fuente (BD vs FAA)
+  * Info banner ámbar sobre formato OACI crudo
+  * Lista de NOTAMs (cards individuales) con:
+    - ID (font-mono) + badge de status (activo=verde, próximo=azul, permanente=morado)
+    - Badge de prioridad (URGENT=rojo, HIGH=naranja, MEDIUM=ámbar)
+    - Badge "verificado" si aplica
+    - Sujeto, condición, alcance, Q-code
+    - Vigencia (fechas desde/hasta en formato es-PE UTC)
+    - Coordenadas, niveles (SFC→UNL), radio NM
+    - Campos OACI parseados Q/A/B/C/D/E (grid 2 columnas)
+    - Texto OACI crudo en bloque <pre> con font-mono
+  * Estado vacío: "Sin NOTAMs activos" con icono CheckCircle2 verde y mensaje "Las condiciones de operación son normales"
+  * Footer con timestamp de última consulta
+
+Verificación con Agent Browser + VLM:
+- SPJC → NOTAMs tab: 6 NOTAMs mostrados ✓
+  * A0015/25 [activo] [HIGH] - TMA LIMA AIRSPACE RESTRICTION FOR STATE FLIGHT...
+  * A0009/25 [activo] [HIGH] - ILS RWY 16 SPJC GP UNSERVICEABLE...
+  * A0017/25 [permanente] [HIGH] - CRANE ERECTED VICINITY SPJC 3329FT AGL...
+  * A0001/25 [activo] [HIGH] - RWY 16/34 SPJC CLSD FOR MAINTENANCE...
+  * A0007/25 [activo] [HIGH] - GPS RNP APPROACH RWY 16 SPJC UNSERVICEABLE...
+  * A0010/25 [activo] - TWY B SPJC CLSD BTN RWY 16 AND TWY C...
+  * Info banner visible: "Los NOTAMs se muestran en formato crudo OACI..."
+  * Fechas de vigencia visibles (Desde/Hasta en UTC)
+  * Badge en tab: "NOTAMs 6"
+- SPAS (ANDOAS) → NOTAMs tab: 0 NOTAMs, estado vacío ✓
+  * Header: "NOTAMs para SPAS" + "0 activos" + "Fuente: AIS Perú (BD)"
+  * Info banner visible
+  * Empty state: "Sin NOTAMs activos" + "No hay avisos activos o próximos para SPAS. Las condiciones de operación son normales."
+- API /api/airports/SPJC/notams devuelve 6 NOTAMs (source: database)
+- API /api/airports/SPCL/notams devuelve 1 NOTAM (A0006/25 - TWR SPCL FREQUENCY)
+- API /api/airports/SPAS/notams devuelve 0 NOTAMs (empty state correcto)
+- Lint: bun run lint exit 0 (clean)
+- Dev server: corriendo estable, GET /api/airports/SPJC/notams 200
+
+Stage Summary:
+- 2 archivos creados/modificados:
+  * src/app/api/airports/[icaoCode]/notams/route.ts — NUEVO endpoint dedicado para NOTAMs por ICAO
+  * src/components/airport-detail.tsx — añadido tab NOTAMs con cards detalladas, badges, info banner, estado vacío
+- Tab NOTAMs aparece entre "Cartas" y "Clima" en el airport detail
+- Badge con conteo en el tab cuando hay NOTAMs (ej: "NOTAMs 6")
+- Cada NOTAM muestra: ID, status (activo/próximo/permanente), prioridad, verificación, sujeto/condición/alcance/Q-code, vigencia (fechas UTC), coordenadas/niveles/radio, campos OACI Q/A/B/C/D/E parseados, texto crudo
+- Estado vacío cuando no hay NOTAMs: "Sin NOTAMs activos — Las condiciones de operación son normales"
+- Fuente de datos: BD AIS Perú (CORPAC) con fallback a FAA USNS en vivo
+- Formato OACI crudo preservado tal cual fue emitido

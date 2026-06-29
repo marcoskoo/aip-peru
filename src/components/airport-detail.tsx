@@ -39,6 +39,10 @@ import {
   FileText,
   Download,
   ExternalLink,
+  Bell,
+  CalendarClock,
+  CheckCircle2,
+  AlertCircle,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -210,6 +214,45 @@ interface DocumentsResponse {
   grouped: Record<string, DocumentData[]>
 }
 
+// ─── NOTAM types ─────────────────────────────────────────────────────
+interface AirportNotam {
+  id: string
+  notamId: string
+  type: string
+  replacesId: string | null
+  fir: string
+  effectiveFrom: string
+  effectiveTo: string | null
+  isPermanent: boolean
+  scope: string | null
+  subject: string
+  condition: string
+  text: string
+  coordinates: string | null
+  lat: number | null
+  lon: number | null
+  radius: number | null
+  lowerLimit: string | null
+  upperLimit: string | null
+  priority: string
+  source: string | null
+  verified: boolean
+  airport: { icaoCode: string; name: string; city: string | null } | null
+  status: 'active' | 'upcoming' | 'expired' | 'perm'
+  qCode: string | null
+  fields: Record<string, string>
+}
+
+interface NotamsResponse {
+  airportIcaoCode: string
+  notams: AirportNotam[]
+  total: number
+  active: number
+  upcoming: number
+  source: string
+  fetchedAt: string
+}
+
 export function AirportDetailView({ airport, onBack }: AirportDetailProps) {
   const [detail, setDetail] = useState<AirportDetail | null>(null)
   const [obstacles, setObstacles] = useState<Obstacle[]>([])
@@ -219,6 +262,8 @@ export function AirportDetailView({ airport, onBack }: AirportDetailProps) {
   const [obstaclesLoading, setObstaclesLoading] = useState(true)
   const [chartsLoading, setChartsLoading] = useState(true)
   const [documentsLoading, setDocumentsLoading] = useState(true)
+  const [notamsData, setNotamsData] = useState<NotamsResponse | null>(null)
+  const [notamsLoading, setNotamsLoading] = useState(true)
   const [selectedChart, setSelectedChart] = useState<ChartData | null>(null)
   const [chartFilter, setChartFilter] = useState<string>("all")
 
@@ -298,6 +343,26 @@ export function AirportDetailView({ airport, onBack }: AirportDetailProps) {
       }
     }
     fetchDocuments()
+  }, [airport.icaoCode])
+
+  useEffect(() => {
+    async function fetchNotams() {
+      setNotamsLoading(true)
+      try {
+        const response = await fetch(
+          `/api/airports/${airport.icaoCode}/notams`
+        )
+        if (response.ok) {
+          const data = await response.json()
+          setNotamsData(data)
+        }
+      } catch {
+        // Will show empty state
+      } finally {
+        setNotamsLoading(false)
+      }
+    }
+    fetchNotams()
   }, [airport.icaoCode])
 
   const chartTypes = ["SID", "STAR", "IAC", "ADC", "TMA", "VAC", "HELO", "NADP"]
@@ -400,6 +465,15 @@ export function AirportDetailView({ airport, onBack }: AirportDetailProps) {
             <TabsTrigger value="cartas" className="flex-1 min-w-0">
               <Map className="size-4" />
               <span className="hidden sm:inline ml-1.5">Cartas</span>
+            </TabsTrigger>
+            <TabsTrigger value="notams" className="flex-1 min-w-0 relative">
+              <Bell className="size-4" />
+              <span className="hidden sm:inline ml-1.5">NOTAMs</span>
+              {notamsData && notamsData.total > 0 && (
+                <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-xs bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-400">
+                  {notamsData.total}
+                </Badge>
+              )}
             </TabsTrigger>
             <TabsTrigger value="clima" className="flex-1 min-w-0">
               <CloudSun className="size-4" />
@@ -1094,6 +1168,234 @@ export function AirportDetailView({ airport, onBack }: AirportDetailProps) {
                 </CardContent>
               </Card>
             ) : null}
+          </div>
+        </TabsContent>
+
+        {/* NOTAMs Tab */}
+        <TabsContent value="notams" className="mt-4">
+          <div className="space-y-4">
+            {/* Summary header */}
+            <Card className="border-amber-200 dark:border-amber-900/50">
+              <CardContent className="pt-6">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="rounded-full bg-amber-100 dark:bg-amber-950/50 p-2.5">
+                      <Bell className="size-5 text-amber-700 dark:text-amber-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold">
+                        NOTAMs para {airport.icaoCode}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Avisos a aviadores activos y próximos para este aeródromo
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {notamsData && (
+                      <>
+                        <Badge variant="outline" className="gap-1 border-emerald-300 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800">
+                          <CheckCircle2 className="size-3" />
+                          {notamsData.active} activos
+                        </Badge>
+                        {notamsData.upcoming > 0 && (
+                          <Badge variant="outline" className="gap-1 border-blue-300 bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-800">
+                            <CalendarClock className="size-3" />
+                            {notamsData.upcoming} próximos
+                          </Badge>
+                        )}
+                        <Badge variant="outline" className="text-xs">
+                          Fuente: {notamsData.source === 'database' ? 'AIS Perú (BD)' : 'FAA USNS (en vivo)'}
+                        </Badge>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Info banner */}
+            <div className="rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-900/50 dark:bg-amber-950/20 p-3 text-xs text-amber-800 dark:text-amber-300">
+              Los NOTAMs se muestran en formato crudo OACI tal cual fueron emitidos por AIS Perú. Los campos parseados (Q/A/B/C/D/E) son referenciales.
+            </div>
+
+            {/* NOTAM list */}
+            {notamsLoading ? (
+              <div className="space-y-3">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <Card key={i}>
+                    <CardContent className="pt-6 space-y-3">
+                      <Skeleton className="h-5 w-32" />
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-3/4" />
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : notamsData && notamsData.notams.length > 0 ? (
+              <div className="space-y-3">
+                {notamsData.notams.map((notam) => {
+                  const statusColor =
+                    notam.status === 'active'
+                      ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800'
+                      : notam.status === 'upcoming'
+                      ? 'bg-blue-100 text-blue-800 dark:bg-blue-950/50 dark:text-blue-400 border-blue-300 dark:border-blue-800'
+                      : notam.status === 'perm'
+                      ? 'bg-purple-100 text-purple-800 dark:bg-purple-950/50 dark:text-purple-400 border-purple-300 dark:border-purple-800'
+                      : 'bg-muted text-muted-foreground'
+                  const statusLabel =
+                    notam.status === 'active' ? 'activo'
+                      : notam.status === 'upcoming' ? 'próximo'
+                      : notam.status === 'perm' ? 'permanente'
+                      : notam.status
+                  const priorityColor =
+                    notam.priority === 'URGENT'
+                      ? 'bg-red-100 text-red-800 dark:bg-red-950/50 dark:text-red-400 border-red-300 dark:border-red-800'
+                      : notam.priority === 'HIGH'
+                      ? 'bg-orange-100 text-orange-800 dark:bg-orange-950/50 dark:text-orange-400 border-orange-300 dark:border-orange-800'
+                      : notam.priority === 'MEDIUM'
+                      ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-400 border-amber-300 dark:border-amber-800'
+                      : 'bg-muted text-muted-foreground'
+
+                  return (
+                    <Card key={notam.id} className="overflow-hidden">
+                      <CardHeader className="pb-3">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <CardTitle className="text-base font-mono">
+                              {notam.notamId}
+                            </CardTitle>
+                            <Badge variant="outline" className={`text-xs ${statusColor}`}>
+                              {statusLabel}
+                            </Badge>
+                            {notam.priority !== 'MEDIUM' && (
+                              <Badge variant="outline" className={`text-xs ${priorityColor}`}>
+                                {notam.priority}
+                              </Badge>
+                            )}
+                            {notam.verified && (
+                              <Badge variant="outline" className="text-xs gap-1">
+                                <CheckCircle2 className="size-3" />
+                                verificado
+                              </Badge>
+                            )}
+                          </div>
+                          {notam.source && (
+                            <span className="text-xs text-muted-foreground">
+                              {notam.source}
+                            </span>
+                          )}
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        {/* Subject / Condition */}
+                        <div className="flex flex-wrap items-center gap-2 text-xs">
+                          {notam.subject && (
+                            <span className="text-muted-foreground">
+                              Sujeto: <span className="font-medium text-foreground">{notam.subject}</span>
+                            </span>
+                          )}
+                          {notam.condition && (
+                            <span className="text-muted-foreground">
+                              Condición: <span className="font-medium text-foreground">{notam.condition}</span>
+                            </span>
+                          )}
+                          {notam.scope && (
+                            <span className="text-muted-foreground">
+                              Alcance: <span className="font-medium text-foreground">{notam.scope}</span>
+                            </span>
+                          )}
+                          {notam.qCode && (
+                            <span className="text-muted-foreground">
+                              Q-code: <span className="font-mono text-foreground">{notam.qCode}</span>
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Vigencia */}
+                        <div className="flex items-start gap-2 text-xs">
+                          <CalendarClock className="size-4 text-muted-foreground mt-0.5 shrink-0" />
+                          <div className="min-w-0">
+                            <span className="text-muted-foreground">Vigencia: </span>
+                            <span className="font-medium">
+                              Desde: {new Date(notam.effectiveFrom).toLocaleString('es-PE', { dateStyle: 'short', timeStyle: 'medium', timeZone: 'UTC' })} UTC
+                              {notam.isPermanent
+                                ? ' → Permanente'
+                                : notam.effectiveTo
+                                ? ` → Hasta: ${new Date(notam.effectiveTo).toLocaleString('es-PE', { dateStyle: 'short', timeStyle: 'medium', timeZone: 'UTC' })} UTC`
+                                : ' → Sin fin'}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Coordinates / Limits */}
+                        {(notam.coordinates || notam.lowerLimit || notam.upperLimit) && (
+                          <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                            {notam.coordinates && (
+                              <span>Coord: <span className="font-mono text-foreground">{notam.coordinates}</span></span>
+                            )}
+                            {(notam.lowerLimit || notam.upperLimit) && (
+                              <span>Niveles: <span className="font-mono text-foreground">{notam.lowerLimit || 'SFC'} → {notam.upperLimit || 'UNL'}</span></span>
+                            )}
+                            {notam.radius && (
+                              <span>Radio: <span className="font-mono text-foreground">{notam.radius} NM</span></span>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Parsed fields Q/A/B/C/D/E */}
+                        {Object.keys(notam.fields).length > 0 && (
+                          <div className="rounded-md bg-muted/50 p-2 text-xs">
+                            <p className="text-muted-foreground mb-1">Campos OACI parseados (referenciales):</p>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
+                              {['Q', 'A', 'B', 'C', 'D', 'E'].map((k) =>
+                                notam.fields[k] ? (
+                                  <div key={k} className="flex gap-1.5">
+                                    <span className="font-mono font-semibold text-amber-700 dark:text-amber-400">{k})</span>
+                                    <span className="break-words">{notam.fields[k]}</span>
+                                  </div>
+                                ) : null
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Raw OACI text */}
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
+                            <AlertCircle className="size-3" />
+                            Texto OACI completo (crudo)
+                          </p>
+                          <div className="rounded-md bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 p-3">
+                            <pre className="text-xs font-mono whitespace-pre-wrap break-words text-slate-800 dark:text-slate-200">
+                              {notam.text}
+                            </pre>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
+                })}
+              </div>
+            ) : (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <CheckCircle2 className="size-10 text-emerald-500 mx-auto mb-3 opacity-70" />
+                  <h3 className="text-lg font-medium">Sin NOTAMs activos</h3>
+                  <p className="text-muted-foreground mt-1">
+                    No hay avisos activos o próximos para {airport.icaoCode}.
+                    Las condiciones de operación son normales.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Refresh hint */}
+            {notamsData && (
+              <p className="text-xs text-center text-muted-foreground">
+                Última consulta: {new Date(notamsData.fetchedAt).toLocaleString('es-PE', { dateStyle: 'short', timeStyle: 'medium' })}
+              </p>
+            )}
           </div>
         </TabsContent>
 
