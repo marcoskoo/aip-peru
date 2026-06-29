@@ -1,0 +1,20 @@
+[
+  {
+    "t": "AFIS",
+    "cs": "TALARA INFORMACIÓN DE AERÓDROMO",
+    "f": "119.5",
+    "hrs": "1300-2100 (CLSD SUN)"
+  },
+  {
+    "t": "EMERG",
+    "cs": "EMERGENCIA",
+    "f": "121.5",
+    "hrs": "1300-2100"
+  },
+  {
+    "t": "APP",
+    "cs": "PIURA APP/TWR",
+    "f": "118.4",
+    "hrs": "H24"
+  }
+]

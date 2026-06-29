@@ -1,0 +1,98 @@
+[
+  {
+    "des": "LIMA FIR",
+    "type": "FIR",
+    "cls": "G",
+    "lower": "SFC",
+    "upper": "UNL",
+    "cs": "LIMA RADIO",
+    "hrs": "H24",
+    "transAlt": 18000,
+    "fp": "127.9",
+    "fs": "128.7"
+  },
+  {
+    "des": "LIMA TMA",
+    "type": "TMA",
+    "cls": "D",
+    "lower": "1500ft AMSL",
+    "upper": "FL245",
+    "cs": "LIMA CONTROL",
+    "hrs": "H24",
+    "transAlt": 18000,
+    "fp": "119.7",
+    "fs": "124.3"
+  },
+  {
+    "des": "LIMA CTR",
+    "type": "CTR",
+    "cls": "D",
+    "lower": "SFC",
+    "upper": "1500ft AMSL",
+    "cs": "LIMA TORRE",
+    "hrs": "H24",
+    "transAlt": 18000,
+    "fp": "119.1",
+    "fs": "121.9"
+  },
+  {
+    "des": "CUSCO CTR",
+    "type": "CTR",
+    "cls": "D",
+    "lower": "SFC",
+    "upper": "11500ft AMSL",
+    "cs": "CUSCO TORRE",
+    "hrs": "H24",
+    "transAlt": 18000,
+    "fp": "118.3",
+    "fs": "121.9"
+  },
+  {
+    "des": "AREQUIPA TMA",
+    "type": "TMA",
+    "cls": "D",
+    "lower": "9000ft AMSL",
+    "upper": "FL245",
+    "cs": "AREQUIPA CONTROL",
+    "hrs": "H24",
+    "transAlt": 18000,
+    "fp": "119.7",
+    "fs": "121.9"
+  },
+  {
+    "des": "IQUITOS CTR",
+    "type": "CTR",
+    "cls": "D",
+    "lower": "SFC",
+    "upper": "1000ft AMSL",
+    "cs": "IQUITOS TORRE",
+    "hrs": "H24",
+    "transAlt": 18000,
+    "fp": "118.9",
+    "fs": "121.9"
+  },
+  {
+    "des": "TRUJILLO CTR",
+    "type": "CTR",
+    "cls": "D",
+    "lower": "SFC",
+    "upper": "1000ft AMSL",
+    "cs": "TRUJILLO TORRE",
+    "hrs": "H24",
+    "transAlt": 18000,
+    "fp": "119.5",
+    "fs": "121.9"
+  },
+  {
+    "des": "JULIACA CTR",
+    "type": "CTR",
+    "cls": "D",
+    "lower": "SFC",
+    "upper": "13500ft AMSL",
+    "cs": "JULIACA TORRE",
+    "hrs": "H24",
+    "transAlt": 18000,
+    "fp": "118.5",
+    "fs": "121.9"
+  }
+]

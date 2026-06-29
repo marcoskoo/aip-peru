@@ -1,0 +1,79 @@
+[
+  {
+    "id": "OBS001",
+    "ad": "SPIM",
+    "name": "Torre TV Miraflores",
+    "lat": -12.115,
+    "lng": -77.033,
+    "elev": 328,
+    "type": "TOWER",
+    "light": true,
+    "rmk": "Balizado noche"
+  },
+  {
+    "id": "OBS002",
+    "ad": "SPIM",
+    "name": "Cerros La Molina",
+    "lat": -12.08,
+    "lng": -76.95,
+    "elev": 410,
+    "type": "TERRAIN",
+    "light": false,
+    "rmk": ""
+  },
+  {
+    "id": "OBS003",
+    "ad": "SPZO",
+    "name": "Cerro Picchu",
+    "lat": -13.52,
+    "lng": -72.02,
+    "elev": 12800,
+    "type": "TERRAIN",
+    "light": false,
+    "rmk": "Terreno crítico aprox"
+  },
+  {
+    "id": "OBS004",
+    "ad": "SPZO",
+    "name": "El Ausangate",
+    "lat": -13.786,
+    "lng": -71.226,
+    "elev": 20945,
+    "type": "TERRAIN",
+    "light": false,
+    "rmk": "Nevado referencia"
+  },
+  {
+    "id": "OBS005",
+    "ad": "SPQU",
+    "name": "El Misti",
+    "lat": -16.295,
+    "lng": -71.41,
+    "elev": 19101,
+    "type": "TERRAIN",
+    "light": false,
+    "rmk": "Volcán - restricción airspace"
+  },
+  {
+    "id": "OBS006",
+    "ad": "SPQU",
+    "name": "Chachani",
+    "lat": -16.193,
+    "lng": -71.531,
+    "elev": 19872,
+    "type": "TERRAIN",
+    "light": false,
+    "rmk": ""
+  },
+  {
+    "id": "OBS007",
+    "ad": "SPJL",
+    "name": "Cordillera Occidental",
+    "lat": -15.6,
+    "lng": -70,
+    "elev": 18000,
+    "type": "TERRAIN",
+    "light": false,
+    "rmk": ""
+  }
+]

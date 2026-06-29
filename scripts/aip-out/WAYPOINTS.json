@@ -1,0 +1,1058 @@
+[
+  {
+    "id": "AKSOL",
+    "lat": -13.33,
+    "lng": -75.7625,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "UM548 UM793 UT222"
+  },
+  {
+    "id": "AKTUK",
+    "lat": -6.8658,
+    "lng": -80.1114,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "UM542"
+  },
+  {
+    "id": "ALDAL",
+    "lat": -11.7761,
+    "lng": -76.2472,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "T226 UT226"
+  },
+  {
+    "id": "ALDAX",
+    "lat": -18.35,
+    "lng": -72.4722,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "UL550"
+  },
+  {
+    "id": "AMERO",
+    "lat": -3.4,
+    "lng": -83.7667,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "UL344"
+  },
+  {
+    "id": "AMVEX",
+    "lat": -10.8006,
+    "lng": -76.8033,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "UL305 UM414"
+  },
+  {
+    "id": "ANBIS",
+    "lat": -10.2183,
+    "lng": -76.2047,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "T325"
+  },
+  {
+    "id": "ANBON",
+    "lat": -12.5467,
+    "lng": -70.0769,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "T218 UT218"
+  },
+  {
+    "id": "ANDID",
+    "lat": -2.4222,
+    "lng": -75.3189,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "UL342 UM776"
+  },
+  {
+    "id": "ANKUG",
+    "lat": -12.3836,
+    "lng": -72.16,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "T218 T335 UP408 UT218 UT335"
+  },
+  {
+    "id": "ANPAL",
+    "lat": -3.4,
+    "lng": -83.0033,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "UL308"
+  },
+  {
+    "id": "ARNEL",
+    "lat": -3.4,
+    "lng": -81.5833,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "UM542"
+  },
+  {
+    "id": "AROTI",
+    "lat": -3.6628,
+    "lng": -70.5844,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "R567"
+  },
+  {
+    "id": "ARPEN",
+    "lat": -2.3886,
+    "lng": -72.12,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "R567"
+  },
+  {
+    "id": "ASOXI",
+    "lat": -12.7606,
+    "lng": -76.6064,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "L525 T336 UL550 UM415 UM548 UM793 UT224 UT336"
+  },
+  {
+    "id": "ASUPA",
+    "lat": -15.8769,
+    "lng": -72.5406,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "UT222"
+  },
+  {
+    "id": "ATATU",
+    "lat": -10.1969,
+    "lng": -78.0106,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "UL308 UL312 UL344 UM674 UV1"
+  },
+  {
+    "id": "BORLA",
+    "lat": -7.7372,
+    "lng": -75.2364,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "T216 UM414 UV4 V4"
+  },
+  {
+    "id": "CEMIL",
+    "lat": -13.2397,
+    "lng": -70.6497,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "UV10 V10"
+  },
+  {
+    "id": "CHIRA",
+    "lat": -4.9353,
+    "lng": -80.8939,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "V1"
+  },
+  {
+    "id": "DADIL",
+    "lat": -2.4181,
+    "lng": -70.5833,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "A301"
+  },
+  {
+    "id": "DANKI",
+    "lat": -18.3067,
+    "lng": -70.275,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "A568 UM664"
+  },
+  {
+    "id": "DOMVO",
+    "lat": -4.25,
+    "lng": -81.3333,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "UV1 V1"
+  },
+  {
+    "id": "DORAN",
+    "lat": -4.1856,
+    "lng": -74.0536,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "UV3 V3"
+  },
+  {
+    "id": "EGASI",
+    "lat": -4.2081,
+    "lng": -80.4794,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "V2"
+  },
+  {
+    "id": "ELAKO",
+    "lat": -15.9267,
+    "lng": -69.305,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "A304 UM657"
+  },
+  {
+    "id": "ESMIL",
+    "lat": -8.8197,
+    "lng": -78.7047,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "G675 V1"
+  },
+  {
+    "id": "FANES",
+    "lat": -7.4878,
+    "lng": -74.3275,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "T335 UT335 UV9 V9"
+  },
+  {
+    "id": "GAVAR",
+    "lat": -16.9725,
+    "lng": -71.1142,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "UV12 V12"
+  },
+  {
+    "id": "IKARO",
+    "lat": -6.2569,
+    "lng": -75.9239,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "UV5 V5"
+  },
+  {
+    "id": "ILMOX",
+    "lat": -14.5944,
+    "lng": -70.8444,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "UV11 V11"
+  },
+  {
+    "id": "ILROL",
+    "lat": -10.5139,
+    "lng": -77.2972,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "T311 T327 UL342 UM795 UP776"
+  },
+  {
+    "id": "ILMUX",
+    "lat": -2.4619,
+    "lng": -72.8489,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "UM414 UP776"
+  },
+  {
+    "id": "ISAPA",
+    "lat": -3.6539,
+    "lng": -74.1394,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "A566"
+  },
+  {
+    "id": "ISIDI",
+    "lat": -4.6839,
+    "lng": -72.0886,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "UM784"
+  },
+  {
+    "id": "ISOKI",
+    "lat": -16.2436,
+    "lng": -73.5786,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "L525 T337 UT224 UT337"
+  },
+  {
+    "id": "ISREN",
+    "lat": -9.7033,
+    "lng": -78.6767,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "UL308 UL312 UL344 UL780 UM542"
+  },
+  {
+    "id": "ITALU",
+    "lat": -5.4989,
+    "lng": -81.5767,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "UL308"
+  },
+  {
+    "id": "KALAR",
+    "lat": -11.2458,
+    "lng": -77.4969,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "T311 T327 UL308 UL342 UM674 UP776 UV1"
+  },
+  {
+    "id": "KALOR",
+    "lat": -4.0958,
+    "lng": -70.7669,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "A566"
+  },
+  {
+    "id": "KEBOM",
+    "lat": -8,
+    "lng": -73.6778,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "B552"
+  },
+  {
+    "id": "KEVES",
+    "lat": -14.6703,
+    "lng": -69.8908,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "UV14 V14"
+  },
+  {
+    "id": "KIBAN",
+    "lat": -6.8939,
+    "lng": -80.0894,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "G675"
+  },
+  {
+    "id": "KOLKA",
+    "lat": -15.6814,
+    "lng": -71.9936,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "UV15 V15"
+  },
+  {
+    "id": "KORBO",
+    "lat": -3.0183,
+    "lng": -77.8578,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "A566"
+  },
+  {
+    "id": "KUSKU",
+    "lat": -6.0192,
+    "lng": -77.5147,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "UM795 UV3"
+  },
+  {
+    "id": "LET",
+    "lat": -4.195,
+    "lng": -69.94,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "A566"
+  },
+  {
+    "id": "LITOT",
+    "lat": -14.7933,
+    "lng": -71.8147,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "UM415 UV15 V15"
+  },
+  {
+    "id": "LODIN",
+    "lat": -7.4072,
+    "lng": -75.5783,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "T311 UP776 UV4"
+  },
+  {
+    "id": "LOLES",
+    "lat": -17.9,
+    "lng": -69.7833,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "A568 UM664"
+  },
+  {
+    "id": "MANPA",
+    "lat": -7.5875,
+    "lng": -78.1411,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "UM674 UV5"
+  },
+  {
+    "id": "MELIX",
+    "lat": -6.5044,
+    "lng": -79.0092,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "V3"
+  },
+  {
+    "id": "MIGEB",
+    "lat": -17.2256,
+    "lng": -72.075,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "L525 UT224"
+  },
+  {
+    "id": "MOXOM",
+    "lat": -3.5008,
+    "lng": -80.2186,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "UM659 V1"
+  },
+  {
+    "id": "MOXOV",
+    "lat": -7.2411,
+    "lng": -75.75,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "V4"
+  },
+  {
+    "id": "MUBIN",
+    "lat": -13.4064,
+    "lng": -69.4828,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "UV14 V14"
+  },
+  {
+    "id": "NENER",
+    "lat": -8.4478,
+    "lng": -76.7878,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "UL342"
+  },
+  {
+    "id": "NUXON",
+    "lat": -15.0642,
+    "lng": -70.9061,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "UV18"
+  },
+  {
+    "id": "OBLIR",
+    "lat": -14.145,
+    "lng": -68.855,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "UM668"
+  },
+  {
+    "id": "OGMAS",
+    "lat": -16.3856,
+    "lng": -70.7711,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "UL300 UM793"
+  },
+  {
+    "id": "OGTAM",
+    "lat": -6.0525,
+    "lng": -80.3528,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "G675"
+  },
+  {
+    "id": "OPKUL",
+    "lat": -15.1094,
+    "lng": -71.0403,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "UL300 UM415"
+  },
+  {
+    "id": "ORALO",
+    "lat": -17.2961,
+    "lng": -69.625,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "A573 UM548 UP673"
+  },
+  {
+    "id": "OSAKI",
+    "lat": -3.4,
+    "lng": -84.6833,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "UL312"
+  },
+  {
+    "id": "OSUBU",
+    "lat": -3.3289,
+    "lng": -76.0519,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "A566 T234 UT234"
+  },
+  {
+    "id": "PABAM",
+    "lat": -3.4036,
+    "lng": -75.6136,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "A566 T232"
+  },
+  {
+    "id": "PADIS",
+    "lat": -11.1878,
+    "lng": -76.5814,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "T313 UT313"
+  },
+  {
+    "id": "PAGUR",
+    "lat": -4.4764,
+    "lng": -80.3636,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "G675"
+  },
+  {
+    "id": "PAKOL",
+    "lat": -12.745,
+    "lng": -75.9636,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "T319 UM668"
+  },
+  {
+    "id": "PALOP",
+    "lat": -7.4617,
+    "lng": -79.4356,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "V1"
+  },
+  {
+    "id": "PAPEM",
+    "lat": -3.1781,
+    "lng": -70.3047,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "A301"
+  },
+  {
+    "id": "PUPMI",
+    "lat": -6.68,
+    "lng": -77.4831,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "UM795 UV4"
+  },
+  {
+    "id": "RAXUN",
+    "lat": -14.4483,
+    "lng": -69.0903,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "UM776"
+  },
+  {
+    "id": "REBAN",
+    "lat": -8.4469,
+    "lng": -79.7061,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "UL312 UL344"
+  },
+  {
+    "id": "RELOR",
+    "lat": -7.2333,
+    "lng": -77.4564,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "UM795 UV5"
+  },
+  {
+    "id": "RELUN",
+    "lat": -7.2892,
+    "lng": -78.5881,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "T330 UT330"
+  },
+  {
+    "id": "REMEX",
+    "lat": -3.2161,
+    "lng": -70.3297,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "UP525"
+  },
+  {
+    "id": "ROBIG",
+    "lat": -6.6925,
+    "lng": -78.1853,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "UM674 UT330 UV4"
+  },
+  {
+    "id": "ROKOL",
+    "lat": -5.9772,
+    "lng": -80.2108,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "V1"
+  },
+  {
+    "id": "ROLUS",
+    "lat": -1.1314,
+    "lng": -73.6267,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "UL300 UN420"
+  },
+  {
+    "id": "RONSO",
+    "lat": -4.3678,
+    "lng": -73.9233,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "T311 UP776 UV5 V5"
+  },
+  {
+    "id": "SORTA",
+    "lat": -18.35,
+    "lng": -76.3033,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "UL780"
+  },
+  {
+    "id": "SURIX",
+    "lat": -3.8914,
+    "lng": -72.4894,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "A566 UM665"
+  },
+  {
+    "id": "TAPIR",
+    "lat": -4.6003,
+    "lng": -73.5375,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "UV9 V9"
+  },
+  {
+    "id": "TEMAS",
+    "lat": -6.7039,
+    "lng": -78.8981,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "V4"
+  },
+  {
+    "id": "TEMOS",
+    "lat": -6.7039,
+    "lng": -78.8981,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "V4"
+  },
+  {
+    "id": "TERAS",
+    "lat": -2,
+    "lng": -75.9333,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "UL305 UM776"
+  },
+  {
+    "id": "TILPA",
+    "lat": -13.6978,
+    "lng": -72.8867,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "UV11 V11"
+  },
+  {
+    "id": "TIMLI",
+    "lat": -6.31,
+    "lng": -77.5008,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "V19"
+  },
+  {
+    "id": "TONOS",
+    "lat": -15.9244,
+    "lng": -70.9058,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "V14"
+  },
+  {
+    "id": "TOPIX",
+    "lat": -11.6611,
+    "lng": -77.76,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "UM542"
+  },
+  {
+    "id": "UDOBA",
+    "lat": -6.4886,
+    "lng": -76.9122,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "V19"
+  },
+  {
+    "id": "UMSOK",
+    "lat": -3.4497,
+    "lng": -75.5683,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "UL342 UM665"
+  },
+  {
+    "id": "UTKIK",
+    "lat": -7.0453,
+    "lng": -77.0942,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "UV5 V5"
+  },
+  {
+    "id": "VATES",
+    "lat": -7.7033,
+    "lng": -78.3656,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "T329 UV5 V5"
+  },
+  {
+    "id": "VUKOK",
+    "lat": -5.3433,
+    "lng": -76.2325,
+    "type": "ICAO",
+    "notif": false,
+    "fir": [
+      "LIMA"
+    ],
+    "rmk": "T234 UL305 UP408 UT234 UV3 V3"
+  }
+]

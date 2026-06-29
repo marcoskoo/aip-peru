@@ -4863,3 +4863,77 @@ Stage Summary:
 - Campos EET, Endurance, Route (y todos los demás) siguen siendo editables; al editar manualmente se remueve el marcador .fpl-auto-filled (solo para input real del usuario, no synthetic events)
 - Banner azul visible durante 6s confirmando la importación
 - Verificado con Agent Browser (DOM + VLM) + lint clean
+
+---
+Task ID: 19
+Agent: Main Agent
+Task: Volcar todos los puntos de notificación, puntos de transferencia, waypoints, rutas y radioayudas al mapa interactivo (basado en skyvector.com / AIP Perú), con énfasis en la construcción de rutas.
+
+Work Log:
+- Extraje todos los arreglos de datos del AIP Perú HTML (upload/aip-peru-v20-dragfix.html) usando scripts/extract-aip.mjs:
+  - WAYPOINTS: 96 waypoints ICAO (con flags notif/fir)
+  - NAVAIDS: 29 radioayudas peruanas (VOR/DME, DVOR/DME, VOR)
+  - NAVAIDS_INTL: 11 radioayudas de FIRs adyacentes (Ecuador, Colombia, Brasil, Bolivia, Chile)
+  - ROUTES: 50 segmentos de aerovías convencionales altas (UV1–UV18)
+  - ROUTES_LOW: 76 segmentos de aerovías convencionales bajas (A301, V1–V19, etc.)
+  - ROUTES_RNAV: 32 aerovías RNAV (T218, UL300, UM542, UN420, UP525, etc.) con coordenadas explícitas
+  - FIR_TRANSFERS: 5 sectores de transferencia FIR (Lima→Guayaquil, Lima→Bogotá, Lima→Amazónica, Lima→Santiago, Lima→La Paz) con listas de puntos y frecuencias ACC
+  - TMA_SECTORS: 9 polígonos TMA/CTR (Lima, Cusco, Arequipa, etc.)
+  - ATC_SECTORS: 11 sectores ATC con frecuencias
+  - SIDSTAR: 62 procedimientos SID/STAR por aeródromo
+  - RESTR: 5 zonas restringidas/prohibidas/peligrosas
+  - AIRSPACE: 8 clases de espacio aéreo
+  - OBSTACLES: 7 obstáculos
+- Generé 5 nuevos archivos estáticos con scripts/generate-static-data.mjs:
+  - src/lib/aviation/peru-airways-static.ts (856 líneas):
+    * 185 waypoints únicos (96 del AIP + 86 nuevos extraídos de ROUTES_RNAV + 4 extras)
+    * 22 puntos marcados como transferencia/notificación (notif=true, transfer=true)
+    * 63 aerovías (11 conv altas + 20 conv bajas + 32 RNAV) con segmentos completos
+    * Nueva interfaz PeruvianWaypointExt con campos notif/transfer/fir
+  - src/lib/aviation/peru-navaids-intl-static.ts: 11 radioayudas internacionales (Ecuador/Colombia/Brasil/Bolivia/Chile) con país y FIR
+  - src/lib/aviation/peru-fir-transfers.ts: 5 sectores de transferencia FIR con sus puntos y frecuencias
+  - src/lib/aviation/peru-airspace.ts: 9 polígonos TMA/CTR + 11 sectores ATC + 5 zonas restringidas
+  - src/lib/aviation/peru-sidstar.ts: 62 procedimientos SID/STAR con helpers getSids()/getStars()
+- Actualicé src/components/interactive-map.tsx:
+  - Nuevos imports: INTERNATIONAL_NAVAIDS, FIR_TRANSFERS, TRANSFER_POINT_IDS, TMA_SECTORS_DATA, RESTRICTED_AIRSPACE, PeruvianWaypointExt, FirTransfer
+  - Nuevas capas en LayerState: intlNavaids, transferPoints, tmaSectors, restricted
+  - Nuevas entradas en la paleta de colores: transferPt (rojo), notifPt (naranja), intlNavaid (teal), tma (violeta), restricted (rojo)
+  - createWaypointIcon ahora distingue 3 variantes: transfer (diamante rojo relleno con estrella ★), notif (diamante naranja relleno), regular (diamante verde hueco)
+  - Nueva función createIntlNavaidIcon: círculo teal con borde discontinuo para radioayudas internacionales
+  - Nueva interfaz AirwayIndex + funciones buildAirwayIndex() y buildIcaoRouteString() — construyen string ICAO automáticamente (ej: "SPJC DCT TAP V5 ISRES V321 SPCL") insertando designadores de aerovía o DCT según corresponda
+  - Nuevo useMemo airwayIndex que indexa pares (from→to) de todos los segmentos de aerovías
+  - Nuevo useMemo icaoRouteString que construye el string ICAO a partir de la ruta actual
+  - allPoints ahora incluye INTERNATIONAL_NAVAIDS para selección en Origen/Destino
+  - coordLookup ahora incluye radioayudas internacionales (para resolución de aerovías transfronterizas)
+  - Renderizador de waypoints reescrito: muestra badges "TRANSFERENCIA FIR" o "NOTIFICACIÓN" en popups, con info de frecuencias ACC Lima/vecina para puntos de transferencia
+  - Nuevo renderizador de radioayudas internacionales con popups detallados (país, FIR, frecuencia, tipo)
+  - Nuevo renderizador de polígonos TMA/CTR (contorno violeta discontinuo + tooltip con clase/lo/hi)
+  - Panel de capas ampliado de 8 a 12 toggles: Aeródromos, Radioayudas, Radioay. Intl, Waypoints, Pts. Notificac., Aerovías Conv., Aerovías RNAV, FIR Lima, FIRs Adyac., TMA / CTR, Zonas Rest., Grilla
+  - Nueva sección "RUTA ICAO" debajo del resumen de ruta: muestra el string ICAO construido + botón "Copiar" al portapapeles
+  - Leyenda ampliada con nuevos marcadores: Radioayuda Intl, Punto Transferencia FIR ★, Punto Notificación, TMA/CTR
+- Verificación con Agent Browser + VLM:
+  * Página carga sin errores client-side
+  * Las 12 capas aparecen en el panel con sus checkboxes (Radioay. Intl, Pts. Notificac., TMA / CTR, Zonas Rest. visibles)
+  * Marcadores en el mapa: aeropuertos (círculos azules), radioayudas, radioayudas internacionales (teal), puntos de transferencia (diamantes rojos con ★) — confirmado por VLM
+  * Botones de basemap (World Hi/Lo/VFR) visibles y funcionales
+  * Campos Origen/Destino funcionan: establecidos SPJC y SPCL
+  * "Ruta Directa" construye ruta de 265 NM con rumbo 35°
+  * "RUTA ICAO" muestra "SPJC DCT SPCL" con botón Copiar
+  * Tabla de detalle de ruta con columnas Leg NM, Acum NM
+  * Lint pasa limpio (0 errores)
+  * /api/airdata/all devuelve 200 (con fallback estático por mismatch Prisma postgresql/sqlite, ya conocido)
+
+Stage Summary:
+- 5 nuevos archivos de datos estáticos generados desde el AIP Perú:
+  * 185 waypoints (96 originales + 86 nuevos de RNAV + 3 extras), 22 marcados como transferencia/notificación
+  * 11 radioayudas internacionales de FIRs vecinas
+  * 5 sectores de transferencia FIR con frecuencias ACC Lima y vecina
+  * 9 polígonos TMA/CTR + 11 sectores ATC + 5 zonas restringidas
+  * 62 procedimientos SID/STAR
+  * 63 aerovías (11 conv altas + 20 conv bajas + 32 RNAV) con segmentos completos
+- Mapa interactivo ampliado con 4 nuevas capas (Radioay. Intl, Pts. Notificac., TMA/CTR, Zonas Rest.)
+- Nuevos iconos distintos para puntos de transferencia (★ rojo), notificación (naranja) y radioayuda internacional (teal discontinuo)
+- Construcción automática de string ICAO con detección de aerovías compartidas entre puntos consecutivos
+- Sección "RUTA ICAO" con string construido + botón Copiar al portapapeles
+- Popups de puntos de transferencia muestran frecuencias ACC Lima y ACC vecina
+- Verificado con Agent Browser + VLM: todo renderiza correctamente sin errores

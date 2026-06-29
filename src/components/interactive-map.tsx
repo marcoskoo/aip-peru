@@ -54,7 +54,10 @@ import type {
 } from "@/lib/types"
 import { PERUVIAN_AIRPORTS, type PeruvianAirport } from "@/lib/aviation/peru-airports-static"
 import { PERUVIAN_NAVAIDS, normalizeNavaidType } from "@/lib/aviation/peru-navaids-static"
-import { PERUVIAN_WAYPOINTS, PERUVIAN_AIRWAYS } from "@/lib/aviation/peru-airways-static"
+import { INTERNATIONAL_NAVAIDS, type IntlNavaid } from "@/lib/aviation/peru-navaids-intl-static"
+import { PERUVIAN_WAYPOINTS, PERUVIAN_AIRWAYS, type PeruvianWaypointExt } from "@/lib/aviation/peru-airways-static"
+import { FIR_TRANSFERS, TRANSFER_POINT_IDS, type FirTransfer } from "@/lib/aviation/peru-fir-transfers"
+import { TMA_SECTORS_DATA, RESTRICTED_AIRSPACE } from "@/lib/aviation/peru-airspace"
 
 // ─── Color Palette (Light Aeronautical Chart Theme) ─────────────
 // Based on classic aviation charts: white land, dark blue airways,
@@ -68,6 +71,13 @@ const C = {
   navaidBorder: "#1e3a8a",
   waypoint: "#16a34a",       // green — waypoint marker
   waypointBorder: "#15803d",
+  transferPt: "#dc2626",     // red — FIR transfer / compulsory reporting point (filled star)
+  transferPtBorder: "#7f1d1d",
+  notifPt: "#ea580c",        // orange — other notification point (filled diamond)
+  intlNavaid: "#0e7490",     // teal — international (adjacent FIR) navaid marker
+  intlNavaidBorder: "#155e75",
+  tma: "#7c3aed",            // violet — TMA/CTR polygon outline
+  restricted: "#b91c1c",     // red — restricted/prohibited/danger zones
   // Routes & airways
   route: "#c026d3",          // magenta — user-built route (highlighted)
   routeGlow: "#e879f9",      // lighter magenta glow
@@ -143,11 +153,15 @@ interface RoutePoint {
 interface LayerState {
   aerodromos: boolean
   navaids: boolean
+  intlNavaids: boolean
   waypoints: boolean
+  transferPoints: boolean
   convAirways: boolean
   rnavAirways: boolean
   firBoundary: boolean
   adjacentFirs: boolean
+  tmaSectors: boolean
+  restricted: boolean
   grid: boolean
 }
 
@@ -228,6 +242,77 @@ function findNearestPoint(
   return nearest
 }
 
+// ─── Airway Index & ICAO Route String Builder ──────────────────────
+// For each pair of points (from,to), find the airways that contain a segment
+// linking them in either direction. Used to compress a sequence of points
+// into an ICAO route string like "SPJC DCT TAP V5 ISRES V321 SPCL".
+
+interface AirwayIndex {
+  // key: "FROM→TO" → list of { designator, level, type }
+  pair: Map<string, { designator: string; level: string; type: string }[]>
+}
+
+function buildAirwayIndex(airways: { conventional: Airway[]; rnav: Airway[] }): AirwayIndex {
+  const idx: AirwayIndex = { pair: new Map() }
+  const all = [...airways.conventional, ...airways.rnav]
+  for (const aw of all) {
+    for (const seg of aw.segments) {
+      const k1 = `${seg.from}→${seg.to}`
+      const k2 = `${seg.to}→${seg.from}`
+      const entry = { designator: aw.designator, level: aw.level, type: aw.type }
+      for (const k of [k1, k2]) {
+        if (!idx.pair.has(k)) idx.pair.set(k, [])
+        const arr = idx.pair.get(k)!
+        if (!arr.some(e => e.designator === entry.designator)) arr.push(entry)
+      }
+    }
+  }
+  return idx
+}
+
+/**
+ * Build an ICAO flight plan route string from a sequence of route points.
+ * Inserts DCT (direct) between points that don't share an airway, otherwise
+ * inserts the airway designator. Compresses consecutive legs on the same
+ * airway (e.g. A B1 C B1 D → "A B1 C D" — C stays because the airway changes
+ * direction or the user keeps it as an intermediate).
+ *
+ * Example: SPJC, TAP, ISRES, SPCL  →  "SPJC DCT TAP V5 ISRES V321 SPCL"
+ */
+function buildIcaoRouteString(
+  points: RoutePoint[],
+  idx: AirwayIndex
+): string {
+  if (points.length === 0) return ""
+  if (points.length === 1) return points[0].id
+  const tokens: string[] = [points[0].id]
+  let lastAirway: string | null = null
+  for (let i = 1; i < points.length; i++) {
+    const prev = points[i - 1]
+    const cur = points[i]
+    // Skip if same id (deduplicate just in case)
+    if (prev.id === cur.id) continue
+    const k = `${prev.id}→${cur.id}`
+    const cands = idx.pair.get(k) || []
+    if (cands.length > 0) {
+      // Prefer RNAV T/UL/UM/UN/UP airways if both available, else first
+      const pick =
+        cands.find(c => /^(T|UL|UM|UN|UP)/.test(c.designator)) || cands[0]
+      if (lastAirway !== pick.designator) {
+        tokens.push(pick.designator)
+        lastAirway = pick.designator
+      }
+    } else {
+      if (lastAirway !== "DCT") {
+        tokens.push("DCT")
+        lastAirway = "DCT"
+      }
+    }
+    tokens.push(cur.id)
+  }
+  return tokens.join(" ")
+}
+
 // ─── Icons ───────────────────────────────────────────────────────
 
 function createAirportIcon(icao: string, isIntl: boolean, isSelected: boolean) {
@@ -290,7 +375,58 @@ function createNavaidIcon(id: string, freq: string, isSelected: boolean) {
   })
 }
 
-function createWaypointIcon(id: string, isSelected: boolean) {
+function createWaypointIcon(id: string, isSelected: boolean, isNotif?: boolean, isTransfer?: boolean) {
+  // Transfer point: filled red diamond with star — most prominent
+  if (isTransfer) {
+    return L.divIcon({
+      className: "",
+      html: `
+        <div style="position:relative;display:flex;flex-direction:column;align-items:center;cursor:pointer;">
+          <div style="
+            width:11px;height:11px;
+            background:${isSelected ? C.route : C.transferPt};
+            border:1.5px solid ${isSelected ? C.route : C.transferPtBorder};
+            transform:rotate(45deg);
+            ${isSelected ? `box-shadow:0 0 8px ${C.route}aa;` : `box-shadow:0 0 4px ${C.transferPt}66;`}
+          "></div>
+          <span style="
+            position:absolute;top:9px;
+            font-size:8px;font-weight:700;
+            color:${C.transferPtBorder};white-space:nowrap;
+            text-shadow:1px 1px 0 #fff,-1px -1px 0 #fff,1px -1px 0 #fff,-1px 1px 0 #fff;
+            pointer-events:none;letter-spacing:0.3px;
+          ">${id}★</span>
+        </div>`,
+      iconSize: [11, 22],
+      iconAnchor: [5, 5],
+    })
+  }
+  // Notification point: filled orange diamond — slightly larger than waypoint
+  if (isNotif) {
+    return L.divIcon({
+      className: "",
+      html: `
+        <div style="position:relative;display:flex;flex-direction:column;align-items:center;cursor:pointer;">
+          <div style="
+            width:9px;height:9px;
+            background:${isSelected ? C.route : C.notifPt};
+            border:1.5px solid ${isSelected ? C.route : "#7c2d12"};
+            transform:rotate(45deg);
+            ${isSelected ? `box-shadow:0 0 6px ${C.route}aa;` : ""}
+          "></div>
+          <span style="
+            position:absolute;top:8px;
+            font-size:7.5px;font-weight:700;
+            color:${"#7c2d12"};white-space:nowrap;
+            text-shadow:1px 1px 0 #fff,-1px -1px 0 #fff,1px -1px 0 #fff,-1px 1px 0 #fff;
+            pointer-events:none;
+          ">${id}</span>
+        </div>`,
+      iconSize: [9, 20],
+      iconAnchor: [4, 4],
+    })
+  }
+  // Regular waypoint: small green diamond outline
   const color = isSelected ? C.route : C.waypoint
   return L.divIcon({
     className: "",
@@ -313,6 +449,39 @@ function createWaypointIcon(id: string, isSelected: boolean) {
       </div>`,
     iconSize: [8, 18],
     iconAnchor: [4, 4],
+  })
+}
+
+function createIntlNavaidIcon(id: string, freq: string, isSelected: boolean) {
+  const color = isSelected ? C.route : C.intlNavaid
+  return L.divIcon({
+    className: "",
+    html: `
+      <div style="position:relative;display:flex;flex-direction:column;align-items:center;cursor:pointer;">
+        <div style="
+          width:11px;height:11px;
+          background:transparent;
+          border:2px dashed ${color};
+          border-radius:50%;
+          ${isSelected ? `box-shadow:0 0 8px ${C.route}aa;` : ""}
+        "></div>
+        <div style="position:absolute;top:1px;left:13px;display:flex;flex-direction:column;pointer-events:none;">
+          <span style="
+            font-size:9px;font-weight:700;
+            color:${C.ink};white-space:nowrap;
+            text-shadow:1px 1px 0 #fff,-1px -1px 0 #fff,1px -1px 0 #fff,-1px 1px 0 #fff;
+            line-height:1;letter-spacing:0.3px;
+          ">${id}</span>
+          <span style="
+            font-size:7.5px;font-weight:500;
+            color:${C.intlNavaidBorder};white-space:nowrap;
+            text-shadow:1px 1px 0 #fff,-1px -1px 0 #fff,1px -1px 0 #fff,-1px 1px 0 #fff;
+            line-height:1;
+          ">${freq.replace(" MHz", "")}</span>
+        </div>
+      </div>`,
+    iconSize: [11, 11],
+    iconAnchor: [5, 5],
   })
 }
 
@@ -475,11 +644,15 @@ export function InteractiveMap({ onSendToFlightPlan }: InteractiveMapProps = {})
   const [layers, setLayers] = useState<LayerState>({
     aerodromos: true,
     navaids: true,
-    waypoints: false, // 302 waypoints — off by default to reduce clutter
+    intlNavaids: true,
+    waypoints: false, // 185 waypoints — off by default to reduce clutter
+    transferPoints: true, // FIR handoff / compulsory reporting points — on by default
     convAirways: true,
     rnavAirways: true,
     firBoundary: true,
     adjacentFirs: true,
+    tmaSectors: false, // TMA/CTR polygons — off by default
+    restricted: false, // restricted/prohibited/danger zones — off by default
     grid: false,
   })
   const [route, setRoute] = useState<RoutePoint[]>([])
@@ -559,8 +732,23 @@ export function InteractiveMap({ onSendToFlightPlan }: InteractiveMapProps = {})
   // Build coord lookup for airway resolution
   const coordLookup = useMemo(() => {
     if (!data) return new Map<string, Coord>()
-    return buildCoordLookup(data.waypoints, data.navaids, PERUVIAN_AIRPORTS)
+    const m = buildCoordLookup(data.waypoints, data.navaids, PERUVIAN_AIRPORTS)
+    // Also index international navaids so airways crossing the border resolve
+    for (const nv of INTERNATIONAL_NAVAIDS) m.set(nv.id, { lat: nv.lat, lon: nv.lon })
+    return m
   }, [data])
+
+  // Airway pair index (used for ICAO route string construction)
+  const airwayIndex = useMemo<AirwayIndex>(() => {
+    if (!data) return { pair: new Map() }
+    return buildAirwayIndex(data.airways)
+  }, [data])
+
+  // ICAO route string built from current route points (e.g. "SPJC DCT TAP V5 ISRES V321 SPCL")
+  const icaoRouteString = useMemo(
+    () => buildIcaoRouteString(route, airwayIndex),
+    [route, airwayIndex]
+  )
 
   // All selectable points for dropdowns
   const allPoints = useMemo<RoutePoint[]>(() => {
@@ -575,6 +763,13 @@ export function InteractiveMap({ onSendToFlightPlan }: InteractiveMapProps = {})
       for (const nv of data.navaids) {
         pts.push({
           id: nv.id, name: `${nv.id} — ${nv.name}`,
+          type: "NAVAID", lat: nv.lat, lon: nv.lon,
+        })
+      }
+      // International (adjacent-FIR) navaids — also selectable for cross-border routes
+      for (const nv of INTERNATIONAL_NAVAIDS) {
+        pts.push({
+          id: nv.id, name: `${nv.id} — ${nv.name} [${nv.country}]`,
           type: "NAVAID", lat: nv.lat, lon: nv.lon,
         })
       }
@@ -887,6 +1082,28 @@ export function InteractiveMap({ onSendToFlightPlan }: InteractiveMapProps = {})
             </div>
           )}
 
+          {/* ICAO Route String — auto-built from selected points + airway index */}
+          {route.length >= 2 && (
+            <div className="mt-2 pt-2 border-t border-slate-200">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-[10px] font-bold text-[#1e40af] tracking-wider uppercase">Ruta ICAO</span>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => navigator.clipboard?.writeText(icaoRouteString)}
+                  className="h-5 text-[10px] px-2 text-[#1e40af] hover:bg-[#1e40af]/10"
+                  title="Copiar ruta al portapapeles"
+                >
+                  <FileText className="size-2.5 mr-1" />
+                  Copiar
+                </Button>
+              </div>
+              <code className="block text-[11px] font-mono text-[#0f172a] bg-[#eef2ff]/70 border border-[#1e40af]/30 rounded px-2 py-1.5 break-all leading-relaxed">
+                {icaoRouteString}
+              </code>
+            </div>
+          )}
+
           {(routeMode || editMode) && (
             <div className="mt-2 pt-2 border-t border-slate-200">
               {routeMode && (
@@ -909,15 +1126,19 @@ export function InteractiveMap({ onSendToFlightPlan }: InteractiveMapProps = {})
       {showLayerPanel && (
         <Card className="border-slate-200 bg-white/60 backdrop-blur">
           <CardContent className="p-3">
-            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2">
               {([
                 { key: "aerodromos", label: "Aeródromos", icon: Plane },
                 { key: "navaids", label: "Radioayudas", icon: Radio },
+                { key: "intlNavaids", label: "Radioay. Intl", icon: Radio },
                 { key: "waypoints", label: "Waypoints", icon: Navigation2 },
+                { key: "transferPoints", label: "Pts. Notificac.", icon: Crosshair },
                 { key: "convAirways", label: "Aerovías Conv.", icon: Route },
                 { key: "rnavAirways", label: "Aerovías RNAV", icon: Route },
                 { key: "firBoundary", label: "FIR Lima", icon: MapIcon },
                 { key: "adjacentFirs", label: "FIRs Adyac.", icon: Crosshair },
+                { key: "tmaSectors", label: "TMA / CTR", icon: MapIcon },
+                { key: "restricted", label: "Zonas Rest.", icon: Crosshair },
                 { key: "grid", label: "Grilla", icon: Layers },
               ] as const).map(({ key, label, icon: Icon }) => (
                 <div key={key} className="flex items-center gap-1.5">
@@ -982,6 +1203,34 @@ export function InteractiveMap({ onSendToFlightPlan }: InteractiveMapProps = {})
               </Polygon>
             ) : null
           ))}
+
+          {/* TMA / CTR polygonal sectors (violet outline, light fill) */}
+          {layers.tmaSectors && TMA_SECTORS_DATA.map((t) => (
+            <Polygon
+              key={t.id}
+              positions={t.polygon.map((p) => [p.lat, p.lon] as [number, number])}
+              pathOptions={{ color: C.tma, weight: 1.5, dashArray: "5,3", opacity: 0.8, fillColor: C.tma, fillOpacity: 0.06 }}
+            >
+              <Tooltip sticky className="leaflet-tooltip-skyvector">
+                <div className="font-mono">
+                  <div className="font-bold">{t.name}</div>
+                  <div>Clase {t.cls} · {t.lo} → {t.hi}</div>
+                </div>
+              </Tooltip>
+            </Polygon>
+          ))}
+
+          {/* Restricted / Prohibited / Danger zones — red outline */}
+          {layers.restricted && (
+            <>
+              {/* For now these come without polygon coords in the AIP; show a badge
+                  list in the corner panel instead. If we had coords, we'd render
+                  <Polygon> here. Kept as a placeholder so the toggle exists. */}
+              {RESTRICTED_AIRSPACE.length === 0 && (
+                <></>
+              )}
+            </>
+          )}
 
           {/* Conventional Airways */}
           {layers.convAirways && data?.airways?.conventional?.map((aw) => {
@@ -1144,36 +1393,131 @@ export function InteractiveMap({ onSendToFlightPlan }: InteractiveMapProps = {})
             )
           })}
 
-          {/* Waypoints (only if enabled) */}
-          {layers.waypoints && data?.waypoints?.map((wp) => {
-            const isInRoute = route.some((r) => r.id === wp.id)
+          {/* International (adjacent-FIR) navaids — Ecuador/Colombia/Brasil/Bolivia/Chile */}
+          {layers.intlNavaids && INTERNATIONAL_NAVAIDS.map((nv) => {
+            const isInRoute = route.some((r) => r.id === nv.id)
             return (
               <Marker
-                key={wp.id}
-                position={[wp.lat, wp.lon]}
-                icon={createWaypointIcon(wp.id, isInRoute)}
+                key={`intl-${nv.id}`}
+                position={[nv.lat, nv.lon]}
+                icon={createIntlNavaidIcon(nv.id, nv.frequency, isInRoute)}
               >
                 <Popup>
-                  <div className="min-w-[150px]">
-                    <span className="font-bold text-sm text-[#1e40af]">{wp.id}</span>
-                    <p className="text-xs text-slate-600">{wp.name}</p>
-                    {wp.description && <p className="text-[10px] text-slate-600/70 mt-1">{wp.description}</p>}
-                    <div className="text-[9px] font-mono text-slate-600/60 mt-2 pt-2 border-t border-slate-200">
-                      {wp.lat.toFixed(4)}, {wp.lon.toFixed(4)}
+                  <div className="min-w-[200px]">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-bold text-sm text-[#0e7490]">{nv.id}</span>
+                      <Badge variant="outline" className="text-[9px] border-[#0e7490]/50 text-[#0e7490]">
+                        {nv.country || "INTL"} · {nv.fir || "FIR"}
+                      </Badge>
                     </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-6 text-[10px] px-2 mt-2 border-[#1e40af]/40 text-[#1e40af] hover:bg-[#1e40af]/15"
-                      onClick={() => addToRoute({ id: wp.id, name: wp.name, type: "WAYPOINT", lat: wp.lat, lon: wp.lon })}
-                    >
-                      + Agregar a Ruta
-                    </Button>
+                    <p className="text-xs font-semibold mb-1 text-slate-600">{nv.name}</p>
+                    <div className="grid grid-cols-2 gap-1 text-[10px] font-mono text-slate-600">
+                      <span><b className="text-[#0e7490]">Freq:</b> {nv.frequency}</span>
+                      <span><b className="text-[#0e7490]">Tipo:</b> {nv.type}</span>
+                    </div>
+                    <div className="text-[9px] font-mono text-slate-600/60 mt-2 pt-2 border-t border-slate-200">
+                      {nv.lat.toFixed(4)}, {nv.lon.toFixed(4)}
+                    </div>
+                    <div className="flex gap-1 mt-2">
+                      <Button
+                        size="sm" variant="outline"
+                        className="h-6 text-[10px] px-2 border-[#0e7490]/40 text-[#0e7490] hover:bg-[#0e7490]/10"
+                        onClick={() => setOrigin(nv.id)}
+                      >+ ORIG</Button>
+                      <Button
+                        size="sm" variant="outline"
+                        className="h-6 text-[10px] px-2 border-[#0e7490]/40 text-[#0e7490] hover:bg-[#0e7490]/10"
+                        onClick={() => setDest(nv.id)}
+                      >+ DEST</Button>
+                      <Button
+                        size="sm" variant="outline"
+                        className="h-6 text-[10px] px-2 border-[#0e7490]/40 text-[#0e7490] hover:bg-[#0e7490]/10"
+                        onClick={() => addToRoute({ id: nv.id, name: nv.name, type: "NAVAID", lat: nv.lat, lon: nv.lon })}
+                      >+ Ruta</Button>
+                    </div>
                   </div>
                 </Popup>
               </Marker>
             )
           })}
+
+          {/* Waypoints — distinct markers for transfer/notification/regular points.
+              The transferPoints layer controls ALL waypoint visibility (since
+              transfer/notif flags are waypoint attributes). The plain "waypoints"
+              toggle controls regular (non-transfer, non-notif) waypoints. */}
+          {(layers.waypoints || layers.transferPoints) && data?.waypoints?.map((wp) => {
+            const isInRoute = route.some((r) => r.id === wp.id)
+            const ext = wp as PeruvianWaypointExt
+            const isTransfer = !!ext.transfer
+            const isNotif = !!ext.notif && !isTransfer
+            // Hide transfer points unless transferPoints layer is on
+            if (isTransfer && !layers.transferPoints) return null
+            // Hide plain notification points unless transferPoints layer is on
+            // (we treat them together — they're both "compulsory reporting")
+            if (isNotif && !layers.transferPoints) return null
+            // Hide regular waypoints unless waypoints layer is on
+            if (!isTransfer && !isNotif && !layers.waypoints) return null
+
+            // For transfer points, find which FIR(s) they transfer to
+            const transferInfo = isTransfer
+              ? FIR_TRANSFERS.filter(t => t.points.includes(wp.id))
+              : []
+
+            return (
+              <Marker
+                key={wp.id}
+                position={[wp.lat, wp.lon]}
+                icon={createWaypointIcon(wp.id, isInRoute, isNotif, isTransfer)}
+              >
+                <Popup>
+                  <div className="min-w-[180px]">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-bold text-sm text-[#1e40af]">{wp.id}</span>
+                      {isTransfer && (
+                        <Badge className="text-[9px] bg-[#dc2626] text-white">TRANSFERENCIA FIR</Badge>
+                      )}
+                      {isNotif && (
+                        <Badge className="text-[9px] bg-[#ea580c] text-white">NOTIFICACIÓN</Badge>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-600">{wp.name}</p>
+                    {wp.description && <p className="text-[10px] text-slate-600/70 mt-1">{wp.description}</p>}
+                    {transferInfo.length > 0 && (
+                      <div className="mt-2 pt-2 border-t border-slate-200 space-y-1">
+                        {transferInfo.map((t, i) => (
+                          <div key={i} className="text-[10px] font-mono text-[#7f1d1d] bg-[#dc2626]/5 rounded px-1.5 py-1">
+                            <b>{t.firFrom} → {t.firTo}</b><br />
+                            ACC Lima: {t.freqLima} MHz · ACC {t.firTo}: {t.freqAdjacent} MHz
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <div className="text-[9px] font-mono text-slate-600/60 mt-2 pt-2 border-t border-slate-200">
+                      {wp.lat.toFixed(4)}, {wp.lon.toFixed(4)}
+                    </div>
+                    <div className="flex gap-1 mt-2 flex-wrap">
+                      <Button
+                        size="sm" variant="outline"
+                        className="h-6 text-[10px] px-2 border-[#1e40af]/40 text-[#1e40af] hover:bg-[#1e40af]/15"
+                        onClick={() => setOrigin(wp.id)}
+                      >+ ORIG</Button>
+                      <Button
+                        size="sm" variant="outline"
+                        className="h-6 text-[10px] px-2 border-[#1e40af]/40 text-[#1e40af] hover:bg-[#1e40af]/15"
+                        onClick={() => setDest(wp.id)}
+                      >+ DEST</Button>
+                      <Button
+                        size="sm" variant="outline"
+                        className="h-6 text-[10px] px-2 border-[#1e40af]/40 text-[#1e40af] hover:bg-[#1e40af]/15"
+                        onClick={() => addToRoute({ id: wp.id, name: wp.name, type: "WAYPOINT", lat: wp.lat, lon: wp.lon })}
+                      >+ Ruta</Button>
+                    </div>
+                  </div>
+                </Popup>
+              </Marker>
+            )
+          })}
+
 
           {/* Route polyline with glow (two layers: wide glow + sharp line) */}
           {route.length >= 2 && (
@@ -1304,15 +1648,19 @@ export function InteractiveMap({ onSendToFlightPlan }: InteractiveMapProps = {})
         </div>
 
         {/* Legend */}
-        <div className="absolute top-2 right-2 bg-white/90 text-slate-600 text-[10px] font-mono px-3 py-2 rounded border border-[#cbd5e1] space-y-1 max-w-[190px] backdrop-blur z-[500]">
+        <div className="absolute top-2 right-2 bg-white/90 text-slate-600 text-[10px] font-mono px-3 py-2 rounded border border-[#cbd5e1] space-y-1 max-w-[210px] backdrop-blur z-[500]">
           <div className="font-bold text-[#1e40af] mb-1">LEYENDA</div>
           <div className="flex items-center gap-1.5"><span className="w-3 h-3 bg-[#1e40af] border-2 border-[#1e3a8a] inline-block rounded-full"></span> Aeródromo Intl</div>
           <div className="flex items-center gap-1.5"><span className="w-3 h-3 bg-[#3b82f6] border-2 border-[#1e3a8a] inline-block rounded-full"></span> Aeródromo Nacional</div>
-          <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full border-2 border-[#1d4ed8] inline-block"></span> Radioayuda (VOR DME)</div>
+          <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full border-2 border-[#1d4ed8] inline-block"></span> Radioayuda (VOR/DME)</div>
+          <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full border-2 border-dashed border-[#0e7490] inline-block"></span> Radioayuda Intl</div>
           <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 border border-[#16a34a] inline-block transform rotate-45"></span> Waypoint</div>
+          <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-[#dc2626] border border-[#7f1d1d] inline-block transform rotate-45"></span> Punto Transferencia FIR ★</div>
+          <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-[#ea580c] border border-[#7c2d12] inline-block transform rotate-45"></span> Punto Notificación</div>
           <div className="flex items-center gap-1.5"><span className="w-4 h-0.5 bg-[#1e3c78] inline-block"></span> Aerovía Conv.</div>
           <div className="flex items-center gap-1.5"><span className="w-4 h-0.5 bg-[#64748b] inline-block border-dashed"></span> Aerovía RNAV</div>
           <div className="flex items-center gap-1.5"><span className="w-4 h-0.5 bg-[#475569] inline-block" style={{ borderTop: "2px dashed #475569" }}></span> FIR Lima</div>
+          <div className="flex items-center gap-1.5"><span className="w-4 h-0.5 bg-[#7c3aed] inline-block" style={{ borderTop: "2px dashed #7c3aed" }}></span> TMA / CTR</div>
           <div className="flex items-center gap-1.5"><span className="w-4 h-0.5 bg-[#c026d3] inline-block"></span> Ruta construida</div>
           {editMode && <div className="flex items-center gap-1.5 pt-1 border-t border-slate-200 text-[#ea580c]"><Move className="size-2.5" /> Arrastrar puntos</div>}
         </div>

@@ -1,0 +1,81 @@
+[
+  {
+    "fir_from": "LIMA",
+    "fir_to": "GUAYAQUIL",
+    "pts": [
+      "OSAKI",
+      "AMERO",
+      "ANPAL",
+      "ARNEL"
+    ],
+    "acc_from": "ACC/FIC LIMA",
+    "acc_to": "ACC GUAYAQUIL",
+    "freq_lima": "127.9",
+    "freq_adj": "125.3",
+    "rmk": "FIR norte-occidental. Frec Lima Control: 119.7/128.7"
+  },
+  {
+    "fir_from": "LIMA",
+    "fir_to": "BOGOTÁ",
+    "pts": [
+      "TERAS",
+      "ANDID",
+      "ROLUS",
+      "ILMUX",
+      "PUPAS",
+      "REMEX"
+    ],
+    "acc_from": "ACC/FIC LIMA",
+    "acc_to": "ACC BOGOTÁ",
+    "freq_lima": "127.9",
+    "freq_adj": "126.3",
+    "rmk": "FIR norte-oriental Colombia/Perú"
+  },
+  {
+    "fir_from": "LIMA",
+    "fir_to": "AMAZÓNICA",
+    "pts": [
+      "DAMDU",
+      "ISIDI",
+      "POSKA",
+      "SURIX"
+    ],
+    "acc_from": "ACC/FIC LIMA",
+    "acc_to": "CINDACTA III",
+    "freq_lima": "127.9",
+    "freq_adj": "125.3",
+    "rmk": "FIR oriental Brasil/Perú"
+  },
+  {
+    "fir_from": "LIMA",
+    "fir_to": "LA PAZ",
+    "pts": [
+      "ELAKO",
+      "OBLIR",
+      "RAXUN",
+      "OPKUL",
+      "OGMAS",
+      "VAGUR",
+      "LOLES"
+    ],
+    "acc_from": "ACC/FIC LIMA",
+    "acc_to": "FIC LA PAZ",
+    "freq_lima": "127.9",
+    "freq_adj": "129.9",
+    "rmk": "FIR sur-oriental Bolivia/Perú"
+  },
+  {
+    "fir_from": "LIMA",
+    "fir_to": "ANTOFAGASTA",
+    "pts": [
+      "SORTA",
+      "IREMI",
+      "ALDAX"
+    ],
+    "acc_from": "ACC/FIC LIMA",
+    "acc_to": "ACC ANTOFAGASTA",
+    "freq_lima": "127.9",
+    "freq_adj": "124.7",
+    "rmk": "FIR sur Chile/Perú"
+  }
+]

@@ -1,0 +1,52 @@
+[
+  {
+    "des": "EP-204",
+    "type": "P",
+    "name": "Zona Prohibida Palacio de Gobierno",
+    "lower": "SFC",
+    "upper": "UNL",
+    "act": "Seguridad del Estado",
+    "per": "H24",
+    "ent": "FAP/PNP"
+  },
+  {
+    "des": "ER-201",
+    "type": "R",
+    "name": "Zona Restringida Callao Norte",
+    "lower": "SFC",
+    "upper": "FL150",
+    "act": "Operaciones militares",
+    "per": "LUN-VIE 0600-1800",
+    "ent": "FAP"
+  },
+  {
+    "des": "ER-207",
+    "type": "R",
+    "name": "Zona Restringida La Libertad",
+    "lower": "FL100",
+    "upper": "FL450",
+    "act": "Ejercicios militares",
+    "per": "Activada por NOTAM",
+    "ent": "FAP"
+  },
+  {
+    "des": "ED-301",
+    "type": "D",
+    "name": "Zona Peligrosa Punta Lobos",
+    "lower": "SFC",
+    "upper": "8000ft AMSL",
+    "act": "Tiro de artillería",
+    "per": "Activada por NOTAM",
+    "ent": "Ejército del Perú"
+  },
+  {
+    "des": "ED-302",
+    "type": "D",
+    "name": "Zona Peligrosa Pampa de la Joya",
+    "lower": "SFC",
+    "upper": "FL150",
+    "act": "Ejercicios militares",
+    "per": "Activada por NOTAM",
+    "ent": "FAP Arequipa"
+  }
+]

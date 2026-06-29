@@ -1,0 +1,1329 @@
+[
+  {
+    "id": "T218",
+    "type": "RNAV",
+    "pts": [
+      {
+        "id": "KONTA 54 NM",
+        "lat": -12.1031,
+        "lng": -76.1922
+      },
+      {
+        "id": "ILPIP 10 NM Sectores LIMA ACC:",
+        "lat": -12.1136,
+        "lng": -76.0225
+      },
+      {
+        "id": "LOKEB 20 NM",
+        "lat": -12.1342,
+        "lng": -75.6828
+      },
+      {
+        "id": "BODET 105 NM 5",
+        "lat": -12.2353,
+        "lng": -73.9008
+      },
+      {
+        "id": "ETEBA 33 NM",
+        "lat": -12.4294,
+        "lng": -71.5956
+      },
+      {
+        "id": "ANBON 89 NM",
+        "lat": -12.5467,
+        "lng": -70.0769
+      },
+      {
+        "id": "MONKU 115 NM FL 210",
+        "lat": -11.7619,
+        "lng": -75.9075
+      }
+    ]
+  },
+  {
+    "id": "T232",
+    "type": "RNAV",
+    "pts": [
+      {
+        "id": "MASPO 30 NM Sectores LIMA ACC:",
+        "lat": -3.0797,
+        "lng": -76.0694
+      },
+      {
+        "id": "URIMU 21 NM G FL 240",
+        "lat": -3.6097,
+        "lng": -75.3233
+      },
+      {
+        "id": "TROMPETEROS VOR/DME",
+        "lat": -3.8028,
+        "lng": -75.0508
+      },
+      {
+        "id": "GELVO 20 NM Oriente radar: 128.5 MH",
+        "lat": -3.8011,
+        "lng": -74.7175
+      },
+      {
+        "id": "KOKRO 34 NM Oriente radar: 128.5 MH",
+        "lat": -3.7978,
+        "lng": -74.1514
+      }
+    ]
+  },
+  {
+    "id": "T234",
+    "type": "RNAV",
+    "pts": [
+      {
+        "id": "PUNUD 50 NM 5 Oriente radar: 128.5 ",
+        "lat": -4.1631,
+        "lng": -76.1267
+      },
+      {
+        "id": "ENSUB 55 NM FL 040",
+        "lat": -8.9564,
+        "lng": -73.8539
+      },
+      {
+        "id": "ESKOM 123 NM G FL 240 5 Oriente rad",
+        "lat": -10.2519,
+        "lng": -72.2347
+      },
+      {
+        "id": "TITVU 176 NM",
+        "lat": -12.0906,
+        "lng": -69.8961
+      },
+      {
+        "id": "OSETA 55 NM D FL200 118.1 MHz",
+        "lat": -9.2483,
+        "lng": -74.2758
+      },
+      {
+        "id": "PUMAS 46 NM 5",
+        "lat": -11.3569,
+        "lng": -73.3078
+      },
+      {
+        "id": "ESKOM 48 NM FL 090 126.9 MHz",
+        "lat": -10.2519,
+        "lng": -72.2347
+      },
+      {
+        "id": "PTO. ESPERANZA VOR",
+        "lat": -9.7692,
+        "lng": -70.705
+      }
+    ]
+  },
+  {
+    "id": "T246",
+    "type": "RNAV",
+    "pts": [
+      {
+        "id": "POVLO UNIDIRECCIONAL",
+        "lat": -13.1519,
+        "lng": -74.2053
+      },
+      {
+        "id": "REKEM FL 200 5 Sectores LIMA ACC",
+        "lat": -13.055,
+        "lng": -75.6275
+      }
+    ]
+  },
+  {
+    "id": "T311",
+    "type": "RNAV",
+    "pts": [
+      {
+        "id": "LODIN 207 NM G FL 240 Sectores LIMA",
+        "lat": -7.4072,
+        "lng": -75.5783
+      },
+      {
+        "id": "TOKAN 132 NM",
+        "lat": -9.3381,
+        "lng": -76.6425
+      },
+      {
+        "id": "ILROL 80 NM",
+        "lat": -10.5139,
+        "lng": -77.2972
+      },
+      {
+        "id": "RENON 85 NM",
+        "lat": -10.7644,
+        "lng": -76.3239
+      },
+      {
+        "id": "PADIS 30 NM FL 210",
+        "lat": -11.1878,
+        "lng": -76.5814
+      }
+    ]
+  },
+  {
+    "id": "T315",
+    "type": "RNAV",
+    "pts": [
+      {
+        "id": "MIKAR 55 NM FL 080 118.1 MHz",
+        "lat": -9.1858,
+        "lng": -75.0072
+      },
+      {
+        "id": "VADOS 87 NM",
+        "lat": -10.9686,
+        "lng": -76.0608
+      },
+      {
+        "id": "OPROS 35 NM FL 210",
+        "lat": -11.3947,
+        "lng": -76.4792
+      }
+    ]
+  },
+  {
+    "id": "T317",
+    "type": "RNAV",
+    "pts": [
+      {
+        "id": "OPROS 53 NM D FL 200",
+        "lat": -11.3947,
+        "lng": -76.4792
+      },
+      {
+        "id": "IRESO 60 NM G FL 240 5",
+        "lat": -11.3747,
+        "lng": -75.4614
+      },
+      {
+        "id": "ROGAT 89 NM",
+        "lat": -11.3389,
+        "lng": -73.9467
+      },
+      {
+        "id": "PUMAS 38 NM FL 130 123.5 MHz",
+        "lat": -11.3569,
+        "lng": -73.3078
+      }
+    ]
+  },
+  {
+    "id": "T319",
+    "type": "RNAV",
+    "pts": [
+      {
+        "id": "PAKOL 79 NM",
+        "lat": -12.745,
+        "lng": -75.9636
+      },
+      {
+        "id": "POVLO 106 NM G FL 240",
+        "lat": -13.1519,
+        "lng": -74.2053
+      },
+      {
+        "id": "DARKI 80 NM",
+        "lat": -13.4514,
+        "lng": -72.8731
+      },
+      {
+        "id": "OPROS 53 NM FL 210",
+        "lat": -11.3947,
+        "lng": -76.4792
+      },
+      {
+        "id": "RENON 39 NM 5 Sectores LIMA ACC:",
+        "lat": -10.7644,
+        "lng": -76.3239
+      },
+      {
+        "id": "ANBIS 33 NM G FL 240",
+        "lat": -10.2183,
+        "lng": -76.2047
+      }
+    ]
+  },
+  {
+    "id": "T327",
+    "type": "RNAV",
+    "pts": [
+      {
+        "id": "REPUL 39 NM UNIDIRECCIONAL",
+        "lat": -9.7503,
+        "lng": -76.485
+      },
+      {
+        "id": "ILROL 66 NM Oriente radar: 128.5 MH",
+        "lat": -10.5139,
+        "lng": -77.2972
+      }
+    ]
+  },
+  {
+    "id": "T329",
+    "type": "RNAV",
+    "pts": [
+      {
+        "id": "KOMGO 60 NM",
+        "lat": -10.3064,
+        "lng": -77.7839
+      },
+      {
+        "id": "NAXUS 139 NM FL 210 Nor-dos radar: ",
+        "lat": -8.0303,
+        "lng": -78.2931
+      },
+      {
+        "id": "MARBA 34 NM",
+        "lat": -7.14,
+        "lng": -78.4906
+      }
+    ]
+  },
+  {
+    "id": "T330",
+    "type": "RNAV",
+    "pts": [
+      {
+        "id": "RELUN 57 NM FL 170",
+        "lat": -7.2892,
+        "lng": -78.5881
+      },
+      {
+        "id": "MARBA 11 NM G FL 240",
+        "lat": -7.14,
+        "lng": -78.4906
+      },
+      {
+        "id": "PUMSA UNIDIRECCIONAL",
+        "lat": -12.8411,
+        "lng": -69.7489
+      },
+      {
+        "id": "URAPA 28 NM G FL 240",
+        "lat": -12.7244,
+        "lng": -72.0061
+      },
+      {
+        "id": "UROLO 113 NM",
+        "lat": -12.61,
+        "lng": -73.9239
+      },
+      {
+        "id": "UDENI 79 NM",
+        "lat": -12.5211,
+        "lng": -75.275
+      },
+      {
+        "id": "PEROV 46 NM",
+        "lat": -12.3469,
+        "lng": -76.0381
+      }
+    ]
+  },
+  {
+    "id": "T334",
+    "type": "RNAV",
+    "pts": [
+      {
+        "id": "VUPUD 21 NM G FL 240 Ayacucho AFIS:",
+        "lat": -13.3139,
+        "lng": -74.7533
+      },
+      {
+        "id": "POVLO 33 NM",
+        "lat": -13.1519,
+        "lng": -74.2053
+      }
+    ]
+  },
+  {
+    "id": "T335",
+    "type": "RNAV",
+    "pts": [
+      {
+        "id": "UROKU 71 NM",
+        "lat": -9.9275,
+        "lng": -73.2564
+      },
+      {
+        "id": "VUPAM 73 NM",
+        "lat": -11.6181,
+        "lng": -72.5039
+      },
+      {
+        "id": "URAPA 22 NM Cusco APP: 120.6 MHz",
+        "lat": -12.7244,
+        "lng": -72.0061
+      },
+      {
+        "id": "REKEM 60 NM Sectores LIMA ACC:",
+        "lat": -13.055,
+        "lng": -75.6275
+      },
+      {
+        "id": "VUPUD 53 NM G FL 240",
+        "lat": -13.3139,
+        "lng": -74.7533
+      }
+    ]
+  },
+  {
+    "id": "UL300",
+    "type": "RNAV",
+    "pts": [
+      {
+        "id": "ROLUS",
+        "lat": -1.1314,
+        "lng": -73.6267
+      },
+      {
+        "id": "OSORA 117 NM",
+        "lat": -5.7161,
+        "lng": -72.9428
+      },
+      {
+        "id": "ILNAM",
+        "lat": -9.5219,
+        "lng": -72.1856
+      },
+      {
+        "id": "ETEBA 177 NM",
+        "lat": -12.4294,
+        "lng": -71.5956
+      },
+      {
+        "id": "OPKUL 95 NM Oriente radar: 128.5 MH",
+        "lat": -15.1094,
+        "lng": -71.0403
+      },
+      {
+        "id": "OGMAS 78 NM",
+        "lat": -16.3856,
+        "lng": -70.7711
+      },
+      {
+        "id": "EVLAR 14 NM",
+        "lat": -16.6103,
+        "lng": -70.7233
+      },
+      {
+        "id": "ISLOD 55 NM",
+        "lat": -17.5058,
+        "lng": -70.5325
+      }
+    ]
+  },
+  {
+    "id": "UL305",
+    "type": "RNAV",
+    "pts": [
+      {
+        "id": "TERAS GNSS o IRU requerido",
+        "lat": -2,
+        "lng": -75.9333
+      },
+      {
+        "id": "VUNBO 82 NM Sectores LIMA ACC",
+        "lat": -3.3747,
+        "lng": -76.0561
+      },
+      {
+        "id": "PUNUD 47 NM",
+        "lat": -4.1631,
+        "lng": -76.1267
+      },
+      {
+        "id": "ENPAP 110 NM",
+        "lat": -8.4894,
+        "lng": -76.55
+      },
+      {
+        "id": "TOKAN 51 NM Nor-uno radar: 119.5 MH",
+        "lat": -9.3381,
+        "lng": -76.6425
+      },
+      {
+        "id": "AMVEX 88 NM",
+        "lat": -10.8006,
+        "lng": -76.8033
+      }
+    ]
+  },
+  {
+    "id": "UL306",
+    "type": "RNAV",
+    "pts": [
+      {
+        "id": "NUXUM GNSS o IRU requerido",
+        "lat": -9.135,
+        "lng": -72.9564
+      },
+      {
+        "id": "ASBOB 36 NM",
+        "lat": -9.4419,
+        "lng": -73.4708
+      },
+      {
+        "id": "NILSA 24 NM",
+        "lat": -9.6469,
+        "lng": -73.815
+      },
+      {
+        "id": "VADOS 155 NM A UNL 5",
+        "lat": -10.9686,
+        "lng": -76.0608
+      },
+      {
+        "id": "OPROS 35 NM",
+        "lat": -11.3947,
+        "lng": -76.4792
+      }
+    ]
+  },
+  {
+    "id": "UL308",
+    "type": "RNAV",
+    "pts": [
+      {
+        "id": "ANPAL GNSS o IRU requerido",
+        "lat": -3.4,
+        "lng": -83.0033
+      },
+      {
+        "id": "ITALU 152 NM",
+        "lat": -5.4989,
+        "lng": -81.5767
+      },
+      {
+        "id": "UGEMA 208 NM",
+        "lat": -8.3706,
+        "lng": -79.6036
+      },
+      {
+        "id": "ISREN 97 NM A UNL 10 Nor-dos radar:",
+        "lat": -9.7033,
+        "lng": -78.6767
+      },
+      {
+        "id": "OSAKI",
+        "lat": -3.4,
+        "lng": -84.6833
+      },
+      {
+        "id": "REBAN 423 NM Sectores LIMA ACC",
+        "lat": -8.4469,
+        "lng": -79.7061
+      },
+      {
+        "id": "ISREN 97 NM",
+        "lat": -9.7033,
+        "lng": -78.6767
+      }
+    ]
+  },
+  {
+    "id": "UL342",
+    "type": "RNAV",
+    "pts": [
+      {
+        "id": "PTO. LEGUIZAMO VOR/DME",
+        "lat": -0.1786,
+        "lng": -74.7756
+      },
+      {
+        "id": "ANDID 138 NM",
+        "lat": -2.4222,
+        "lng": -75.3189
+      },
+      {
+        "id": "UMSOK 63 NM",
+        "lat": -3.4497,
+        "lng": -75.5683
+      },
+      {
+        "id": "NENER 110 NM",
+        "lat": -8.4478,
+        "lng": -76.7878
+      },
+      {
+        "id": "ILROL 127 NM",
+        "lat": -10.5139,
+        "lng": -77.2972
+      }
+    ]
+  },
+  {
+    "id": "UL344",
+    "type": "RNAV",
+    "pts": [
+      {
+        "id": "AMERO",
+        "lat": -3.4,
+        "lng": -83.7667
+      },
+      {
+        "id": "MULON 179 NM",
+        "lat": -5.7394,
+        "lng": -81.8897
+      },
+      {
+        "id": "REBAN 208 NM A UNL 10 Nor-uno radar",
+        "lat": -8.4469,
+        "lng": -79.7061
+      },
+      {
+        "id": "ISREN 97 NM",
+        "lat": -9.7033,
+        "lng": -78.6767
+      }
+    ]
+  },
+  {
+    "id": "UL401",
+    "type": "RNAV",
+    "pts": [
+      {
+        "id": "PABOB",
+        "lat": -3.4,
+        "lng": -87.575
+      },
+      {
+        "id": "ILVOS 437 NM G UNL 10",
+        "lat": -10,
+        "lng": -84.4203
+      },
+      {
+        "id": "ESDIN 556 NM Disponible SELCAL",
+        "lat": -18.35,
+        "lng": -80.2033
+      },
+      {
+        "id": "EVLEP 214 NM",
+        "lat": -16.5653,
+        "lng": -73.9475
+      },
+      {
+        "id": "ALDAX 136 NM",
+        "lat": -18.35,
+        "lng": -72.4722
+      }
+    ]
+  },
+  {
+    "id": "UL780",
+    "type": "RNAV",
+    "pts": [
+      {
+        "id": "VAKUD GNSS o IRU requerido",
+        "lat": -4.5078,
+        "lng": -79.5619
+      },
+      {
+        "id": "ISREN 100 NM",
+        "lat": -9.7033,
+        "lng": -78.6767
+      },
+      {
+        "id": "MOXES 10",
+        "lat": -14.2747,
+        "lng": -77.4178
+      },
+      {
+        "id": "SORTA 252 NM",
+        "lat": -18.35,
+        "lng": -76.3033
+      }
+    ]
+  },
+  {
+    "id": "UM414",
+    "type": "RNAV",
+    "pts": [
+      {
+        "id": "ILMUX GNSS o IRU requerido",
+        "lat": -2.4619,
+        "lng": -72.8489
+      },
+      {
+        "id": "VUMPU 31 NM",
+        "lat": -2.9456,
+        "lng": -73.0192
+      },
+      {
+        "id": "MAJAZ 50 NM",
+        "lat": -4.5456,
+        "lng": -73.6817
+      },
+      {
+        "id": "PUGUP 192 NM",
+        "lat": -7.4369,
+        "lng": -75.0892
+      },
+      {
+        "id": "AMVEX 102 NM",
+        "lat": -10.8006,
+        "lng": -76.8033
+      },
+      {
+        "id": "MEXUR 60 NM",
+        "lat": -13.1678,
+        "lng": -75.6703
+      },
+      {
+        "id": "KULIS 46 NM",
+        "lat": -13.4772,
+        "lng": -74.9511
+      },
+      {
+        "id": "REMUS 54 NM",
+        "lat": -14.0842,
+        "lng": -73.5211
+      },
+      {
+        "id": "OPKUL 49 NM",
+        "lat": -15.1094,
+        "lng": -71.0403
+      },
+      {
+        "id": "DOBNI 47 NM",
+        "lat": -15.7186,
+        "lng": -69.3817
+      }
+    ]
+  },
+  {
+    "id": "UM527",
+    "type": "RNAV",
+    "pts": [
+      {
+        "id": "SIGOB GNSS o IRU requerido",
+        "lat": -8.4711,
+        "lng": -73.3383
+      },
+      {
+        "id": "ERINI 29 NM",
+        "lat": -9.1736,
+        "lng": -74.0978
+      },
+      {
+        "id": "VADOS 158 NM FL 250",
+        "lat": -10.9686,
+        "lng": -76.0608
+      },
+      {
+        "id": "OPROS 35 NM",
+        "lat": -11.3947,
+        "lng": -76.4792
+      }
+    ]
+  },
+  {
+    "id": "UM542",
+    "type": "RNAV",
+    "pts": [
+      {
+        "id": "ARNEL GNSS o IRU requerido",
+        "lat": -3.4,
+        "lng": -81.5833
+      },
+      {
+        "id": "OKASO 38 NM",
+        "lat": -5.1444,
+        "lng": -80.97
+      },
+      {
+        "id": "AKTUK 115 NM",
+        "lat": -6.8658,
+        "lng": -80.1114
+      },
+      {
+        "id": "MIPAS 92 NM",
+        "lat": -8.2425,
+        "lng": -79.4183
+      },
+      {
+        "id": "VUGAL 72 NM Sur-uno radar: 135.0 MH",
+        "lat": -9.3236,
+        "lng": -78.87
+      },
+      {
+        "id": "ISREN 25 NM",
+        "lat": -9.7033,
+        "lng": -78.6767
+      },
+      {
+        "id": "TOPIX 129 NM",
+        "lat": -11.6611,
+        "lng": -77.76
+      }
+    ]
+  },
+  {
+    "id": "UM548",
+    "type": "RNAV",
+    "pts": [
+      {
+        "id": "AKSOL 60 NM",
+        "lat": -13.33,
+        "lng": -75.7625
+      },
+      {
+        "id": "EKUVA 43 NM Sectores LIMA ACC",
+        "lat": -13.7333,
+        "lng": -75.1597
+      },
+      {
+        "id": "BOMEL 84 NM FL 250 Sur-dos radar: 1",
+        "lat": -14.5264,
+        "lng": -73.9617
+      },
+      {
+        "id": "KAMAK 130 NM",
+        "lat": -15.7319,
+        "lng": -72.1056
+      },
+      {
+        "id": "REPES 69 NM",
+        "lat": -16.3669,
+        "lng": -71.1089
+      },
+      {
+        "id": "EVLAR 27 NM",
+        "lat": -16.6103,
+        "lng": -70.7233
+      }
+    ]
+  },
+  {
+    "id": "UM665",
+    "type": "RNAV",
+    "pts": [
+      {
+        "id": "KUMET GNSS o IRU requerido",
+        "lat": -3.0831,
+        "lng": -77.9367
+      },
+      {
+        "id": "VUNBO 114 NM",
+        "lat": -3.3747,
+        "lng": -76.0561
+      },
+      {
+        "id": "UMSOK 30 NM A UNL",
+        "lat": -3.4497,
+        "lng": -75.5683
+      },
+      {
+        "id": "SURIX 50 NM",
+        "lat": -3.8914,
+        "lng": -72.4894
+      }
+    ]
+  },
+  {
+    "id": "UM668",
+    "type": "RNAV",
+    "pts": [
+      {
+        "id": "PAKOL 79 NM",
+        "lat": -12.745,
+        "lng": -75.9636
+      },
+      {
+        "id": "POVLO 106 NM UNIDIRECCIONAL",
+        "lat": -13.1519,
+        "lng": -74.2053
+      },
+      {
+        "id": "DARKI 80 NM",
+        "lat": -13.4514,
+        "lng": -72.8731
+      },
+      {
+        "id": "OPTOP 139 NM",
+        "lat": -14.0764,
+        "lng": -69.2436
+      },
+      {
+        "id": "OBLIR 23 NM",
+        "lat": -14.145,
+        "lng": -68.855
+      }
+    ]
+  },
+  {
+    "id": "UM674",
+    "type": "RNAV",
+    "pts": [
+      {
+        "id": "TOSES GNSS o IRU requerido",
+        "lat": -3.4983,
+        "lng": -78.3408
+      },
+      {
+        "id": "ROBIG 191 NM",
+        "lat": -6.6925,
+        "lng": -78.1853
+      },
+      {
+        "id": "BOBUG 34 NM A UNL 5 Oriente radar: ",
+        "lat": -8.1561,
+        "lng": -78.1128
+      },
+      {
+        "id": "TERAS GNSS o IRU requerido",
+        "lat": -2,
+        "lng": -75.9333
+      },
+      {
+        "id": "ANDID 45 NM",
+        "lat": -2.4222,
+        "lng": -75.3189
+      },
+      {
+        "id": "ORETO 131 NM",
+        "lat": -3.6542,
+        "lng": -73.5203
+      },
+      {
+        "id": "POSKA 84 NM",
+        "lat": -5.1064,
+        "lng": -72.8119
+      },
+      {
+        "id": "ASOLA",
+        "lat": -9.795,
+        "lng": -70.9733
+      },
+      {
+        "id": "OPTOP 275 NM FL 250 5 Oriente radar",
+        "lat": -14.0764,
+        "lng": -69.2436
+      },
+      {
+        "id": "RAXUN 24 NM",
+        "lat": -14.4483,
+        "lng": -69.0903
+      }
+    ]
+  },
+  {
+    "id": "UM793",
+    "type": "RNAV",
+    "pts": [
+      {
+        "id": "AKSOL 60 NM",
+        "lat": -13.33,
+        "lng": -75.7625
+      },
+      {
+        "id": "EKUVA 43 NM Sectores LIMA ACC",
+        "lat": -13.7333,
+        "lng": -75.1597
+      },
+      {
+        "id": "BOMEL 84 NM 5 Sur-uno radar: 135.0 ",
+        "lat": -14.5264,
+        "lng": -73.9617
+      },
+      {
+        "id": "KAMAK 130 NM",
+        "lat": -15.7319,
+        "lng": -72.1056
+      },
+      {
+        "id": "REPES 69 NM",
+        "lat": -16.3669,
+        "lng": -71.1089
+      },
+      {
+        "id": "OGMAS 20 NM",
+        "lat": -16.3856,
+        "lng": -70.7711
+      },
+      {
+        "id": "KOMPA 102 NM",
+        "lat": -16.475,
+        "lng": -69
+      }
+    ]
+  },
+  {
+    "id": "UM795",
+    "type": "RNAV",
+    "pts": [
+      {
+        "id": "LOBOT GNSS o IRU requerido",
+        "lat": -2.9422,
+        "lng": -77.6611
+      },
+      {
+        "id": "KUSKU 184 NM",
+        "lat": -6.0192,
+        "lng": -77.5147
+      },
+      {
+        "id": "PUPMI 40 NM 5 Oriente radar: 128.5 ",
+        "lat": -6.68,
+        "lng": -77.4831
+      },
+      {
+        "id": "ILROL 196 NM",
+        "lat": -10.5139,
+        "lng": -77.2972
+      }
+    ]
+  },
+  {
+    "id": "UN420",
+    "type": "RNAV",
+    "pts": [
+      {
+        "id": "ROLUS GNSS o IRU requerido",
+        "lat": -1.1314,
+        "lng": -73.6267
+      },
+      {
+        "id": "VUMPU 114 NM A UNL 5",
+        "lat": -2.9456,
+        "lng": -73.0192
+      },
+      {
+        "id": "DAMDU 115 NM",
+        "lat": -4.5131,
+        "lng": -71.895
+      },
+      {
+        "id": "PUGUP 31 NM",
+        "lat": -7.4369,
+        "lng": -75.0892
+      },
+      {
+        "id": "PUCALLPA VOR/DME",
+        "lat": -8.3758,
+        "lng": -74.5722
+      },
+      {
+        "id": "ERINI 55 NM FL 250",
+        "lat": -9.1736,
+        "lng": -74.0978
+      },
+      {
+        "id": "NILSA 33 NM",
+        "lat": -9.6469,
+        "lng": -73.815
+      },
+      {
+        "id": "ANKUG 190 NM",
+        "lat": -12.3836,
+        "lng": -72.16
+      }
+    ]
+  },
+  {
+    "id": "UP525",
+    "type": "RNAV",
+    "pts": [
+      {
+        "id": "PUPAS GNSS o IRU requerido",
+        "lat": -2.335,
+        "lng": -70.6822
+      },
+      {
+        "id": "REMEX 57 NM 128.8 MHz",
+        "lat": -3.2161,
+        "lng": -70.3297
+      },
+      {
+        "id": "ISLOD 48 NM A UNL 5 Sectores LIMA A",
+        "lat": -17.5058,
+        "lng": -70.5325
+      },
+      {
+        "id": "ILMUX",
+        "lat": -2.4619,
+        "lng": -72.8489
+      },
+      {
+        "id": "ORETO 82 NM Sectores LIMA ACC",
+        "lat": -3.6542,
+        "lng": -73.5203
+      },
+      {
+        "id": "LODIN 29 NM A UNL",
+        "lat": -7.4072,
+        "lng": -75.5783
+      },
+      {
+        "id": "TOKAN 132 NM Oriente radar: 128.5 M",
+        "lat": -9.3381,
+        "lng": -76.6425
+      },
+      {
+        "id": "ILROL 80 NM",
+        "lat": -10.5139,
+        "lng": -77.2972
+      },
+      {
+        "id": "ILPIP 64 NM",
+        "lat": -12.1136,
+        "lng": -76.0225
+      },
+      {
+        "id": "LOKEB 20 NM Rumbo este",
+        "lat": -12.1342,
+        "lng": -75.6828
+      },
+      {
+        "id": "BODET 105 NM",
+        "lat": -12.2353,
+        "lng": -73.9008
+      },
+      {
+        "id": "ANKUG 103 NM",
+        "lat": -12.3836,
+        "lng": -72.16
+      },
+      {
+        "id": "ETEBA 33 NM Sur-dos radar: 128.8 MH",
+        "lat": -12.4294,
+        "lng": -71.5956
+      },
+      {
+        "id": "ANBON 89 NM",
+        "lat": -12.5467,
+        "lng": -70.0769
+      },
+      {
+        "id": "AKSOL",
+        "lat": -13.33,
+        "lng": -75.7625
+      },
+      {
+        "id": "DIKOS 110 NM A UNL 5 Sectores LIMA ",
+        "lat": -14.7997,
+        "lng": -74.1531
+      },
+      {
+        "id": "ASUPA 114 NM",
+        "lat": -15.8769,
+        "lng": -72.5406
+      },
+      {
+        "id": "MIGEB 105 NM",
+        "lat": -17.2256,
+        "lng": -72.075
+      },
+      {
+        "id": "MONKU 115 NM FL 250 Oriente radar: ",
+        "lat": -11.7619,
+        "lng": -75.9075
+      },
+      {
+        "id": "PUNUD 50 NM A UNL 5",
+        "lat": -4.1631,
+        "lng": -76.1267
+      },
+      {
+        "id": "PUCALLPA VOR/DME",
+        "lat": -8.3758,
+        "lng": -74.5722
+      },
+      {
+        "id": "RENON 85 NM",
+        "lat": -10.7644,
+        "lng": -76.3239
+      },
+      {
+        "id": "PADIS 30 NM",
+        "lat": -11.1878,
+        "lng": -76.5814
+      },
+      {
+        "id": "PUCALLPA VOR/DME",
+        "lat": -8.3758,
+        "lng": -74.5722
+      },
+      {
+        "id": "MIKAR 55 NM",
+        "lat": -9.1858,
+        "lng": -75.0072
+      },
+      {
+        "id": "VADOS 87 NM FL 250",
+        "lat": -10.9686,
+        "lng": -76.0608
+      },
+      {
+        "id": "OPROS 35 NM",
+        "lat": -11.3947,
+        "lng": -76.4792
+      },
+      {
+        "id": "OPROS 53 NM UNIDIRECCIONAL",
+        "lat": -11.3947,
+        "lng": -76.4792
+      },
+      {
+        "id": "IRESO 60 NM A UNL 5",
+        "lat": -11.3747,
+        "lng": -75.4614
+      },
+      {
+        "id": "ROGAT 89 NM",
+        "lat": -11.3389,
+        "lng": -73.9467
+      },
+      {
+        "id": "PUMAS 38 NM",
+        "lat": -11.3569,
+        "lng": -73.3078
+      },
+      {
+        "id": "PEROV 65 NM",
+        "lat": -12.3469,
+        "lng": -76.0381
+      },
+      {
+        "id": "UDENI 46 NM",
+        "lat": -12.5211,
+        "lng": -75.275
+      },
+      {
+        "id": "ITARA 70 NM FL 250 Sur-dos radar: 1",
+        "lat": -12.7942,
+        "lng": -74.1153
+      },
+      {
+        "id": "GAXUN 80 NM",
+        "lat": -13.1,
+        "lng": -72.7858
+      },
+      {
+        "id": "ESOGO 135 NM UNIDIRECCIONAL",
+        "lat": -15.0692,
+        "lng": -74.3422
+      },
+      {
+        "id": "VUPKO 100 NM",
+        "lat": -16.05,
+        "lng": -72.9333
+      },
+      {
+        "id": "SIHUAS VOR",
+        "lat": -16.3711,
+        "lng": -72.1336
+      },
+      {
+        "id": "PUCALLPA VOR/DME",
+        "lat": -8.3758,
+        "lng": -74.5722
+      },
+      {
+        "id": "RELUN 57 NM Sectores LIMA ACC",
+        "lat": -7.2892,
+        "lng": -78.5881
+      },
+      {
+        "id": "MARBA 11 NM A UNL 5",
+        "lat": -7.14,
+        "lng": -78.4906
+      },
+      {
+        "id": "ROBIG 32 NM",
+        "lat": -6.6925,
+        "lng": -78.1853
+      },
+      {
+        "id": "VAKUD",
+        "lat": -4.5078,
+        "lng": -79.5619
+      },
+      {
+        "id": "KOMLA 45 NM A UNL 5 Nor-dos radar: ",
+        "lat": -5.2533,
+        "lng": -79.6486
+      },
+      {
+        "id": "PUMSA GNSS o IRU requerido",
+        "lat": -12.8411,
+        "lng": -69.7489
+      },
+      {
+        "id": "URAPA 28 NM",
+        "lat": -12.7244,
+        "lng": -72.0061
+      },
+      {
+        "id": "UROLO 113 NM A FL 250 Sur-dos radar",
+        "lat": -12.61,
+        "lng": -73.9239
+      },
+      {
+        "id": "UDENI 79 NM",
+        "lat": -12.5211,
+        "lng": -75.275
+      },
+      {
+        "id": "PEROV 46 NM",
+        "lat": -12.3469,
+        "lng": -76.0381
+      },
+      {
+        "id": "EKUVA 46 NM UNL 5 Sectores LIMA ACC",
+        "lat": -13.7333,
+        "lng": -75.1597
+      },
+      {
+        "id": "VUPUD 21 NM Sur-dos radar: 128.8 MH",
+        "lat": -13.3139,
+        "lng": -74.7533
+      },
+      {
+        "id": "POVLO 33 NM",
+        "lat": -13.1519,
+        "lng": -74.2053
+      },
+      {
+        "id": "ASBOB 39 NM",
+        "lat": -9.4419,
+        "lng": -73.4708
+      },
+      {
+        "id": "ANKUG 192 NM Oriente radar: 128.5 M",
+        "lat": -12.3836,
+        "lng": -72.16
+      },
+      {
+        "id": "URAPA 22 NM",
+        "lat": -12.7244,
+        "lng": -72.0061
+      },
+      {
+        "id": "REKEM 60 NM",
+        "lat": -13.055,
+        "lng": -75.6275
+      },
+      {
+        "id": "VUPUD 53 NM FL 250 Sur-uno radar: 1",
+        "lat": -13.3139,
+        "lng": -74.7533
+      },
+      {
+        "id": "TOROK 34 NM",
+        "lat": -16.2961,
+        "lng": -72.9967
+      },
+      {
+        "id": "SIHUAS VOR",
+        "lat": -16.3711,
+        "lng": -72.1336
+      }
+    ]
+  }
+]
