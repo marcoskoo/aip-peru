@@ -174,3 +174,94 @@
 .dark .custom-scrollbar {
   scrollbar-color: oklch(0.5 0.02 260) transparent;
 }
+
+/* ─── Neon Green Scrollbar (interactive map) ─── */
+.custom-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #00ff66 transparent;
+}
+.custom-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scroll::-webkit-scrollbar-track {
+  background: #001a0d;
+}
+.custom-scroll::-webkit-scrollbar-thumb {
+  background: #00ff66;
+  border-radius: 3px;
+  box-shadow: 0 0 4px #00ff6688;
+}
+.custom-scroll::-webkit-scrollbar-thumb:hover {
+  background: #00cc52;
+}
+
+/* ─── Leaflet Popup — Neon Green Theme ─── */
+.leaflet-popup-content-wrapper {
+  background: #001a0d !important;
+  color: #99ffcc !important;
+  border: 1px solid #00ff66 !important;
+  border-radius: 6px !important;
+  box-shadow: 0 0 15px rgba(0, 255, 102, 0.25) !important;
+}
+.leaflet-popup-tip {
+  background: #001a0d !important;
+  border: 1px solid #00ff66 !important;
+}
+.leaflet-popup-content {
+  margin: 10px 12px !important;
+}
+.leaflet-container a.leaflet-popup-close-button {
+  color: #00ff66 !important;
+  font-weight: bold !important;
+}
+.leaflet-container a.leaflet-popup-close-button:hover {
+  color: #ff3333 !important;
+}
+
+/* Leaflet tooltip — neon green */
+.leaflet-tooltip {
+  background: #001a0d !important;
+  color: #00ff66 !important;
+  border: 1px solid #00ff66 !important;
+  box-shadow: 0 0 8px rgba(0, 255, 102, 0.2) !important;
+  font-family: monospace !important;
+  font-size: 10px !important;
+}
+.leaflet-tooltip-top:before,
+.leaflet-tooltip-bottom:before,
+.leaflet-tooltip-left:before,
+.leaflet-tooltip-right:before {
+  border-top-color: #00ff66 !important;
+  border-bottom-color: #00ff66 !important;
+  border-left-color: #00ff66 !important;
+  border-right-color: #00ff66 !important;
+}
+
+/* Leaflet zoom controls — dark green */
+.leaflet-bar a {
+  background: #001a0d !important;
+  color: #00ff66 !important;
+  border-color: #00ff66 !important;
+}
+.leaflet-bar a:hover {
+  background: #003300 !important;
+  color: #00ff66 !important;
+}
+
+/* Leaflet attribution — dark */
+.leaflet-control-attribution {
+  background: rgba(0, 26, 13, 0.8) !important;
+  color: #99ffcc !important;
+}
+.leaflet-control-attribution a {
+  color: #00ff66 !important;
+}
+
+/* Dragging cursor for editable route markers */
+.leaflet-marker-draggable {
+  cursor: grab !important;
+}
+.leaflet-marker-draggable:active {
+  cursor: grabbing !important;
+}

@@ -3934,3 +3934,100 @@ Stage Summary:
   5. ✅ Construcción de rutas (dropdowns ORIGEN/DESTINO + click en mapa + botón "+ Ruta" en popups)
   6. ✅ Rutas en el mapa (polyline amber con etiquetas de distancia por leg + tabla detalle)
 - Datos combinados del sistema existente (API /api/airdata/all con 48 navaids, 302 wpts, 37 airways) + datos estáticos del HTML subido (20 aeropuertos con coords)
+
+---
+Task ID: 12-MAP-COLORS-DRAG
+Agent: main (Z.ai Code)
+Task: Cambiar colores del mapa interactivo a tema verde neón aviación + implementar drag-and-drop de puntos de ruta + botones EDITAR RUTA / DESHACER / LIMPIAR
+
+Work Log:
+- Analicé las 2 imágenes subidas (IMG_5968.png, IMG_5967.jpeg) con VLM:
+  * IMG_5967 muestra el diseño deseado: tema verde neón (#00ff66) con fondo negro-azulado (#0a0f1a), botones "EDITAR RUTA", "DESHACER" (naranja), "LIMPIAR" (rojo)
+  * IMG_5968 muestra el tema anterior naranja/cian que hay que cambiar
+- Leí completo el archivo src/components/interactive-map.tsx (1037 líneas) para entender la estructura
+
+- CAMBIOS DE COLOR (tema verde neón aviación):
+  * Creé paleta de colores centralizada `C` con: neon #00ff66, darkGreen #003300, darkBg #0a0f1a, panelBg #001a0d, lightGreen #99ffcc, blue #4da6ff, lightCyan #66ff99, orange #ff9933, red #ff3333
+  * createAirportIcon: amber→neon green, navy→dark green, texto blanco con sombra negra
+  * createNavaidIcon: blue→neon green border con glow
+  * createWaypointIcon: cyan→lightCyan #66ff99
+  * createRoutePointIcon: amber→neon green #00ff66 con glow, borde darkGreen, soporta modo editable (borde dashed + icono ✥)
+  * Map background: #0a1628 → #0a0f1a
+  * FIR boundary: blue → neon green
+  * Adjacent FIRs: orange #f97316 → #ff9933
+  * Conv airways: #3b82f6 → #4da6ff
+  * RNAV airways: #06b6d4 → #66ff99
+  * Route polyline: amber → neon green con glow underlay (weight 10 opacity 0.18) + main line (weight 3)
+  * Distance labels: amber/navy → neon green/dark green
+  * Todas las clases Tailwind amber-* → [#00ff66]/[#003300]/[#99ffcc] con arbitrary values
+  * Grid layer: gris → verde oscuro #1a3a2a
+
+- CSS personalizado en globals.css:
+  * .custom-scroll: scrollbar verde neón
+  * .leaflet-popup-content-wrapper: fondo #001a0d, borde #00ff66, box-shadow glow
+  * .leaflet-tooltip: fondo verde oscuro, texto verde neón
+  * .leaflet-bar a (zoom controls): fondo verde oscuro, texto verde neón
+  * .leaflet-control-attribution: fondo translúcido verde
+  * .leaflet-marker-draggable: cursor grab/grabbing
+
+- DRAG-AND-DROP DE PUNTOS DE RUTA:
+  * Añadí estado `editMode` (bool) e `history` (RoutePoint[][])
+  * Añadí refs `routeRef` y `dataRef` actualizados via useEffect (no durante render — fix lint)
+  * Route point markers: `draggable={editMode}` + `eventHandlers.dragend` que llama handleRoutePointDrag
+  * handleRoutePointDrag(index, lat, lon): 
+    1. Push estado actual al historial
+    2. Busca nearest airport/navaid/waypoint dentro de 0.35° (snap automático)
+    3. Si encuentra snap → usa id/name/coords del punto conocido
+    4. Si no → crea punto CUSTOM con coords como nombre
+  * createRoutePointIcon: en modo editable muestra borde dashed + icono ✥ + mayor tamaño + cursor grab
+
+- BOTONES EDITAR RUTA / DESHACER / LIMPIAR:
+  * "Editar Ruta" (Pencil icon): toggle editMode, verde neón cuando ON, contorno verde cuando OFF, disabled si no hay ruta
+  * "Deshacer" (Undo2 icon): naranja #ff9933, llama undo(), disabled si history vacío
+  * "Limpiar" (Trash2 icon): rojo #ff3333, limpia ruta + origin + dest
+  * undo(): pop último estado del historial, setRoute(estado)
+  * Todas las operaciones destructivas (removeFromRoute, clearRoute, buildDirectRoute, handleRoutePointDrag) hacen push al historial antes de modificar
+
+- MEJORAS ADICIONALES:
+  * flightTime: cálculo de tiempo estimado de vuelo (240 KTAS) → formato "Xh YYMIN"
+  * Badge de ruta muestra "{n} pts · {NM} NM · {flightTime}"
+  * Tabla de detalle muestra flightTime en header
+  * Hint text en modo edición: "Arrastra y suelta los puntos de la ruta al punto deseado por donde quieres la trayectoria"
+  * Snap automático a radioayudas/aeródromos cercanos al arrastrar
+  * Leyenda muestra indicador "Arrastrar puntos" cuando editMode está ON
+
+- BUG FIX: Error de lint "Cannot update ref during render" → cambié `routeRef.current = route` a `useEffect(() => { routeRef.current = route }, [route])`
+
+- VERIFICACIÓN CON AGENT BROWSER (todo en scripts /tmp/verify-*.sh porque el dev server moría entre llamadas):
+  * Página carga: HTTP 200, 17 botones, "AIP PERÚ" visible
+  * Navegación a "Mapa Interactivo": H1 correcto, 1 leaflet container, 49 markers (20 airports + 29 navaids fallback)
+  * VLM confirmó colores: "ruta verde", "marcadores verde brillante", "botones verde oscuro"
+  * Construcción de ruta SPIM→SPQU: "2 pts · 413 NM" ✓
+  * EDITAR RUTA button: toggles "EDIT MODE ON" ✓
+  * Draggable check: "Total:52 Draggable:2" — exactamente 2 markers arrastrables (los 2 puntos de ruta) ✓
+  * DESHACER test completo:
+    - Ruta inicial: "2 pts · 413 NM"
+    - UNDO BEFORE: disabled=true (correcto, sin historial)
+    - Click LIMPIAR → ruta vacía
+    - UNDO AFTER LIMPIAR: disabled=false (correcto, historial tiene 1 entry)
+    - Click DESHACER → "2 pts · 413 NM" (ruta RESTAURADA) ✓
+  * VLM confirmó estado final: "ruta verde restaurada con 2 puntos", "413 NM", "1h43min"
+  * Screenshots: map-verify-*.png (8 capturas del proceso)
+
+- Lint: bun run lint clean (exit 0)
+
+Stage Summary:
+- 2 archivos modificados:
+  * src/components/interactive-map.tsx — reescrito completo con tema verde neón + drag-drop + undo
+  * src/app/globals.css — añadidos estilos leaflet verde neón + custom-scroll
+- Esquema de colores cambiado de amber/navy/cian a VERDE NEÓN (#00ff66) aviación:
+  * Fondo mapa: #0a0f1a (negro-azulado)
+  * Ruta: #00ff66 con glow effect
+  * Marcadores: verde neón
+  * Botones primarios: verde oscuro #003300 con texto/borde verde neón
+  * Deshacer: naranja #ff9933
+  * Limpiar: rojo #ff3333
+- Drag-and-drop implementado: arrastrar puntos de ruta al punto deseado, con snap automático a radioayudas/aeródromos cercanos
+- Botones EDITAR RUTA / DESHACER / LIMPIAR añadidos (como en IMG_5967)
+- Historial de undo funcional: cualquier cambio (limpiar, eliminar punto, arrastrar, ruta directa) se puede deshacer
+- Verificado con Agent Browser: colores ✓, drag habilitado ✓, undo funcional ✓
