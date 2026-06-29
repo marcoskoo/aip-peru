@@ -238,12 +238,21 @@ export function NotamDetail({ notamId, onBack, onSelectAirport, onSelectNotam }:
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* TEXTO CRUDO — primero y prominente, antes que cualquier campo parseado */}
+          {/* TEXTO CRUDO OACI — primero y prominente, antes que cualquier campo parseado.
+              El texto se muestra EXACTAMENTE como lo emite la fuente. NO hay interpretación,
+              resumen ni transformación del sistema. */}
           <div>
-            <h4 className="text-sm font-semibold text-amber-600 dark:text-amber-400 mb-2 flex items-center gap-1.5">
-              <AlertCircle className="size-4" />
-              Texto OACI completo (crudo)
-            </h4>
+            <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+              <h4 className="text-sm font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+                <AlertCircle className="size-4" />
+                Texto OACI original · sin interpretación
+              </h4>
+              {notam.source && (
+                <span className="text-xs font-mono text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-1 rounded border border-emerald-200 dark:border-emerald-900">
+                  Fuente: {notam.source}
+                </span>
+              )}
+            </div>
             <div className="bg-slate-900 dark:bg-slate-950 rounded-lg p-4 border border-slate-700 dark:border-slate-800">
               <p className="text-sm font-mono text-slate-100 dark:text-slate-200 whitespace-pre-wrap break-words leading-relaxed">{notam.text}</p>
             </div>

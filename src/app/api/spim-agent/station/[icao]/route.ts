@@ -622,112 +622,137 @@ export async function GET(
     }
 
     // Fetch NOTAMs for this station.
-    // Estrategia:
-    //   1) Si la DB tiene NOTAMs (pipeline email IMAP activo), se usan esos.
-    //   2) Si la DB está vacía, se consulta en vivo la FAA USNS.
-    // En ambos casos el texto crudo OACI se devuelve intacto en `text`.
+    //
+    // ESTRATEGIA: FAA USNS EN VIVO ES LA FUENTE PRIMARIA.
+    //   Los NOTAMs deben ser REALES — la API pública de la FAA devuelve
+    //   NOTAMs OACI completos para cualquier aeropuerto peruano. La DB
+    //   se usa solo como suplemento para NOTAMs reales ingresados
+    //   manualmente por admin. El texto crudo OACI siempre se entrega
+    //   intacto en `text` — sin interpretación del sistema.
     //
     // Filtro "no expirado": se devuelven los NOTAMs activos + próximos (upcoming)
     // + permanentes. Se excluyen solo los NOTAMs cuya fecha de fin ya pasó.
-    // Esto hace que el conteo del tab badge coincida con el badge del dashboard
-    // (stats endpoint usa el mismo filtro).
     const now = new Date()
     let notams: StructuredNotam[] = []
 
-    const dbHasNotams = dbAirport
-      ? (await db.notam.count({
-          where: {
-            AND: [
-              {
-                OR: [
-                  { airportId: dbAirport.id },
-                  { fir: 'SPIM', airportId: null, text: { contains: code } },
-                ],
-              },
-              notExpiredFilter(now),
+    // ── 1) FAA live (PRIMARIO — NOTAMs reales y actuales) ──────────
+    let liveNotams: ReturnType<typeof fetchLiveNotams> extends Promise<infer T> ? T : never = []
+    try {
+      liveNotams = await fetchLiveNotams(code, 'SPIM')
+    } catch (e) {
+      console.error(`FAA live fetch failed for ${code}:`, e)
+    }
+    const liveIds = new Set(liveNotams.map((n) => n.notamId))
+
+    // ── 2) DB supplement (NOTAMs reales manuales, no duplicados) ───
+    let dbNotams: Array<{
+      id: string
+      notamId: string
+      type: string
+      replacesId: string | null
+      fir: string
+      effectiveFrom: Date
+      effectiveTo: Date | null
+      isPermanent: boolean
+      scope: string | null
+      subject: string
+      condition: string
+      text: string
+      coordinates: string | null
+      lat: number | null
+      lon: number | null
+      radius: number | null
+      lowerLimit: string | null
+      upperLimit: string | null
+      priority: string
+      source: string | null
+      verified: boolean
+      airport: { icaoCode: string; name: string; city: string | null } | null
+    }> = []
+
+    if (dbAirport) {
+      const dbWhere = {
+        AND: [
+          {
+            OR: [
+              { airportId: dbAirport.id },
+              { fir: 'SPIM', airportId: null, text: { contains: code } },
             ],
           },
-        })) > 0
-      : false
-
-    if (dbHasNotams && dbAirport) {
-      const dbNotams = await db.notam.findMany({
-        where: {
-          AND: [
-            {
-              OR: [
-                { airportId: dbAirport.id },
-                { fir: 'SPIM', airportId: null, text: { contains: code } },
-              ],
-            },
-            notExpiredFilter(now),
-          ],
-        },
+          notExpiredFilter(now),
+          ...(liveIds.size > 0
+            ? [{ NOT: { notamId: { in: Array.from(liveIds) } } }]
+            : []),
+        ],
+      }
+      dbNotams = await db.notam.findMany({
+        where: dbWhere,
         include: { airport: { select: { icaoCode: true, name: true, city: true } } },
         orderBy: [{ effectiveFrom: 'desc' }],
         take: 100,
       })
-
-      notams = dbNotams.map((n) => {
-        const status = notamStatus(
-          n.effectiveFrom.toISOString(),
-          n.effectiveTo?.toISOString() ?? (n.isPermanent ? 'PERM' : undefined)
-        )
-        const parsed = parseNotamFields(n.text)
-        return {
-          id: n.id,
-          notamId: n.notamId,
-          type: n.type,
-          replacesId: n.replacesId,
-          fir: n.fir,
-          effectiveFrom: n.effectiveFrom.toISOString(),
-          effectiveTo: n.effectiveTo?.toISOString() ?? null,
-          isPermanent: n.isPermanent,
-          scope: n.scope,
-          subject: n.subject,
-          condition: n.condition,
-          text: n.text,
-          priority: n.priority,
-          source: n.source,
-          verified: n.verified,
-          airport: n.airport,
-          status: (n.isPermanent ? 'perm' : status) as StructuredNotam['status'],
-          qCode: parsed.qCode,
-          fields: parsed.fields,
-        }
-      })
-    } else {
-      // Fallback FAA en vivo — el texto crudo se conserva intacto
-      const liveNotams = await fetchLiveNotams(code, 'SPIM')
-      notams = liveNotams.map((n) => {
-        const status = notamStatus(
-          n.effectiveFrom.toISOString(),
-          n.effectiveTo?.toISOString() ?? (n.isPermanent ? 'PERM' : undefined)
-        )
-        const parsed = parseNotamFields(n.text)
-        return {
-          id: n.id,
-          notamId: n.notamId,
-          type: n.type,
-          replacesId: n.replacesId,
-          fir: n.fir,
-          effectiveFrom: n.effectiveFrom.toISOString(),
-          effectiveTo: n.effectiveTo?.toISOString() ?? null,
-          isPermanent: n.isPermanent,
-          scope: n.scope,
-          subject: n.subject,
-          condition: n.condition,
-          text: n.text,
-          priority: n.priority,
-          source: n.source,
-          verified: n.verified,
-          airport: n.airport,
-          status: (n.isPermanent ? 'perm' : status) as StructuredNotam['status'],
-          qCode: parsed.qCode,
-          fields: parsed.fields,
-        }
-      })
     }
+
+    // ── 3) Merge: FAA live primero, luego DB-only ──────────────────
+    const mapToStructured = (n: {
+      id: string
+      notamId: string
+      type: string
+      replacesId: string | null
+      fir: string
+      effectiveFrom: Date
+      effectiveTo: Date | null
+      isPermanent: boolean
+      scope: string | null
+      subject: string
+      condition: string
+      text: string
+      coordinates?: string | null
+      lat?: number | null
+      lon?: number | null
+      radius?: number | null
+      lowerLimit?: string | null
+      upperLimit?: string | null
+      priority: string
+      source: string | null
+      verified: boolean
+      airport: { icaoCode: string; name: string; city: string | null } | null
+    }): StructuredNotam => {
+      const status = notamStatus(
+        n.effectiveFrom.toISOString(),
+        n.effectiveTo?.toISOString() ?? (n.isPermanent ? 'PERM' : undefined)
+      )
+      const parsed = parseNotamFields(n.text)
+      return {
+        id: n.id,
+        notamId: n.notamId,
+        type: n.type,
+        replacesId: n.replacesId,
+        fir: n.fir,
+        effectiveFrom: n.effectiveFrom.toISOString(),
+        effectiveTo: n.effectiveTo?.toISOString() ?? null,
+        isPermanent: n.isPermanent,
+        scope: n.scope,
+        subject: n.subject,
+        condition: n.condition,
+        text: n.text,
+        coordinates: n.coordinates ?? null,
+        lat: n.lat ?? null,
+        lon: n.lon ?? null,
+        radius: n.radius ?? null,
+        lowerLimit: n.lowerLimit ?? null,
+        upperLimit: n.upperLimit ?? null,
+        priority: n.priority,
+        source: n.source,
+        verified: n.verified,
+        airport: n.airport,
+        status: (n.isPermanent ? 'perm' : status) as StructuredNotam['status'],
+        qCode: parsed.qCode,
+        fields: parsed.fields,
+      }
+    }
+
+    notams = [...liveNotams.map(mapToStructured), ...dbNotams.map(mapToStructured)]
 
     // Determine last update time
     const lastUpdate = weather.metar?.time || weather.taf?.time || weather.fetchedAt

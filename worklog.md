@@ -5368,3 +5368,31 @@ Stage Summary:
 - Estado vacío cuando no hay NOTAMs: "Sin NOTAMs activos — Las condiciones de operación son normales"
 - Fuente de datos: BD AIS Perú (CORPAC) con fallback a FAA USNS en vivo
 - Formato OACI crudo preservado tal cual fue emitido
+
+---
+Task ID: NOTAM-RAW-REAL
+Agent: Main Agent
+Task: Presentar NOTAMs en formato crudo sin interpretación, eliminando NOTAMs ficticios y usando solo NOTAMs reales
+
+Work Log:
+- Investigación completa del flujo de NOTAMs (data source, API, componentes UI, seed)
+- Identificado que los 25 NOTAMs en la DB eran ficticios (seed de prisma/seed-scalable-data.ts), incluyendo A0014/25 para SPHI con texto "RWY 02/20 SPHI RESURFACING WORK IN PROGRESS"
+- Confirmado que el proyecto ya tenía integración con la API real de FAA USNS (https://notams.aim.faa.gov/notamSearch/search) pero solo se usaba como fallback cuando la DB estaba vacía — como la DB tenía los 25 NOTAMs falsos, el fallback nunca se ejecutaba
+- Verificado que la API de FAA devuelve NOTAMs REALES y actuales para aeropuertos peruanos (SPHI devolvió A1690/26, A2239/26, A2250/26, A2217/26 en formato OACI completo)
+- Modificado src/app/api/notams/route.ts: FAA USNS en vivo ahora es la fuente PRIMARIA (no fallback). La DB se usa solo como suplemento para NOTAMs reales ingresados manualmente por admin, deduplicando por notamId
+- Modificado src/app/api/airports/[icaoCode]/notams/route.ts: mismo patrón FAA-primary con merge DB
+- Modificado src/app/api/spim-agent/station/[icao]/route.ts: mismo patrón FAA-primary con merge DB
+- Modificado prisma/seed-scalable-data.ts: eliminado el array de 25 NOTAMs ficticios, reemplazado por `const notams: never[] = []` con comentario explicativo
+- Ejecutado purge de DB: eliminados los 25 NOTAMs ficticios existentes (DELETE FROM notam)
+- Modificado src/components/notam-listing.tsx: añadida etiqueta "Texto OACI original · sin interpretación" encima del bloque de texto crudo, badge de fuente (FAA USNS live) en verde, movido subject/condition al collapsible "Ver metadatos" como "Q-code (ref.)"
+- Modificado src/components/notam-detail.tsx: añadida etiqueta "Texto OACI original · sin interpretación" y badge "Fuente: FAA USNS (live)"
+- Lint pasado sin errores
+- Verificado con Agent Browser: la pestaña NOTAMs muestra NOTAMs reales (A1834/26, A1427/26, A1487/26, C1740/25, etc.) con texto OACI crudo, etiqueta de sin interpretación, y badge FAA USNS (live)
+- Verificado con VLM que SPHI muestra NOTAMs reales (A2250/26, A1690/26, A2239/26, A2217/26) y el ficticio A0014/25 ya no aparece
+
+Stage Summary:
+- NOTAMs ficticios eliminados completamente (DB purgada + seed limpiado)
+- FAA USNS en vivo es ahora la fuente PRIMARIA de NOTAMs (reales, actuales, formato OACI)
+- UI enfatiza "Texto OACI original · sin interpretación" con badge de fuente visible
+- El NOTAM A0014/25 ficticio ya no aparece; SPHI ahora muestra 4 NOTAMs reales
+- El LLM (z-ai-web-dev-sdk) NO se usa para generar, decodificar ni interpretar NOTAMs — solo para el briefing operacional separado en /api/spim-briefing

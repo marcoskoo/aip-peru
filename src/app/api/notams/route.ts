@@ -44,8 +44,9 @@ interface NotamRow {
 }
 
 /**
- * Aplica filtros in-memory a una lista de NOTAMs (usado para los resultados
- * en vivo de la FAA, ya que no podemos hacer queries SQL sobre ellos).
+ * Aplica TODOS los filtros in-memory a una lista combinada de NOTAMs
+ * (FAA live + DB supplement). El texto crudo nunca se modifica — los
+ * filtros solo deciden qué NOTAMs mostrar/ocultar.
  */
 function applyFilters(
   list: NotamRow[],
@@ -55,6 +56,10 @@ function applyFilters(
     priority: string
     active: boolean
     airportId: string | null
+    qCode: string
+    locationA: string
+    validity: string
+    textE: string
   }
 ): NotamRow[] {
   let result = list
@@ -87,11 +92,48 @@ function applyFilters(
   }
 
   if (opts.airportId) {
-    // Para FAA live, airportId no aplica directamente porque no hay DB ID,
-    // pero si el usuario seleccionó un aeródromo, ya filtramos por su ICAO
-    // al hacer la llamada a la FAA. Aquí solo aceptamos los que tienen
-    // airport.icaoCode == el ICAO del aeródromo seleccionado.
     result = result.filter((n) => n.airport !== null)
+  }
+
+  // ── Filtro por código Q (coincidencia parcial, case-insensitive) ──
+  if (opts.qCode) {
+    const q = opts.qCode.toUpperCase()
+    result = result.filter((n) => {
+      const nq = (n as { qCode?: string | null }).qCode
+      if (nq && nq.toUpperCase().includes(q)) return true
+      // Fallback: buscar "Q) SPIM/<qcode>" en el texto crudo
+      return n.text.toUpperCase().includes(`Q)${q}`) ||
+             n.text.toUpperCase().includes(`Q) ${q}`) ||
+             n.text.toUpperCase().includes(`/${q}/`) ||
+             n.text.toUpperCase().includes(`/${q} `)
+    })
+  }
+
+  // ── Filtro por designador de lugar (campo A) ──
+  if (opts.locationA) {
+    const loc = opts.locationA.toUpperCase()
+    result = result.filter((n) => {
+      const nloc = (n as { locationA?: string | null }).locationA
+      if (nloc && nloc.toUpperCase() === loc) return true
+      // Fallback: "A) SPJC" en el texto crudo
+      return n.text.toUpperCase().includes(`A)${loc}`) ||
+             n.text.toUpperCase().includes(`A) ${loc}`)
+    })
+  }
+
+  // ── Filtro por tipo de vigencia ──
+  if (opts.validity === 'PERM') {
+    result = result.filter((n) => n.isPermanent)
+  } else if (opts.validity === 'EST') {
+    result = result.filter((n) => !n.isPermanent && /\bEST\b/i.test(n.text))
+  } else if (opts.validity === 'FINITE') {
+    result = result.filter((n) => !n.isPermanent && n.effectiveTo !== null)
+  }
+
+  // ── Filtro por texto de la casilla E) ──
+  if (opts.textE) {
+    const te = opts.textE.toLowerCase()
+    result = result.filter((n) => n.text.toLowerCase().includes(te))
   }
 
   return result
@@ -128,11 +170,6 @@ export async function GET(request: NextRequest) {
     const fir = searchParams.get('fir')?.trim() || 'SPIM'
     const airportId = searchParams.get('airportId')?.trim() || ''
     const active = searchParams.get('active')?.trim() || ''
-    // Nuevos filtros solicitados:
-    //   qCode       → filtra por código Q (e.g. "QFALC", "QWLLW"). Acepta coincidencia parcial.
-    //   locationA   → filtra por designador de lugar del campo A) (e.g. "SPJC", "SPIM").
-    //   validity    → "PERM" | "EST" | "FINITE" filtra por tipo de vigencia.
-    //   textE       → filtra por texto dentro de la casilla E) (búsqueda contains).
     const qCode = searchParams.get('qCode')?.trim() || ''
     const locationA = searchParams.get('locationA')?.trim().toUpperCase() || ''
     const validity = searchParams.get('validity')?.trim().toUpperCase() || ''
@@ -140,144 +177,21 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(Math.max(parseInt(searchParams.get('limit') || '50', 10) || 50, 1), 200)
     const offset = Math.max(parseInt(searchParams.get('offset') || '0', 10) || 0, 0)
 
-    // ── 1) Intentar primero la base de datos local ───────────────────────
-    // Si la DB tiene NOTAMs (pipeline email IMAP activo), se usan esos.
-    // Si está vacía, hacemos fallback a la FAA en vivo.
-    const dbCount = await db.notam.count({ where: { fir } })
+    // ══════════════════════════════════════════════════════════════════
+    // ESTRATEGIA: FAA USNS EN VIVO ES LA FUENTE PRIMARIA
+    //
+    // Los NOTAMs deben ser REALES y presentarse en formato crudo OACI,
+    // sin interpretación del sistema. La API pública de la FAA devuelve
+    // NOTAMs internacionales (incluyendo FIR SPIM y todos los aeropuertos
+    // peruanos) con el texto OACI completo en el campo `icaoMessage`.
+    //
+    // La base de datos local se usa SOLO como suplemento para NOTAMs
+    // reales ingresados manualmente por un administrador (p.ej. pegados
+    // desde correos de AIS Perú). Estos se mezclan con los de la FAA,
+    // deduplicando por notamId.
+    // ══════════════════════════════════════════════════════════════════
 
-    if (dbCount > 0) {
-      // Build where clause
-      const where: Record<string, unknown> = { fir }
-      const andParts: Record<string, unknown>[] = []
-
-      if (search) {
-        where.OR = [
-          { notamId: { contains: search } },
-          { text: { contains: search } },
-          { subject: { contains: search } },
-          { condition: { contains: search } },
-        ]
-      }
-      if (scope) where.scope = scope
-      if (priority) where.priority = priority
-      if (airportId) where.airportId = airportId
-
-      // ── Filtro por código Q (coincidencia parcial, case-insensitive) ──
-      if (qCode) {
-        const q = qCode.toUpperCase()
-        andParts.push({
-          OR: [
-            { qCode: { equals: q } },
-            { qCode: { contains: q } },
-            // Fallback: buscar en el texto si qCode está vacío (NOTAMs viejos)
-            { text: { contains: `Q) SPIM/${q}` } },
-          ],
-        })
-      }
-
-      // ── Filtro por designador de lugar (campo A) ──
-      if (locationA) {
-        andParts.push({
-          OR: [
-            { locationA: { equals: locationA } },
-            // Fallback en texto: "A) SPJC"
-            { text: { contains: `A) ${locationA}` } },
-          ],
-        })
-      }
-
-      // ── Filtro por tipo de vigencia ──
-      if (validity === 'PERM') {
-        andParts.push({ isPermanent: true })
-      } else if (validity === 'EST') {
-        // EST: NO es permanente Y el texto contiene "EST" en el campo C)
-        andParts.push({
-          isPermanent: false,
-          text: { contains: 'EST' },
-        })
-      } else if (validity === 'FINITE') {
-        // Vigencia finita (no PERM, no EST): tiene effectiveTo y no es PERM
-        andParts.push({
-          isPermanent: false,
-          effectiveTo: { not: null },
-        })
-      }
-
-      // ── Filtro por texto de la casilla E) ──
-      if (textE) {
-        // Búsqueda contains case-insensitive en el campo text.
-        // El campo E) está embebido en text; usamos contains para buscarlo.
-        andParts.push({ text: { contains: textE } })
-      }
-
-      if (andParts.length > 0) {
-        where.AND = andParts
-      }
-
-      const now = new Date()
-
-      if (active === 'true') {
-        // Filtro "no expirado": incluye activos + próximos (upcoming) + permanentes.
-        // Excluye solo los NOTAMs cuya fecha de fin ya pasó.
-        // Esto resuelve la inconsistencia donde el listado mostraba menos NOTAMs
-        // de los que el usuario esperaba (los "upcoming" estaban siendo ocultos
-        // por el filtro `effectiveFrom <= now` anterior).
-        where.AND = [
-          ...(where.AND ? (Array.isArray(where.AND) ? where.AND : [where.AND]) : []),
-          notExpiredFilter(now),
-        ]
-      }
-
-      const total = await db.notam.count({ where })
-
-      // activeWhere usa el mismo filtro "no expirado" para que el conteo
-      // activeStats sea consistente con el listado devuelto (where + active=true).
-      const activeWhere = {
-        fir,
-        AND: [notExpiredFilter(now)],
-      }
-
-      const [activeTotal, activeUrgent, activeHigh] = await Promise.all([
-        db.notam.count({ where: activeWhere }),
-        db.notam.count({ where: { ...activeWhere, priority: 'URGENT' } }),
-        db.notam.count({ where: { ...activeWhere, priority: 'HIGH' } }),
-      ])
-
-      const includeAirport = !!airportId
-
-      const notams = await db.notam.findMany({
-        where,
-        include: {
-          airport: includeAirport
-            ? { select: { id: true, icaoCode: true, name: true, city: true } }
-            : { select: { icaoCode: true, name: true } },
-        },
-        orderBy: [{ effectiveFrom: 'desc' }],
-        take: limit,
-        skip: offset,
-      })
-
-      notams.sort((a, b) => {
-        const priorityDiff = (PRIORITY_ORDER[b.priority] || 0) - (PRIORITY_ORDER[a.priority] || 0)
-        if (priorityDiff !== 0) return priorityDiff
-        return new Date(b.effectiveFrom).getTime() - new Date(a.effectiveFrom).getTime()
-      })
-
-      return NextResponse.json({
-        notams,
-        total,
-        activeStats: {
-          total: activeTotal,
-          urgent: activeUrgent,
-          high: activeHigh,
-        },
-        source: 'database',
-      })
-    }
-
-    // ── 2) Fallback: FAA USNS en vivo ───────────────────────────────────
-    // La DB está vacía — consultamos la FAA directamente.
-    // Si airportId está seteado, resolvemos el ICAO y consultamos solo ese.
+    // Resolver airportId → ICAO si se especificó
     let airportIcao: string | undefined
     if (airportId) {
       const airport = await db.airport.findUnique({
@@ -287,35 +201,88 @@ export async function GET(request: NextRequest) {
       airportIcao = airport?.icaoCode
     }
 
-    const liveNotams = await fetchLiveNotams(airportIcao, fir)
+    // ── 1) FAA live (PRIMARIO — NOTAMs reales y actuales) ──────────
+    let liveNotams: NormalizedNotam[] = []
+    try {
+      liveNotams = await fetchLiveNotams(airportIcao, fir)
+    } catch (e) {
+      console.error('FAA live fetch failed:', e)
+    }
 
-    // Convertir a NotamRow (mismo formato que devolvería Prisma)
-    let rows: NotamRow[] = liveNotams.map((n: NormalizedNotam) => ({
-      ...n,
-      source: n.source || 'FAA USNS (live)',
-      createdAt: n.createdAt,
-      updatedAt: n.updatedAt,
-    }))
+    // ── 2) DB supplement (NOTAMs reales ingresados manualmente) ────
+    // Solo se incluyen NOTAMs de la DB que NO estén ya en los resultados
+    // de la FAA (dedup por notamId).
+    const liveIds = new Set(liveNotams.map((n) => n.notamId))
+    const dbWhere: Record<string, unknown> = { fir }
+    if (airportId) dbWhere.airportId = airportId
 
-    // Aplicar filtros en memoria
-    rows = applyFilters(rows, {
+    const dbNotams = liveIds.size > 0
+      ? await db.notam.findMany({
+          where: {
+            ...dbWhere,
+            NOT: { notamId: { in: Array.from(liveIds) } },
+          },
+          include: {
+            airport: { select: { icaoCode: true, name: true, city: true } },
+          },
+          orderBy: [{ effectiveFrom: 'desc' }],
+          take: 200,
+        })
+      : await db.notam.findMany({
+          where: dbWhere,
+          include: {
+            airport: { select: { icaoCode: true, name: true, city: true } },
+          },
+          orderBy: [{ effectiveFrom: 'desc' }],
+          take: 200,
+        })
+
+    // ── 3) Merge: FAA live primero, luego DB-only ──────────────────
+    const rows: NotamRow[] = [
+      ...liveNotams.map((n: NormalizedNotam) => ({
+        ...n,
+        source: n.source || 'FAA USNS (live)',
+      })),
+      ...dbNotams.map((n) => ({
+        ...n,
+        source: n.source || 'AIS Perú (manual)',
+      })) as NotamRow[],
+    ]
+
+    // ── 4) Aplicar filtros in-memory sobre la lista combinada ──────
+    const filtered = applyFilters(rows, {
       search,
       scope,
       priority,
       active: active === 'true',
       airportId,
+      qCode,
+      locationA,
+      validity,
+      textE,
     })
 
-    // Ordenar y paginar
-    rows = sortByPriority(rows)
-    const total = rows.length
-    const paged = rows.slice(offset, offset + limit)
+    // ── 5) Ordenar y paginar ───────────────────────────────────────
+    const sorted = sortByPriority(filtered)
+    const total = sorted.length
+    const paged = sorted.slice(offset, offset + limit)
+
+    const sourceLabel =
+      liveNotams.length > 0 && dbNotams.length > 0
+        ? 'faa-live+manual'
+        : liveNotams.length > 0
+          ? 'faa-live'
+          : dbNotams.length > 0
+            ? 'database'
+            : 'empty'
 
     return NextResponse.json({
       notams: paged,
       total,
-      activeStats: computeActiveStats(rows),
-      source: 'faa-live',
+      activeStats: computeActiveStats(sorted),
+      source: sourceLabel,
+      liveCount: liveNotams.length,
+      dbCount: dbNotams.length,
     })
   } catch (error) {
     console.error('Error fetching NOTAMs:', error)

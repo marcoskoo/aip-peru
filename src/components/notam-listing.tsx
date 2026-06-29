@@ -589,30 +589,48 @@ export function NotamListing({ onSelectNotam, onSelectAirport, isAdmin = false }
                         </div>
                       </CardHeader>
                       <CardContent className="space-y-3">
-                        {/* TEXTO CRUDO — siempre visible, sin truncar, primero y prominente */}
-                        <div className="bg-slate-900 dark:bg-slate-950 rounded-lg p-3 border border-slate-700 dark:border-slate-800">
-                          <p className="text-[11px] font-mono text-slate-100 dark:text-slate-200 whitespace-pre-wrap break-words leading-relaxed">{notam.text}</p>
+                        {/* TEXTO CRUDO OACI — siempre visible, sin truncar, primero y prominente.
+                            El texto se muestra EXACTAMENTE como lo emite la fuente (FAA USNS en vivo
+                            o AIS Perú manual). NO hay interpretación, resumen ni transformación del sistema. */}
+                        <div>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span className="text-[10px] font-bold tracking-wider text-amber-600 dark:text-amber-400 uppercase flex items-center gap-1">
+                              <AlertCircle className="size-3" />
+                              Texto OACI original · sin interpretación
+                            </span>
+                            {notam.source && (
+                              <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-900">
+                                {notam.source}
+                              </span>
+                            )}
+                          </div>
+                          <div className="bg-slate-900 dark:bg-slate-950 rounded-lg p-3 border border-slate-700 dark:border-slate-800">
+                            <p className="text-[11px] font-mono text-slate-100 dark:text-slate-200 whitespace-pre-wrap break-words leading-relaxed">{notam.text}</p>
+                          </div>
                         </div>
 
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex-1 min-w-0">
-                            <div className="font-semibold text-sm text-muted-foreground">
-                              {notam.subject} — {notam.condition}
-                            </div>
+                            <CollapsibleTrigger asChild>
+                              <Button variant="ghost" size="sm" className="shrink-0 h-7 gap-1 text-xs">
+                                {isExpanded ? (
+                                  <><ChevronUp className="size-4" /> Ocultar metadatos</>
+                                ) : (
+                                  <><ChevronDown className="size-4" /> Ver metadatos</>
+                                )}
+                              </Button>
+                            </CollapsibleTrigger>
                           </div>
-                          <CollapsibleTrigger asChild>
-                            <Button variant="ghost" size="sm" className="shrink-0 h-7 gap-1 text-xs">
-                              {isExpanded ? (
-                                <><ChevronUp className="size-4" /> Ocultar detalle</>
-                              ) : (
-                                <><ChevronDown className="size-4" /> Ver detalle</>
-                              )}
-                            </Button>
-                          </CollapsibleTrigger>
                         </div>
 
                         <CollapsibleContent>
                           <div className="mt-3 space-y-3">
+                            {/* Q-code de referencia (derivado del texto, no interpretación) */}
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <span>Q-code (ref.):</span>
+                              <span className="font-mono">{notam.subject}{notam.condition ? ` / ${notam.condition}` : ""}</span>
+                            </div>
+
                             {/* Altitude limits */}
                             {(notam.lowerLimit || notam.upperLimit) && (
                               <div className="flex items-center gap-2 text-xs text-muted-foreground">

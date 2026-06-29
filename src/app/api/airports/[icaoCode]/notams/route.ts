@@ -2,13 +2,16 @@ import { db } from '@/lib/db'
 import { NextRequest, NextResponse } from 'next/server'
 import { notamStatus } from '@/lib/aviation/notam-parser'
 import { notExpiredFilter } from '@/lib/aviation/notam-filter'
-import { fetchLiveNotams } from '@/lib/aviation/faa-notams'
+import { fetchLiveNotams, type NormalizedNotam } from '@/lib/aviation/faa-notams'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
 // ─── NOTAM Structured Parser (campos Q/A/B/C/D/E) ────────────────────
 // Replica mínima del parser usado en /api/spim-agent/station/[icao]/route.ts
+// NOTA: Este parser SOLO extrae los campos OACI del texto crudo para mostrarlos
+//       de forma estructurada. NO interpreta, NO resume, NO genera texto nuevo.
+//       El texto original siempre se entrega intacto en el campo `text`.
 
 interface ParsedNotamFields {
   qCode: string | null
@@ -128,58 +131,129 @@ export async function GET(
       select: { id: true, icaoCode: true, name: true, city: true },
     })
 
-    let notams: StructuredNotam[] = []
+    // ══════════════════════════════════════════════════════════════════
+    // ESTRATEGIA: FAA USNS EN VIVO ES LA FUENTE PRIMARIA
+    //
+    // Los NOTAMs deben ser REALES — la API pública de la FAA devuelve
+    // NOTAMs OACI completos para cualquier aeropuerto peruano.
+    // La DB se usa solo como suplemento para NOTAMs reales ingresados
+    // manualmente por admin (p.ej. pegados desde correos de AIS Perú).
+    // ══════════════════════════════════════════════════════════════════
+
+    // ── 1) FAA live (PRIMARIO — NOTAMs reales y actuales) ──────────
+    let liveNotams: NormalizedNotam[] = []
+    try {
+      liveNotams = await fetchLiveNotams(code, 'SPIM')
+    } catch (e) {
+      console.error(`FAA live fetch failed for ${code}:`, e)
+    }
+
+    // ── 2) DB supplement (NOTAMs reales manuales, no duplicados) ───
+    const liveIds = new Set(liveNotams.map((n) => n.notamId))
+    let dbNotams: Array<{
+      id: string
+      notamId: string
+      type: string
+      replacesId: string | null
+      fir: string
+      effectiveFrom: Date
+      effectiveTo: Date | null
+      isPermanent: boolean
+      scope: string | null
+      subject: string
+      condition: string
+      text: string
+      coordinates: string | null
+      lat: number | null
+      lon: number | null
+      radius: number | null
+      lowerLimit: string | null
+      upperLimit: string | null
+      priority: string
+      source: string | null
+      verified: boolean
+      airport: { icaoCode: string; name: string; city: string | null } | null
+    }> = []
 
     if (airport) {
-      // Estrategia: igual que /api/spim-agent/station/[icao]
-      //   1) Si la BD tiene NOTAMs para este aeródromo, usarlos.
-      //   2) Si no, consultar FAA USNS en vivo.
-      const dbHasNotams =
-        (await db.notam.count({
-          where: {
-            AND: [
-              {
-                OR: [
-                  { airportId: airport.id },
-                  { fir: 'SPIM', airportId: null, text: { contains: code } },
-                ],
-              },
-              notExpiredFilter(now),
+      const dbWhere = {
+        AND: [
+          {
+            OR: [
+              { airportId: airport.id },
+              { fir: 'SPIM', airportId: null, text: { contains: code } },
             ],
           },
-        })) > 0
-
-      if (dbHasNotams) {
-        const dbNotams = await db.notam.findMany({
-          where: {
-            AND: [
-              {
-                OR: [
-                  { airportId: airport.id },
-                  { fir: 'SPIM', airportId: null, text: { contains: code } },
-                ],
-              },
-              notExpiredFilter(now),
-            ],
-          },
-          include: {
-            airport: { select: { icaoCode: true, name: true, city: true } },
-          },
-          orderBy: [{ effectiveFrom: 'desc' }],
-          take: 100,
-        })
-
-        notams = dbNotams.map(toStructured)
-      } else {
-        // Fallback FAA en vivo
-        const liveNotams = await fetchLiveNotams(code, 'SPIM')
-        notams = liveNotams.map(toStructured)
+          notExpiredFilter(now),
+          ...(liveIds.size > 0
+            ? [{ NOT: { notamId: { in: Array.from(liveIds) } } }]
+            : []),
+        ],
       }
-    } else {
-      // Aeropuerto no está en BD — intentar FAA en vivo igualmente
-      const liveNotams = await fetchLiveNotams(code, 'SPIM')
-      notams = liveNotams.map(toStructured)
+
+      dbNotams = await db.notam.findMany({
+        where: dbWhere,
+        include: {
+          airport: { select: { icaoCode: true, name: true, city: true } },
+        },
+        orderBy: [{ effectiveFrom: 'desc' }],
+        take: 100,
+      })
     }
+
+    // ── 3) Merge: FAA live primero, luego DB-only ──────────────────
+    const merged: Array<{
+      id: string
+      notamId: string
+      type: string
+      replacesId: string | null
+      fir: string
+      effectiveFrom: Date
+      effectiveTo: Date | null
+      isPermanent: boolean
+      scope: string | null
+      subject: string
+      condition: string
+      text: string
+      coordinates: string | null
+      lat: number | null
+      lon: number | null
+      radius: number | null
+      lowerLimit: string | null
+      upperLimit: string | null
+      priority: string
+      source: string | null
+      verified: boolean
+      airport: { icaoCode: string; name: string; city: string | null } | null
+    }> = [
+      ...liveNotams.map((n) => ({
+        id: n.id,
+        notamId: n.notamId,
+        type: n.type,
+        replacesId: n.replacesId,
+        fir: n.fir,
+        effectiveFrom: n.effectiveFrom,
+        effectiveTo: n.effectiveTo,
+        isPermanent: n.isPermanent,
+        scope: n.scope,
+        subject: n.subject,
+        condition: n.condition,
+        text: n.text,
+        coordinates: n.coordinates,
+        lat: n.lat,
+        lon: n.lon,
+        radius: n.radius,
+        lowerLimit: n.lowerLimit,
+        upperLimit: n.upperLimit,
+        priority: n.priority,
+        source: n.source,
+        verified: n.verified,
+        airport: n.airport,
+      })),
+      ...dbNotams,
+    ]
+
+    const notams = merged.map(toStructured)
 
     return NextResponse.json({
       airportIcaoCode: code,
@@ -187,7 +261,16 @@ export async function GET(
       total: notams.length,
       active: notams.filter((n) => n.status === 'active' || n.status === 'perm').length,
       upcoming: notams.filter((n) => n.status === 'upcoming').length,
-      source: airport ? 'database' : 'faa-live',
+      source:
+        liveNotams.length > 0 && dbNotams.length > 0
+          ? 'faa-live+manual'
+          : liveNotams.length > 0
+            ? 'faa-live'
+            : dbNotams.length > 0
+              ? 'database'
+              : 'empty',
+      liveCount: liveNotams.length,
+      dbCount: dbNotams.length,
       fetchedAt: new Date().toISOString(),
     })
   } catch (error) {
