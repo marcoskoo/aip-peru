@@ -112,10 +112,27 @@ export async function GET() {
       },
     })
   } catch (error) {
-    console.error('Error fetching all airdata:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch airdata' },
-      { status: 500 }
-    )
+    console.error('Error fetching all airdata, using static fallback:', error)
+    // Static fallback — same data the interactive map uses when DB unavailable
+    const { PERUVIAN_WAYPOINTS, PERUVIAN_AIRWAYS } = await import('@/lib/aviation/peru-airways-static')
+    const { PERUVIAN_NAVAIDS } = await import('@/lib/aviation/peru-navaids-static')
+    return NextResponse.json({
+      firBoundaries: {},
+      adjacentFirs: [],
+      navaids: PERUVIAN_NAVAIDS.map((n) => ({
+        id: n.id,
+        name: n.name,
+        type: n.type,
+        frequency: n.frequency,
+        lat: n.lat,
+        lon: n.lon,
+        elevation: n.elevation,
+      })),
+      waypoints: PERUVIAN_WAYPOINTS,
+      airways: {
+        conventional: PERUVIAN_AIRWAYS.conventional,
+        rnav: PERUVIAN_AIRWAYS.rnav,
+      },
+    })
   }
 }

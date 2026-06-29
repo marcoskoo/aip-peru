@@ -4278,3 +4278,108 @@ Stage Summary:
 - Dropdown de departamentos: 22 opciones únicas (antes 18, sin duplicados UPPERCASE/Title)
 - Coordenadas convertidas de DMS (formato AIP) a decimal con precisión de 6+ decimales
 - Verificado con Agent Browser + VLM: 33 aeródromos, sin errores, secciones correctas, búsqueda funcional
+
+---
+Task ID: 17-SPJC-MAP-RESTYLE-CRASHFIX
+Agent: main (Z.ai Code)
+Task: 1) Corregir SPIM→SPJC (Jorge Chávez = SPJC, SPIM = FIR Lima). 2) Ajustar mapa interactivo al estilo de carta aeronáutica clara (IMG_5969). 3) Corregir TypeError "undefined is not an object (evaluating 'data.waypoints')" en RouteCalculator. 4) Revisar fallas en varios lugares.
+
+Work Log:
+
+- ANALICÉ IMG_5969.jpeg con VLM (2 pases, primero rehusó por "safety", segundo con prompt de diseño funcionó):
+  * Fondo: blanco (tierra) / azul-gris pálido (agua)
+  * Líneas de aerovías: azul oscuro (convencionales), magenta (ruta destacada), negro (secundarias)
+  * Marcadores waypoint: verde
+  * Marcadores VOR/DME: azul
+  * Marcadores aeropuertos: azul (más grandes)
+  * Fronteras: gris oscuro
+  * Grid: gris claro
+  * Etiquetas: sans-serif negro
+  * Tema general: claro, tipo carta aeronáutica
+
+- ANALICÉ IMG_5974.png: mostraba el listado de aeródromos con SPIM etiquetado como "Aeropuerto Internacional Jorge Chávez" (incorrecto — debe ser SPJC)
+
+DIAGNÓSTICO DEL CRASH (RouteCalculator TypeError):
+- route-calculator.tsx línea 123: `for (const wp of data.waypoints)` — data era {error:"..."} cuando /api/airdata/all fallaba (Prisma postgresql/sqlite mismatch → HTTP 500 {error})
+- El fetch no verificaba res.ok ni validaba la shape del JSON antes de setData()
+- El useMemo waypointMap solo checaba `if (!data)` pero no `if (!data.waypoints)`
+
+FIX 1 — route-calculator.tsx (crash fix + static fallback):
+- Reescribí el useEffect de fetch con async/await:
+  * Checa res.ok antes de parsear
+  * Valida shape: `Array.isArray(json.waypoints)` antes de setData
+  * Normaliza: asegura waypoints/navaids/airways.conventional/airways.rnav siempre existen (arrays vacíos si faltan)
+  * Catch: import dinámico de PERUVIAN_WAYPOINTS, PERUVIAN_NAVAIDS, PERUVIAN_AIRWAYS como fallback
+  * Cancelled flag para evitar setState en componente desmontado
+- Añadí optional chaining en TODOS los accesos a data:
+  * `data.waypoints` → `data.waypoints ?? []`
+  * `data.navaids` → `data.navaids ?? []`
+  * `data.airways.conventional` → `data.airways?.conventional ?? []`
+  * `data.airways.rnav` → `data.airways?.rnav ?? []`
+- 5 useMemo hooks protegidos: waypointMap, airwayLookup, searchResults, contextAirwayLines
+
+FIX 2 — /api/airdata/all/route.ts (static fallback):
+- catch block: en vez de retornar {error} con status 500, ahora hace import dinámico de PERUVIAN_WAYPOINTS/PERUVIAN_NAVAIDS/PERUVIAN_AIRWAYS y retorna los datos estáticos completos
+- La API ya nunca devuelve error — siempre devuelve datos válidos (DB si disponible, estático si no)
+
+FIX 3 — SPIM→SPJC (Jorge Chávez airport):
+- peru-airports-static.ts: icao "SPIM"→"SPJC", aftn "SPIMZPZX"→"SPJCZPZX"
+- peru-navaids-static.ts: JCL associatedAD "SPIM"→"SPJC"
+- SPIM se mantiene como designador FIR Lima en: NOTAM Q-lines, INFO SPIM briefing agent, weather FIR, etc. (correcto)
+- Verificado: /api/airports ahora devuelve SPJC (no SPIM) para Jorge Chávez
+- weather/[icaoCode]/route.ts ya tenía SPJC como key principal (SPIM se mantiene como alias FIR)
+
+FIX 4 — Restyle mapa interactivo (dark neon-green → light aeronautical chart):
+- NUEVA PALETA C (semántica, 26 colores):
+  * airport: #1e40af (azul), airportNat: #3b82f6, airportBorder: #1e3a8a
+  * navaid: #1d4ed8 (azul VOR/DME), navaidBorder: #1e3a8a
+  * waypoint: #16a34a (verde), waypointBorder: #15803d
+  * route: #c026d3 (magenta — ruta construida), routeGlow: #e879f9
+  * airwayConv: #1e3c78 (azul oscuro), airwayRnav: #64748b (slate dashed)
+  * fir: #475569 (slate), adjacentFir: #94a3b8, grid: #cbd5e1
+  * ink: #0f172a (texto negro), inkSoft: #475569, panelBg: #ffffff, panelBorder: #cbd5e1
+  * accent: #1e40af, orange: #ea580c, red: #dc2626, mapBg: #e8eef5
+- ICON GENERATORS (4 funciones reescritas):
+  * createAirportIcon: círculo azul relleno, etiqueta negro con halo blanco (text-shadow 1px 1px 0 #fff)
+  * createNavaidIcon: círculo azul con borde, etiqueta negro + freq gris
+  * createWaypointIcon: diamante verde rotado 45°, etiqueta gris
+  * createRoutePointIcon: círculo magenta relleno con borde blanco, número blanco, glow magenta
+- TILE LAYER: dark_all → light_all (CARTO basemap claro)
+- POLYLINES: FIR #475569 dashed, adjacentFir #94a3b8, conv airways #1e3c78, RNAV #64748b dashed, ruta #c026d3 + glow #e879f9
+- GRID: #1a3a2a → #cbd5e1 (gris claro)
+- LEYENDA: bg blanco, texto slate, swatches azul/verde/magenta (acordes a nuevos colores)
+- DISTANCE LABELS: fondo magenta, texto blanco
+- BULK REPLACEMENT (Python script, 173 reemplazos):
+  * bg-[#001a0d]→bg-white, bg-[#003300]→bg-[#eef2ff]
+  * text-[#00ff66]→text-[#1e40af], text-[#99ffcc]→text-slate-600
+  * border-[#00ff66]→border-[#1e40af], bg-[#00ff66]→bg-[#1e40af]
+  * text-[#ff9933]→text-[#ea580c], text-[#ff3333]→text-[#dc2626]
+  * text-shadow neon→azul, boxShadow neon→magenta
+- globals.css: sección leaflet completa reescrita (popup/tooltip/zoom/attribution/scrollbar) de dark neon-green → light blanco/slate
+- route-calculator-map.tsx: airway labels verde→azul oscuro, waypoint labels verde/azul, ruta naranja→magenta, airways green→dark blue, RNAV magenta→slate dashed
+
+VERIFICACIÓN CON AGENT BROWSER:
+- Página / (Aeródromos): HTTP 200, sin TypeError ✓
+- Jorge Chávez card: "SPJC\nINTERNACIONAL\nAeropuerto Internacional Jorge Chávez" (antes SPIM) ✓
+- Body tiene SPJC ✓, SPIM solo en "INFO SPIM" (FIR) ✓
+- Mapa Interactivo: 64 markers, 63 paths, leyenda visible, sin errores ✓
+- VLM confirmó mapa: "Light background, blue airway lines, blue airport markers, light/white legend, dark text on light bg, looks like a professional aeronautical chart" ✓
+- Calculadora (Route Calculator): carga sin TypeError ✓, 2 inputs + mapa presente ✓
+- Búsqueda "LIM" en calculadora: 18 resultados en dropdown, sin crash ✓ (era el trigger original del TypeError)
+- Screenshots: map-light-final.png, calculadora-no-crash.png
+- Lint: bun run lint clean (exit 0)
+
+Stage Summary:
+- 5 archivos modificados:
+  * src/components/route-calculator.tsx — crash fix (res.ok + shape validation + static fallback + optional chaining en 5 useMemo)
+  * src/app/api/airdata/all/route.ts — static fallback en catch (nunca devuelve error)
+  * src/lib/aviation/peru-airports-static.ts — SPIM→SPJC (icao + aftn)
+  * src/lib/aviation/peru-navaids-static.ts — JCL associatedAD SPIM→SPJC
+  * src/components/interactive-map.tsx — restyle completo dark→light (paleta + 4 icon generators + tile layer + polylines + grid + leyenda + 173 bulk class replacements)
+  * src/app/globals.css — sección leaflet reescrita light theme
+  * src/components/route-calculator-map.tsx — colores airways/ruta/labels aeronáuticos
+- SPJC es ahora el designador de Jorge Chávez; SPIM se mantiene como FIR Lima
+- TypeError "data.waypoints" eliminado: doble protección (API con fallback + cliente con validación/optional chaining)
+- Mapa interactivo: tema claro de carta aeronáutica (blanco/azul/magenta/verde) como IMG_5969
+- Route Calculator: funcional, sin crash, con datos estáticos de fallback
+- Verificado con Agent Browser + VLM: todo funciona, sin errores

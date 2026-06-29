@@ -90,18 +90,72 @@ export function RouteCalculator({
     requestAnimationFrame(() => setMounted(true))
   }, [])
 
-  // Load airways data
+  // Load airways data (with static fallback when API fails)
   useEffect(() => {
-    fetch("/api/airdata/all")
-      .then((res) => res.json())
-      .then((json) => {
-        setData(json as AirwaysData)
-        setLoading(false)
-      })
-      .catch((err) => {
-        console.error("Failed to load airways data:", err)
-        setLoading(false)
-      })
+    let cancelled = false
+    async function load() {
+      try {
+        const res = await fetch("/api/airdata/all")
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        const json = await res.json()
+        if (cancelled) return
+        // Validate shape — API may return { error } on failure
+        if (!json || typeof json !== "object" || !Array.isArray(json.waypoints)) {
+          throw new Error("Invalid airdata response shape")
+        }
+        // Normalize: ensure all expected arrays exist (defensive)
+        const normalized: AirwaysData = {
+          firBoundaries: json.firBoundaries ?? {},
+          adjacentFirs: Array.isArray(json.adjacentFirs) ? json.adjacentFirs : [],
+          navaids: Array.isArray(json.navaids) ? json.navaids : [],
+          waypoints: Array.isArray(json.waypoints) ? json.waypoints : [],
+          airways: {
+            conventional:
+              json.airways?.conventional && Array.isArray(json.airways.conventional)
+                ? json.airways.conventional
+                : [],
+            rnav:
+              json.airways?.rnav && Array.isArray(json.airways.rnav)
+                ? json.airways.rnav
+                : [],
+          },
+        }
+        setData(normalized)
+      } catch (err) {
+        if (cancelled) return
+        console.error("Failed to load airways data from API, using static fallback:", err)
+        // Static fallback — same data the interactive map uses
+        const { PERUVIAN_WAYPOINTS, PERUVIAN_AIRWAYS } = await import(
+          "@/lib/aviation/peru-airways-static"
+        )
+        const { PERUVIAN_NAVAIDS } = await import("@/lib/aviation/peru-navaids-static")
+        if (cancelled) return
+        setData({
+          firBoundaries: {},
+          adjacentFirs: [],
+          navaids: PERUVIAN_NAVAIDS.map((n) => ({
+            id: n.id,
+            name: n.name,
+            type: n.type,
+            frequency: n.frequency,
+            lat: n.lat,
+            lon: n.lon,
+            elevation: n.elevation,
+          })),
+          waypoints: PERUVIAN_WAYPOINTS,
+          airways: {
+            conventional: PERUVIAN_AIRWAYS.conventional,
+            rnav: PERUVIAN_AIRWAYS.rnav,
+          },
+        })
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+    load()
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   // Close dropdown on outside click
@@ -120,10 +174,10 @@ export function RouteCalculator({
   const waypointMap = useMemo(() => {
     const map = new Map<string, Waypoint>()
     if (!data) return map
-    for (const wp of data.waypoints) {
+    for (const wp of data.waypoints ?? []) {
       map.set(wp.id, wp)
     }
-    for (const nv of data.navaids) {
+    for (const nv of data.navaids ?? []) {
       if (!map.has(nv.id)) {
         map.set(nv.id, {
           id: nv.id,
@@ -144,7 +198,10 @@ export function RouteCalculator({
     const lookup = new Map<string, AirwayConnection[]>()
     if (!data) return lookup
 
-    const allAirways: Airway[] = [...data.airways.conventional, ...data.airways.rnav]
+    const allAirways: Airway[] = [
+      ...(data.airways?.conventional ?? []),
+      ...(data.airways?.rnav ?? []),
+    ]
 
     for (const airway of allAirways) {
       const segs = airway.segments
@@ -255,7 +312,7 @@ export function RouteCalculator({
   const searchResults = useMemo(() => {
     if (!data || !searchTerm.trim()) return []
     const term = searchTerm.trim().toUpperCase()
-    const allPoints = data.waypoints.map((wp) => ({
+    const allPoints = (data.waypoints ?? []).map((wp) => ({
       id: wp.id,
       name: wp.name,
       type: wp.type as "WAYPOINT" | "NAVAID" | "AIRPORT",
@@ -422,7 +479,7 @@ export function RouteCalculator({
     const convLines: [number, number][][] = []
     const rnavLines: [number, number][][] = []
 
-    for (const airway of data.airways.conventional) {
+    for (const airway of data.airways?.conventional ?? []) {
       for (const seg of airway.segments) {
         const from = waypointMap.get(seg.from)
         const to = waypointMap.get(seg.to)
@@ -435,7 +492,7 @@ export function RouteCalculator({
       }
     }
 
-    for (const airway of data.airways.rnav) {
+    for (const airway of data.airways?.rnav ?? []) {
       for (const seg of airway.segments) {
         const from = waypointMap.get(seg.from)
         const to = waypointMap.get(seg.to)

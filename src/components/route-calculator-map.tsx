@@ -76,14 +76,14 @@ function AirwayLabelMarker({ lat, lon, name }: AirwayLabel) {
       new L.DivIcon({
         className: "airway-label-icon",
         html: `<div style="
-          background: rgba(255,255,255,0.9);
-          color: #059669;
+          background: rgba(255,255,255,0.95);
+          color: #1e3c78;
           font-size: 10px;
           font-weight: 700;
           font-family: monospace;
           padding: 1px 5px;
           border-radius: 3px;
-          border: 1px solid rgba(5,150,105,0.4);
+          border: 1px solid rgba(30,60,120,0.4);
           white-space: nowrap;
           pointer-events: none;
           box-shadow: 0 1px 2px rgba(0,0,0,0.1);
@@ -111,7 +111,7 @@ function WaypointLabelMarker({ lat, lon, name, type }: { lat: number; lon: numbe
       new L.DivIcon({
         className: "waypoint-label-icon",
         html: `<div style="
-          background: ${type === "NAVAID" ? "rgba(5,150,105,0.9)" : "rgba(217,119,6,0.9)"};
+          background: ${type === "NAVAID" ? "rgba(30,64,175,0.95)" : "rgba(22,163,74,0.95)"};
           color: white;
           font-size: 10px;
           font-weight: 700;
@@ -183,30 +183,30 @@ export function RouteCalculatorMap({
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
 
-      {/* Context: Conventional Airways (faint green) */}
+      {/* Context: Conventional Airways (dark blue) */}
       {contextAirwayLines.conventional.map((positions, i) => (
         <Polyline
           key={`conv-${i}`}
           positions={positions}
-          pathOptions={{ color: "#22c55e", weight: 1, opacity: 0.25 }}
+          pathOptions={{ color: "#1e3c78", weight: 1, opacity: 0.4 }}
         />
       ))}
 
-      {/* Context: RNAV Airways (faint magenta) */}
+      {/* Context: RNAV Airways (slate dashed) */}
       {contextAirwayLines.rnav.map((positions, i) => (
         <Polyline
           key={`rnav-${i}`}
           positions={positions}
-          pathOptions={{ color: "#d946ef", weight: 1, opacity: 0.2 }}
+          pathOptions={{ color: "#64748b", weight: 1, opacity: 0.35, dashArray: "5,3" }}
         />
       ))}
 
-      {/* Route Trajectory (bold orange) */}
+      {/* Route Trajectory (bold magenta) */}
       {routePositions.length > 1 && (
         <Polyline
           positions={routePositions}
           pathOptions={{
-            color: "#f97316",
+            color: "#c026d3",
             weight: 4,
             opacity: 0.9,
           }}

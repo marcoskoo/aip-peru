@@ -23,7 +23,7 @@ export interface PeruvianAirport {
 
 export const PERUVIAN_AIRPORTS: PeruvianAirport[] = [
   {
-    "icao": "SPIM",
+    "icao": "SPJC",
     "iata": "LIM",
     "name": "Aeropuerto Internacional Jorge Chávez",
     "short": "Jorge Chávez",
@@ -36,7 +36,7 @@ export const PERUVIAN_AIRPORTS: PeruvianAirport[] = [
     "transAlt": 18000,
     "transLvl": "FL200",
     "cert": "INTERNACIONAL",
-    "aftn": "SPIMZPZX"
+    "aftn": "SPJCZPZX"
   },
   {
     "icao": "SPZO",

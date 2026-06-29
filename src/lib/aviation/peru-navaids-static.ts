@@ -153,7 +153,7 @@ export const PERUVIAN_NAVAIDS: PeruvianNavaid[] = [
     "elevation": 115,
     "class": "H24",
     "hours": "H24",
-    "associatedAD": "SPIM"
+    "associatedAD": "SPJC"
   },
   {
     "id": "JUL",
