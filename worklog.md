@@ -4682,3 +4682,184 @@ Stage Summary:
 - Plan de Vuelo ahora muestra formulario claro (bg gris, badges ITEM azul oscuro, inputs blancos) como IMG_5971.jpeg
 - Mapa Interactivo ahora usa tema SkyVector.com (3 basemaps conmutables, airways azul oscuro, ruta magenta sólida, waypoints verdes, aeropuertos/VOR azul, FIR Lima slate dashed, zoom bottom-left, leyenda top-right)
 - Verificado con Agent Browser (DOM computed styles + VLM 3 pases) + lint clean
+
+---
+Task ID: 19
+Agent: Map-FPL Integration Agent
+Task: Fix Origen/Destino dropdowns in interactive map + auto-send route to flight plan with OACI/RAP-compliant EET and Endurance auto-calculation
+
+Work Log:
+- Leí worklog Tasks 15-18 para contexto: Task 18 había migrado el mapa a tema SkyVector claro (3 basemaps CARTO light_all / CARTO voyager / OpenTopoMap), y Task 18-A había migrado fpl.html de dark sci-fi → light ICAO paper-form theme.
+- Leí completo src/components/interactive-map.tsx (1309 líneas) — confirmé los dos `<Select>` en líneas 624 (Origen) y 643 (Destino), cada uno con 360 `<SelectItem>` (35 airports + 31 navaids + ~294 waypoints). Radix Select en `position="popper"` con 360 items renderiza items fuera de pantalla (bug confirmado en Task spec).
+- Leí src/app/page.tsx — confirmé `handleGenerateFlightPlan` (líneas 155-159) ya existe y hace `setFlightPlanRoute` + `setFlightPlanSummary` + `setViewMode("flight-plan")`. Solo necesitaba pasarlo como prop a `<InteractiveMap>`.
+- Leí src/components/flight-plan.tsx — el componente ignoraba `initialRoute`/`initialSummary` (los renombraba a `_initialRoute`/`_initialSummary`).
+- Leí src/lib/types.ts — `RouteSummary` tiene forma estricta (totalDistance, totalSegments, waypoints, navaids, estimatedTime, flightLevels, trajectory) que no matchea los campos extra (totalNM, totalEET, legs, departure, destination) que necesitamos enviar. Decidí poblar los campos canónicos Y extender con `as object` + `as RouteSummary` cast (consumer usa `as any` en flight-plan.tsx).
+- Verifiqué IDs en public/fpl.html: `adep` (line 660), `speed`/`speedtype` (678/674), `level`/`leveltype` (686/681), `route` textarea (690), `ades` (700), `eet` (701), `eet18` (868), `endurance` (893). Helper `gv(id)` ya existe. `updateRoute()` solo actualiza labels lbDep/lbDst — no toca otros campos. Sin postMessage handler preexistente.
+
+- Part A — interactive-map.tsx: Reemplacé los imports de `Select/SelectContent/SelectItem/SelectTrigger/SelectValue` con `FileText` (lucide-react) + `RouteSummary` (types). Creé `PointCombobox` (~100 líneas) arriba de `InteractiveMap`: input text con dropdown filtrado case-insensitive por `id` o `name`, muestra primeros 50 resultados, Outside-click cierra, Enter selecciona primero, Escape cierra, badge "Mostrando primeros 50 — afine la búsqueda" si hay >=50, mensaje "Sin resultados para '{query}'" si vacío, dropdown con `z-[1000]` para no quedar bajo otros overlays. Reemplacé los dos `<Select>` por `<PointCombobox value={origin} onChange={setOrigin} ... label="ORIGEN" />` y `<PointCombobox value={dest} onChange={setDest} ... label="DESTINO" />`. Width aumentada a 150px para mostrar nombre completo.
+
+- Part B — interactive-map.tsx: Añadí interfaz `InteractiveMapProps { onSendToFlightPlan?: (route, summary) => void }` y exporté `InteractiveMap({ onSendToFlightPlan }: InteractiveMapProps = {})`. Añadí `routeSummary` useMemo que popula los campos canónicos de RouteSummary + extiende con `totalNM/totalEET/legs/points/departure/destination` vía spread `as object` (no rompe el tipo, consumer lo lee con `as any`). Añadí botón "Enviar al FPL" (azul #1e40af, icono FileText) después del botón "Limpiar", condicional a `route.length >= 2 && onSendToFlightPlan`, llama `onSendToFlightPlan(route, routeSummary!)`.
+
+- Part C — page.tsx: Cambié `<InteractiveMap />` → `<InteractiveMap onSendToFlightPlan={handleGenerateFlightPlan} />` (línea 436). El callback ya existente setea estado + cambia viewMode a "flight-plan", y `<FlightPlan initialRoute={flightPlanRoute} initialSummary={flightPlanSummary} />` ya estaba cableado.
+
+- Part D — flight-plan.tsx: Reescribí completamente (64→113 líneas). Añadí `useRef<HTMLIFrameElement>` + `pendingDataRef`. `useEffect` guarda `{route, summary}` cuando `initialRoute` cambia. `sendRouteToFpl` callback hace `iframe.contentWindow?.postMessage({type:'AIP_PERU_IMPORT_ROUTE', route:[{id,name,type,lat,lon}], summary:{totalNM,totalEET,legs,departure,destination}}, '*')` con fallback `as any` para los campos extendidos del RouteSummary. `onLoad` del iframe: `setLoading(false)` + `setTimeout(sendRouteToFpl, 500)` para dar tiempo al JS del iframe a inicializar sus listeners. Segundo `useEffect` re-envía cuando `initialRoute` cambia después de la carga inicial. Cambié bg del contenedor de `#050b14` (dark remanente) → `#F0F0F0` (light consistente con Task 18-A).
+
+- Part E — fpl.html: Añadí regla CSS `.fpl-auto-filled { box-shadow: inset 0 0 0 1px rgba(0,102,204,.4) !important; background: rgba(0,102,204,.04) !important; }` antes de `</style>`. Añadí al final del `<script>` (antes de `</script>`): listener `window.addEventListener('message', ...)` que filtra `ev.data.type === 'AIP_PERU_IMPORT_ROUTE'`, valida `route.length >= 2`, y:
+  1. Rellena `adep` = route[0].id.slice(0,4).toUpperCase() + `.classList.add('fpl-auto-filled')` + dispatch input
+  2. Rellena `ades` = route[last].id.slice(0,4).toUpperCase() + classList + dispatch
+  3. Rellena `route` textarea: si solo 2 puntos → "DCT"; si 3+ → "DCT WP1 DCT WP2 ... DCT" (excluye ADEP/ADES) + classList + dispatch
+  4. Calcula `totalNM` desde `summary.totalNM` (fallback: haversine sobre route points)
+  5. Lee `speed`/`speedtype` si usuario ya los seteó (convierte K km/h o M Mach a kt); si vacíos, setea default N0240 + classList
+  6. Si `level` vacío, setea default F180 + classList
+  7. EET = `ceil(totalNM/TAS * 60)` min → formato HHMM (e.g. 79 min → "0119")
+  8. Endurance = EET + `max(5% EET, 5)` contingency + 30 min final reserve (IFR per OACI Annex 6 / RAP 91.1039) → formato HHMM (e.g. 79+5+30=114 → "0154")
+  9. Rellena `eet` y `endurance` + classList + dispatch input
+  10. Si `eet18` vacío, setea `destIcao + eetStr` (e.g. "SPZO0119") + classList + dispatch
+  11. Llama `showImportBanner('Ruta importada desde Mapa Interactivo: SPJC → SPZO | 316 NM | EET 0119 | Autonomía 0154')` — toast fijo top center, azul #1e40af, font Share Tech Mono, fade out a los 6s.
+  
+  Añadí IIFE que registra listeners `input` en `['adep','ades','route','eet','endurance','speed','level','eet18']` que remueven la clase `.fpl-auto-filled` SOLO cuando `ev.isTrusted === true` (es decir, eventos reales del usuario, no sintéticos del propio handler — fix crítico para que el dispatch input del handler no se autodispare y borre la marca).
+  
+  Añadí `function showImportBanner(msg)` que crea div `#import-banner` con estilos inline (position fixed, top 10px, transform translateX(-50%), z-index 9999, bg #1e40af, color #fff, padding 10px 20px, border-radius 6px, font Share Tech Mono 11px, max-width 90vw) y lo elimina después de 6s con fade-out.
+
+- Lint: `cd /home/z/my-project && bun run lint` → exit 0 ✓
+
+- VERIFICACIÓN CON AGENT BROWSER (dev server localhost:3000):
+  * Homepage / cargada OK (HTTP 200)
+  * Click "Mapa Interactivo" → H1 "Mapa Interactivo" ✓
+  * Combobox Origen visible como textbox (ref e41), NO como Select roto ✓
+  * Click Origen → type "SPJC" → dropdown muestra "SPJC— Jorge Chávez" (ref e44), filtrado case-insensitive ✓
+  * Click SPJC option → Origen muestra "SPJC — Jorge Chávez" ✓
+  * Click Destino → type "SPZO" → dropdown muestra "SPZO— Velasco Astete" ✓
+  * Click SPZO option → Destino muestra "SPZO — Velasco Astete" ✓
+  * Botón "Ruta Directa" habilitado (is enabled = true) → click ✓
+  * Botón "Enviar al FPL" aparece (ref e23) cuando route.length >= 2 ✓
+  * Click "Enviar al FPL" → viewMode cambia a flight-plan, H1 "Plan de Vuelo OACI / ICAO FPL" ✓
+  * Esperé 4s (iframe onLoad + 500ms setTimeout + postMessage + handler sync) ✓
+  * Eval directo al contentDocument del iframe:
+    - adep = "SPJC" ✓
+    - ades = "SPZO" ✓
+    - route = "DCT" ✓
+    - speed = "0240" ✓ (auto-filled default)
+    - level = "180" ✓ (auto-filled default)
+    - eet = "0119" ✓ (79 min = ceil(316/240 * 60), formato HHMM)
+    - endurance = "0154" ✓ (79 + 5 contingency + 30 final reserve = 114 min)
+    - eet18 = "SPZO0119" ✓ (Item 18 EET/ to destination FIR)
+    - adepAutoFilled = true ✓ (clase .fpl-auto-filled presente, blue border visible)
+    - adesAutoFilled = true ✓
+    - routeAutoFilled = true ✓
+    - speedAutoFilled = true ✓
+    - levelAutoFilled = true ✓
+    - eetAutoFilled = true ✓
+    - endAutoFilled = true ✓
+    - eet18AutoFilled = true ✓
+  * Banner verificado tras re-trigger de postMessage: "Ruta importada desde Mapa Interactivo: SPJC → SPZO | 316 NM | EET 0119 | Autonomía 0154" ✓
+  * CRÍTICO — Editabilidad manual (postMessage simulado segundo, luego edits):
+    - Fill EET (ref e51) con "0200" → value cambió a "0200", eetAutoFilled = false ✓ (clase removida, blue border desapareció)
+    - Fill Endurance (ref e69) con "0300" → value cambió a "0300", endAutoFilled = false ✓
+    - Fill Route textarea (ref e48) con "DCT LIM DCT" → value cambió, routeAutoFilled = false ✓
+    - Campos no tocados (adep/ades/speed/level/eet18) siguen con auto-filled = true ✓
+  * Re-import con ruta de 3 puntos (SPJC → LIM → SPZO): route = "DCT LIM DCT" (middle waypoint entre dos DCT) ✓
+  * Console sin errores (solo HMR/Fast Refresh normales), errors vacío ✓
+  * Screenshots guardados:
+    - verify-task19-map-initial.png (mapa con comboboxes visibles)
+    - verify-task19-origen-selected.png (SPJC seleccionado)
+    - verify-task19-route-built.png (ruta magenta SPJC→SPZO + botón Enviar al FPL visible)
+    - verify-task19-route-built-2.png (ruta construida con Enviar al FPL visible)
+    - verify-task19-fpl-after-import.png (FPL con campos auto-filled)
+    - verify-task19-fpl-full.png (full page screenshot)
+    - verify-task19-fpl-edited.png (EET/Endurance/Route editados manualmente, blue border removido)
+    - verify-task19-banner-visible.png (toast banner visible)
+
+Stage Summary:
+- 4 archivos modificados:
+  * src/components/interactive-map.tsx — Reemplazados los imports de Select por FileText + RouteSummary; añadido componente `PointCombobox` (~100 líneas, input text con dropdown filtrado, max 50 items, outside-click, Enter/Escape keyboard nav, z-[1000]); reemplazados los 2 `<Select>` rotos por `<PointCombobox label="ORIGEN/DESTINO" />`; añadida interfaz `InteractiveMapProps { onSendToFlightPlan? }`; añadido `routeSummary` useMemo que cast-a-RouteSummary con campos extendidos; añadido botón "Enviar al FPL" (azul) condicional a `route.length >= 2 && onSendToFlightPlan`.
+  * src/app/page.tsx — 1 sola línea: `<InteractiveMap />` → `<InteractiveMap onSendToFlightPlan={handleGenerateFlightPlan} />` (el callback ya existía).
+  * src/components/flight-plan.tsx — Reescrito completamente: añade `iframeRef` + `pendingDataRef` + `sendRouteToFpl` callback que hace `postMessage({type:'AIP_PERU_IMPORT_ROUTE', route, summary}, '*')` al iframe; `onLoad` hace setTimeout 500ms antes de enviar; re-envía cuando initialRoute cambia después de mount; bg del contenedor cambiado de dark `#050b14` → light `#F0F0F0` (consistencia con Task 18-A).
+  * public/fpl.html — Añadida regla CSS `.fpl-auto-filled` (box-shadow inset azul + bg azul claro); añadido listener `window.addEventListener('message', ...)` (~150 líneas) que recibe rutas desde el mapa y auto-rellena ADEP/ADES/Route/Speed/Level/EET/Endurance/EET18 según OACI Doc 4444 + RAP Peru (EET = ceil(NM/TAS*60), Endurance = EET + max(5% EET, 5) contingency + 30 min final reserve IFR); añadido IIFE que registra listeners `input` que remueven `.fpl-auto-filled` SOLO para eventos trusted (fix crítico: el dispatchEvent sintético del handler no se autodispara); añadida `showImportBanner()` con toast fijo top-center azul que fade-out a los 6s.
+- Bug de Origen/Destino Select resuelto: el Radix Select con 360 items en `position="popper"` renderizaba items off-screen (top:-7160). Reemplazado por PointCombobox custom con input filtrado + dropdown limitado a 50 resultados. Búsqueda case-insensitive por id o nombre.
+- Integración Map → FPL: el botón "Enviar al FPL" en el mapa pasa la ruta construida (RoutePoint[]) + RouteSummary al flight plan vía callback → setFlightPlanRoute → FlightPlan recibe initialRoute → iframe onLoad → postMessage al iframe → iframe handler auto-rellena 8 campos (adep/ades/route/speed/level/eet/endurance/eet18) + muestra banner de confirmación.
+- Cálculos OACI/RAP: EET (HHMM) = ceil(totalNM / TAS * 60) minutos con TAS default 240 kt (respeta speed/speedtype si usuario ya lo seteó, convierte K km/h y M Mach). Endurance (HHMM) = EET + max(5% EET, 5 min) contingency + 30 min final reserve IFR (OACI Annex 6 Part II / RAP 91.1039 / 121.639).
+- Editabilidad preservada: los 8 campos auto-filled siguen siendo `<input>`/`<textarea>` editables. El usuario puede sobreescribir cualquier valor; al hacerlo, la clase `.fpl-auto-filled` se remueve (blue border desaparece) gracias al guard `ev.isTrusted === false` que evita que los eventos sintéticos del propio handler borren la marca.
+- Verificación Agent Browser end-to-end: 100% de los 15 puntos de control pasaron (comboboxes funcionan, ruta construida, Enviar al FPL navega, postMessage recibido, 8 campos rellenados, banner visible, ediciones manuales respetadas, clase auto-filled gestionada correctamente). Lint exit 0. Sin errores de consola.
+
+---
+Task ID: 19-FINAL-VERIFICATION
+Agent: main (Z.ai Code)
+Task: Verificación end-to-end del fix de Origen/Destino + integración Mapa→Plan de Vuelo con auto-cálculo de EET/Autonomía per OACI Doc 4444 + RAP Peru.
+
+Work Log:
+- Reproduje el bug original con Agent Browser:
+  * Select de Origen (Radix Select con position="popper") con 360 items: listbox scrollHeight=298px, firstItemTop=-7160px → items absolutamente posicionados fuera del viewport, no cliqueables para usuario normal
+  * A pesar de eso, setOrigin(state) sí cambiaba (verificado: combobox mostraba "SPJC — Jorge Chávez" después de mi JS-scrollIntoView+dispatch)
+- Subagente 19 implementó:
+  * PointCombobox (componente nuevo en interactive-map.tsx): input + dropdown filtrado case-insensitive por id o nombre, max 50 resultados, Enter/Escape, outside-click close, z-[1000]
+  * Reemplazo de ambos <Select> con <PointCombobox>
+  * Prop onSendToFlightPlan?(route, summary) en InteractiveMap
+  * useMemo routeSummary que construye RouteSummary desde routeStats
+  * Botón "Enviar al FPL" (azul, FileText icon) condicional route.length >= 2
+  * page.tsx: <InteractiveMap onSendToFlightPlan={handleGenerateFlightPlan} />
+  * flight-plan.tsx: iframeRef + postMessage con {type:'AIP_PERU_IMPORT_ROUTE', route, summary} al iframe, re-send en cambios de initialRoute
+  * fpl.html: window.addEventListener('message', ...) que recibe la ruta y:
+    - ADEP = route[0].id
+    - ADES = route[last].id
+    - Route = "DCT" o "DCT WP1 DCT WP2 DCT" (intermedios)
+    - Speed = "0240" (default, respeta existente)
+    - Level = "180" (default, respeta existente)
+    - EET (HHMM) = ceil(totalNM / TAS * 60) min — OACI Doc 4444
+    - Endurance (HHMM) = EET + max(5% EET, 5 min) contingency + 30 min final reserve IFR — OACI Annex 6 + RAP 91.1039
+    - EET18 = "DESTICAO + EET"
+    - Clase CSS .fpl-auto-filled (box-shadow azul inset + bg azul claro) para marcar campos auto-llenados
+    - Listener que remueve .fpl-auto-filled solo para ev.isTrusted === true (input real del usuario, no synthetic events)
+    - showImportBanner() toast azul en la parte superior durante 6s
+
+- MI VERIFICACIÓN CON AGENT BROWSER:
+  * Homepage / cargada OK
+  * Navegué a "Mapa Interactivo"
+  * Click en Origen combobox → input visible, escribí "SPJC" → dropdown filtró a 1 resultado "SPJC — Jorge Chávez" → VLM confirmó dropdown visible y no detrás del mapa
+  * Click en el resultado → combobox muestra "SPJC — Jorge Chávez"
+  * Click en Destino combobox → escribí "SPZO" → click en "SPZO — Velasco Astete"
+  * "Ruta Directa" botón habilitado → click → ruta magenta SPJC→SPZO aparece en el mapa
+  * Botón "Enviar al FPL" aparece (route.length >= 2) → click
+  * Vista cambia a "Plan de Vuelo OACI / ICAO FPL"
+  * Esperé 4s para que el iframe cargue + postMessage se procese
+  * DOM verification (iframe.contentDocument):
+    - adep = "SPJC" ✓
+    - ades = "SPZO" ✓
+    - route = "DCT" ✓ (direct, sin waypoints intermedios)
+    - speed = "0240" ✓ (240 KTAS default)
+    - level = "180" ✓ (FL180 default)
+    - eet = "0119" ✓ (79 min = ceil(316 NM / 240 kt * 60))
+    - endurance = "0154" ✓ (114 min = 79 + 5 contingency + 30 final reserve)
+    - eet18 = "SPZO0119" ✓
+    - adepClass = "fpl-auto-filled" ✓ (marcador azul visible)
+    - eetClass = "fpl-auto-filled" ✓
+  * VLM confirmó banner azul visible: "Ruta importada desde Mapa Interactivo: SPJC → SPZO | 316 NM | EET 0119 | Autonomía 0154"
+  * Editabilidad verificada:
+    - execCommand('insertText', false, '99') en EET → valor cambió a "99" Y clase .fpl-auto-filled removida (porque ev.isTrusted=true)
+    - Input sintético (dispatchEvent con InputEvent) también cambia el valor (campos editables), pero no remueve la clase (comportamiento correcto — solo input real del usuario remueve el marcador)
+  * 64 markers presentes en el mapa; popup + ORIG/+ DEST/+ Ruta buttons siguen funcionando (setOrigin/setDest/addToRoute → actualizan el display del combobox)
+  * Sin errores de consola
+  * Lint: bun run lint exit 0 (clean)
+
+- Cálculo verificado manualmente:
+  * Ruta SPJC → SPZO (direct): 316 NM (haversine, coincide con el cálculo del mapa)
+  * TAS = 240 kt
+  * EET = 316/240 * 60 = 79 min = 01H19MIN → "0119" ✓
+  * Contingency = max(5% de 79, 5) = max(3.95, 5) = 5 min (OACI Annex 6 §4.3.6)
+  * Final reserve = 30 min (IFR, OACI Annex 6 Part II §4.3.7 / RAP 91.1039)
+  * Endurance = 79 + 5 + 30 = 114 min = 01H54MIN → "0154" ✓
+
+Stage Summary:
+- 4 archivos modificados:
+  * src/components/interactive-map.tsx — removidos imports Select/SelectContent/SelectItem/SelectTrigger/SelectValue (ya no se usan); agregado FileText (lucide) + RouteSummary (types); nuevo componente PointCombobox (~100 líneas); reemplazados los dos <Select> con <PointCombobox>; agregada prop onSendToFlightPlan + useMemo routeSummary + botón "Enviar al FPL"
+  * src/app/page.tsx — 1 línea: <InteractiveMap onSendToFlightPlan={handleGenerateFlightPlan} />
+  * src/components/flight-plan.tsx — reescrito (64→113 líneas): iframeRef + pendingDataRef + sendRouteToFpl callback que hace postMessage al iframe; onLoad con setTimeout 500ms; re-send cuando initialRoute cambia; container bg light #F0F0F0
+  * public/fpl.html — añadido CSS .fpl-auto-filled + window.addEventListener('message') handler (~150 líneas) que recibe ruta, calcula EET/Endurance per OACI Doc 4444 + RAP Peru (EET = ceil(NM/TAS*60); Endurance = EET + max(5%EET,5) + 30 IFR), llena ADEP/ADES/Route/Speed/Level/EET/Endurance/EET18; listener que remueve .fpl-auto-filled solo para ev.isTrusted=true; showImportBanner() toast
+- Origen/Destino dropdowns ahora funcionan (combobox buscable en vez de Select con 360 items rotos)
+- Botones popup + ORIG/+ DEST/+ Ruta siguen funcionando (state → combobox display)
+- Ruta del mapa se envía al Plan de Vuelo vía postMessage al iframe
+- EET calculado: 316 NM / 240 kt = "0119" (79 min)
+- Endurance calculado per OACI Annex 6 + RAP 91.1039: 79 + 5 + 30 = "0154" (114 min)
+- Campos EET, Endurance, Route (y todos los demás) siguen siendo editables; al editar manualmente se remueve el marcador .fpl-auto-filled (solo para input real del usuario, no synthetic events)
+- Banner azul visible durante 6s confirmando la importación
+- Verificado con Agent Browser (DOM + VLM) + lint clean

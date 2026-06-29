@@ -433,7 +433,7 @@ export default function Home() {
                 {PERUVIAN_AIRPORTS_COUNT} Aeródromos · Radioayudas · Waypoints
               </Badge>
             </div>
-            <InteractiveMap />
+            <InteractiveMap onSendToFlightPlan={handleGenerateFlightPlan} />
           </div>
         ) : viewMode === "chart" && !selectedAirport ? (
           <div className="space-y-4">

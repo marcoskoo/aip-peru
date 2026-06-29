@@ -392,6 +392,9 @@ footer span{color:var(--acc);}
   transition:background .15s;
 }
 .help-ico:hover{background:rgba(0,102,204,.3);}
+
+/* Fields auto-filled from Mapa Interactivo — keep editable but mark with a subtle indicator */
+.fpl-auto-filled{box-shadow:inset 0 0 0 1px rgba(0,102,204,.4) !important;background:rgba(0,102,204,.04) !important;}
 </style>
 </head>
 <body>
@@ -2380,6 +2383,177 @@ async function downloadPDF(){
   } else {
     doc.save('PlanVuelo_'+acid+'_'+dep+'_'+des+'.pdf');
   }
+}
+
+// ─── POSTMESSAGE LISTENER: recibe ruta desde el Mapa Interactivo ─────────
+// Recibe {type:'AIP_PERU_IMPORT_ROUTE', route:[{id,name,type,lat,lon}], summary:{totalNM,totalEET,legs,departure,destination}}
+// y auto-rellena ADEP/ADES/Route/Speed/Level/EET/Endurance/EET18 según OACI Doc 4444 + RAP Peru.
+// Todos los campos siguen siendo editables por el usuario (clase .fpl-auto-filled se quita al editar).
+window.addEventListener('message', function(ev) {
+  if (!ev.data || ev.data.type !== 'AIP_PERU_IMPORT_ROUTE') return;
+  var route = ev.data.route;
+  var summary = ev.data.summary;
+  if (!route || !Array.isArray(route) || route.length < 2) return;
+
+  // 1. ADEP (departure) = first point
+  var adepEl = document.getElementById('adep');
+  if (adepEl) {
+    adepEl.value = String(route[0].id || '').slice(0, 4).toUpperCase();
+    adepEl.classList.add('fpl-auto-filled');
+    adepEl.dispatchEvent(new Event('input', {bubbles: true}));
+  }
+
+  // 2. ADES (destination) = last point
+  var adesEl = document.getElementById('ades');
+  if (adesEl) {
+    adesEl.value = String(route[route.length - 1].id || '').slice(0, 4).toUpperCase();
+    adesEl.classList.add('fpl-auto-filled');
+    adesEl.dispatchEvent(new Event('input', {bubbles: true}));
+  }
+
+  // 3. Route string: join intermediate points with DCT
+  // ICAO format: route field contains everything between ADEP and ADES.
+  // If only 2 points (direct), route = "DCT".
+  // If 3+ points, route = "DCT WP1 DCT WP2 DCT ... DCT" (excluding ADEP and ADES).
+  var routeEl = document.getElementById('route');
+  if (routeEl) {
+    var middlePoints = route.slice(1, -1);
+    var routeStr;
+    if (middlePoints.length === 0) {
+      routeStr = 'DCT';
+    } else {
+      routeStr = 'DCT ' + middlePoints.map(function(p) { return p.id; }).join(' DCT ') + ' DCT';
+    }
+    routeEl.value = routeStr;
+    routeEl.classList.add('fpl-auto-filled');
+    routeEl.dispatchEvent(new Event('input', {bubbles: true}));
+  }
+
+  // 4. Calculate EET and Endurance per OACI Doc 4444 + RAP Peru
+  // Default cruise speed: 240 KTAS (matches interactive map default)
+  // EET (HHMM) = ceil(totalNM / TAS * 60) minutes
+  // Endurance per OACI Annex 6 / RAP Peru (RAP 91.1039 / 121.639):
+  //   - Trip fuel time = EET
+  //   - Contingency = max(5% of EET, 5 minutes)
+  //   - Final reserve = 30 minutes (IFR) or 20 minutes (VFR)
+  //   - Endurance = EET + contingency + final reserve (rounded up)
+  var totalNM = (summary && summary.totalNM) ? parseFloat(summary.totalNM) : 0;
+  if (!totalNM || totalNM <= 0) {
+    // Fallback: compute from route points using haversine
+    totalNM = 0;
+    for (var i = 0; i < route.length - 1; i++) {
+      var a = route[i], b = route[i + 1];
+      var R = 3440.065; // Earth radius in NM
+      var dLat = (b.lat - a.lat) * Math.PI / 180;
+      var dLon = (b.lon - a.lon) * Math.PI / 180;
+      var la1 = a.lat * Math.PI / 180, la2 = b.lat * Math.PI / 180;
+      var h = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(la1) * Math.cos(la2) * Math.sin(dLon/2) * Math.sin(dLon/2);
+      var c = 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1-h));
+      totalNM += R * c;
+    }
+  }
+
+  var TAS = 240; // default cruise true airspeed in knots
+  var speedEl = document.getElementById('speed');
+  var speedTypeEl = document.getElementById('speedtype');
+  if (speedEl && speedEl.value && /^\d{3,4}$/.test(speedEl.value)) {
+    var stVal = speedTypeEl ? speedTypeEl.value : 'N';
+    var spd = parseInt(speedEl.value, 10);
+    if (stVal === 'K') {
+      spd = spd / 1.852; // km/h → kt
+    } else if (stVal === 'M') {
+      spd = spd * 0.85 * 574; // Mach → kt at FL180 (approx)
+    }
+    if (spd > 50 && spd < 600) TAS = Math.round(spd);
+  } else if (speedEl && !speedEl.value) {
+    // Speed is empty — set default N0240
+    speedEl.value = '0240';
+    if (speedTypeEl) speedTypeEl.value = 'N';
+    speedEl.classList.add('fpl-auto-filled');
+  }
+
+  // Default cruise level: FL180 (18000 ft)
+  var levelEl = document.getElementById('level');
+  var levelTypeEl = document.getElementById('leveltype');
+  if (levelEl && !levelEl.value) {
+    levelEl.value = '180';
+    if (levelTypeEl) levelTypeEl.value = 'F';
+    levelEl.classList.add('fpl-auto-filled');
+  }
+
+  // EET in minutes
+  var eetMin = Math.ceil((totalNM / TAS) * 60);
+  var eetH = Math.floor(eetMin / 60);
+  var eetM = eetMin % 60;
+  var eetStr = String(eetH).padStart(2, '0') + String(eetM).padStart(2, '0');
+
+  var eetEl = document.getElementById('eet');
+  if (eetEl) {
+    eetEl.value = eetStr;
+    eetEl.classList.add('fpl-auto-filled');
+    eetEl.dispatchEvent(new Event('input', {bubbles: true}));
+  }
+
+  // Endurance per OACI Annex 6 + RAP Peru (RAP 91.1039 / 121.639) — IFR default
+  var contingencyMin = Math.max(Math.ceil(eetMin * 0.05), 5);
+  var finalReserveMin = 30; // IFR default
+  var endMin = eetMin + contingencyMin + finalReserveMin;
+  var endH = Math.floor(endMin / 60);
+  var endM = endMin % 60;
+  var endStr = String(endH).padStart(2, '0') + String(endM).padStart(2, '0');
+
+  var endEl = document.getElementById('endurance');
+  if (endEl) {
+    endEl.value = endStr;
+    endEl.classList.add('fpl-auto-filled');
+    endEl.dispatchEvent(new Event('input', {bubbles: true}));
+  }
+
+  // Also fill EET/ (Item 18 EET to destination FIR) — same as total EET
+  var eet18El = document.getElementById('eet18');
+  if (eet18El && !eet18El.value) {
+    var destIcao = String(route[route.length - 1].id || '').slice(0, 4).toUpperCase();
+    eet18El.value = destIcao + eetStr;
+    eet18El.classList.add('fpl-auto-filled');
+    eet18El.dispatchEvent(new Event('input', {bubbles: true}));
+  }
+
+  // Show a visible notification to the user
+  showImportBanner(
+    'Ruta importada desde Mapa Interactivo: ' + route[0].id + ' → ' + route[route.length-1].id +
+    ' | ' + totalNM.toFixed(0) + ' NM | EET ' + eetStr + ' | Autonomía ' + endStr
+  );
+});
+
+// Remove .fpl-auto-filled class when the user manually edits any auto-filled field.
+// Only respond to TRUSTED (real user) input events — synthetic events dispatched
+// by our own postMessage handler have isTrusted=false and must NOT remove the marker.
+(function() {
+  ['adep','ades','route','eet','endurance','speed','level','eet18'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('input', function(ev) {
+      if (ev && ev.isTrusted === false) return;
+      this.classList.remove('fpl-auto-filled');
+    });
+  });
+})();
+
+// Import banner — non-blocking toast at top of FPL
+function showImportBanner(msg) {
+  var existing = document.getElementById('import-banner');
+  if (existing) existing.remove();
+  var b = document.createElement('div');
+  b.id = 'import-banner';
+  b.style.cssText = 'position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:9999;background:#1e40af;color:#fff;padding:10px 20px;border-radius:6px;font-family:Share Tech Mono,monospace;font-size:11px;letter-spacing:1px;box-shadow:0 4px 16px rgba(0,0,0,.3);max-width:90vw;text-align:center;';
+  b.textContent = msg;
+  document.body.appendChild(b);
+  setTimeout(function() {
+    if (b.parentElement) {
+      b.style.transition = 'opacity .5s';
+      b.style.opacity = '0';
+      setTimeout(function() { if (b.parentElement) b.remove(); }, 500);
+    }
+  }, 6000);
 }
 </script>
 </body>

@@ -23,13 +23,6 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import {
   Plane,
   Radio,
   Navigation2,
@@ -46,6 +39,7 @@ import {
   Undo2,
   Pencil,
   Move,
+  FileText,
 } from "lucide-react"
 import type {
   AirwaysData,
@@ -56,6 +50,7 @@ import type {
   FIRBoundary,
   AdjacentFIR,
   Coord,
+  RouteSummary,
 } from "@/lib/types"
 import { PERUVIAN_AIRPORTS, type PeruvianAirport } from "@/lib/aviation/peru-airports-static"
 import { PERUVIAN_NAVAIDS, normalizeNavaidType } from "@/lib/aviation/peru-navaids-static"
@@ -353,6 +348,109 @@ function createRoutePointIcon(label: string, index: number, editable: boolean) {
   })
 }
 
+// ─── Point Combobox (searchable, replaces Radix Select for 360-item lists) ──
+interface PointComboboxProps {
+  value: string
+  onChange: (id: string) => void
+  points: RoutePoint[]
+  placeholder?: string
+  label?: string
+}
+
+function PointCombobox({ value, onChange, points, placeholder, label }: PointComboboxProps) {
+  const [open, setOpen] = useState(false)
+  const [query, setQuery] = useState("")
+  const inputRef = useRef<HTMLInputElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  // Show selected point's display text when not searching
+  const selected = points.find(p => p.id === value)
+  const displayText = selected
+    ? `${selected.id} — ${selected.name.split("—")[1]?.trim() || selected.name}`
+    : ""
+
+  // Filter points by query (case-insensitive, match id or name)
+  const filtered = useMemo(() => {
+    if (!query.trim()) return points.slice(0, 50) // show first 50 if no query
+    const q = query.toLowerCase().trim()
+    return points.filter(p =>
+      p.id.toLowerCase().includes(q) ||
+      p.name.toLowerCase().includes(q)
+    ).slice(0, 50)
+  }, [query, points])
+
+  // Close on outside click
+  useEffect(() => {
+    function onDocClick(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false)
+        setQuery("")
+      }
+    }
+    document.addEventListener("mousedown", onDocClick)
+    return () => document.removeEventListener("mousedown", onDocClick)
+  }, [])
+
+  return (
+    <div ref={containerRef} className="relative">
+      {label && <span className="text-[10px] text-slate-600 font-mono mr-1 hidden md:inline">{label}</span>}
+      <input
+        ref={inputRef}
+        type="text"
+        value={open ? query : displayText}
+        placeholder={placeholder}
+        onChange={(e) => { setQuery(e.target.value); setOpen(true) }}
+        onFocus={() => { setOpen(true); setQuery("") }}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") { setOpen(false); setQuery("") }
+          if (e.key === "Enter" && filtered.length > 0) {
+            e.preventDefault()
+            onChange(filtered[0].id)
+            setOpen(false)
+            setQuery("")
+            inputRef.current?.blur()
+          }
+        }}
+        className="w-[150px] h-8 text-xs bg-[#eef2ff]/40 border border-[#1e40af]/40 text-[#1e40af] rounded-md px-2 font-mono outline-none focus:border-[#1e40af] focus:ring-2 focus:ring-[#1e40af]/20 transition-colors"
+      />
+      {open && filtered.length > 0 && (
+        <div
+          className="absolute top-full left-0 mt-1 w-[280px] max-h-[260px] overflow-y-auto bg-white border border-[#1e40af]/40 rounded-md shadow-lg"
+          style={{ zIndex: 1000 }}
+        >
+          {filtered.map((p) => (
+            <button
+              key={p.type + p.id}
+              type="button"
+              onClick={() => {
+                onChange(p.id)
+                setOpen(false)
+                setQuery("")
+                inputRef.current?.blur()
+              }}
+              className={`w-full text-left px-2 py-1.5 text-xs hover:bg-[#eef2ff] transition-colors border-b border-slate-100 last:border-b-0 ${p.id === value ? 'bg-[#eef2ff] text-[#1e40af] font-bold' : 'text-slate-600'}`}
+            >
+              <span className="font-mono text-[#1e40af]">{p.id}</span>
+              <span className="text-slate-600/70 ml-1 truncate">— {p.name.split("—")[1]?.trim() || p.name}</span>
+            </button>
+          ))}
+          {filtered.length === 50 && (
+            <div className="px-2 py-1 text-[10px] text-slate-500 text-center bg-slate-50">Mostrando primeros 50 — afine la búsqueda</div>
+          )}
+        </div>
+      )}
+      {open && filtered.length === 0 && (
+        <div
+          className="absolute top-full left-0 mt-1 w-[280px] bg-white border border-[#1e40af]/40 rounded-md shadow-lg p-2 text-xs text-slate-500 text-center"
+          style={{ zIndex: 1000 }}
+        >
+          Sin resultados para &quot;{query}&quot;
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Map Click Handler ───────────────────────────────────────────
 function MapClickHandler({
   onMapClick,
@@ -368,7 +466,10 @@ function MapClickHandler({
 }
 
 // ─── Main Component ──────────────────────────────────────────────
-export function InteractiveMap() {
+interface InteractiveMapProps {
+  onSendToFlightPlan?: (route: RoutePoint[], summary: RouteSummary) => void
+}
+export function InteractiveMap({ onSendToFlightPlan }: InteractiveMapProps = {}) {
   const [data, setData] = useState<AirwaysData | null>(null)
   const [loading, setLoading] = useState(true)
   const [layers, setLayers] = useState<LayerState>({
@@ -517,6 +618,32 @@ export function InteractiveMap() {
     return `${h}H${m.toString().padStart(2, "0")}MIN`
   }, [routeStats.totalNM])
 
+  // Build a RouteSummary object for the FPL callback. The strict RouteSummary
+  // type in lib/types.ts has a different shape (segments/levels/trajectory),
+  // so we cast via `as RouteSummary` — the consumer (flight-plan.tsx → fpl.html
+  // postMessage) only reads our extended fields via `as any` lookups.
+  const routeSummary = useMemo<RouteSummary | null>(() => {
+    if (route.length < 2) return null
+    return {
+      totalDistance: routeStats.totalNM,
+      totalSegments: routeStats.legs.length,
+      waypoints: route.filter(p => p.type === "WAYPOINT").length,
+      navaids: route.filter(p => p.type === "NAVAID").length,
+      estimatedTime: Math.round((routeStats.totalNM / 240) * 60),
+      flightLevels: { min: 0, max: 0 },
+      trajectory: [],
+      // Extended fields (consumed by flight-plan.tsx via `as any`):
+      ...({
+        totalNM: routeStats.totalNM,
+        totalEET: flightTime || "00H00MIN",
+        legs: routeStats.legs,
+        points: route.length,
+        departure: route[0]?.id || "",
+        destination: route[route.length - 1]?.id || "",
+      } as object),
+    } as RouteSummary
+  }, [route, routeStats, flightTime])
+
   // Direct distance between origin and dest
   const directDist = useMemo(() => {
     if (!origin || !dest) return null
@@ -619,41 +746,11 @@ export function InteractiveMap() {
               <span className="text-xs font-bold text-[#1e40af] hidden sm:inline tracking-wider">RUTA:</span>
             </div>
 
-            <div className="flex items-center gap-1">
-              <span className="text-[10px] text-slate-600 font-mono hidden md:inline">ORIGEN</span>
-              <Select value={origin} onValueChange={setOrigin}>
-                <SelectTrigger className="w-[130px] h-8 text-xs bg-[#eef2ff]/40 border-[#1e40af]/40 text-[#1e40af]">
-                  <SelectValue placeholder="Origen" />
-                </SelectTrigger>
-                <SelectContent className="max-h-[300px] bg-white border-[#1e40af]/40">
-                  {allPoints.map((p) => (
-                    <SelectItem key={p.type + p.id} value={p.id} className="text-xs text-slate-600 focus:bg-[#eef2ff] focus:text-[#1e40af]">
-                      <span className="font-mono text-[#1e40af]">{p.id}</span>
-                      <span className="text-slate-600/70 ml-1 truncate">— {p.name.split("—")[1]?.trim() || ""}</span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <PointCombobox value={origin} onChange={setOrigin} points={allPoints} placeholder="Origen" label="ORIGEN" />
 
             <span className="text-[#1e40af] font-bold" style={{ textShadow: "0 0 4px #1e40af" }}>→</span>
 
-            <div className="flex items-center gap-1">
-              <span className="text-[10px] text-slate-600 font-mono hidden md:inline">DESTINO</span>
-              <Select value={dest} onValueChange={setDest}>
-                <SelectTrigger className="w-[130px] h-8 text-xs bg-[#eef2ff]/40 border-[#1e40af]/40 text-[#1e40af]">
-                  <SelectValue placeholder="Destino" />
-                </SelectTrigger>
-                <SelectContent className="max-h-[300px] bg-white border-[#1e40af]/40">
-                  {allPoints.map((p) => (
-                    <SelectItem key={p.type + p.id} value={p.id} className="text-xs text-slate-600 focus:bg-[#eef2ff] focus:text-[#1e40af]">
-                      <span className="font-mono text-[#1e40af]">{p.id}</span>
-                      <span className="text-slate-600/70 ml-1 truncate">— {p.name.split("—")[1]?.trim() || ""}</span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <PointCombobox value={dest} onChange={setDest} points={allPoints} placeholder="Destino" label="DESTINO" />
 
             {/* Distance display */}
             {directDist && (
@@ -732,6 +829,19 @@ export function InteractiveMap() {
               >
                 <Trash2 className="size-3 mr-1" />
                 Limpiar
+              </Button>
+            )}
+
+            {/* Enviar al FPL — send the built route to the flight plan iframe */}
+            {route.length >= 2 && onSendToFlightPlan && (
+              <Button
+                size="sm"
+                onClick={() => onSendToFlightPlan(route, routeSummary!)}
+                className="h-8 text-xs bg-[#1e40af] text-white hover:bg-[#1e3a8a] font-bold gap-1"
+                title="Enviar la ruta construida al Plan de Vuelo (calcula EET y Autonomía automáticamente)"
+              >
+                <FileText className="size-3 mr-1" />
+                Enviar al FPL
               </Button>
             )}
 
