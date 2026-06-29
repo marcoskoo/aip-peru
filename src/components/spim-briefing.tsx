@@ -1033,7 +1033,7 @@ function NotamPanel({ notams, showJson, onToggleJson }: {
       {/* Banner: recordatorio de que se muestra texto crudo OACI */}
       <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-amber-500/10 border border-amber-500/30 text-xs text-amber-700 dark:text-amber-400">
         <FileText className="size-3.5 shrink-0" />
-        <span>Los NOTAMs se muestran en <strong>formato crudo OACI</strong> tal cual fueron emitidos por AIS Perú. Los campos parseados (Q/A/B/C/D/E) son referenciales.</span>
+        <span>Los NOTAMs se muestran en <strong>formato crudo OACI</strong> tal cual fueron emitidos por la fuente.</span>
       </div>
 
       {notams.map((n) => {
@@ -1047,22 +1047,18 @@ function NotamPanel({ notams, showJson, onToggleJson }: {
             >
               <ChevronRight className={cn("size-4 text-slate-400 transition-transform shrink-0", isOpen && "rotate-90")} />
               <span className="font-mono font-semibold text-sm text-slate-900 dark:text-slate-100">{n.notamId}</span>
-              {n.qCode && (
-                <Badge variant="secondary" className="text-[10px] font-mono">{n.qCode}</Badge>
-              )}
               <Badge variant="outline" className={cn("text-[10px]", statusColors[n.status])}>{n.status}</Badge>
-              {n.priority !== "MEDIUM" && (
-                <Badge variant="outline" className={cn("text-[10px]", priorityColors[n.priority])}>{n.priority}</Badge>
-              )}
               <span className="ml-auto flex items-center gap-2 text-[11px] text-slate-400 shrink-0">
                 <NotamCountdown validFrom={n.effectiveFrom} validTo={n.effectiveTo} isPermanent={n.isPermanent} />
               </span>
             </button>
 
-            {/* Expanded content — TEXTO CRUDO PRIMERO */}
+            {/* Expanded content — SOLO TEXTO CRUDO OACI */}
             {isOpen && (
               <div className="border-t border-slate-200 dark:border-slate-700 p-3 space-y-3 bg-slate-50/50 dark:bg-slate-800/30">
-                {/* TEXTO CRUDO OACI — primero y prominente */}
+                {/* TEXTO CRUDO OACI — único contenido mostrado.
+                    Se presenta EXACTAMENTE como lo emite la fuente. Sin interpretación,
+                    sin campos parseados, sin vigencia. Todo está en el texto crudo. */}
                 <div>
                   <h5 className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wider mb-1 flex items-center gap-1">
                     <FileText className="size-3" />
@@ -1071,37 +1067,7 @@ function NotamPanel({ notams, showJson, onToggleJson }: {
                   <pre className="rounded bg-slate-900 dark:bg-slate-950 p-3 font-mono text-[11px] text-slate-100 dark:text-slate-200 overflow-x-auto whitespace-pre-wrap break-words leading-relaxed border border-slate-700 dark:border-slate-800">{n.text}</pre>
                 </div>
 
-                {/* Validity period */}
-                <div className="flex items-center gap-3 flex-wrap text-xs">
-                  <span className="text-slate-500">Vigencia:</span>
-                  <span className="font-mono text-slate-700 dark:text-slate-300">
-                    Desde: {formatDateTime(n.effectiveFrom)}
-                  </span>
-                  <span className="text-slate-400">→</span>
-                  <span className="font-mono text-slate-700 dark:text-slate-300">
-                    Hasta: {n.isPermanent ? "PERM" : n.effectiveTo ? formatDateTime(n.effectiveTo) : "—"}
-                  </span>
-                </div>
-
-                {/* Campos OACI parseados — secundario, colapsable */}
-                {n.fields.length > 0 && (
-                  <details className="group">
-                    <summary className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:text-slate-700 dark:hover:text-slate-300 transition-colors flex items-center gap-1 select-none">
-                      <ChevronRight className="size-3 transition-transform group-open:rotate-90" />
-                      Campos OACI parseados (referencial)
-                    </summary>
-                    <div className="space-y-1 mt-2 pl-4">
-                      {n.fields.map((f, i) => (
-                        <div key={i} className="flex items-start gap-2 text-xs">
-                          <span className="font-mono font-semibold text-slate-600 dark:text-slate-400 shrink-0 w-8">{f.label}</span>
-                          <span className="font-mono text-slate-700 dark:text-slate-300 break-all">{f.value}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </details>
-                )}
-
-                {/* JSON */}
+                {/* JSON — opcional, solo para depuración */}
                 {showJson && (
                   <pre className="rounded bg-slate-900 dark:bg-slate-950 p-2 font-mono text-[10px] text-slate-100 dark:text-slate-200 overflow-x-auto max-h-48">
                     {JSON.stringify(n, null, 2)}

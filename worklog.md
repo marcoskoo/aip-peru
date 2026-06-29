@@ -5480,3 +5480,34 @@ Stage Summary:
 - NOTAMs se muestran en texto crudo OACI exclusivamente (sin interpretación ni campos parseados)
 - El segmento de ruta ahora sigue el formato OACI: Radioayuda/WP + Aerovía + Radioayuda/WP... (ej: V1 PALOP V1)
 - Verificado end-to-end con navegador
+
+---
+Task ID: NOTAM-RAW-ONLY
+Agent: Main Agent
+Task: Quitar de los NOTAM las secciones "Sujeto/Q-code", "Vigencia", "Coordenadas", "Campos OACI parseados (referenciales)" para que solo quede el NOTAM crudo (como IMG_5980/IMG_5983).
+
+Work Log:
+- Analicé IMG_5981 (parte a quitar), IMG_5980 y IMG_5983 (formato deseado) con VLM
+- Identifiqué que la sección "Campos OACI parseados (referenciales)" provenía de DOS componentes:
+  * src/components/airport-detail.tsx (vista de detalle de aeródromo, pestaña NOTAMs)
+  * src/components/spim-briefing.tsx (vista Briefing Múltiple de INFO SPIM)
+- Simplifiqué airport-detail.tsx (tarjeta NOTAM):
+  * Removí: Sujeto/Condición/Alcance/Q-code, Vigencia (Desde/Hasta), Coordenadas/Niveles/Radio, "Campos OACI parseados (referenciales)" con Q/A/B/C/D/E
+  * Removí del header: badges de prioridad y verificado
+  * Conservé: header con NOTAM ID + estado + fuente, título "Texto OACI completo (crudo)", bloque con texto crudo
+  * Actualicé banner informativo (quitó mención a "campos parseados")
+- Simplifiqué spim-briefing.tsx (tarjeta NOTAM):
+  * Removí: Vigencia (Desde/Hasta), "Campos OACI parseados (referencial)" colapsable con campos Q/A/B/C/D/E
+  * Removí del header: badge qCode y badge prioridad
+  * Conservé: header con NOTAM ID + estado + countdown, título "Texto OACI completo (crudo)", bloque oscuro con texto crudo
+  * Actualicé banner informativo (quitó mención a "campos parseados")
+- Verifiqué con Agent Browser + VLM:
+  * Airport detail (SPJC, pestaña NOTAMs): confirmado — solo ID + estado + fuente + "Texto OACI completo (crudo)" + texto crudo. Sin Sujeto/Q-code/Vigencia/Campos parseados/Coordenadas
+  * Briefing Múltiple (SPJC): confirmado — solo ID + estado + countdown + "Texto OACI completo (crudo)" + texto crudo en bloque oscuro. Nada más abajo del bloque
+  * DOM verificado: no existe texto "Campos OACI", "Vigencia", "Sujeto", "Q-code", "parseados" en ninguna de las dos vistas
+- Lint: sin errores. Dev log: sin errores.
+
+Stage Summary:
+- Las secciones "Sujeto/Q-code", "Vigencia", "Coordenadas" y "Campos OACI parseados (referenciales)" fueron removidas completamente de airport-detail.tsx y spim-briefing.tsx
+- Ahora todas las vistas de NOTAM (listing, detail, airport detail, briefing múltiple) muestran SOLO el texto crudo OACI con un header mínimo (ID + estado)
+- Formato coincide con IMG_5980 (solo texto crudo) y IMG_5983 (header mínimo + texto crudo)

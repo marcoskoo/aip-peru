@@ -1216,7 +1216,7 @@ export function AirportDetailView({ airport, onBack }: AirportDetailProps) {
 
             {/* Info banner */}
             <div className="rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-900/50 dark:bg-amber-950/20 p-3 text-xs text-amber-800 dark:text-amber-300">
-              Los NOTAMs se muestran en formato crudo OACI tal cual fueron emitidos por AIS Perú. Los campos parseados (Q/A/B/C/D/E) son referenciales.
+              Los NOTAMs se muestran en formato crudo OACI tal cual fueron emitidos por la fuente.
             </div>
 
             {/* NOTAM list */}
@@ -1268,17 +1268,6 @@ export function AirportDetailView({ airport, onBack }: AirportDetailProps) {
                             <Badge variant="outline" className={`text-xs ${statusColor}`}>
                               {statusLabel}
                             </Badge>
-                            {notam.priority !== 'MEDIUM' && (
-                              <Badge variant="outline" className={`text-xs ${priorityColor}`}>
-                                {notam.priority}
-                              </Badge>
-                            )}
-                            {notam.verified && (
-                              <Badge variant="outline" className="text-xs gap-1">
-                                <CheckCircle2 className="size-3" />
-                                verificado
-                              </Badge>
-                            )}
                           </div>
                           {notam.source && (
                             <span className="text-xs text-muted-foreground">
@@ -1288,79 +1277,10 @@ export function AirportDetailView({ airport, onBack }: AirportDetailProps) {
                         </div>
                       </CardHeader>
                       <CardContent className="space-y-3">
-                        {/* Subject / Condition */}
-                        <div className="flex flex-wrap items-center gap-2 text-xs">
-                          {notam.subject && (
-                            <span className="text-muted-foreground">
-                              Sujeto: <span className="font-medium text-foreground">{notam.subject}</span>
-                            </span>
-                          )}
-                          {notam.condition && (
-                            <span className="text-muted-foreground">
-                              Condición: <span className="font-medium text-foreground">{notam.condition}</span>
-                            </span>
-                          )}
-                          {notam.scope && (
-                            <span className="text-muted-foreground">
-                              Alcance: <span className="font-medium text-foreground">{notam.scope}</span>
-                            </span>
-                          )}
-                          {notam.qCode && (
-                            <span className="text-muted-foreground">
-                              Q-code: <span className="font-mono text-foreground">{notam.qCode}</span>
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Vigencia */}
-                        <div className="flex items-start gap-2 text-xs">
-                          <CalendarClock className="size-4 text-muted-foreground mt-0.5 shrink-0" />
-                          <div className="min-w-0">
-                            <span className="text-muted-foreground">Vigencia: </span>
-                            <span className="font-medium">
-                              Desde: {new Date(notam.effectiveFrom).toLocaleString('es-PE', { dateStyle: 'short', timeStyle: 'medium', timeZone: 'UTC' })} UTC
-                              {notam.isPermanent
-                                ? ' → Permanente'
-                                : notam.effectiveTo
-                                ? ` → Hasta: ${new Date(notam.effectiveTo).toLocaleString('es-PE', { dateStyle: 'short', timeStyle: 'medium', timeZone: 'UTC' })} UTC`
-                                : ' → Sin fin'}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Coordinates / Limits */}
-                        {(notam.coordinates || notam.lowerLimit || notam.upperLimit) && (
-                          <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                            {notam.coordinates && (
-                              <span>Coord: <span className="font-mono text-foreground">{notam.coordinates}</span></span>
-                            )}
-                            {(notam.lowerLimit || notam.upperLimit) && (
-                              <span>Niveles: <span className="font-mono text-foreground">{notam.lowerLimit || 'SFC'} → {notam.upperLimit || 'UNL'}</span></span>
-                            )}
-                            {notam.radius && (
-                              <span>Radio: <span className="font-mono text-foreground">{notam.radius} NM</span></span>
-                            )}
-                          </div>
-                        )}
-
-                        {/* Parsed fields Q/A/B/C/D/E */}
-                        {Object.keys(notam.fields).length > 0 && (
-                          <div className="rounded-md bg-muted/50 p-2 text-xs">
-                            <p className="text-muted-foreground mb-1">Campos OACI parseados (referenciales):</p>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
-                              {['Q', 'A', 'B', 'C', 'D', 'E'].map((k) =>
-                                notam.fields[k] ? (
-                                  <div key={k} className="flex gap-1.5">
-                                    <span className="font-mono font-semibold text-amber-700 dark:text-amber-400">{k})</span>
-                                    <span className="break-words">{notam.fields[k]}</span>
-                                  </div>
-                                ) : null
-                              )}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Raw OACI text */}
+                        {/* TEXTO CRUDO OACI — único contenido mostrado.
+                            Se presenta EXACTAMENTE como lo emite la fuente (FAA USNS en vivo
+                            o AIS Perú manual). Sin interpretación, sin campos parseados.
+                            Todos los campos OACI (Q, A, B, C, D, E) están incluidos en este texto. */}
                         <div>
                           <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
                             <AlertCircle className="size-3" />
