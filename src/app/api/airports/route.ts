@@ -56,22 +56,23 @@ export async function GET(request: NextRequest) {
   const search = searchParams.get('search')?.trim() || ''
   const department = searchParams.get('department')?.trim() || ''
 
-  // ─── Intento con Prisma (PostgreSQL en producción) ────────────────
-  // Si la BD no está disponible (p.ej. entorno local con SQLite pero
-  // schema postgresql, o DATABASE_URL inválida), caemos al listado
-  // estático extraído del AIP PERÚ para que la UI nunca se rompa.
+  // ─── Intento con Prisma ───────────────────────────────────────────
+  // Funciona tanto para PostgreSQL (producción) como SQLite (sandbox).
+  // Si la BD no está disponible o falla, caemos al listado estático
+  // extraído del AIP PERÚ para que la UI nunca se rompa.
   try {
-    if (process.env.DATABASE_URL && process.env.DATABASE_URL.startsWith('postgres')) {
+    if (process.env.DATABASE_URL) {
       const where: Record<string, unknown> = {}
       if (search) {
+        // SQLite no soporta 'insensitive', lo manejamos manualmente abajo
         where.OR = [
-          { city: { contains: search, mode: 'insensitive' } },
-          { name: { contains: search, mode: 'insensitive' } },
-          { icaoCode: { contains: search, mode: 'insensitive' } },
+          { city: { contains: search } },
+          { name: { contains: search } },
+          { icaoCode: { contains: search } },
         ]
       }
       if (department) {
-        where.department = { contains: department, mode: 'insensitive' }
+        where.department = { contains: department }
       }
 
       const airports = await db.airport.findMany({
@@ -95,11 +96,24 @@ export async function GET(request: NextRequest) {
         ],
       })
 
-      console.log(`[/api/airports] DB OK ${airports.length} airports in ${Date.now() - startedAt}ms`)
-      return NextResponse.json(airports)
+      // Filtro case-insensitive manual para SQLite (no soporta mode: 'insensitive')
+      const filtered = search || department
+        ? airports.filter((a) => {
+            const s = search.toLowerCase()
+            const d = department.toLowerCase()
+            if (d && !(a.department || '').toLowerCase().includes(d)) return false
+            if (s) {
+              const hay = `${a.icaoCode} ${a.name} ${a.city}`.toLowerCase()
+              if (!hay.includes(s)) return false
+            }
+            return true
+          })
+        : airports
+
+      console.log(`[/api/airports] DB OK ${filtered.length} airports in ${Date.now() - startedAt}ms`)
+      return NextResponse.json(filtered)
     }
-    // DATABASE_URL no es postgres → saltamos directo al fallback estático
-    console.warn('[/api/airports] DATABASE_URL no es postgres, usando fallback estático')
+    console.warn('[/api/airports] Sin DATABASE_URL, usando fallback estático')
   } catch (error) {
     const errMsg = error instanceof Error ? error.message : String(error)
     console.warn('[/api/airports] Prisma falló, usando fallback estático:', errMsg)
