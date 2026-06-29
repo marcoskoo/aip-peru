@@ -364,19 +364,19 @@ export function WeatherPanel({ icaoCode, showSelector = false }: WeatherPanelPro
         </CardContent>
       </Card>
 
-      {/* SPECI Card — Reportes Especiales */}
-      {speci.length > 0 && (
-        <Card className="border-amber-300 dark:border-amber-700/60">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Zap className="size-5 text-amber-500" />
-                SPECI — {activeIcao}
-              </CardTitle>
-              <div className="flex items-center gap-2">
-                <Badge className="bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700 text-[10px] font-bold">
-                  {speci.length} REPORTE{speci.length !== 1 ? "S" : ""}
-                </Badge>
+      {/* SPECI Card — Reportes Especiales (siempre visible) */}
+      <Card className="border-amber-300 dark:border-amber-700/60">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Zap className="size-5 text-amber-500" />
+              SPECI — {activeIcao}
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              <Badge className="bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700 text-[10px] font-bold">
+                {speci.length} REPORTE{speci.length !== 1 ? "S" : ""}
+              </Badge>
+              {speci.length > 0 && (
                 <Button
                   variant="ghost"
                   size="sm"
@@ -386,113 +386,119 @@ export function WeatherPanel({ icaoCode, showSelector = false }: WeatherPanelPro
                   {showSpeciDetails ? <ChevronUp className="size-3" /> : <ChevronDown className="size-3" />}
                   {showSpeciDetails ? "Contraer" : "Expandir"}
                 </Button>
-              </div>
+              )}
             </div>
-            <p className="text-xs text-muted-foreground">
-              Reportes especiales emitidos por cambios significativos en las condiciones meteorológicas (últimas 3 h)
-            </p>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {showSpeciDetails && (
-              <div className="max-h-80 overflow-y-auto space-y-2 pr-1">
-                {speci.map((s, i) => {
-                  const sCat = getFlightCategoryConfig(s.flightCategory)
-                  return (
-                    <motion.div
-                      key={i}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: Math.min(i * 0.05, 0.3) }}
-                      className="rounded-lg border border-amber-200 dark:border-amber-800/40 bg-amber-50/50 dark:bg-amber-950/10 p-3 space-y-2"
-                    >
-                      <div className="flex items-center justify-between gap-2 flex-wrap">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <Badge variant="outline" className="text-[10px] font-mono border-amber-400 dark:border-amber-600 text-amber-700 dark:text-amber-300">
-                            SPECI
-                          </Badge>
-                          <span className="text-xs text-muted-foreground font-medium">
-                            {formatWeatherTime(s.time)}
-                          </span>
-                          {s.auto && (
-                            <Badge variant="outline" className="text-[9px] h-4">AUTO</Badge>
-                          )}
-                          {s.cavok && (
-                            <Badge className="bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 text-[9px] h-4 px-1">
-                              CAVOK
-                            </Badge>
-                          )}
-                        </div>
-                        <Badge className={`${sCat.bg} ${sCat.text} border ${sCat.border} text-[9px] h-4 px-1.5 font-bold`}>
-                          {sCat.label}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Reportes especiales emitidos por cambios significativos en las condiciones meteorológicas (últimas 3 h)
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {speci.length === 0 ? (
+            <div className="flex items-center gap-2 py-3 text-sm text-muted-foreground">
+              <Cloud className="size-4 text-emerald-500 shrink-0" />
+              <span>
+                <span className="font-medium text-emerald-700 dark:text-emerald-400">Sin reportes SPECI</span> en las últimas 3 horas — Condiciones estables
+              </span>
+            </div>
+          ) : showSpeciDetails ? (
+            <div className="max-h-80 overflow-y-auto space-y-2 pr-1">
+              {speci.map((s, i) => {
+                const sCat = getFlightCategoryConfig(s.flightCategory)
+                return (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: Math.min(i * 0.05, 0.3) }}
+                    className="rounded-lg border border-amber-200 dark:border-amber-800/40 bg-amber-50/50 dark:bg-amber-950/10 p-3 space-y-2"
+                  >
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Badge variant="outline" className="text-[10px] font-mono border-amber-400 dark:border-amber-600 text-amber-700 dark:text-amber-300">
+                          SPECI
                         </Badge>
+                        <span className="text-xs text-muted-foreground font-medium">
+                          {formatWeatherTime(s.time)}
+                        </span>
+                        {s.auto && (
+                          <Badge variant="outline" className="text-[9px] h-4">AUTO</Badge>
+                        )}
+                        {s.cavok && (
+                          <Badge className="bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 text-[9px] h-4 px-1">
+                            CAVOK
+                          </Badge>
+                        )}
                       </div>
-                      <div className="flex flex-wrap gap-3 text-xs">
-                        <span className="flex items-center gap-1">
-                          <Wind className="size-3 text-muted-foreground" />
-                          <span className="font-medium">
-                            {s.wind.variable ? "VRB" : `${s.wind.direction}°`} {s.wind.speed} kt
-                            {s.wind.gust && ` G${s.wind.gust}`}
-                          </span>
+                      <Badge className={`${sCat.bg} ${sCat.text} border ${sCat.border} text-[9px] h-4 px-1.5 font-bold`}>
+                        {sCat.label}
+                      </Badge>
+                    </div>
+                    <div className="flex flex-wrap gap-3 text-xs">
+                      <span className="flex items-center gap-1">
+                        <Wind className="size-3 text-muted-foreground" />
+                        <span className="font-medium">
+                          {s.wind.variable ? "VRB" : `${s.wind.direction}°`} {s.wind.speed} kt
+                          {s.wind.gust && ` G${s.wind.gust}`}
                         </span>
-                        <span className="flex items-center gap-1">
-                          <Eye className="size-3 text-muted-foreground" />
-                          <span className="font-medium">
-                            {s.visibility.value >= 9999 ? ">10 km" : `${s.visibility.value} ${s.visibility.unit}`}
-                          </span>
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Eye className="size-3 text-muted-foreground" />
+                        <span className="font-medium">
+                          {s.visibility.value >= 9999 ? ">10 km" : `${s.visibility.value} ${s.visibility.unit}`}
                         </span>
-                        <span className="flex items-center gap-1">
-                          <Thermometer className="size-3 text-muted-foreground" />
-                          <span className="font-medium">{s.temperature}°C</span>
-                          <span className="text-muted-foreground">/ {s.dewpoint}°C</span>
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Gauge className="size-3 text-muted-foreground" />
-                          <span className="font-medium">{s.qnh} hPa</span>
-                        </span>
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Thermometer className="size-3 text-muted-foreground" />
+                        <span className="font-medium">{s.temperature}°C</span>
+                        <span className="text-muted-foreground">/ {s.dewpoint}°C</span>
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Gauge className="size-3 text-muted-foreground" />
+                        <span className="font-medium">{s.qnh} hPa</span>
+                      </span>
+                    </div>
+                    {s.clouds.length > 0 && (
+                      <div className="flex flex-wrap gap-2 text-xs">
+                        {s.clouds.map((cloud, ci) => {
+                          const CloudIcon = getCloudIcon(cloud.quantity)
+                          return (
+                            <span key={ci} className="flex items-center gap-1">
+                              <CloudIcon className="size-3 text-muted-foreground" />
+                              <span className="font-medium">{getCloudLabel(cloud.quantity)}</span>
+                              <span className="text-muted-foreground">{cloud.height * 100} ft</span>
+                              {cloud.type && (
+                                <Badge variant="outline" className="text-[9px] h-4 px-1">{cloud.type}</Badge>
+                              )}
+                            </span>
+                          )
+                        })}
                       </div>
-                      {s.clouds.length > 0 && (
-                        <div className="flex flex-wrap gap-2 text-xs">
-                          {s.clouds.map((cloud, ci) => {
-                            const CloudIcon = getCloudIcon(cloud.quantity)
-                            return (
-                              <span key={ci} className="flex items-center gap-1">
-                                <CloudIcon className="size-3 text-muted-foreground" />
-                                <span className="font-medium">{getCloudLabel(cloud.quantity)}</span>
-                                <span className="text-muted-foreground">{cloud.height * 100} ft</span>
-                                {cloud.type && (
-                                  <Badge variant="outline" className="text-[9px] h-4 px-1">{cloud.type}</Badge>
-                                )}
-                              </span>
-                            )
-                          })}
-                        </div>
-                      )}
-                      {s.weather && s.weather.length > 0 && (
-                        <div className="flex flex-wrap gap-1">
-                          {s.weather.map((w, wi) => (
-                            <Badge key={wi} variant="outline" className="text-[9px] h-4 px-1 gap-0.5">
-                              {getWeatherIcon(w)}
-                              {w}
-                            </Badge>
-                          ))}
-                        </div>
-                      )}
-                      <div className="bg-muted/40 dark:bg-muted/20 rounded-md p-2 mt-1">
-                        <p className="text-[11px] font-mono text-muted-foreground break-all">{s.raw}</p>
+                    )}
+                    {s.weather && s.weather.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {s.weather.map((w, wi) => (
+                          <Badge key={wi} variant="outline" className="text-[9px] h-4 px-1 gap-0.5">
+                            {getWeatherIcon(w)}
+                            {w}
+                          </Badge>
+                        ))}
                       </div>
-                    </motion.div>
-                  )
-                })}
-              </div>
-            )}
-            {!showSpeciDetails && (
-              <div className="text-xs text-muted-foreground italic">
-                {speci.length} reporte{speci.length !== 1 ? "s" : ""} especial{speci.length !== 1 ? "es" : ""} en las últimas 3 horas — Expanda para ver detalles
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
+                    )}
+                    <div className="bg-muted/40 dark:bg-muted/20 rounded-md p-2 mt-1">
+                      <p className="text-[11px] font-mono text-muted-foreground break-all">{s.raw}</p>
+                    </div>
+                  </motion.div>
+                )
+              })}
+            </div>
+          ) : (
+            <div className="text-xs text-muted-foreground italic">
+              {speci.length} reporte{speci.length !== 1 ? "s" : ""} especial{speci.length !== 1 ? "es" : ""} en las últimas 3 horas — Expanda para ver detalles
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* TAF Card */}
       {taf && (
@@ -509,10 +515,17 @@ export function WeatherPanel({ icaoCode, showSelector = false }: WeatherPanelPro
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
-            {taf.periods.map((period, i) => {
+            {taf.periods.length === 0 ? (
+              <div className="text-xs text-muted-foreground italic py-2">
+                No se pudieron parsear los períodos del TAF. Vea el TAF crudo para referencia.
+              </div>
+            ) : taf.periods.map((period, i) => {
               const periodCat = period.flightCategory
                 ? getFlightCategoryConfig(period.flightCategory)
                 : null
+
+              const periodLabel = period.type === "BASE" ? "BASE" : period.type
+              const isBase = period.type === "BASE"
 
               return (
                 <motion.div
@@ -520,10 +533,21 @@ export function WeatherPanel({ icaoCode, showSelector = false }: WeatherPanelPro
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.05 }}
-                  className="flex items-start gap-3 p-3 rounded-lg bg-muted/20 hover:bg-muted/30 transition-colors"
+                  className={`flex items-start gap-3 p-3 rounded-lg transition-colors ${
+                    isBase
+                      ? "bg-amber-50/50 dark:bg-amber-950/10 border border-amber-200/50 dark:border-amber-800/30"
+                      : "bg-muted/20 hover:bg-muted/30"
+                  }`}
                 >
-                  <Badge variant="outline" className="text-[10px] shrink-0 mt-0.5 min-w-[52px] justify-center">
-                    {period.type}
+                  <Badge
+                    variant="outline"
+                    className={`text-[10px] shrink-0 mt-0.5 min-w-[52px] justify-center font-bold ${
+                      isBase
+                        ? "border-amber-400 dark:border-amber-600 text-amber-700 dark:text-amber-300 bg-amber-100/50 dark:bg-amber-950/30"
+                        : ""
+                    }`}
+                  >
+                    {periodLabel}
                     {period.probability && ` ${period.probability}%`}
                   </Badge>
                   <div className="flex-1 min-w-0 space-y-1">

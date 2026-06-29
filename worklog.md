@@ -5105,3 +5105,70 @@ Stage Summary:
 - Tarjeta SPECI solo aparece cuando hay reportes especiales (no muestra tarjeta vacía)
 - SPECI muestra datos decodificados completos + raw + flight category + badges AUTO/CAVOK
 - Verificado con Agent Browser + VLM: SPECI card renderiza correctamente con todos los datos
+
+---
+Task ID: 22-FIX-REVISAR
+Agent: Main Agent
+Task: User reported "no funciona, revisar todo funcione como se dese y que la información este donde debe de estar" — Investigar y corregir todos los problemas.
+
+Work Log:
+- Verifiqué el estado del dev server (corriendo, HTTP 200) y revisé dev.log
+- Usé Agent Browser + VLM para inspeccionar la página de inicio, el panel de clima, el mapa interactivo y el plan de vuelo
+- Encontré 3 problemas:
+  1. **Parser TAF roto**: devolvía 0 períodos → la tarjeta TAF se veía vacía
+  2. **SPECI card no se mostraba cuando estaba vacía**: el usuario no podía ver que la función existía
+  3. **El bloque base del TAF se saltaba** completamente (solo procesaba FM/TEMPO/BECMG/PROB)
+
+Fix 1 — Parser TAF reescrito (src/app/api/weather/[icaoCode]/route.ts):
+- Causa raíz: el parser buscaba `part === "FM"` pero el formato TAF usa `FM291730` (un solo token FM+DDHHMM)
+- Reescribí completamente parseTafPeriods con un diseño limpio:
+  * Nuevas helpers: `tafTimeToISO()`, `parseValidityRange()`, `parseWeatherBlock()` (DRY — antes el código de parsear viento/vis/wx/clouds estaba duplicado 4 veces)
+  * `parseWeatherBlock()` ahora también acepta MPS/KMH (no solo KT), visibilidad en SM, CAVOK, y nubes tipo VV (vertical visibility)
+  * Saltar prefijo "TAF" o "TAF AMD" / "TAF COR" correctamente
+  * Parsear el **bloque base** (initial forecast) como un período tipo "BASE" con su rango de validez DDHH/DDHH
+  * Saltar tokens TX../TN.. (temperaturas max/min) del bloque base
+  * Detectar `FM\d{6}` con regex (no `=== "FM"`) para capturar FMDDHHMM
+  * Detectar `PROB\d{2}` con regex (no `startsWith("PROB")`) para mayor precisión
+- Verifiqué: SPJC ahora devuelve 3 períodos (BASE + 2 FM) con viento, visibilidad, nubes y flight category
+
+Fix 2 — SPECI card siempre visible (src/components/weather-panel.tsx):
+- Antes: `{speci.length > 0 && (<Card>...)}` → no se mostraba cuando no había SPECI
+- Ahora: la tarjeta SPECI siempre se renderiza
+  * Cuando hay 0 SPECI: muestra mensaje "Sin reportes SPECI en las últimas 3 horas — Condiciones estables" con icono Cloud verde
+  * El badge "0 REPORTES" siempre se muestra para indicar el estado
+  * El botón Contraer/Expandir solo aparece cuando hay SPECI que ver
+- Verifiqué con VLM: SPJC muestra "0 REPORTES" + "Sin reportes SPECI — Condiciones estables"
+
+Fix 3 — TAF period "BASE" display:
+- Añadí manejo del tipo "BASE" en la tarjeta TAF:
+  * Badge "BASE" con estilo ámbar distintivo (border-amber-400, bg-amber-100/50)
+  * Fondo del período base con borde ámbar claro para distinguirlo de FM/TEMPO/BECMG
+  * Mensaje "No se pudieron parsear los períodos del TAF" como fallback si periods.length === 0
+
+Verificación con Agent Browser + VLM:
+- Página de inicio: 33 aeródromos, navegación sin "Carta Aeronáutica" ✓
+- SPJC → Clima tab:
+  * METAR card: viento 180° 10 kt, vis >10 km, temp 22°C, QNH 1013 hPa, nubes SCT 2500 ft + BKN 4000 ft ✓
+  * SPECI card: "0 REPORTES" + "Sin reportes SPECI en las últimas 3 horas — Condiciones estables" ✓
+  * TAF card: 3 períodos (BASE 29-jun 12:00 → 30-jun 12:00, FM 29-jun 17:30, FM 30-jun 05:00) con viento/vis/nubes ✓
+  * Footer visible al pie ✓
+- SPECI con datos (inyecté 2 SPECI de prueba vía fetch interception):
+  * Badge "2 REPORTES" ✓
+  * 2 reportes SPECI con detalles completos (viento, vis, temp, QNH, nubes, fenómenos -RA) ✓
+  * Primer SPECI: IFR (vis 4000 m, BKN 800 ft), Segundo SPECI: MVFR (vis 6000 m, BKN 2500 ft) ✓
+  * Raw text visible ✓
+  * Botón "Contraer" ✓
+- Mapa Interactivo: renderiza con tiles, marcadores, panel de capas ✓
+- Plan de Vuelo: formulario ICAO visible ✓
+- Sección Rutas: botón "Ver en Carta" ya no aparece ✓
+- Sin errores de consola ni de runtime
+- Lint: bun run lint exit 0 (clean)
+
+Stage Summary:
+- 2 archivos modificados:
+  * src/app/api/weather/[icaoCode]/route.ts — parser TAF reescrito completamente (helpers DRY + bloque BASE + regex FM\d{6} + soporte MPS/KMH/SM/CAVOK/VV)
+  * src/components/weather-panel.tsx — SPECI card siempre visible con mensaje "Sin reportes" cuando vacía + estilo distintivo para período BASE del TAF + mensaje fallback si TAF no tiene períodos
+- TAF ahora parsea correctamente: BASE + FM + TEMPO + BECMG + PROB
+- SPECI card siempre visible (0 REPORTES → "Condiciones estables"; N REPORTES → lista con detalles)
+- "Carta Aeronáutica" totalmente eliminada (navegación + botón "Ver en Carta")
+- Todas las secciones verificadas funcionando con Agent Browser + VLM

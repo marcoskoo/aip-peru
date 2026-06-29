@@ -242,201 +242,219 @@ function parseMetar(raw: string): ParsedMetar {
 
 // ─── Simple TAF Period Parser ────────────────────────────────────
 
+// Convierte "DDHH" o "DDHHMM" a ISO string (usa el mes/año actual)
+function tafTimeToISO(timeStr: string): string {
+  const now = new Date()
+  const day = parseInt(timeStr.substring(0, 2)) || now.getUTCDate()
+  const hour = parseInt(timeStr.substring(2, 4)) || 0
+  const minute = parseInt(timeStr.substring(4, 6)) || 0
+  return new Date(Date.UTC(now.getFullYear(), now.getMonth(), day, hour, minute)).toISOString()
+}
+
+// Parsea un rango de validez "DDHH/DDHH"
+function parseValidityRange(timeGroup: string): { from: string; to: string } {
+  if (!timeGroup?.includes("/")) return { from: "", to: "" }
+  const [fromStr, toStr] = timeGroup.split("/")
+  return { from: tafTimeToISO(fromStr), to: tafTimeToISO(toStr) }
+}
+
+// Extrae viento, visibilidad, fenómenos y nubes de una secuencia de tokens.
+// Devuelve el nuevo índice y los datos parseados.
+function parseWeatherBlock(parts: string[], startIdx: number): {
+  idx: number
+  wind?: TafPeriod["wind"]
+  visibility?: TafPeriod["visibility"]
+  weather?: string[]
+  clouds?: TafPeriod["clouds"]
+  flightCategory?: "VFR" | "MVFR" | "IFR" | "LIFR"
+} {
+  let idx = startIdx
+  let ceiling: number | null = null
+  const result: {
+    wind?: TafPeriod["wind"]
+    visibility?: TafPeriod["visibility"]
+    weather?: string[]
+    clouds?: TafPeriod["clouds"]
+    flightCategory?: "VFR" | "MVFR" | "IFR" | "LIFR"
+  } = {}
+
+  // Viento — acepta KT, MPS, KMH o sin unidad
+  const windMatch = parts[idx]?.match(/^(\d{3}|VRB)(\d{2,3})(G(\d{2,3}))?(KT|MPS|KMH)?$/)
+  if (windMatch && (windMatch[5] || /^\d{3}|VRB/.test(windMatch[1]))) {
+    // Solo consumir si parece viento (3 dígitos o VRB al inicio) y va seguido de unidad o más datos
+    if (windMatch[5] === "KT" || windMatch[5] === "MPS" || windMatch[5] === "KMH" || windMatch[1] === "VRB") {
+      result.wind = {
+        direction: windMatch[1] === "VRB" ? 0 : parseInt(windMatch[1]),
+        speed: parseInt(windMatch[2]),
+        gust: windMatch[4] ? parseInt(windMatch[4]) : undefined,
+      }
+      idx++
+    }
+  }
+
+  // Visibilidad
+  const vis = parts[idx]
+  if (vis === "9999" || /^\d{4}$/.test(vis || "")) {
+    result.visibility = { value: parseInt(vis), unit: "m" }
+    idx++
+  } else if (/^\d+SM$/.test(vis || "")) {
+    result.visibility = { value: parseInt(vis) * 1609, unit: "m" }
+    idx++
+  } else if (vis === "CAVOK") {
+    result.visibility = { value: 9999, unit: "m" }
+    idx++
+  }
+
+  // Fenómenos meteorológicos
+  const wx: string[] = []
+  while (/^([+-]?)(TS|SH|FZ|BL|DR|MI|BC|PR|VC)?(DZ|RA|SN|SG|IC|PL|GR|GS|UP|BR|FG|FU|VA|DU|SA|HZ|PY|PO|SQ|FC|SS|DS|WC|WK)$/.test(parts[idx] || "")) {
+    wx.push(parts[idx])
+    idx++
+  }
+
+  // Nubes
+  const clouds: TafPeriod["clouds"] = []
+  while (/^(SKC|CLR|FEW|SCT|BKN|OVC|NSC|NCD|VV)(\d{3})(CB|TCU|ACC)?$/i.test(parts[idx] || "")) {
+    const match = parts[idx].match(/^(SKC|CLR|FEW|SCT|BKN|OVC|NSC|NCD|VV)(\d{3})(CB|TCU|ACC)?$/i)!
+    const height = parseInt(match[2])
+    const quantity = match[1].toUpperCase()
+    clouds.push({ quantity, height, type: match[3] })
+    if (["BKN", "OVC"].includes(quantity)) {
+      ceiling = height * 100
+    }
+    idx++
+  }
+
+  if (wx.length > 0) result.weather = wx
+  if (clouds.length > 0) result.clouds = clouds
+  if (result.visibility) {
+    result.flightCategory = getFlightCategory(result.visibility.value, ceiling)
+  }
+
+  return { idx, ...result }
+}
+
 function parseTafPeriods(raw: string): TafPeriod[] {
   const periods: TafPeriod[] = []
   const parts = raw.trim().split(/\s+/)
 
-  // Skip TAF header and ICAO/time.
-  // NO consumir el primer keyword (FM/TEMPO/BECMG/PROB) aquí —
-  // el segundo while lo procesará como primer período.
   let idx = 0
-  while (idx < parts.length && !/^(FM|TEMPO|BECMG|PROB)/.test(parts[idx])) {
+
+  // Saltar prefijo "TAF" o "TAF AMD" / "TAF COR"
+  if (parts[idx] === "TAF") {
+    idx++
+    if (parts[idx] === "AMD" || parts[idx] === "COR") idx++
+  }
+
+  // ICAO code (4 letras)
+  if (/^[A-Z]{4}$/.test(parts[idx] || "")) idx++
+
+  // Issue time: DDHHMMZ
+  if (/^\d{6}Z$/.test(parts[idx] || "")) idx++
+
+  // Validity period: DDHH/DDHH
+  let baseFrom = ""
+  let baseTo: string | undefined
+  if (/^\d{4}\/\d{4}$/.test(parts[idx] || "")) {
+    const range = parseValidityRange(parts[idx])
+    baseFrom = range.from
+    baseTo = range.to
     idx++
   }
 
+  // ─── Bloque base (initial forecast) ───────────────────────────
+  // El TAF siempre tiene un pronóstico base antes del primer FM/TEMPO/BECMG/PROB.
+  // Contiene viento, visibilidad, fenómenos, nubes y temperaturas max/min (TX/TN).
+  const basePeriod: TafPeriod = { type: "BASE", from: baseFrom, to: baseTo }
+  const baseBlock = parseWeatherBlock(parts, idx)
+  idx = baseBlock.idx
+  if (baseBlock.wind) basePeriod.wind = baseBlock.wind
+  if (baseBlock.visibility) basePeriod.visibility = baseBlock.visibility
+  if (baseBlock.weather) basePeriod.weather = baseBlock.weather
+  if (baseBlock.clouds) basePeriod.clouds = baseBlock.clouds
+  if (baseBlock.flightCategory) basePeriod.flightCategory = baseBlock.flightCategory
+
+  // Saltar temperaturas max/min (TX24/2919Z, TN21/3011Z) y otros tokens del bloque base
+  // hasta encontrar el primer cambio (FM/TEMPO/BECMG/PROB)
+  while (idx < parts.length) {
+    const p = parts[idx]
+    if (/^FM\d{6}$/.test(p)) break
+    if (p === "TEMPO" || p === "BECMG") break
+    if (/^PROB\d{2}$/.test(p)) break
+    idx++
+  }
+
+  // Solo añadir el período base si tiene datos meteorológicos
+  if (basePeriod.wind || basePeriod.visibility || basePeriod.clouds) {
+    periods.push(basePeriod)
+  }
+
+  // ─── Períodos de cambio (FM/TEMPO/BECMG/PROB) ────────────────
   while (idx < parts.length) {
     const part = parts[idx]
 
-    if (part === "TEMPO" || part === "BECMG") {
-      const type = part
-      idx++
-      const timeGroup = parts[idx]
+    // FMDDHHMM — "From" change group (ej: FM291730 = desde día 29, 17:30)
+    if (/^FM\d{6}$/.test(part)) {
+      const timeStr = part.substring(2) // DDHHMM
+      const from = tafTimeToISO(timeStr)
       idx++
 
+      const period: TafPeriod = { type: "FM", from }
+      const block = parseWeatherBlock(parts, idx)
+      idx = block.idx
+      if (block.wind) period.wind = block.wind
+      if (block.visibility) period.visibility = block.visibility
+      if (block.weather) period.weather = block.weather
+      if (block.clouds) period.clouds = block.clouds
+      if (block.flightCategory) period.flightCategory = block.flightCategory
+
+      periods.push(period)
+    } else if (part === "TEMPO" || part === "BECMG") {
+      const type = part
+      idx++
+
+      // Rango de validez DDHH/DDHH
       let from = ""
       let to: string | undefined
-      if (timeGroup?.includes("/")) {
-        const [fromStr, toStr] = timeGroup.split("/")
-        const now = new Date()
-        const day = parseInt(fromStr.substring(0, 2))
-        const hour = parseInt(fromStr.substring(2, 4))
-        from = new Date(Date.UTC(now.getFullYear(), now.getMonth(), day, hour)).toISOString()
-        const toDay = parseInt(toStr.substring(0, 2))
-        const toHour = parseInt(toStr.substring(2, 4))
-        to = new Date(Date.UTC(now.getFullYear(), now.getMonth(), toDay, toHour)).toISOString()
+      if (/^\d{4}\/\d{4}$/.test(parts[idx] || "")) {
+        const range = parseValidityRange(parts[idx])
+        from = range.from
+        to = range.to
+        idx++
       }
 
       const period: TafPeriod = { type, from, to }
-      let ceiling: number | null = null
-
-      const windMatch = parts[idx]?.match(/^(\d{3}|VRB)(\d{2,3})(G(\d{2,3}))?KT$/)
-      if (windMatch) {
-        period.wind = {
-          direction: windMatch[1] === "VRB" ? 0 : parseInt(windMatch[1]),
-          speed: parseInt(windMatch[2]),
-          gust: windMatch[4] ? parseInt(windMatch[4]) : undefined,
-        }
-        idx++
-      }
-
-      const vis = parts[idx]
-      if (/^\d{4}$/.test(vis) || vis === "9999") {
-        period.visibility = { value: parseInt(vis), unit: "m" }
-        idx++
-      }
-
-      const wx: string[] = []
-      while (/^([+-]?)(TS|SH|FZ|BL|DR|MI|BC|PR|VC)?(DZ|RA|SN|SG|IC|PL|GR|GS|UP|BR|FG|FU|VA|DU|SA|HZ|PY|PO|SQ|FC|SS|DS)$/.test(parts[idx] || "")) {
-        wx.push(parts[idx])
-        idx++
-      }
-
-      const clouds: TafPeriod["clouds"] = []
-      while (/^(SKC|CLR|FEW|SCT|BKN|OVC|NSC|NCD)(\d{3})(CB|TCU|ACC)?$/i.test(parts[idx] || "")) {
-        const match = parts[idx].match(/^(SKC|CLR|FEW|SCT|BKN|OVC|NSC|NCD)(\d{3})(CB|TCU|ACC)?$/i)!
-        const height = parseInt(match[2])
-        const quantity = match[1].toUpperCase()
-        clouds.push({ quantity, height, type: match[3] })
-        if (["BKN", "OVC"].includes(quantity)) {
-          ceiling = height * 100
-        }
-        idx++
-      }
-
-      if (wx.length > 0) period.weather = wx
-      if (clouds.length > 0) period.clouds = clouds
-      if (period.visibility) {
-        period.flightCategory = getFlightCategory(period.visibility.value, ceiling)
-      }
+      const block = parseWeatherBlock(parts, idx)
+      idx = block.idx
+      if (block.wind) period.wind = block.wind
+      if (block.visibility) period.visibility = block.visibility
+      if (block.weather) period.weather = block.weather
+      if (block.clouds) period.clouds = block.clouds
+      if (block.flightCategory) period.flightCategory = block.flightCategory
 
       periods.push(period)
-    } else if (part === "FM") {
-      idx++
-      const timeStr = parts[idx]
-      idx++
-
-      const now = new Date()
-      const day = parseInt(timeStr?.substring(0, 2) || "01")
-      const hour = parseInt(timeStr?.substring(2, 4) || "00")
-      const minute = parseInt(timeStr?.substring(4, 6) || "00")
-      const from = new Date(Date.UTC(now.getFullYear(), now.getMonth(), day, hour, minute)).toISOString()
-
-      const period: TafPeriod = { type: "FM", from }
-      let ceiling: number | null = null
-
-      const windMatch = parts[idx]?.match(/^(\d{3}|VRB)(\d{2,3})(G(\d{2,3}))?KT$/)
-      if (windMatch) {
-        period.wind = {
-          direction: windMatch[1] === "VRB" ? 0 : parseInt(windMatch[1]),
-          speed: parseInt(windMatch[2]),
-          gust: windMatch[4] ? parseInt(windMatch[4]) : undefined,
-        }
-        idx++
-      }
-
-      const vis = parts[idx]
-      if (/^\d{4}$/.test(vis) || vis === "9999") {
-        period.visibility = { value: parseInt(vis), unit: "m" }
-        idx++
-      }
-
-      const wx: string[] = []
-      while (/^([+-]?)(TS|SH|FZ|BL|DR|MI|BC|PR|VC)?(DZ|RA|SN|SG|IC|PL|GR|GS|UP|BR|FG|FU|VA|DU|SA|HZ|PY|PO|SQ|FC|SS|DS)$/.test(parts[idx] || "")) {
-        wx.push(parts[idx])
-        idx++
-      }
-
-      const clouds: TafPeriod["clouds"] = []
-      while (/^(SKC|CLR|FEW|SCT|BKN|OVC|NSC|NCD)(\d{3})(CB|TCU|ACC)?$/i.test(parts[idx] || "")) {
-        const match = parts[idx].match(/^(SKC|CLR|FEW|SCT|BKN|OVC|NSC|NCD)(\d{3})(CB|TCU|ACC)?$/i)!
-        const height = parseInt(match[2])
-        const quantity = match[1].toUpperCase()
-        clouds.push({ quantity, height, type: match[3] })
-        if (["BKN", "OVC"].includes(quantity)) {
-          ceiling = height * 100
-        }
-        idx++
-      }
-
-      if (wx.length > 0) period.weather = wx
-      if (clouds.length > 0) period.clouds = clouds
-      if (period.visibility) {
-        period.flightCategory = getFlightCategory(period.visibility.value, ceiling)
-      }
-
-      periods.push(period)
-    } else if (part?.startsWith("PROB")) {
+    } else if (/^PROB\d{2}$/.test(part || "")) {
       const prob = parseInt(part.replace("PROB", ""))
       idx++
 
-      const timeGroup = parts[idx]
-      idx++
-
+      // Puede tener rango de validez DDHH/DDHH
       let from = ""
       let to: string | undefined
-      if (timeGroup?.includes("/")) {
-        const [fromStr, toStr] = timeGroup.split("/")
-        const now = new Date()
-        const day = parseInt(fromStr.substring(0, 2))
-        const hour = parseInt(fromStr.substring(2, 4))
-        from = new Date(Date.UTC(now.getFullYear(), now.getMonth(), day, hour)).toISOString()
-        const toDay = parseInt(toStr.substring(0, 2))
-        const toHour = parseInt(toStr.substring(2, 4))
-        to = new Date(Date.UTC(now.getFullYear(), now.getMonth(), toDay, toHour)).toISOString()
+      if (/^\d{4}\/\d{4}$/.test(parts[idx] || "")) {
+        const range = parseValidityRange(parts[idx])
+        from = range.from
+        to = range.to
+        idx++
       }
 
       const period: TafPeriod = { type: "PROB", from, to, probability: prob }
-      let ceiling: number | null = null
-
-      const windMatch = parts[idx]?.match(/^(\d{3}|VRB)(\d{2,3})(G(\d{2,3}))?KT$/)
-      if (windMatch) {
-        period.wind = {
-          direction: windMatch[1] === "VRB" ? 0 : parseInt(windMatch[1]),
-          speed: parseInt(windMatch[2]),
-          gust: windMatch[4] ? parseInt(windMatch[4]) : undefined,
-        }
-        idx++
-      }
-
-      const vis = parts[idx]
-      if (/^\d{4}$/.test(vis) || vis === "9999") {
-        period.visibility = { value: parseInt(vis), unit: "m" }
-        idx++
-      }
-
-      const wx: string[] = []
-      while (/^([+-]?)(TS|SH|FZ|BL|DR|MI|BC|PR|VC)?(DZ|RA|SN|SG|IC|PL|GR|GS|UP|BR|FG|FU|VA|DU|SA|HZ|PY|PO|SQ|FC|SS|DS)$/.test(parts[idx] || "")) {
-        wx.push(parts[idx])
-        idx++
-      }
-
-      const clouds: TafPeriod["clouds"] = []
-      while (/^(SKC|CLR|FEW|SCT|BKN|OVC|NSC|NCD)(\d{3})(CB|TCU|ACC)?$/i.test(parts[idx] || "")) {
-        const match = parts[idx].match(/^(SKC|CLR|FEW|SCT|BKN|OVC|NSC|NCD)(\d{3})(CB|TCU|ACC)?$/i)!
-        const height = parseInt(match[2])
-        const quantity = match[1].toUpperCase()
-        clouds.push({ quantity, height, type: match[3] })
-        if (["BKN", "OVC"].includes(quantity)) {
-          ceiling = height * 100
-        }
-        idx++
-      }
-
-      if (wx.length > 0) period.weather = wx
-      if (clouds.length > 0) period.clouds = clouds
-      if (period.visibility) {
-        period.flightCategory = getFlightCategory(period.visibility.value, ceiling)
-      }
+      const block = parseWeatherBlock(parts, idx)
+      idx = block.idx
+      if (block.wind) period.wind = block.wind
+      if (block.visibility) period.visibility = block.visibility
+      if (block.weather) period.weather = block.weather
+      if (block.clouds) period.clouds = block.clouds
+      if (block.flightCategory) period.flightCategory = block.flightCategory
 
       periods.push(period)
     } else {
