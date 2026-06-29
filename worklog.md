@@ -4224,3 +4224,57 @@ Stage Summary:
 - AerodromeSelector (componente de búsqueda global) también se beneficia automáticamente del fix en /api/airports
 - Cero exposición de trazas técnicas al usuario final
 - Verificado con Agent Browser + VLM: contador "20 aeródromos encontrados", secciones Internacionales+Nacionales con cards, sin errores visibles
+
+---
+Task ID: 16-ADD-MISSING-AERODROMOS
+Agent: main (Z.ai Code)
+Task: Revisar código — el usuario reporta "faltan aeródromos" en la página de Aeródromos. La página mostraba solo 20 aeródromos (del fallback estático extraído del HTML AP array), pero la base de datos de producción (prisma/seed.ts) tiene 32.
+
+Work Log:
+- Comparé las fuentes de datos:
+  * HTML upload/aip-peru-v20-dragfix.html `var AP=[]`: 20 aeropuertos
+  * src/lib/aviation/peru-airports-static.ts (fallback): 20 aeropuertos (mismos que AP)
+  * prisma/seed.ts (seed de producción): 32 aeropuertos únicos
+- Diff: 13 aeródromos presentes en seed.ts pero FALTANTES en el fallback estático:
+  SPAS (Andoas), SPAY (Atalaya), SPEO (Chimbote), SPGM (Tingo María), SPHZ (Anta-Huaraz),
+  SPJA (Rioja), SPJE (Jaén), SPJI (Juanjuí), SPJJ (Jauja), SPLO (Ilo), SPME (Tumbes),
+  SPMF (Mazamari), SPZA (Nasca)
+- Escribí scripts/extract-missing-airports.mjs (parser Node ESM brace-aware):
+  * Localiza cada `icaoCode: "SPXX"` en seed.ts y parsea el objeto completo contando llaves (para no cortarse en objetos anidados como runways/declaredDistances/operatingHours)
+  * Dedupe por ICAO (algunos aparecen en múltiples createMany)
+  * Extrae: name, city, department, arpLatitude (DMS), arpLongitude (DMS), elevation ("X m / Y ft")
+  * Convierte DMS → decimal: soporta ° (U+00B0) y º (U+00BA), formatos DD°MM'SS.ss"H, DD°MM'H, DD°H
+  * Extrae elevación en pies con regex decimal-aware: /(\d+(?:\.\d+)?)\s*ft/i (fix para SPHZ "9015.2 ft" que antes capturaba "2")
+  * Infiere cert: INTERNACIONAL si el nombre lo contiene, sino NACIONAL
+  * Genera entradas TS en el formato exacto del archivo estático
+- Fix de bugs durante el desarrollo:
+  * Regex inicial `\{\s*icaoCode...[\s\S]*?\n\s*\}` cortaba en la primera `}` anidada → reescrito con parser brace-aware manual
+  * DMS con º (ordinal) en SPJA/SPGM no parseaba → añadí .replace(/º/g, '°') para normalizar
+  * elevFt regex `(\d+)\s*ft` capturaba "2" de "9015.2 ft" → cambié a `(\d+(?:\.\d+)?)\s*ft` con Math.round
+- Inserté las 13 entradas en src/lib/aviation/peru-airports-static.ts antes del `]` de cierre del array PERUVIAN_AIRPORTS (total: 20 + 13 = 33 aeropuertos)
+- Normalicé nombres de departamento a Title Case:
+  * Los 13 nuevos venían de seed.ts con dept en UPPERCASE (LORETO, ANCASH, JUNÍN, etc.)
+  * Los 20 originales usaban Title Case (Loreto, Ancash, Junín, etc.)
+  * Esto causaba duplicados en el dropdown de departamentos ("LORETO" + "Loreto")
+  * Script Python normalizó los 13 deptos UPPERCASE → Title Case (22 deptos únicos sin duplicados)
+
+- VERIFICACIÓN:
+  * GET /api/airports: 33 aeropuertos (12 internacionales + 21 nacionales) ✓
+  * Lista completa incluye los 13 nuevos: SPAS, SPAY, SPEO, SPGM, SPHZ, SPJA, SPJE, SPJI, SPJJ, SPLO, SPME, SPMF, SPZA ✓
+  * Agent Browser: "33 aeródromos encontrados" ✓ (antes era 20)
+  * Dropdown departamentos: 22 opciones únicas sin duplicados ✓
+  * Búsqueda "nasca": "1 aeródromo encontrado" (SPZA María Reiche Neuman) ✓
+  * Secciones AEROPUERTOS INTERNACIONALES + AEROPUERTOS NACIONALES visibles ✓
+  * VLM confirmó: "33, No [error], Sí [aeropuertos nuevos visibles], Sí [secciones]" ✓
+  * Screenshot: aerodromos-33-final.png
+  * Lint: bun run lint clean (exit 0)
+
+Stage Summary:
+- 2 archivos creados/modificados:
+  * scripts/extract-missing-airports.mjs (parser Node ESM brace-aware, 155 líneas) — extrae aeródromos de seed.ts que faltan en el fallback estático
+  * src/lib/aviation/peru-airports-static.ts — añadidos 13 aeródromos (SPAS, SPAY, SPEO, SPGM, SPHZ, SPJA, SPJE, SPJI, SPJJ, SPLO, SPME, SPMF, SPZA) con coordenadas DMS→decimal verificadas y deptos normalizados a Title Case
+- Total aeropuertos en fallback estático: 33 (antes 20, +13 nuevos)
+- La página de Aeródromos ahora muestra los 33 aeródromos del sistema AIP PERÚ (32 de seed.ts + SPIM Jorge Chávez del HTML AP)
+- Dropdown de departamentos: 22 opciones únicas (antes 18, sin duplicados UPPERCASE/Title)
+- Coordenadas convertidas de DMS (formato AIP) a decimal con precisión de 6+ decimales
+- Verificado con Agent Browser + VLM: 33 aeródromos, sin errores, secciones correctas, búsqueda funcional

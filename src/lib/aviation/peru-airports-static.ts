@@ -341,5 +341,135 @@ export const PERUVIAN_AIRPORTS: PeruvianAirport[] = [
     "transLvl": "FL230",
     "cert": "NACIONAL",
     "aftn": "SPNC"
-  }
+  },
+  {
+    "icao": "SPAS",
+    "name": "ANDOAS",
+    "city": "ANDOAS",
+    "dept": "Loreto",
+    "lat": -2.796108333333333,
+    "lng": -76.46659722222222,
+    "elev": 728,
+    "cert": "NACIONAL"
+  },
+  {
+    "icao": "SPHZ",
+    "name": "COMANDANTE FAP GERMÁN ARIAS GRAZIANI",
+    "city": "ANTA HUARAZ",
+    "dept": "Ancash",
+    "lat": -9.360555555555555,
+    "lng": -77.59388888888888,
+    "elev": 9015,
+    "cert": "NACIONAL"
+  },
+  {
+    "icao": "SPAY",
+    "name": "ATALAYA",
+    "city": "ATALAYA",
+    "dept": "Ucayali",
+    "lat": -10.72861111111111,
+    "lng": -73.76611111111112,
+    "elev": 1900,
+    "cert": "NACIONAL"
+  },
+  {
+    "icao": "SPEO",
+    "name": "TENIENTE FAP JAIME A. DE MONTREUIL MORALES",
+    "city": "CHIMBOTE",
+    "dept": "Ancash",
+    "lat": -9.151166666666667,
+    "lng": -78.52383333333333,
+    "elev": 69,
+    "cert": "NACIONAL"
+  },
+  {
+    "icao": "SPJE",
+    "name": "FERNANDO BELAÚNDE TERRY",
+    "city": "JAÉN",
+    "dept": "Cajamarca",
+    "lat": -5.591388888888889,
+    "lng": -78.7713888888889,
+    "elev": 2477,
+    "cert": "NACIONAL"
+  },
+  {
+    "icao": "SPJJ",
+    "name": "FRANCISCO CARLÉ",
+    "city": "JAUJA",
+    "dept": "Junín",
+    "lat": -11.783388888888888,
+    "lng": -75.47336111111112,
+    "elev": 11034,
+    "cert": "NACIONAL"
+  },
+  {
+    "icao": "SPJI",
+    "name": "JUANJUÍ",
+    "city": "JUANJUÍ",
+    "dept": "San Martín",
+    "lat": -7.169722222222222,
+    "lng": -76.72916666666667,
+    "elev": 1148,
+    "cert": "NACIONAL"
+  },
+  {
+    "icao": "SPMF",
+    "name": "MAYOR PNP NANCY FLORES PÁUCAR",
+    "city": "MAZAMARI",
+    "dept": "Junín",
+    "lat": -11.325516666666667,
+    "lng": -74.53582777777778,
+    "elev": 2180,
+    "cert": "NACIONAL"
+  },
+  {
+    "icao": "SPJA",
+    "name": "AERÓDROMO RIOJA",
+    "city": "RIOJA",
+    "dept": "San Martín",
+    "lat": -6.0677916666666665,
+    "lng": -77.15980555555556,
+    "elev": 2707,
+    "cert": "NACIONAL"
+  },
+  {
+    "icao": "SPGM",
+    "name": "AERÓDROMO TINGO MARÍA",
+    "city": "TINGO MARÍA",
+    "dept": "Huánuco",
+    "lat": -9.289666666666667,
+    "lng": -76.00505555555556,
+    "elev": 2146,
+    "cert": "NACIONAL"
+  },
+  {
+    "icao": "SPLO",
+    "name": "AEROPUERTO GENERAL JORGE FERNÁNDEZ MALDONADO SOLARI",
+    "city": "ILO",
+    "dept": "Moquegua",
+    "lat": -17.695,
+    "lng": -71.34388888888888,
+    "elev": 72,
+    "cert": "NACIONAL"
+  },
+  {
+    "icao": "SPZA",
+    "name": "AEROPUERTO NACIONAL MARÍA REICHE NEUMAN",
+    "city": "NASCA",
+    "dept": "Ica",
+    "lat": -14.854138888888889,
+    "lng": -74.96177222222222,
+    "elev": 1813,
+    "cert": "NACIONAL"
+  },
+  {
+    "icao": "SPME",
+    "name": "AEROPUERTO CAPITÁN FAP PEDRO CANGA RODRÍGUEZ",
+    "city": "TUMBES",
+    "dept": "Tumbes",
+    "lat": -3.5522638888888887,
+    "lng": -80.38106944444444,
+    "elev": 115,
+    "cert": "NACIONAL"
+  },
 ]
