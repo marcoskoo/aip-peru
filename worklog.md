@@ -5396,3 +5396,49 @@ Stage Summary:
 - UI enfatiza "Texto OACI original · sin interpretación" con badge de fuente visible
 - El NOTAM A0014/25 ficticio ya no aparece; SPHI ahora muestra 4 NOTAMs reales
 - El LLM (z-ai-web-dev-sdk) NO se usa para generar, decodificar ni interpretar NOTAMs — solo para el briefing operacional separado en /api/spim-briefing
+
+---
+Task ID: MAP-LEGEND-MOBILE
+Agent: Main Agent
+Task: Hacer la leyenda del mapa interactivo colapsable/minimizable y mejorar la vista móvil
+
+Work Log:
+- Analizado el screenshot móvil (IMG_5979.jpeg) con VLM: la leyenda ocupaba ~30% del ancho del mapa y ~25% de la altura, sin opción de colapsar
+- Investigado el componente interactive-map.tsx (2500 líneas): la leyenda (L2383), basemap toggle (L2354), y toolbar no tenían manejo responsive
+- Añadidos iconos: ChevronUp, Info, Eye, EyeOff, SlidersHorizontal
+- Añadido estado `legendCollapsed` (default false en desktop, true en móvil)
+- Añadido estado `isMobile` con detección automática via matchMedia("(max-width: 768px)")
+- Añadido useEffect que: detecta móvil, colapsa leyenda por defecto en móvil, oculta panel de capas por defecto en móvil
+- Leyenda colapsable:
+  - Estado colapsado: chip compacto con icono Info + texto "Leyenda" (82x29px) que al click expande
+  - Estado expandido: panel completo con botón EyeOff para minimizar
+- Basemap toggle responsive: etiquetas cortas (Hi/Lo/VFR) en móvil, completas (World Hi/Lo/VFR) en desktop
+- Altura del mapa responsive: 60vh/380px min en móvil, 70vh/500px min en desktop
+- Toolbar móvil optimizada: todos los botones de acción muestran solo icono en móvil (hidden sm:inline para texto)
+  - "Ruta Directa" → solo icono MapPin
+  - "Ruta por Aerovía" → solo icono Route
+  - "Editar Ruta" → solo icono Pencil
+  - "Deshacer" → solo icono Undo2
+  - "Click en mapa ON" → "Mapa ON" en móvil
+  - "Enviar al FPL" → "FPL" en móvil
+  - Botón "Capas" → icono Layers + chevron, con estado activo resaltado
+- Lint pasado sin errores
+- Verificado con Agent Browser en vista móvil (iPhone 14, 390x844):
+  - Leyenda minimizada por defecto (chip con icono Info) ✓
+  - Basemap toggle muestra Hi/Lo/VFR ✓
+  - Área del mapa grande y visible ✓
+  - Sin solapamientos ✓
+  - Toolbar con solo iconos ✓
+  - Expandir leyenda funciona (muestra lista completa + botón EyeOff) ✓
+  - Panel de capas se abre con 2 columnas legibles ✓
+- Verificado en desktop (1440x900):
+  - Leyenda expandida por defecto con lista completa ✓
+  - Botón EyeOff de minimizar visible ✓
+  - Basemap toggle con etiquetas completas ✓
+  - Toolbar con iconos y texto ✓
+  - Minimizar leyenda funciona (colapsa a chip de 82x29px) ✓
+
+Stage Summary:
+- Leyenda ahora es colapsable/minimizable con chip compacto (icono Info) cuando está colapsada y botón EyeOff cuando está expandida
+- Vista móvil mejorada: leyenda colapsada por defecto, panel de capas oculto por defecto, toolbar con solo iconos, basemap toggle con etiquetas cortas, altura de mapa optimizada
+- Vista desktop mantiene el comportamiento original (leyenda expandida, toolbar completa) con la nueva capacidad de colapsar la leyenda

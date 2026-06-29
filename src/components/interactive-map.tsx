@@ -35,11 +35,16 @@ import {
   X,
   ChevronDown,
   ChevronRight,
+  ChevronUp,
   Gauge,
   Undo2,
   Pencil,
   Move,
   FileText,
+  Info,
+  Eye,
+  EyeOff,
+  SlidersHorizontal,
 } from "lucide-react"
 import type {
   AirwaysData,
@@ -776,6 +781,25 @@ export function InteractiveMap({ onSendToFlightPlan }: InteractiveMapProps = {})
   const [dest, setDest] = useState<string>("")
   const [selectedPoint, setSelectedPoint] = useState<RoutePoint | null>(null)
   const [showLayerPanel, setShowLayerPanel] = useState(true)
+  const [legendCollapsed, setLegendCollapsed] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+
+  // Detect mobile viewport to apply responsive defaults
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const mq = window.matchMedia("(max-width: 768px)")
+    const update = () => {
+      const mobile = mq.matches
+      setIsMobile(mobile)
+      // On mobile, collapse the legend by default and hide the layer panel
+      // to maximize map area. Users can re-open them with the buttons.
+      setLegendCollapsed((prev) => (mobile ? true : prev))
+      if (mobile) setShowLayerPanel(false)
+    }
+    update()
+    mq.addEventListener("change", update)
+    return () => mq.removeEventListener("change", update)
+  }, [])
   const [routeMode, setRouteMode] = useState(false)
   const [editMode, setEditMode] = useState(false)
   const [history, setHistory] = useState<RoutePoint[][]>([])
@@ -1359,15 +1383,17 @@ export function InteractiveMap({ onSendToFlightPlan }: InteractiveMapProps = {})
               </Badge>
             )}
 
+            {/* Acciones de ruta — en móvil solo iconos para ahorrar espacio */}
             <Button
               size="sm"
               variant="outline"
               onClick={buildDirectRoute}
               disabled={!origin || !dest}
               className="h-8 text-xs border-[#1e40af]/50 text-[#1e40af] hover:bg-[#1e40af]/15 hover:text-[#1e40af] bg-[#eef2ff]/30"
+              title="Ruta directa entre origen y destino"
             >
-              <MapPin className="size-3 mr-1" />
-              Ruta Directa
+              <MapPin className="size-3 sm:mr-1" />
+              <span className="hidden sm:inline">Ruta Directa</span>
             </Button>
 
             {/* RUTA POR AEROVÍA — uses BFS pathfinder through the airway network */}
@@ -1379,8 +1405,8 @@ export function InteractiveMap({ onSendToFlightPlan }: InteractiveMapProps = {})
               className="h-8 text-xs border-[#0e7490]/50 text-[#0e7490] hover:bg-[#0e7490]/15 hover:text-[#0e7490] bg-[#ecfeff]/40"
               title="Busca automáticamente una ruta a través de la red de aerovías (BFS, máx. 4 legs). Si no encuentra ruta, usa directa."
             >
-              <Route className="size-3 mr-1" />
-              Ruta por Aerovía
+              <Route className="size-3 sm:mr-1" />
+              <span className="hidden sm:inline">Ruta por Aerovía</span>
             </Button>
 
             {/* EDITAR RUTA toggle — enables drag-and-drop of route points */}
@@ -1391,9 +1417,10 @@ export function InteractiveMap({ onSendToFlightPlan }: InteractiveMapProps = {})
               disabled={route.length === 0}
               className={`h-8 text-xs ${editMode ? "bg-[#c026d3] text-white hover:bg-[#a21caf] font-bold" : "border-[#1e40af]/50 text-[#1e40af] hover:bg-[#1e40af]/15 bg-[#eef2ff]/30"}`}
               style={editMode ? { boxShadow: "0 0 8px #c026d388" } : {}}
+              title={editMode ? "Modo edición de ruta activo" : "Activar edición de ruta (arrastrar puntos)"}
             >
-              <Pencil className="size-3 mr-1" />
-              {editMode ? "Editar Ruta ON" : "Editar Ruta"}
+              <Pencil className="size-3 sm:mr-1" />
+              <span className="hidden sm:inline">{editMode ? "Editar Ruta ON" : "Editar Ruta"}</span>
             </Button>
 
             {/* DESHACER (undo) */}
@@ -1403,9 +1430,10 @@ export function InteractiveMap({ onSendToFlightPlan }: InteractiveMapProps = {})
               onClick={undo}
               disabled={history.length === 0}
               className="h-8 text-xs border-[#ea580c]/50 text-[#ea580c] hover:bg-[#ea580c]/10 bg-[#fff7ed] disabled:opacity-30"
+              title="Deshacer última acción"
             >
-              <Undo2 className="size-3 mr-1" />
-              Deshacer
+              <Undo2 className="size-3 sm:mr-1" />
+              <span className="hidden sm:inline">Deshacer</span>
             </Button>
 
             {routeMode && (
@@ -1415,9 +1443,11 @@ export function InteractiveMap({ onSendToFlightPlan }: InteractiveMapProps = {})
                 onClick={() => setRouteMode(false)}
                 className="h-8 text-xs bg-[#c026d3] text-white hover:bg-[#a21caf] font-bold"
                 style={{ boxShadow: "0 0 8px #c026d388" }}
+                title="Click en mapa activo — toca para desactivar"
               >
-                <Crosshair className="size-3 mr-1" />
-                Click en mapa ON
+                <Crosshair className="size-3 sm:mr-1" />
+                <span className="hidden sm:inline">Click en mapa ON</span>
+                <span className="sm:hidden">Mapa ON</span>
               </Button>
             )}
             {!routeMode && (
@@ -1426,9 +1456,10 @@ export function InteractiveMap({ onSendToFlightPlan }: InteractiveMapProps = {})
                 variant="outline"
                 onClick={() => setRouteMode(true)}
                 className="h-8 text-xs border-[#1e40af]/50 text-[#1e40af] hover:bg-[#1e40af]/15 bg-[#eef2ff]/30"
+                title="Activar construcción de ruta por click en mapa"
               >
-                <Crosshair className="size-3 mr-1" />
-                Click en mapa
+                <Crosshair className="size-3 sm:mr-1" />
+                <span className="hidden sm:inline">Click en mapa</span>
               </Button>
             )}
 
@@ -1438,9 +1469,10 @@ export function InteractiveMap({ onSendToFlightPlan }: InteractiveMapProps = {})
                 variant="outline"
                 onClick={clearRoute}
                 className="h-8 text-xs border-[#dc2626]/50 text-[#dc2626] hover:bg-[#dc2626]/10 bg-[#3a0000]/30"
+                title="Limpiar ruta"
               >
-                <Trash2 className="size-3 mr-1" />
-                Limpiar
+                <Trash2 className="size-3 sm:mr-1" />
+                <span className="hidden sm:inline">Limpiar</span>
               </Button>
             )}
 
@@ -1452,21 +1484,23 @@ export function InteractiveMap({ onSendToFlightPlan }: InteractiveMapProps = {})
                 className="h-8 text-xs bg-[#1e40af] text-white hover:bg-[#1e3a8a] font-bold gap-1"
                 title="Enviar la ruta construida al Plan de Vuelo (calcula EET y Autonomía automáticamente)"
               >
-                <FileText className="size-3 mr-1" />
-                Enviar al FPL
+                <FileText className="size-3 sm:mr-1" />
+                <span className="hidden sm:inline">Enviar al FPL</span>
+                <span className="sm:hidden">FPL</span>
               </Button>
             )}
 
-            {/* Layer panel toggle */}
+            {/* Layer panel toggle — siempre visible (icono en móvil) */}
             <Button
               size="sm"
-              variant="ghost"
+              variant={showLayerPanel ? "default" : "ghost"}
               onClick={() => setShowLayerPanel(!showLayerPanel)}
-              className="h-8 text-xs ml-auto text-slate-600 hover:bg-[#1e40af]/10"
+              className={`h-8 text-xs ml-auto text-slate-600 hover:bg-[#1e40af]/10 ${showLayerPanel ? "bg-[#1e40af] text-white hover:bg-[#1e3a8a]" : ""}`}
+              title="Mostrar/ocultar panel de capas"
             >
-              <Layers className="size-3 mr-1" />
-              Capas
-              {showLayerPanel ? <ChevronDown className="size-3 ml-1" /> : <ChevronRight className="size-3 ml-1" />}
+              <Layers className="size-3 sm:mr-1" />
+              <span className="hidden sm:inline">Capas</span>
+              {showLayerPanel ? <ChevronUp className="size-3 ml-1" /> : <ChevronDown className="size-3 ml-1" />}
             </Button>
           </div>
 
@@ -1613,7 +1647,12 @@ export function InteractiveMap({ onSendToFlightPlan }: InteractiveMapProps = {})
       )}
 
       {/* ─── Map ─────────────────────────────────── */}
-      <div className="relative rounded-lg overflow-hidden border border-[#cbd5e1]" style={{ height: "70vh", minHeight: "500px" }}>
+      {/* Altura responsive: en móvil más compacta (60vh, min 380px) para dejar
+          espacio a la toolbar; en desktop 70vh, min 500px. */}
+      <div
+        className="relative rounded-lg overflow-hidden border border-[#cbd5e1]"
+        style={{ height: isMobile ? "60vh" : "70vh", minHeight: isMobile ? "380px" : "500px" }}
+      >
         <MapContainer
           center={MAP_CENTER}
           zoom={MAP_ZOOM}
@@ -2350,14 +2389,15 @@ export function InteractiveMap({ onSendToFlightPlan }: InteractiveMapProps = {})
           WGS84 · ICAO · AIP Perú + OurAirports (CC0) + Worldwide Airways
         </div>
 
-        {/* SkyVector-style basemap toggle (top-left, horizontal stack) */}
+        {/* SkyVector-style basemap toggle (top-left, horizontal stack).
+            En móvil usa etiquetas cortas (Hi/Lo/VFR) para ahorrar espacio. */}
         <div className="absolute top-2 left-2 flex flex-col gap-1 z-[500]">
           <div className="flex flex-row bg-white/95 backdrop-blur rounded border border-[#cbd5e1] shadow-sm overflow-hidden">
             {([
-              { id: "hi" as BasemapId, label: "World Hi" },
-              { id: "lo" as BasemapId, label: "World Lo" },
-              { id: "vfr" as BasemapId, label: "World VFR" },
-            ]).map(({ id, label }) => {
+              { id: "hi" as BasemapId, label: "World Hi", short: "Hi" },
+              { id: "lo" as BasemapId, label: "World Lo", short: "Lo" },
+              { id: "vfr" as BasemapId, label: "World VFR", short: "VFR" },
+            ]).map(({ id, label, short }) => {
               const active = basemap === id
               return (
                 <button
@@ -2372,31 +2412,60 @@ export function InteractiveMap({ onSendToFlightPlan }: InteractiveMapProps = {})
                   aria-pressed={active}
                   title={`Basemap: ${label}`}
                 >
-                  {label}
+                  <span className="sm:hidden">{short}</span>
+                  <span className="hidden sm:inline">{label}</span>
                 </button>
               )
             })}
           </div>
         </div>
 
-        {/* Legend */}
-        <div className="absolute top-2 right-2 bg-white/90 text-slate-600 text-[10px] font-mono px-3 py-2 rounded border border-[#cbd5e1] space-y-1 max-w-[220px] backdrop-blur z-[500] max-h-[80vh] overflow-y-auto custom-scroll">
-          <div className="font-bold text-[#1e40af] mb-1">LEYENDA</div>
-          <div className="flex items-center gap-1.5"><span className="w-3 h-3 bg-[#1e40af] border-2 border-[#1e3a8a] inline-block rounded-full"></span> Aeródromo Intl PE</div>
-          <div className="flex items-center gap-1.5"><span className="w-3 h-3 bg-[#3b82f6] border-2 border-[#1e3a8a] inline-block rounded-full"></span> Aeródromo Nacional PE</div>
-          <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full border-2 border-[#1d4ed8] inline-block"></span> Radioayuda (VOR/DME) PE</div>
-          <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full border-2 border-dashed border-[#0e7490] inline-block"></span> Radioayuda Mundo</div>
-          <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 border border-[#16a34a] inline-block transform rotate-45"></span> Waypoint PE</div>
-          <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-[#dc2626] border border-[#7f1d1d] inline-block transform rotate-45"></span> Pto. Transferencia FIR ★</div>
-          <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-[#ea580c] border border-[#7c2d12] inline-block transform rotate-45"></span> Pto. Notificación</div>
-          <div className="flex items-center gap-1.5"><span className="w-4 h-0.5 bg-[#1e3c78] inline-block"></span> Aerovía Conv. PE</div>
-          <div className="flex items-center gap-1.5"><span className="w-4 h-0.5 bg-[#64748b] inline-block border-dashed"></span> Aerovía RNAV PE</div>
-          <div className="flex items-center gap-1.5"><span className="w-4 h-0.5 bg-[#0e7490] inline-block"></span> Aerovía Mundo</div>
-          <div className="flex items-center gap-1.5"><span className="w-4 h-0.5 bg-[#475569] inline-block" style={{ borderTop: "2px dashed #475569" }}></span> FIR Lima</div>
-          <div className="flex items-center gap-1.5"><span className="w-4 h-0.5 bg-[#7c3aed] inline-block" style={{ borderTop: "2px dashed #7c3aed" }}></span> TMA / CTR</div>
-          <div className="flex items-center gap-1.5"><span className="w-4 h-0.5 bg-[#c026d3] inline-block"></span> Ruta construida</div>
-          {editMode && <div className="flex items-center gap-1.5 pt-1 border-t border-slate-200 text-[#ea580c]"><Move className="size-2.5" /> Arrastrar puntos</div>}
-        </div>
+        {/* Legend — colapsable en móvil y desktop.
+            Estado colapsado: un chip compacto con icono que al tocar expande la leyenda.
+            Estado expandido: panel completo con botón de minimizar. */}
+        {legendCollapsed ? (
+          <button
+            type="button"
+            onClick={() => setLegendCollapsed(false)}
+            className="absolute top-2 right-2 bg-white/95 text-[#1e40af] text-[10px] font-bold font-mono px-2.5 py-1.5 rounded border border-[#cbd5e1] backdrop-blur z-[500] flex items-center gap-1.5 shadow-sm hover:bg-[#eef2ff] transition-colors"
+            title="Mostrar leyenda"
+            aria-label="Mostrar leyenda"
+            aria-expanded="false"
+          >
+            <Info className="size-3" />
+            <span className="hidden xs:inline sm:inline">Leyenda</span>
+          </button>
+        ) : (
+          <div className="absolute top-2 right-2 bg-white/95 text-slate-600 text-[10px] font-mono px-3 py-2 rounded border border-[#cbd5e1] space-y-1 max-w-[220px] backdrop-blur z-[500] max-h-[80vh] overflow-y-auto custom-scroll shadow-sm">
+            <div className="flex items-center justify-between mb-1 gap-2">
+              <div className="font-bold text-[#1e40af]">LEYENDA</div>
+              <button
+                type="button"
+                onClick={() => setLegendCollapsed(true)}
+                className="text-slate-400 hover:text-[#1e40af] transition-colors p-0.5 -mr-1 -mt-0.5"
+                title="Minimizar leyenda"
+                aria-label="Minimizar leyenda"
+                aria-expanded="true"
+              >
+                <EyeOff className="size-3" />
+              </button>
+            </div>
+            <div className="flex items-center gap-1.5"><span className="w-3 h-3 bg-[#1e40af] border-2 border-[#1e3a8a] inline-block rounded-full"></span> Aeródromo Intl PE</div>
+            <div className="flex items-center gap-1.5"><span className="w-3 h-3 bg-[#3b82f6] border-2 border-[#1e3a8a] inline-block rounded-full"></span> Aeródromo Nacional PE</div>
+            <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full border-2 border-[#1d4ed8] inline-block"></span> Radioayuda (VOR/DME) PE</div>
+            <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full border-2 border-dashed border-[#0e7490] inline-block"></span> Radioayuda Mundo</div>
+            <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 border border-[#16a34a] inline-block transform rotate-45"></span> Waypoint PE</div>
+            <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-[#dc2626] border border-[#7f1d1d] inline-block transform rotate-45"></span> Pto. Transferencia FIR ★</div>
+            <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-[#ea580c] border border-[#7c2d12] inline-block transform rotate-45"></span> Pto. Notificación</div>
+            <div className="flex items-center gap-1.5"><span className="w-4 h-0.5 bg-[#1e3c78] inline-block"></span> Aerovía Conv. PE</div>
+            <div className="flex items-center gap-1.5"><span className="w-4 h-0.5 bg-[#64748b] inline-block border-dashed"></span> Aerovía RNAV PE</div>
+            <div className="flex items-center gap-1.5"><span className="w-4 h-0.5 bg-[#0e7490] inline-block"></span> Aerovía Mundo</div>
+            <div className="flex items-center gap-1.5"><span className="w-4 h-0.5 bg-[#475569] inline-block" style={{ borderTop: "2px dashed #475569" }}></span> FIR Lima</div>
+            <div className="flex items-center gap-1.5"><span className="w-4 h-0.5 bg-[#7c3aed] inline-block" style={{ borderTop: "2px dashed #7c3aed" }}></span> TMA / CTR</div>
+            <div className="flex items-center gap-1.5"><span className="w-4 h-0.5 bg-[#c026d3] inline-block"></span> Ruta construida</div>
+            {editMode && <div className="flex items-center gap-1.5 pt-1 border-t border-slate-200 text-[#ea580c]"><Move className="size-2.5" /> Arrastrar puntos</div>}
+          </div>
+        )}
       </div>
 
       {/* Route details table */}
