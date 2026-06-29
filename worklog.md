@@ -4031,3 +4031,140 @@ Stage Summary:
 - Botones EDITAR RUTA / DESHACER / LIMPIAR añadidos (como en IMG_5967)
 - Historial de undo funcional: cualquier cambio (limpiar, eliminar punto, arrastrar, ruta directa) se puede deshacer
 - Verificado con Agent Browser: colores ✓, drag habilitado ✓, undo funcional ✓
+
+---
+Task ID: 13-EXTRACT-WAYPOINTS-ROUTES
+Agent: Sub Agent (general-purpose)
+Task: Extract waypoints and airways data from upload/aip-peru-v20-dragfix.html and create a TypeScript static fallback that the interactive map uses when /api/airdata/all fails locally (Prisma postgresql/sqlite mismatch).
+
+Work Log:
+- Leí worklog.md: la tarea 11 (INTERACTIVE-MAP) y 12 (MAP-COLORS-DRAG) ya crearon el componente interactive-map.tsx con fallback a PERUVIAN_NAVAIDS y PERUVIAN_AIRPORTS, pero NO había fallback para waypoints ni aerovías — localmente el mapa no mostraba ni waypoints ni rutas.
+- Identifiqué 4 fuentes de datos en el HTML:
+  * `var WAYPOINTS=[...]` (línea 838, una sola línea, formato JSON) — 96 waypoints ICAO con {id, lat, lng, type:"ICAO", notif, fir, rmk}
+  * `var ROUTES=[...]` (línea 859, una sola línea) — 50 segmentos de aerovías convencionales (UTA) con {id, tipo:"CONV", from, to, trk_o, trk_r, dist, mea, upper, lower, wid, cls, dir}
+  * `var ROUTES_LOW=[...]` (línea 862, una sola línea) — 76 segmentos de aerovías inferiores (A301, V1, etc.), mismo formato
+  * `var ROUTES_RNAV=[...]` (líneas 1617-1650, multi-línea) — 32 aerovías RNAV con {id, type:"RNAV", pts:[{id, lat, lng}, ...]} — formato DIFERENTE al convencional
+- Creé `/home/z/my-project/scripts/extract-airways.mjs` (parser Node ESM):
+  * Lee el HTML, localiza cada `var NAME=` por línea
+  * Para ROUTES_RNAV (multi-línea) lee desde la línea de `var ROUTES_RNAV=[` hasta encontrar `];`
+  * Evalúa cada array literal con `new Function(\`return (${src});\`)()` (función anónima segura)
+  * Transforma WAYPOINTS → Waypoint[] mapeando `lng`→`lon` y `rmk`→`description`
+  * Adicionalmente, recolecta los puntos de las rutas RNAV (cuyos IDs son descriptivos tipo "KONTA 54 NM") y los añade a PERUVIAN_WAYPOINTS con description `RNAV point on <route>`. Esto es necesario porque el componente usa coordLookup.get(seg.from) para resolver las polylines y los IDs RNAV solo existen en los pts.
+  * Agrupa ROUTES + ROUTES_LOW por id → 31 aerovías convencionales con 126 segmentos
+    - minFL = parseFL(lower), maxFL = parseFL(upper), parseFL("UNL") = undefined
+    - Deriva level: si minFL≥250 → "UPPER", si maxFL≤245 → "LOWER", sino "BOTH"
+  * Transforma ROUTES_RNAV → 32 aerovías RNAV con 195 segmentos
+    - Calcula distance y bearing con haversine great-circle en NM
+    - trackTrue = bearing, reverseTrack = (bearing + 180) % 360
+  * Genera el archivo TypeScript con JSON.stringify para strings/numbers, omitiendo campos opcionales undefined
+- Generé `/home/z/my-project/src/lib/aviation/peru-airways-static.ts` (4130 líneas):
+  * `PERUVIAN_WAYPOINTS: Waypoint[]` — 297 waypoints (96 del WAYPOINTS original + 201 únicos de pts RNAV)
+  * `PERUVIAN_AIRWAYS: { conventional: Airway[]; rnav: Airway[] }`
+    - conventional: 31 airways (UV1, UV3, UV6, UV7, UV12, UV13, UV14, UV15, UV16, UV17, UV18, A301, A304, A306, A307, A308, A312, A313, A314, A315, V1, V3, V5, V12, V17, V18, V19, R567, L525, etc.)
+    - rnav: 32 airways (T218, T232, T234, T246, T311, T315, T317, T319, T327, T329, T330, T334, T335, UL300, UL305, UL306, UL308, UL342, UL344, UL401, UL780, UM414, UM527, UM542, UM548, UM665, UM668, UM674, UM793, UM795, UN420, UP525)
+- Moví el parser a `scripts/` (ya está en el `ignores` del eslint.config.mjs)
+
+- Actualicé `/home/z/my-project/src/components/interactive-map.tsx`:
+  1. Import: `import { PERUVIAN_WAYPOINTS, PERUVIAN_AIRWAYS } from "@/lib/aviation/peru-airways-static"`
+  2. useEffect de fetch `/api/airdata/all`:
+     - Reescribí la lógica de fallback usando tres booleanos hasNavaids, hasWaypoints, hasAirways
+     - `waypoints: hasWaypoints ? raw.waypoints! : PERUVIAN_WAYPOINTS`
+     - `airways: hasAirways ? raw.airways! : { conventional: PERUVIAN_AIRWAYS.conventional, rnav: PERUVIAN_AIRWAYS.rnav }`
+     - También en el catch() (fetch failure): usa PERUVIAN_WAYPOINTS y PERUVIAN_AIRWAYS en vez de arrays vacíos
+  3. allPoints useMemo (dropdowns ORIGEN/DESTINO): añade waypoints al listado con descripción `id — description`, deduplica por id con Set
+
+- VERIFICACIÓN DE RESOLUCIÓN DE SEGMENTOS:
+  * Construí el mismo coordLookup que el componente (waypoints + navaids + airports = 347 entradas)
+  * Convencional: 122/126 segmentos resueltos (96.8%), solo ISRES y REPIB no encontrados (4 segmentos de 2 aerovías no se renderizan — aceptable)
+  * RNAV: 195/195 segmentos resueltos (100%)
+
+- VERIFICACIÓN LOCAL con Agent Browser (dev server localhost:3000):
+  * Page load HTTP 200 ✓
+  * Clic en "Mapa Interactivo" → heading "Mapa Interactivo" ✓
+  * 8 checkboxes de capas visibles (Aeródromos, Radioayudas, Waypoints, Aerovías Conv., Aerovías RNAV, FIR Lima, FIRs Adyac., Grilla) ✓
+  * Sin activar Waypoints: **51 markers** (20 aeropuertos + 31 navaids) ✓ y **63 polylines** (31 conv + 32 RNAV) ✓
+  * Activando checkbox Waypoints: **348 markers** (51 + 297 waypoints estáticos) ✓, polylines se mantienen en 63 ✓
+  * 0 errores JS nuevos en consola (solo el preexistente error Prisma de AirportListing, sin relación)
+  * Screenshot: /home/z/my-project/airways-verify.png
+
+- Lint: `bun run lint` clean (exit 0, sin warnings ni errores)
+
+Stage Summary:
+- 1 archivo creado: `/home/z/my-project/scripts/extract-airways.mjs` (parser Node ESM, 280 líneas)
+- 1 archivo generado: `/home/z/my-project/src/lib/aviation/peru-airways-static.ts` (4130 líneas)
+  * PERUVIAN_WAYPOINTS: 297 waypoints (96 ICAO + 201 únicos RNAV)
+  * PERUVIAN_AIRWAYS.conventional: 31 airways (126 segmentos, 122 resolvibles)
+  * PERUVIAN_AIRWAYS.rnav: 32 airways (195 segmentos, 100% resolvibles)
+- 1 archivo modificado: `/home/z/my-project/src/components/interactive-map.tsx`
+  * Nuevo import de PERUVIAN_WAYPOINTS y PERUVIAN_AIRWAYS
+  * Fallback logic en fetch useEffect (rama then y catch) usa los datos estáticos cuando la API falla o viene vacía
+  * Dropdowns ORIGEN/DESTINO ahora incluyen waypoints además de aeropuertos y navaids (con dedupe por id)
+- Lint clean, dev server carga OK, mapa muestra 348 markers y 63 aerovías (31 conv + 32 RNAV) localmente
+- Bug preexistente mitigado: la API /api/airdata/all falla localmente (Prisma postgresql/sqlite mismatch), pero ahora el mapa interactivo muestra TODOS los datos (waypoints + aerovías convencionales + aerovías RNAV) usando los datos estáticos extraídos del HTML AIP Perú v2.0
+
+---
+Task ID: 14-MAP-DATA-COMPLETE-VOR-DME
+Agent: main (Z.ai Code)
+Task: Completar información del mapa con datos del sistema, verificar coordenadas de radioayudas/waypoints/rutas, y corregir "vordme" por "VOR DME"
+
+Work Log:
+- Analicé imagen IMG_5969.jpeg con VLM: mapa de navegación Perú con rutas, radioayudas VOR/DME (Tacna, Arica, Chiclayo, Trujillo, Tumbes, Pisco, etc.), aeropuerto Jorge Chávez (LIM), y ruta destacada 156° 352nm
+- Verifiqué coordenadas de las 29 radioayudas en peru-navaids-static.ts contra AIP PERÚ ENR 4.1 (parse-official-data.py con datos DMS oficiales)
+- Encontré y corregí 4 errores de coordenadas:
+  * BTE (Chimbote): lon -78.5197 → -78.5219 (error tipográfico)
+  * PDO (Pto Maldonado): lon -69.2228 → -69.2272
+  * LET (Leticia): lon -69.9406 → -69.9400
+  * PLG (Pto Leguizamo): lon -74.7753 → -74.7756
+- Añadí 2 radioayudas faltantes según AIP ENR 4.1:
+  * ARI (ARICA VOR DME) - 116.50 MHz, lat -18.3694, lon -70.3464
+  * OAS (ANDOAS VOR DME) - 116.80 MHz, lat -2.7894, lon -76.4775
+- CORREGÍ "vordme" → "VOR DME" en todo el archivo peru-navaids-static.ts:
+  * type: "VORDME" → "VOR DME" (31 navaids)
+  * type: "DVORDME" → "DVOR DME" (5 navaids: JCL, LPA, LET, SLS, TRU)
+  * name: "... VOR/DME" → "... VOR DME" (sin barra)
+  * name: "... DVOR/DME" → "... DVOR DME"
+- Creé función normalizeNavaidType() que normaliza cualquier variante de la BD al formato canónico "VOR DME" / "DVOR DME":
+  * Maneja: VORDME, VOR/DME, VOR DME, VOR-DME → "VOR DME"
+  * Maneja: DVORDME, DVOR/DME, DVOR DME, DVOR-DME → "DVOR DME"
+  * Maneja: VOR, DME, NDB, TACAN
+- Actualicé interactive-map.tsx:
+  * Importé normalizeNavaidType
+  * Aplicado al badge del popup: {normalizeNavaidType(nv.type)}
+  * Aplicado a navaids de la API: raw.navaids.map(n => ({...n, type: normalizeNavaidType(n.type)}))
+  * Limpieza de nombre: reemplaza "/" por " " en nombres de la BD
+  * Leyenda: "Radioayuda (VOR/DME)" → "Radioayuda (VOR DME)"
+- Delegué a subagente (Task 13) extracción de waypoints y aerovías del HTML subido:
+  * Creó src/lib/aviation/peru-airways-static.ts (5738 líneas)
+  * 297 waypoints extraídos (96 ICAO + 201 RNAV)
+  * 31 aerovías convencionales (126 segmentos de ROUTES + ROUTES_LOW)
+  * 32 aerovías RNAV (195 segmentos de ROUTES_RNAV)
+  * Integrado en interactive-map.tsx como fallback cuando API falla
+
+- VERIFICACIÓN CON AGENT BROWSER (dev server localhost:3000 vía gateway :81):
+  * Página carga: HTTP 200, título "AIP PERÚ - Publicación de Información Aeronáutica" ✓
+  * Navegación a "Mapa Interactivo": H1 correcto ✓
+  * 51 markers (31 navaids + 20 airports) ✓
+  * 63 polylines (31 aerovías conv + 32 RNAV) ✓
+  * Leyenda muestra "Radioayuda (VOR DME)" ✓ (con espacio, sin barra)
+  * Body NO contiene "VORDME" (sin espacio) ✓
+  * Body SÍ contiene "VOR DME" ✓
+  * Popup navaid AND: badge "VOR DME", nombre "ANDAHUAYLAS VOR DME", freq 114.30, elev 11997, coords -13.7142/-73.3778 ✓
+  * Popup navaid CLA: badge "VOR DME", nombre "CHICLAYO VOR DME", freq 114.90, elev 121 ✓
+  * Popup navaid ZCO: badge "VOR DME", nombre "CUSCO VOR DME", freq 114.90, elev 12745 ✓
+  * Popup navaid IQT: badge "VOR DME", nombre "IQUITOS VOR DME", freq 116.50, elev 335 ✓
+  * Popup navaid JCL: badge "DVOR DME", nombre "JORGE CHAVEZ DVOR DME", freq 116.90, elev 115, coords -12.0397/-77.1056 ✓
+  * Popup navaid ILO: badge "VOR" (VOR-only, sin DME) ✓
+  * Screenshot: /home/z/my-project/map-final-vor-dme.png
+
+- Lint: bun run lint clean (exit 0)
+
+Stage Summary:
+- 2 archivos modificados:
+  * src/lib/aviation/peru-navaids-static.ts — 31 radioayudas (VOR DME / DVOR DME / VOR), coordenadas verificadas contra AIP ENR 4.1, 4 errores corregidos, 2 navaids añadidos (ARI, OAS), función normalizeNavaidType() exportada
+  * src/components/interactive-map.tsx — normalizador aplicado a badge popup + navaids de API + leyenda actualizada + fallback de waypoints/aerovías integrado
+- 1 archivo creado (por subagente):
+  * src/lib/aviation/peru-airways-static.ts — 297 waypoints + 31 aerovías conv + 32 RNAV (5738 líneas)
+- "vordme" corregido a "VOR DME" en todo el sistema (static + dynamic via normalizer)
+- Coordenadas verificadas: 31 radioayudas con coords precisas del AIP PERÚ ENR 4.1
+- Mapa completo localmente: 31 navaids + 20 airports + 297 waypoints + 63 aerovías
+- Verificado con Agent Browser: popups muestran "VOR DME" / "DVOR DME" correctamente

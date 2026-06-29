@@ -1,7 +1,12 @@
 /**
- * Radioayudas peruanas (VOR/DME/NDB) con coordenadas precisas.
- * Fuente: AIP PERÚ ENR 4.1 (extraído del sistema de referencia).
+ * Radioayudas peruanas (VOR DME / DVOR DME / NDB / VOR) con coordenadas precisas.
+ * Fuente: AIP PERÚ ENR 4.1 (Radio Navigation Aids).
+ * Coordenadas verificadas contra ENR 4.1-1 (formato DMS → decimal).
  * Usado como fallback del mapa interactivo.
+ *
+ * NOTA: El campo `type` usa el formato canónico "VOR DME" / "DVOR DME" (con espacio,
+ * sin barra) según el requisito del usuario. La función normalizeNavaidType() del
+ * componente mapa normaliza cualquier variante proveniente de la BD al mismo formato.
  */
 
 export interface PeruvianNavaid {
@@ -20,32 +25,68 @@ export interface PeruvianNavaid {
 export const PERUVIAN_NAVAIDS: PeruvianNavaid[] = [
   {
     "id": "AND",
-    "name": "ANDAHUAYLAS VOR/DME",
-    "type": "VORDME",
+    "name": "ANDAHUAYLAS VOR DME",
+    "type": "VOR DME",
     "frequency": "114.30 MHz",
     "lat": -13.7142,
     "lon": -73.3778,
-    "elevation": null,
+    "elevation": 11997,
     "class": "H24",
     "hours": "H24",
-    "associatedAD": "SPHI"
+    "associatedAD": "SPHY"
+  },
+  {
+    "id": "OAS",
+    "name": "ANDOAS VOR DME",
+    "type": "VOR DME",
+    "frequency": "116.80 MHz",
+    "lat": -2.7894,
+    "lon": -76.4775,
+    "elevation": 700,
+    "class": "H24",
+    "hours": "H24",
+    "associatedAD": ""
   },
   {
     "id": "EQU",
-    "name": "AREQUIPA VOR/DME",
-    "type": "VORDME",
+    "name": "AREQUIPA VOR DME",
+    "type": "VOR DME",
     "frequency": "113.70 MHz",
     "lat": -16.3392,
     "lon": -71.5972,
-    "elevation": 39,
+    "elevation": 8405,
     "class": "H24",
     "hours": "H24",
     "associatedAD": "SPQU"
   },
   {
+    "id": "ARI",
+    "name": "ARICA VOR DME",
+    "type": "VOR DME",
+    "frequency": "116.50 MHz",
+    "lat": -18.3694,
+    "lon": -70.3464,
+    "elevation": 164,
+    "class": "H24",
+    "hours": "H24",
+    "associatedAD": ""
+  },
+  {
+    "id": "POY",
+    "name": "CHACHAPOYAS VOR DME",
+    "type": "VOR DME",
+    "frequency": "115.10 MHz",
+    "lat": -6.2006,
+    "lon": -77.8597,
+    "elevation": 8294,
+    "class": "H24",
+    "hours": "H24",
+    "associatedAD": "SPPY"
+  },
+  {
     "id": "CLA",
-    "name": "CHICLAYO VOR/DME",
-    "type": "VORDME",
+    "name": "CHICLAYO VOR DME",
+    "type": "VOR DME",
     "frequency": "114.90 MHz",
     "lat": -6.7172,
     "lon": -79.8192,
@@ -60,20 +101,20 @@ export const PERUVIAN_NAVAIDS: PeruvianNavaid[] = [
     "type": "VOR",
     "frequency": "112.50 MHz",
     "lat": -9.1475,
-    "lon": -78.5197,
-    "elevation": null,
+    "lon": -78.5219,
+    "elevation": 70,
     "class": "H24",
     "hours": "H24",
     "associatedAD": ""
   },
   {
     "id": "ZCO",
-    "name": "CUSCO VOR/DME",
-    "type": "VORDME",
+    "name": "CUSCO VOR DME",
+    "type": "VOR DME",
     "frequency": "114.90 MHz",
     "lat": -13.5192,
-    "lon": -72.01,
-    "elevation": null,
+    "lon": -72.0100,
+    "elevation": 12745,
     "class": "H24",
     "hours": "H24",
     "associatedAD": "SPZO"
@@ -85,15 +126,15 @@ export const PERUVIAN_NAVAIDS: PeruvianNavaid[] = [
     "frequency": "112.50 MHz",
     "lat": -17.6911,
     "lon": -71.3506,
-    "elevation": null,
+    "elevation": 72,
     "class": "H24",
     "hours": "H24",
     "associatedAD": "SPLO"
   },
   {
     "id": "IQT",
-    "name": "IQUITOS VOR/DME",
-    "type": "VORDME",
+    "name": "IQUITOS VOR DME",
+    "type": "VOR DME",
     "frequency": "116.50 MHz",
     "lat": -3.7925,
     "lon": -73.3178,
@@ -104,8 +145,8 @@ export const PERUVIAN_NAVAIDS: PeruvianNavaid[] = [
   },
   {
     "id": "JCL",
-    "name": "JORGE CHAVEZ DVOR/DME",
-    "type": "DVORDME",
+    "name": "JORGE CHAVEZ DVOR DME",
+    "type": "DVOR DME",
     "frequency": "116.90 MHz",
     "lat": -12.0397,
     "lon": -77.1056,
@@ -116,35 +157,35 @@ export const PERUVIAN_NAVAIDS: PeruvianNavaid[] = [
   },
   {
     "id": "JUL",
-    "name": "JULIACA VOR/DME",
-    "type": "VORDME",
+    "name": "JULIACA VOR DME",
+    "type": "VOR DME",
     "frequency": "115.50 MHz",
     "lat": -15.4681,
     "lon": -70.1511,
-    "elevation": null,
+    "elevation": 12552,
     "class": "H24",
     "hours": "H24",
     "associatedAD": "SPJL"
   },
   {
     "id": "LPA",
-    "name": "LAS PALMAS DVOR/DME",
-    "type": "DVORDME",
+    "name": "LAS PALMAS DVOR DME",
+    "type": "DVOR DME",
     "frequency": "113.30 MHz",
     "lat": -12.1558,
     "lon": -76.9994,
-    "elevation": null,
+    "elevation": 233,
     "class": "H24",
     "hours": "H24",
     "associatedAD": "SPAL"
   },
   {
     "id": "LET",
-    "name": "LETICIA DVOR/DME",
-    "type": "DVORDME",
+    "name": "LETICIA DVOR DME",
+    "type": "DVOR DME",
     "frequency": "117.50 MHz",
-    "lat": -4.195,
-    "lon": -69.9406,
+    "lat": -4.1950,
+    "lon": -69.9400,
     "elevation": 285,
     "class": "H24",
     "hours": "H24",
@@ -152,20 +193,20 @@ export const PERUVIAN_NAVAIDS: PeruvianNavaid[] = [
   },
   {
     "id": "MLV",
-    "name": "MALVINAS VOR/DME",
-    "type": "VORDME",
+    "name": "MALVINAS VOR DME",
+    "type": "VOR DME",
     "frequency": "117.20 MHz",
     "lat": -11.8583,
     "lon": -72.9378,
-    "elevation": null,
+    "elevation": 350,
     "class": "H24",
     "hours": "H24",
     "associatedAD": ""
   },
   {
     "id": "SCO",
-    "name": "PISCO VOR/DME",
-    "type": "VORDME",
+    "name": "PISCO VOR DME",
+    "type": "VOR DME",
     "frequency": "114.10 MHz",
     "lat": -13.7386,
     "lon": -76.2128,
@@ -176,47 +217,47 @@ export const PERUVIAN_NAVAIDS: PeruvianNavaid[] = [
   },
   {
     "id": "URA",
-    "name": "PIURA VOR/DME",
-    "type": "VORDME",
+    "name": "PIURA VOR DME",
+    "type": "VOR DME",
     "frequency": "117.70 MHz",
-    "lat": -5.21,
+    "lat": -5.2100,
     "lon": -80.6161,
-    "elevation": null,
+    "elevation": 116,
     "class": "H24",
     "hours": "H24",
     "associatedAD": "SPUR"
   },
   {
     "id": "PZA",
-    "name": "PUERTO ESPERANZA VOR",
+    "name": "PTO ESPERANZA VOR",
     "type": "VOR",
     "frequency": "113.90 MHz",
     "lat": -9.7692,
-    "lon": -70.705,
-    "elevation": null,
+    "lon": -70.7050,
+    "elevation": 800,
     "class": "HJ",
     "hours": "HJ",
     "associatedAD": ""
   },
   {
     "id": "PUL",
-    "name": "PUCALLPA VOR/DME",
-    "type": "VORDME",
+    "name": "PUCALLPA VOR DME",
+    "type": "VOR DME",
     "frequency": "116.70 MHz",
     "lat": -8.3758,
     "lon": -74.5722,
     "elevation": 537,
     "class": "H24",
     "hours": "H24",
-    "associatedAD": "SPBL"
+    "associatedAD": "SPCL"
   },
   {
     "id": "PLG",
-    "name": "PUERTO LEGUIZAMO VOR/DME",
-    "type": "VORDME",
+    "name": "PUERTO LEGUIZAMO VOR DME",
+    "type": "VOR DME",
     "frequency": "112.80 MHz",
     "lat": -0.1786,
-    "lon": -74.7753,
+    "lon": -74.7756,
     "elevation": 665,
     "class": "H24",
     "hours": "H24",
@@ -224,24 +265,24 @@ export const PERUVIAN_NAVAIDS: PeruvianNavaid[] = [
   },
   {
     "id": "PDO",
-    "name": "PUERTO MALDONADO VOR/DME",
-    "type": "VORDME",
+    "name": "PTO MALDONADO VOR DME",
+    "type": "VOR DME",
     "frequency": "116.10 MHz",
     "lat": -12.6078,
-    "lon": -69.2228,
-    "elevation": null,
+    "lon": -69.2272,
+    "elevation": 659,
     "class": "H24",
     "hours": "H24",
     "associatedAD": "SPTU"
   },
   {
     "id": "SLS",
-    "name": "SALINAS DVOR/DME",
-    "type": "DVORDME",
+    "name": "SALINAS DVOR DME",
+    "type": "DVOR DME",
     "frequency": "114.70 MHz",
     "lat": -11.2875,
     "lon": -77.5625,
-    "elevation": null,
+    "elevation": 324,
     "class": "H24",
     "hours": "H24",
     "associatedAD": ""
@@ -272,8 +313,8 @@ export const PERUVIAN_NAVAIDS: PeruvianNavaid[] = [
   },
   {
     "id": "TCA",
-    "name": "TACNA VOR/DME",
-    "type": "VORDME",
+    "name": "TACNA VOR DME",
+    "type": "VOR DME",
     "frequency": "116.80 MHz",
     "lat": -18.0578,
     "lon": -70.2764,
@@ -289,63 +330,63 @@ export const PERUVIAN_NAVAIDS: PeruvianNavaid[] = [
     "frequency": "116.10 MHz",
     "lat": -4.5803,
     "lon": -81.2525,
-    "elevation": null,
+    "elevation": 282,
     "class": "H24",
     "hours": "H24",
     "associatedAD": "SPYL"
   },
   {
     "id": "TAP",
-    "name": "TARAPOTO VOR/DME",
-    "type": "VORDME",
+    "name": "TARAPOTO VOR DME",
+    "type": "VOR DME",
     "frequency": "115.50 MHz",
     "lat": -6.6581,
     "lon": -76.3511,
-    "elevation": null,
+    "elevation": 869,
     "class": "H24",
     "hours": "H24",
     "associatedAD": "SPST"
   },
   {
     "id": "TRO",
-    "name": "TROMPETEROS VOR/DME",
-    "type": "VORDME",
+    "name": "TROMPETEROS VOR DME",
+    "type": "VOR DME",
     "frequency": "114.80 MHz",
     "lat": -3.8028,
     "lon": -75.0508,
-    "elevation": null,
+    "elevation": 427,
     "class": "H24",
     "hours": "H24",
     "associatedAD": ""
   },
   {
     "id": "TRU",
-    "name": "TRUJILLO DVOR/DME",
-    "type": "DVORDME",
+    "name": "TRUJILLO DVOR DME",
+    "type": "DVOR DME",
     "frequency": "116.30 MHz",
     "lat": -8.0875,
     "lon": -79.1125,
-    "elevation": null,
+    "elevation": 100,
     "class": "H24",
     "hours": "H24",
     "associatedAD": "SPRU"
   },
   {
     "id": "BES",
-    "name": "TUMBES VOR/DME",
-    "type": "VORDME",
+    "name": "TUMBES VOR DME",
+    "type": "VOR DME",
     "frequency": "112.90 MHz",
     "lat": -3.5444,
     "lon": -80.3892,
-    "elevation": null,
+    "elevation": 82,
     "class": "H24",
     "hours": "H24",
     "associatedAD": "SPME"
   },
   {
     "id": "URC",
-    "name": "URCOS VOR/DME",
-    "type": "VORDME",
+    "name": "URCOS VOR DME",
+    "type": "VOR DME",
     "frequency": "115.60 MHz",
     "lat": -13.6494,
     "lon": -71.5864,
@@ -353,17 +394,25 @@ export const PERUVIAN_NAVAIDS: PeruvianNavaid[] = [
     "class": "H24",
     "hours": "H24",
     "associatedAD": ""
-  },
-  {
-    "id": "POY",
-    "name": "CHACHAPOYAS VOR/DME",
-    "type": "VORDME",
-    "frequency": "115.10 MHz",
-    "lat": -6.2006,
-    "lon": -77.8597,
-    "elevation": null,
-    "class": "H24",
-    "hours": "H24",
-    "associatedAD": "SPPY"
   }
 ]
+
+/**
+ * Normaliza cualquier variante de tipo de radioayuda al formato canónico
+ * "VOR DME" / "DVOR DME" (con espacio, sin barra).
+ * Maneja variantes de la BD: "VORDME", "VOR/DME", "DVORDME", "DVOR/DME",
+ * "vor dme", etc.
+ */
+export function normalizeNavaidType(type: string | undefined | null): string {
+  if (!type) return ""
+  const t = type.trim().toUpperCase()
+  // Orden importante: DVOR antes que VOR
+  if (t === "DVORDME" || t === "DVOR/DME" || t === "DVOR DME" || t === "DVOR-DME") return "DVOR DME"
+  if (t === "VORDME" || t === "VOR/DME" || t === "VOR DME" || t === "VOR-DME") return "VOR DME"
+  if (t === "DME") return "DME"
+  if (t === "TACAN") return "TACAN"
+  if (t === "NDB") return "NDB"
+  if (t === "VOR") return "VOR"
+  // Si no coincide con ningún patrón conocido, devolver limpio (sin barras)
+  return t.replace(/\s*\/\s*/g, " ").replace(/\s+/g, " ").trim()
+}

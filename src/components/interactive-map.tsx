@@ -57,7 +57,8 @@ import type {
   Coord,
 } from "@/lib/types"
 import { PERUVIAN_AIRPORTS, type PeruvianAirport } from "@/lib/aviation/peru-airports-static"
-import { PERUVIAN_NAVAIDS } from "@/lib/aviation/peru-navaids-static"
+import { PERUVIAN_NAVAIDS, normalizeNavaidType } from "@/lib/aviation/peru-navaids-static"
+import { PERUVIAN_WAYPOINTS, PERUVIAN_AIRWAYS } from "@/lib/aviation/peru-airways-static"
 
 // ─── Color Palette (Neon Green Aviation Theme) ──────────────────
 const C = {
@@ -345,17 +346,31 @@ export function InteractiveMap() {
       .then((raw: Partial<AirwaysData> & { error?: string }) => {
         if (cancelled) return
         // Validate the response has the expected shape; if not, use fallback
+        const hasNavaids = raw.navaids && raw.navaids.length > 0
+        const hasWaypoints = raw.waypoints && raw.waypoints.length > 0
+        const hasAirways =
+          raw.airways &&
+          ((raw.airways.conventional && raw.airways.conventional.length > 0) ||
+            (raw.airways.rnav && raw.airways.rnav.length > 0))
         const d: AirwaysData = {
           firBoundaries: raw.firBoundaries ?? {},
           adjacentFirs: raw.adjacentFirs ?? [],
-          navaids: (raw.navaids && raw.navaids.length > 0)
-            ? raw.navaids
+          navaids: hasNavaids
+            ? raw.navaids!.map((n) => ({
+                ...n,
+                // Normaliza el tipo al formato canónico "VOR DME" / "DVOR DME"
+                type: normalizeNavaidType(n.type),
+                // Limpia el nombre: reemplaza VOR/DME → VOR DME en el nombre también
+                name: (n.name || "").replace(/\s*\/\s*/g, " ").replace(/VOR DME/gi, "VOR DME").replace(/DVOR DME/gi, "DVOR DME").trim(),
+              }))
             : PERUVIAN_NAVAIDS.map((n) => ({
                 id: n.id, name: n.name, type: n.type, frequency: n.frequency,
                 lat: n.lat, lon: n.lon, elevation: n.elevation ?? undefined,
               })),
-          waypoints: raw.waypoints ?? [],
-          airways: raw.airways ?? { conventional: [], rnav: [] },
+          waypoints: hasWaypoints ? raw.waypoints! : PERUVIAN_WAYPOINTS,
+          airways: hasAirways
+            ? raw.airways!
+            : { conventional: PERUVIAN_AIRWAYS.conventional, rnav: PERUVIAN_AIRWAYS.rnav },
         }
         setData(d)
         setLoading(false)
@@ -370,8 +385,8 @@ export function InteractiveMap() {
             id: n.id, name: n.name, type: n.type, frequency: n.frequency,
             lat: n.lat, lon: n.lon, elevation: n.elevation ?? undefined,
           })),
-          waypoints: [],
-          airways: { conventional: [], rnav: [] },
+          waypoints: PERUVIAN_WAYPOINTS,
+          airways: { conventional: PERUVIAN_AIRWAYS.conventional, rnav: PERUVIAN_AIRWAYS.rnav },
         })
         setLoading(false)
       })
@@ -402,8 +417,19 @@ export function InteractiveMap() {
           type: "NAVAID", lat: nv.lat, lon: nv.lon,
         })
       }
+      // Include waypoints too — they're now available as a static fallback
+      for (const wp of data.waypoints) {
+        pts.push({
+          id: wp.id, name: `${wp.id}${wp.description ? ` — ${wp.description}` : ""}`,
+          type: "WAYPOINT", lat: wp.lat, lon: wp.lon,
+        })
+      }
     }
-    return pts.sort((a, b) => a.id.localeCompare(b.id))
+    // Deduplicate by id (in case waypoints overlap with navaids/airports)
+    const seen = new Set<string>()
+    return pts
+      .filter((p) => (seen.has(p.id) ? false : (seen.add(p.id), true)))
+      .sort((a, b) => a.id.localeCompare(b.id))
   }, [data])
 
   // Route calculations
@@ -901,7 +927,7 @@ export function InteractiveMap() {
                   <div className="min-w-[180px]">
                     <div className="flex items-center justify-between mb-2">
                       <span className="font-bold text-sm text-[#00ff66]">{nv.id}</span>
-                      <Badge variant="outline" className="text-[9px] border-[#00ff66]/40 text-[#00ff66]">{nv.type}</Badge>
+                      <Badge variant="outline" className="text-[9px] border-[#00ff66]/40 text-[#00ff66]">{normalizeNavaidType(nv.type)}</Badge>
                     </div>
                     <p className="text-xs font-semibold mb-1 text-[#99ffcc]">{nv.name}</p>
                     <div className="grid grid-cols-2 gap-1 text-[10px] font-mono text-[#99ffcc]">
@@ -1078,7 +1104,7 @@ export function InteractiveMap() {
           <div className="font-bold text-[#00ff66] mb-1" style={{ textShadow: "0 0 3px #00ff66" }}>LEYENDA</div>
           <div className="flex items-center gap-1.5"><span className="w-3 h-3 bg-[#003300] border-2 border-[#00ff66] inline-block" style={{ boxShadow: "0 0 4px #00ff66" }}></span> Aeródromo Intl</div>
           <div className="flex items-center gap-1.5"><span className="w-3 h-3 bg-[#1a4d2e] border-2 border-[#00cc52] inline-block"></span> Aeródromo Nacional</div>
-          <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full border-2 border-[#00ff66] inline-block" style={{ boxShadow: "0 0 4px #00ff66" }}></span> Radioayuda (VOR/DME)</div>
+          <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full border-2 border-[#00ff66] inline-block" style={{ boxShadow: "0 0 4px #00ff66" }}></span> Radioayuda (VOR DME)</div>
           <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 border border-[#66ff99] inline-block transform rotate-45"></span> Waypoint</div>
           <div className="flex items-center gap-1.5"><span className="w-4 h-0.5 bg-[#4da6ff] inline-block"></span> Aerovía Conv.</div>
           <div className="flex items-center gap-1.5"><span className="w-4 h-0.5 bg-[#66ff99] inline-block border-dashed"></span> Aerovía RNAV</div>
