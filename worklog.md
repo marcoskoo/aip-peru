@@ -5569,3 +5569,23 @@ Stage Summary:
 - URL del remote restaurada sin credenciales
 - SECURITY: El token de Vercel (vcp_3G9LDLYocQ...) fue eliminado del historial pero DEBE ser rotado/revocado en Vercel dashboard
 - SECURITY: El token de GitHub (ghp_OY0ay6ECcsQ...) proporcionado por el usuario también debe ser rotado/revocado
+
+
+---
+Task ID: VERCEL-FIX-WORLD-API
+Agent: Main Agent
+Task: Fix /api/world/* routes returning 404 on Vercel deployment.
+
+Work Log:
+- Diagnosed: /api/world/airports, /api/world/navaids, /api/world/airways, /api/world/waypoints all return 404 on Vercel
+- Root cause: world-data.ts used readFileSync(join(process.cwd(), "src/lib/aviation/world/", ...)) which doesn't work in Vercel serverless (no filesystem access to src/)
+- Fix: replaced readFileSync with static JSON imports (import worldAirportsData from "./world/world-airports.json") which get bundled into the serverless output
+- Verified locally: all 4 APIs return HTTP 200 with correct data
+- Verified next build completes successfully with all /api/world/* routes listed
+- Committed fix as b4c5382 and pushed to origin/main
+- Vercel should auto-rebuild and serve the fixed APIs
+
+Stage Summary:
+- world-data.ts now uses static JSON imports instead of readFileSync
+- All /api/world/* routes should work on Vercel after rebuild
+- Build verified locally — all routes present in build output
