@@ -1,70 +1,108 @@
 import { db } from '@/lib/db'
 import { NextRequest, NextResponse } from 'next/server'
+import { staticAirspaceRestrictions, prismaLikelyAvailable } from '@/lib/static-data'
 
 export async function GET(request: NextRequest) {
+  const { searchParams } = request.nextUrl
+  const search = searchParams.get('search')?.trim() || ''
+  const type = searchParams.get('type')?.trim() || ''
+  const status = searchParams.get('status')?.trim() || ''
+  const grouped = searchParams.get('grouped')?.trim() || ''
+
+  // ─── Intento con Prisma ───────────────────────────────────────────
   try {
-    const { searchParams } = request.nextUrl
-    const search = searchParams.get('search')?.trim() || ''
-    const type = searchParams.get('type')?.trim() || ''
-    const status = searchParams.get('status')?.trim() || ''
-    const grouped = searchParams.get('grouped')?.trim() || ''
+    if (prismaLikelyAvailable()) {
+      // Build where clause
+      const where: Record<string, unknown> = {}
 
-    // Build where clause
-    const where: Record<string, unknown> = {}
+      if (search) {
+        where.OR = [
+          { designator: { contains: search } },
+          { name: { contains: search } },
+          { authority: { contains: search } },
+        ]
+      }
 
-    if (search) {
-      where.OR = [
-        { designator: { contains: search } },
-        { name: { contains: search } },
-        { authority: { contains: search } },
-      ]
-    }
+      if (type) {
+        where.type = type
+      }
 
-    if (type) {
-      where.type = type
-    }
+      if (status) {
+        where.status = status
+      }
 
-    if (status) {
-      where.status = status
-    }
+      const restrictions = await db.airspaceRestriction.findMany({
+        where,
+        orderBy: [
+          { type: 'asc' },
+          { designator: 'asc' },
+        ],
+      })
 
-    const restrictions = await db.airspaceRestriction.findMany({
-      where,
-      orderBy: [
-        { type: 'asc' },
-        { designator: 'asc' },
-      ],
-    })
-
-    // If grouped=true, return grouped by type for easy display
-    if (grouped === 'true') {
-      const groupedData: Record<string, typeof restrictions> = {}
-      for (const restriction of restrictions) {
-        const key = restriction.type
-        if (!groupedData[key]) {
-          groupedData[key] = []
+      // If grouped=true, return grouped by type for easy display
+      if (grouped === 'true') {
+        const groupedData: Record<string, typeof restrictions> = {}
+        for (const restriction of restrictions) {
+          const key = restriction.type
+          if (!groupedData[key]) {
+            groupedData[key] = []
+          }
+          groupedData[key].push(restriction)
         }
-        groupedData[key].push(restriction)
+
+        return NextResponse.json({
+          restrictions: groupedData,
+          total: restrictions.length,
+          types: Object.keys(groupedData),
+        })
       }
 
       return NextResponse.json({
-        restrictions: groupedData,
+        restrictions,
         total: restrictions.length,
-        types: Object.keys(groupedData),
       })
     }
-
-    return NextResponse.json({
-      restrictions,
-      total: restrictions.length,
-    })
   } catch (error) {
-    console.error('Error fetching airspace restrictions:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch airspace restrictions' },
-      { status: 500 }
-    )
+    console.warn('[/api/airspace-restrictions] Prisma failed, using static fallback:', error)
   }
+
+  // ─── Fallback estático ────────────────────────────────────────────
+  const sl = search.toLowerCase()
+  const filtered = staticAirspaceRestrictions.filter((r) => {
+    if (type && r.type !== type) return false
+    if (status && r.status !== status) return false
+    if (sl) {
+      const hay = `${r.designator || ''} ${r.name || ''} ${r.authority || ''}`.toLowerCase()
+      if (!hay.includes(sl)) return false
+    }
+    return true
+  }).sort((a, b) => {
+    const ta = String(a.type || '')
+    const tb = String(b.type || '')
+    if (ta !== tb) return ta.localeCompare(tb)
+    return String(a.designator || '').localeCompare(String(b.designator || ''))
+  })
+
+  if (grouped === 'true') {
+    const groupedData: Record<string, typeof filtered> = {}
+    for (const restriction of filtered) {
+      const key = String(restriction.type)
+      if (!groupedData[key]) {
+        groupedData[key] = []
+      }
+      groupedData[key].push(restriction)
+    }
+    return NextResponse.json({
+      restrictions: groupedData,
+      total: filtered.length,
+      types: Object.keys(groupedData),
+    })
+  }
+
+  return NextResponse.json({
+    restrictions: filtered,
+    total: filtered.length,
+  })
 }
 
 export async function POST(request: NextRequest) {

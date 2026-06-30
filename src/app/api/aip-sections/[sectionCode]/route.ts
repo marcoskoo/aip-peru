@@ -1,32 +1,36 @@
 import { db } from '@/lib/db'
 import { NextRequest, NextResponse } from 'next/server'
+import { staticAipSections, prismaLikelyAvailable } from '@/lib/static-data'
 
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ sectionCode: string }> }
 ) {
+  const { sectionCode } = await params
+
+  // ─── Intento con Prisma ───────────────────────────────────────────
   try {
-    const { sectionCode } = await params
-
-    const section = await db.aipSection.findUnique({
-      where: { sectionCode },
-    })
-
-    if (!section) {
-      return NextResponse.json(
-        { error: `AIP section "${sectionCode}" not found` },
-        { status: 404 }
-      )
+    if (prismaLikelyAvailable()) {
+      const section = await db.aipSection.findUnique({
+        where: { sectionCode },
+      })
+      if (section) {
+        return NextResponse.json(section)
+      }
     }
-
-    return NextResponse.json(section)
   } catch (error) {
-    console.error('Error fetching AIP section:', error)
+    console.warn('[/api/aip-sections/sectionCode] Prisma failed, using static fallback:', error)
+  }
+
+  // ─── Fallback estático ────────────────────────────────────────────
+  const record = staticAipSections.find((s) => s.sectionCode === sectionCode)
+  if (!record) {
     return NextResponse.json(
-      { error: 'Failed to fetch AIP section' },
-      { status: 500 }
+      { error: `AIP section "${sectionCode}" not found` },
+      { status: 404 }
     )
   }
+  return NextResponse.json(record)
 }
 
 /**

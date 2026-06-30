@@ -1,5 +1,6 @@
 import { db } from '@/lib/db'
 import { NextRequest, NextResponse } from 'next/server'
+import { staticHeliports, prismaLikelyAvailable } from '@/lib/static-data'
 
 // JSON string fields that need parsing before returning
 const JSON_FIELDS = [
@@ -48,30 +49,35 @@ export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params
+
+  // ─── Intento con Prisma ───────────────────────────────────────────
   try {
-    const { id } = await params
-
-    const heliport = await resolveHeliport(id)
-
-    if (!heliport) {
-      return NextResponse.json(
-        { error: `Heliport with id or ICAO code "${id}" not found` },
-        { status: 404 }
-      )
+    if (prismaLikelyAvailable()) {
+      const heliport = await resolveHeliport(id)
+      if (heliport) {
+        const parsedHeliport = parseJsonFields(
+          heliport as Record<string, unknown>
+        )
+        return NextResponse.json(parsedHeliport)
+      }
     }
-
-    const parsedHeliport = parseJsonFields(
-      heliport as Record<string, unknown>
-    )
-
-    return NextResponse.json(parsedHeliport)
   } catch (error) {
-    console.error('Error fetching heliport:', error)
+    console.warn('[/api/heliports/id] Prisma failed, using static fallback:', error)
+  }
+
+  // ─── Fallback estático ────────────────────────────────────────────
+  const record = staticHeliports.find(
+    (h) => h.id === id || (typeof h.icaoCode === 'string' && h.icaoCode.toUpperCase() === id.toUpperCase())
+  )
+  if (!record) {
     return NextResponse.json(
-      { error: 'Failed to fetch heliport' },
-      { status: 500 }
+      { error: `Heliport with id or ICAO code "${id}" not found` },
+      { status: 404 }
     )
   }
+  const parsedHeliport = parseJsonFields(record)
+  return NextResponse.json(parsedHeliport)
 }
 
 export async function PUT(

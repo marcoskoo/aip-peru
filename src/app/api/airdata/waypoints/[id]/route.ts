@@ -1,5 +1,6 @@
 import { db } from '@/lib/db'
 import { NextRequest, NextResponse } from 'next/server'
+import { staticWaypoints, prismaLikelyAvailable } from '@/lib/static-data'
 
 export async function GET(
   _request: NextRequest,
@@ -8,15 +9,27 @@ export async function GET(
   try {
     const { id } = await params
 
-    const waypoint = await db.waypoint.findUnique({ where: { id } })
+    // ─── Prisma (sandbox / production DB) ────────────────────────────
+    try {
+      if (prismaLikelyAvailable()) {
+        const waypoint = await db.waypoint.findUnique({ where: { id } })
+        if (waypoint) {
+          return NextResponse.json(waypoint)
+        }
+        // If not found in DB, fall through to static fallback
+      }
+    } catch (error) {
+      console.warn('[api/airdata/waypoints/[id]] Prisma failed, using static fallback:', error)
+    }
 
+    // ─── Static fallback (Vercel serverless) ─────────────────────────
+    const waypoint = staticWaypoints.find((w) => w.id === id)
     if (!waypoint) {
       return NextResponse.json(
         { error: `Waypoint "${id}" not found` },
         { status: 404 }
       )
     }
-
     return NextResponse.json(waypoint)
   } catch (error) {
     console.error('Error fetching waypoint:', error)

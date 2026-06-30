@@ -1,12 +1,26 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
+import { staticNavaids, prismaLikelyAvailable } from "@/lib/static-data"
 
 export async function GET() {
   try {
-    const navaids = await db.navaid.findMany({
-      orderBy: { id: "asc" },
-    })
-    return NextResponse.json(navaids)
+    // ─── Prisma (sandbox / production DB) ────────────────────────────
+    try {
+      if (prismaLikelyAvailable()) {
+        const navaids = await db.navaid.findMany({
+          orderBy: { id: "asc" },
+        })
+        return NextResponse.json(navaids)
+      }
+    } catch (error) {
+      console.warn("[api/airdata/navaids] Prisma failed, using static fallback:", error)
+    }
+
+    // ─── Static fallback (Vercel serverless) ─────────────────────────
+    const sorted = [...staticNavaids].sort((a, b) =>
+      String(a.id ?? "").localeCompare(String(b.id ?? ""))
+    )
+    return NextResponse.json(sorted)
   } catch (error) {
     console.error("Error fetching navaids:", error)
     return NextResponse.json({ error: "Error al obtener radioayudas" }, { status: 500 })

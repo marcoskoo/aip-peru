@@ -1,26 +1,47 @@
 import { db } from '@/lib/db'
 import { NextRequest, NextResponse } from 'next/server'
+import { staticWaypoints, prismaLikelyAvailable } from '@/lib/static-data'
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = request.nextUrl
     const search = searchParams.get('search')?.trim() || ''
 
-    const where: Record<string, unknown> = {}
-    if (search) {
-      where.OR = [
-        { id: { contains: search } },
-        { name: { contains: search } },
-        { description: { contains: search } },
-      ]
+    // ─── Prisma (sandbox / production DB) ────────────────────────────
+    try {
+      if (prismaLikelyAvailable()) {
+        const where: Record<string, unknown> = {}
+        if (search) {
+          where.OR = [
+            { id: { contains: search } },
+            { name: { contains: search } },
+            { description: { contains: search } },
+          ]
+        }
+
+        const waypoints = await db.waypoint.findMany({
+          where,
+          orderBy: { id: 'asc' },
+        })
+
+        return NextResponse.json(waypoints)
+      }
+    } catch (error) {
+      console.warn('[api/airdata/waypoints] Prisma failed, using static fallback:', error)
     }
 
-    const waypoints = await db.waypoint.findMany({
-      where,
-      orderBy: { id: 'asc' },
-    })
-
-    return NextResponse.json(waypoints)
+    // ─── Static fallback (Vercel serverless) ─────────────────────────
+    const s = search.toLowerCase()
+    const filtered = s
+      ? staticWaypoints.filter((w) => {
+          const hay = `${w.id ?? ''} ${w.name ?? ''} ${w.description ?? ''}`.toLowerCase()
+          return hay.includes(s)
+        })
+      : staticWaypoints
+    const sorted = [...filtered].sort((a, b) =>
+      String(a.id ?? '').localeCompare(String(b.id ?? ''))
+    )
+    return NextResponse.json(sorted)
   } catch (error) {
     console.error('Error fetching waypoints:', error)
     return NextResponse.json(

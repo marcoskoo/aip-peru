@@ -7,6 +7,7 @@ import {
 } from '@/lib/aviation/peru-stations'
 import { notExpiredFilter } from '@/lib/aviation/notam-filter'
 import { fetchLiveNotams } from '@/lib/aviation/faa-notams'
+import { prismaLikelyAvailable } from '@/lib/static-data'
 
 // ─── Types ────────────────────────────────────────────────────────────
 
@@ -71,23 +72,32 @@ export async function GET() {
       AND: [notExpiredFilter(now)],
     }
 
-    // NOTAM counts grouped by airportId
-    const notamGroups = await db.notam.groupBy({
-      by: ['airportId'],
-      where: activeNotamWhere,
-      _count: { id: true },
-    })
-
     // Map airportId → NOTAM count (from DB)
     const notamCountByAirport = new Map<string, number>()
-    for (const g of notamGroups) {
-      if (g.airportId) {
-        notamCountByAirport.set(g.airportId, g._count.id)
-      }
-    }
 
     // Total active NOTAMs (including those without airportId — FIR-level)
-    let totalActiveNotams = await db.notam.count({ where: activeNotamWhere })
+    let totalActiveNotams = 0
+
+    if (prismaLikelyAvailable()) {
+      try {
+        // NOTAM counts grouped by airportId
+        const notamGroups = await db.notam.groupBy({
+          by: ['airportId'],
+          where: activeNotamWhere,
+          _count: { id: true },
+        })
+
+        for (const g of notamGroups) {
+          if (g.airportId) {
+            notamCountByAirport.set(g.airportId, g._count.id)
+          }
+        }
+
+        totalActiveNotams = await db.notam.count({ where: activeNotamWhere })
+      } catch (error) {
+        console.warn('[api/spim-agent/stats] Prisma NOTAM queries failed:', error)
+      }
+    }
 
     // ── FAA live fallback ───────────────────────────────────────────────
     // Si la DB local no tiene NOTAMs (pipeline email IMAP inactivo o DB
@@ -118,23 +128,42 @@ export async function GET() {
       }
     }
 
-    // Fetch all Peruvian airports from DB
-    const dbAirports = await db.airport.findMany({
-      where: { icaoCode: { startsWith: 'SP' } },
-      select: {
-        id: true,
-        icaoCode: true,
-        name: true,
-        city: true,
-        region: true,
-        department: true,
-        elevation: true,
-        category: true,
-        arpLatitude: true,
-        arpLongitude: true,
-      },
-      orderBy: [{ category: 'desc' }, { icaoCode: 'asc' }],
-    })
+    // Fetch all Peruvian airports from DB (only if Prisma is available)
+    let dbAirports: Array<{
+      id: string
+      icaoCode: string
+      name: string
+      city: string
+      region: string | null
+      department: string | null
+      elevation: string | null
+      category: string | null
+      arpLatitude: string | null
+      arpLongitude: string | null
+    }> = []
+
+    if (prismaLikelyAvailable()) {
+      try {
+        dbAirports = await db.airport.findMany({
+          where: { icaoCode: { startsWith: 'SP' } },
+          select: {
+            id: true,
+            icaoCode: true,
+            name: true,
+            city: true,
+            region: true,
+            department: true,
+            elevation: true,
+            category: true,
+            arpLatitude: true,
+            arpLongitude: true,
+          },
+          orderBy: [{ category: 'desc' }, { icaoCode: 'asc' }],
+        })
+      } catch (error) {
+        console.warn('[api/spim-agent/stats] Prisma airport query failed:', error)
+      }
+    }
 
     // Build station list combining DB airports + canonical PERUVIAN_ICAOS
     const seenIcao = new Set<string>()

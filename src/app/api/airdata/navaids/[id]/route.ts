@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
+import { staticNavaids, prismaLikelyAvailable } from "@/lib/static-data"
 
 export async function GET(
   _request: NextRequest,
@@ -7,7 +8,22 @@ export async function GET(
 ) {
   try {
     const { id } = await params
-    const navaid = await db.navaid.findUnique({ where: { id } })
+
+    // ─── Prisma (sandbox / production DB) ────────────────────────────
+    try {
+      if (prismaLikelyAvailable()) {
+        const navaid = await db.navaid.findUnique({ where: { id } })
+        if (navaid) {
+          return NextResponse.json(navaid)
+        }
+        // If not found in DB, fall through to static fallback
+      }
+    } catch (error) {
+      console.warn("[api/airdata/navaids/[id]] Prisma failed, using static fallback:", error)
+    }
+
+    // ─── Static fallback (Vercel serverless) ─────────────────────────
+    const navaid = staticNavaids.find((n) => n.id === id)
     if (!navaid) {
       return NextResponse.json({ error: "Radioayuda no encontrada" }, { status: 404 })
     }

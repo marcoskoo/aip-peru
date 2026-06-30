@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { fetchLiveNotams, type NormalizedNotam } from '@/lib/aviation/faa-notams'
 import { notExpiredFilter } from '@/lib/aviation/notam-filter'
 import { requireAdmin } from '@/lib/auth'
+import { prismaLikelyAvailable } from '@/lib/static-data'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -193,12 +194,16 @@ export async function GET(request: NextRequest) {
 
     // Resolver airportId → ICAO si se especificó
     let airportIcao: string | undefined
-    if (airportId) {
-      const airport = await db.airport.findUnique({
-        where: { id: airportId },
-        select: { icaoCode: true },
-      })
-      airportIcao = airport?.icaoCode
+    if (airportId && prismaLikelyAvailable()) {
+      try {
+        const airport = await db.airport.findUnique({
+          where: { id: airportId },
+          select: { icaoCode: true },
+        })
+        airportIcao = airport?.icaoCode
+      } catch (error) {
+        console.warn('[api/notams] Prisma airport lookup failed:', error)
+      }
     }
 
     // ── 1) FAA live (PRIMARIO — NOTAMs reales y actuales) ──────────
@@ -212,30 +217,39 @@ export async function GET(request: NextRequest) {
     // ── 2) DB supplement (NOTAMs reales ingresados manualmente) ────
     // Solo se incluyen NOTAMs de la DB que NO estén ya en los resultados
     // de la FAA (dedup por notamId).
+    // Solo si Prisma está disponible (sandbox / DB de producción).
     const liveIds = new Set(liveNotams.map((n) => n.notamId))
     const dbWhere: Record<string, unknown> = { fir }
     if (airportId) dbWhere.airportId = airportId
 
-    const dbNotams = liveIds.size > 0
-      ? await db.notam.findMany({
-          where: {
-            ...dbWhere,
-            NOT: { notamId: { in: Array.from(liveIds) } },
-          },
-          include: {
-            airport: { select: { icaoCode: true, name: true, city: true } },
-          },
-          orderBy: [{ effectiveFrom: 'desc' }],
-          take: 200,
-        })
-      : await db.notam.findMany({
-          where: dbWhere,
-          include: {
-            airport: { select: { icaoCode: true, name: true, city: true } },
-          },
-          orderBy: [{ effectiveFrom: 'desc' }],
-          take: 200,
-        })
+    let dbNotams: NotamRow[] = []
+    if (prismaLikelyAvailable()) {
+      try {
+        const rows = liveIds.size > 0
+          ? await db.notam.findMany({
+              where: {
+                ...dbWhere,
+                NOT: { notamId: { in: Array.from(liveIds) } },
+              },
+              include: {
+                airport: { select: { icaoCode: true, name: true, city: true } },
+              },
+              orderBy: [{ effectiveFrom: 'desc' }],
+              take: 200,
+            })
+          : await db.notam.findMany({
+              where: dbWhere,
+              include: {
+                airport: { select: { icaoCode: true, name: true, city: true } },
+              },
+              orderBy: [{ effectiveFrom: 'desc' }],
+              take: 200,
+            })
+        dbNotams = rows as unknown as NotamRow[]
+      } catch (error) {
+        console.warn('[api/notams] Prisma notam query failed:', error)
+      }
+    }
 
     // ── 3) Merge: FAA live primero, luego DB-only ──────────────────
     const rows: NotamRow[] = [

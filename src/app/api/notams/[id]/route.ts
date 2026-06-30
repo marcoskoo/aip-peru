@@ -1,5 +1,6 @@
 import { db } from '@/lib/db'
 import { NextRequest, NextResponse } from 'next/server'
+import { prismaLikelyAvailable } from '@/lib/static-data'
 
 export async function GET(
   _request: NextRequest,
@@ -9,21 +10,30 @@ export async function GET(
     const { id } = await params
 
     // Try to find by notamId first (e.g., A0234/25), then by database id
-    const notam = await db.notam.findFirst({
-      where: {
-        OR: [
-          { notamId: id },
-          { id },
-        ],
-      },
-      include: {
-        airport: {
-          select: { id: true, icaoCode: true, name: true, city: true },
-        },
-      },
-    })
+    let notam = null
+    try {
+      if (prismaLikelyAvailable()) {
+        notam = await db.notam.findFirst({
+          where: {
+            OR: [
+              { notamId: id },
+              { id },
+            ],
+          },
+          include: {
+            airport: {
+              select: { id: true, icaoCode: true, name: true, city: true },
+            },
+          },
+        })
+      }
+    } catch (error) {
+      console.warn('[api/notams/[id]] Prisma findFirst failed:', error)
+    }
 
     if (!notam) {
+      // Static fallback: NOTAMs are not stored statically (they come from
+      // the FAA live API), so we cannot resolve by id without the DB.
       return NextResponse.json(
         { error: 'NOTAM not found' },
         { status: 404 }
@@ -31,23 +41,30 @@ export async function GET(
     }
 
     // Find related NOTAMs (same scope, airport, or replaces)
-    const relatedNotams = await db.notam.findMany({
-      where: {
-        OR: [
-          { replacesId: notam.notamId },
-          { notamId: notam.replacesId },
-          { airportId: notam.airportId, scope: notam.scope },
-        ],
-        id: { not: notam.id },
-      },
-      include: {
-        airport: {
-          select: { icaoCode: true, name: true },
-        },
-      },
-      take: 10,
-      orderBy: { effectiveFrom: 'desc' },
-    })
+    let relatedNotams: typeof notam[] = []
+    try {
+      if (prismaLikelyAvailable()) {
+        relatedNotams = await db.notam.findMany({
+          where: {
+            OR: [
+              { replacesId: notam.notamId },
+              { notamId: notam.replacesId },
+              { airportId: notam.airportId, scope: notam.scope },
+            ],
+            id: { not: notam.id },
+          },
+          include: {
+            airport: {
+              select: { icaoCode: true, name: true },
+            },
+          },
+          take: 10,
+          orderBy: { effectiveFrom: 'desc' },
+        })
+      }
+    } catch (error) {
+      console.warn('[api/notams/[id]] Prisma related fetch failed:', error)
+    }
 
     return NextResponse.json({
       ...notam,

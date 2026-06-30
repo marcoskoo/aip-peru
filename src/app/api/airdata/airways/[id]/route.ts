@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
+import { staticAirways, prismaLikelyAvailable } from "@/lib/static-data"
 
 export async function GET(
   _request: NextRequest,
@@ -7,14 +8,30 @@ export async function GET(
 ) {
   try {
     const { id } = await params
-    const airway = await db.airway.findUnique({
-      where: { id },
-      include: { segments: { orderBy: { orderIndex: "asc" } } },
-    })
+
+    // ─── Prisma (sandbox / production DB) ────────────────────────────
+    try {
+      if (prismaLikelyAvailable()) {
+        const airway = await db.airway.findUnique({
+          where: { id },
+          include: { segments: { orderBy: { orderIndex: "asc" } } },
+        })
+        if (airway) {
+          return NextResponse.json(airway)
+        }
+        // If not found in DB, fall through to static fallback
+      }
+    } catch (error) {
+      console.warn("[api/airdata/airways/[id]] Prisma failed, using static fallback:", error)
+    }
+
+    // ─── Static fallback (Vercel serverless) ─────────────────────────
+    const airway = staticAirways.find((a) => a.id === id)
     if (!airway) {
       return NextResponse.json({ error: "Aerovía no encontrada" }, { status: 404 })
     }
-    return NextResponse.json(airway)
+    // Static airways don't carry segments; expose empty array to preserve shape.
+    return NextResponse.json({ ...airway, segments: [] })
   } catch (error) {
     console.error("Error fetching airway:", error)
     return NextResponse.json({ error: "Error al obtener aerovía" }, { status: 500 })

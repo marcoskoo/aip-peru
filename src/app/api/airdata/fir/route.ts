@@ -1,12 +1,26 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
+import { staticFIRBoundaries, prismaLikelyAvailable } from "@/lib/static-data"
 
 export async function GET() {
   try {
-    const firs = await db.fIRBoundary.findMany({
-      orderBy: { id: "asc" },
-    })
-    return NextResponse.json(firs)
+    // ─── Prisma (sandbox / production DB) ────────────────────────────
+    try {
+      if (prismaLikelyAvailable()) {
+        const firs = await db.fIRBoundary.findMany({
+          orderBy: { id: "asc" },
+        })
+        return NextResponse.json(firs)
+      }
+    } catch (error) {
+      console.warn("[api/airdata/fir] Prisma failed, using static fallback:", error)
+    }
+
+    // ─── Static fallback (Vercel serverless) ─────────────────────────
+    const sorted = [...staticFIRBoundaries].sort((a, b) =>
+      String(a.id ?? "").localeCompare(String(b.id ?? ""))
+    )
+    return NextResponse.json(sorted)
   } catch (error) {
     console.error("Error fetching FIR boundaries:", error)
     return NextResponse.json({ error: "Error al obtener límites FIR" }, { status: 500 })

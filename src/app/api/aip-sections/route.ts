@@ -1,51 +1,93 @@
 import { db } from '@/lib/db'
 import { NextRequest, NextResponse } from 'next/server'
+import { staticAipSections, prismaLikelyAvailable } from '@/lib/static-data'
+
+const SECTION_SELECT_FIELDS = [
+  'id',
+  'sectionCode',
+  'title',
+  'titleEn',
+  'part',
+  'subPart',
+  'orderIndex',
+  'lastAmendment',
+  'effectiveDate',
+  'sourceFile',
+] as const
+
+function pickSectionFields(s: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {}
+  for (const f of SECTION_SELECT_FIELDS) {
+    out[f] = s[f]
+  }
+  return out
+}
 
 export async function GET(request: NextRequest) {
+  const { searchParams } = request.nextUrl
+  const part = searchParams.get('part')?.trim() || ''
+  const subPart = searchParams.get('subPart')?.trim() || ''
+
+  // ─── Intento con Prisma ───────────────────────────────────────────
   try {
-    const { searchParams } = request.nextUrl
-    const part = searchParams.get('part')?.trim() || ''
-    const subPart = searchParams.get('subPart')?.trim() || ''
+    if (prismaLikelyAvailable()) {
+      const where: Record<string, unknown> = {}
 
-    const where: Record<string, unknown> = {}
+      if (part) {
+        where.part = part
+      }
 
-    if (part) {
-      where.part = part
+      if (subPart) {
+        where.subPart = subPart
+      }
+
+      const sections = await db.aipSection.findMany({
+        where,
+        select: {
+          id: true,
+          sectionCode: true,
+          title: true,
+          titleEn: true,
+          part: true,
+          subPart: true,
+          orderIndex: true,
+          lastAmendment: true,
+          effectiveDate: true,
+          sourceFile: true,
+        },
+        orderBy: [
+          { part: 'asc' },
+          { subPart: 'asc' },
+          { orderIndex: 'asc' },
+        ],
+      })
+
+      return NextResponse.json(sections)
     }
-
-    if (subPart) {
-      where.subPart = subPart
-    }
-
-    const sections = await db.aipSection.findMany({
-      where,
-      select: {
-        id: true,
-        sectionCode: true,
-        title: true,
-        titleEn: true,
-        part: true,
-        subPart: true,
-        orderIndex: true,
-        lastAmendment: true,
-        effectiveDate: true,
-        sourceFile: true,
-      },
-      orderBy: [
-        { part: 'asc' },
-        { subPart: 'asc' },
-        { orderIndex: 'asc' },
-      ],
-    })
-
-    return NextResponse.json(sections)
   } catch (error) {
-    console.error('Error fetching AIP sections:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch AIP sections' },
-      { status: 500 }
-    )
+    console.warn('[/api/aip-sections] Prisma failed, using static fallback:', error)
   }
+
+  // ─── Fallback estático ────────────────────────────────────────────
+  const filtered = staticAipSections.filter((s) => {
+    if (part && s.part !== part) return false
+    if (subPart && s.subPart !== subPart) return false
+    return true
+  })
+    .sort((a, b) => {
+      const pa = String(a.part || '')
+      const pb = String(b.part || '')
+      if (pa !== pb) return pa.localeCompare(pb)
+      const sa = String(a.subPart || '')
+      const sb = String(b.subPart || '')
+      if (sa !== sb) return sa.localeCompare(sb)
+      const oa = Number(a.orderIndex ?? 0)
+      const ob = Number(b.orderIndex ?? 0)
+      return oa - ob
+    })
+    .map(pickSectionFields)
+
+  return NextResponse.json(filtered)
 }
 
 /**

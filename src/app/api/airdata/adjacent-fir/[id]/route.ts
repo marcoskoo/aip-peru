@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
+import { staticAdjacentFIRs, prismaLikelyAvailable } from "@/lib/static-data"
 
 export async function GET(
   _request: NextRequest,
@@ -7,7 +8,26 @@ export async function GET(
 ) {
   try {
     const { id } = await params
-    const adjFir = await db.adjacentFIR.findUnique({ where: { id } })
+
+    // ─── Prisma (sandbox / production DB) ────────────────────────────
+    try {
+      if (prismaLikelyAvailable()) {
+        const adjFir = await db.adjacentFIR.findUnique({ where: { id } })
+        if (adjFir) {
+          return NextResponse.json(adjFir)
+        }
+        // If not found in DB, fall through to static fallback
+      }
+    } catch (error) {
+      console.warn("[api/airdata/adjacent-fir/[id]] Prisma failed, using static fallback:", error)
+    }
+
+    // ─── Static fallback (Vercel serverless) ─────────────────────────
+    // Try by id first, then by icao (the route receives an id but the
+    // frontend sometimes uses the ICAO code as identifier).
+    const adjFir =
+      staticAdjacentFIRs.find((f) => f.id === id) ||
+      staticAdjacentFIRs.find((f) => String(f.icao).toUpperCase() === id.toUpperCase())
     if (!adjFir) {
       return NextResponse.json({ error: "FIR adyacente no encontrado" }, { status: 404 })
     }

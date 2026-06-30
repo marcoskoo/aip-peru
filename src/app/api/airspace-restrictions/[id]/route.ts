@@ -1,32 +1,36 @@
 import { db } from '@/lib/db'
 import { NextRequest, NextResponse } from 'next/server'
+import { staticAirspaceRestrictions, prismaLikelyAvailable } from '@/lib/static-data'
 
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params
+
+  // ─── Intento con Prisma ───────────────────────────────────────────
   try {
-    const { id } = await params
-
-    const restriction = await db.airspaceRestriction.findUnique({
-      where: { id },
-    })
-
-    if (!restriction) {
-      return NextResponse.json(
-        { error: `Airspace restriction with id "${id}" not found` },
-        { status: 404 }
-      )
+    if (prismaLikelyAvailable()) {
+      const restriction = await db.airspaceRestriction.findUnique({
+        where: { id },
+      })
+      if (restriction) {
+        return NextResponse.json(restriction)
+      }
     }
-
-    return NextResponse.json(restriction)
   } catch (error) {
-    console.error('Error fetching airspace restriction:', error)
+    console.warn('[/api/airspace-restrictions/id] Prisma failed, using static fallback:', error)
+  }
+
+  // ─── Fallback estático ────────────────────────────────────────────
+  const record = staticAirspaceRestrictions.find((r) => r.id === id)
+  if (!record) {
     return NextResponse.json(
-      { error: 'Failed to fetch airspace restriction' },
-      { status: 500 }
+      { error: `Airspace restriction with id "${id}" not found` },
+      { status: 404 }
     )
   }
+  return NextResponse.json(record)
 }
 
 export async function PUT(

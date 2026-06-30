@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
+import { staticFIRBoundaries, prismaLikelyAvailable } from "@/lib/static-data"
 
 export async function GET(
   _request: NextRequest,
@@ -7,7 +8,22 @@ export async function GET(
 ) {
   try {
     const { id } = await params
-    const fir = await db.fIRBoundary.findUnique({ where: { id } })
+
+    // ─── Prisma (sandbox / production DB) ────────────────────────────
+    try {
+      if (prismaLikelyAvailable()) {
+        const fir = await db.fIRBoundary.findUnique({ where: { id } })
+        if (fir) {
+          return NextResponse.json(fir)
+        }
+        // If not found in DB, fall through to static fallback
+      }
+    } catch (error) {
+      console.warn("[api/airdata/fir/[id]] Prisma failed, using static fallback:", error)
+    }
+
+    // ─── Static fallback (Vercel serverless) ─────────────────────────
+    const fir = staticFIRBoundaries.find((f) => f.id === id)
     if (!fir) {
       return NextResponse.json({ error: "FIR no encontrado" }, { status: 404 })
     }
