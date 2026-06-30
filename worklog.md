@@ -5589,3 +5589,33 @@ Stage Summary:
 - world-data.ts now uses static JSON imports instead of readFileSync
 - All /api/world/* routes should work on Vercel after rebuild
 - Build verified locally — all routes present in build output
+
+---
+Task ID: VERCEL-FIX-WORLD-API-RESOLVED
+Agent: Main Agent
+Task: Resolver /api/world/* routes returning 404 on Vercel deployment.
+
+Work Log:
+- Diagnóstico inicial: /api/world/airports, /api/world/navaids, /api/world/airways, /api/world/waypoints, /api/world/counts devolvían 404 en Vercel
+- Causa raíz 1: world-data.ts usaba readFileSync(join(process.cwd(), "src/lib/aviation/world/", ...)) — no funciona en Vercel serverless
+  * Fix: reemplazado con imports estáticos de JSON (import worldAirportsData from "./world/world-airports.json")
+- Causa raíz 2: prisma generate fallaba con error "Cannot find module query_engine_bg.sqlite.wasm-base64.js"
+  * Esto hacía que `bun run build` (que ejecuta prisma generate && next build) fallara en Vercel
+  * Vercel mantenía la versión vieja del deploy (last-modified no actualizaba)
+  * Fix: rm -rf node_modules/.prisma node_modules/@prisma/client && bun install (regeneró prisma client 6.19.3)
+- Verificado: `bun run build` ahora completa exitosamente con todas las rutas /api/world/* presentes
+- Commits empujados: b4c5382 (JSON imports), d38c5da (bun.lock fix)
+- Verificación post-deploy en https://aip-peru1.vercel.app:
+  * /api/world/airports → HTTP 200 ✓
+  * /api/world/navaids → HTTP 200 ✓
+  * /api/world/airways → HTTP 200 ✓
+  * /api/world/waypoints → HTTP 200 ✓
+  * /api/world/counts → HTTP 200 ✓
+  * Mapa Interactivo renderiza aeropuertos, aerovías y radioayudas correctamente (confirmado vía VLM)
+  * Sin errores de consola ni de página
+
+Stage Summary:
+- Las 5 APIs /api/world/* ahora funcionan correctamente en Vercel
+- El build de Vercel ya no falla (prisma generate arreglado)
+- El Mapa Interactivo muestra todos los datos correctamente en producción
+- Fix aplicado: imports estáticos de JSON + reinstalación de @prisma/client
