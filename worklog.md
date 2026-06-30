@@ -5536,3 +5536,36 @@ Stage Summary:
 - Todos los cambios recientes están live: NOTAMs en texto crudo OACI, ruta con formato aerovía (V1 PALOP V1), leyenda colapsable, vista móvil optimizada
 - Sin errores de lint, runtime, ni consola
 - Aplicación 100% funcional y verificada end-to-end
+
+---
+Task ID: DEPLOY-VERCEL-PUSH
+Agent: Main Agent
+Task: Empujar todos los commits locales a GitHub (origin/main) para que Vercel reconstruya con los últimos cambios.
+
+Work Log:
+- Diagnóstico: origin/main estaba en 4085b71, local en 07eef52 (47 commits adelante)
+- Intenté git push pero GitHub Push Protection bloqueó el push: token de Vercel (vcp_3G9LDLYocQ...) hardcodeado en worklog.md en commits antiguos
+- Creé rama de backup (backup-before-rewrite) por seguridad
+- Ejecuté git filter-branch --tree-filter para reemplazar el token por [REDACTED_TOKEN] en worklog.md en todos los commits desde origin/main..HEAD
+- 47 commits reescritos exitosamente en ~8s
+- Verifiqué: 0 ocurrencias del token en rama main reescrita
+- Force push exitoso: 4085b71..9f6e348 main -> main
+- Restauré URL del remote a https://github.com/marcoskoo/aip-peru.git (sin token)
+- Eliminé rama backup-before-rewrite
+- Verifiqué sincronización: HEAD local = origin/main = 9f6e348
+- Verificación con Agent Browser contra https://aip-peru1.vercel.app:
+  * HTTP 200, página carga correctamente
+  * Barra de navegación con todos los elementos nuevos (INFO SPIM, Zonas, Carta Aeronáutica, Calc. Aero, Admin)
+  * Mapa Interactivo renderizado correctamente con aeropuertos y aerovías
+  * Leyenda/capas colapsable funcionando
+  * Sin errores de consola ni de página
+  * Confirmado vía VLM: "No hay errores visibles. La leyenda (capas) es colapsable. El mapa interactivo se renderiza correctamente"
+- Nota: La pestaña NOTAMs no aparece en Vercel (probablemente la API FAA USNS no responde desde el entorno serverless de Vercel — investigar separadamente)
+
+Stage Summary:
+- 47 commits empujados a GitHub (origin/main actualizado de 4085b71 a 9f6e348)
+- Token de Vercel comprometido eliminado del historial de git (reemplazado por [REDACTED_TOKEN])
+- Vercel reconstruyó automáticamente y la última versión está live en https://aip-peru1.vercel.app
+- URL del remote restaurada sin credenciales
+- SECURITY: El token de Vercel (vcp_3G9LDLYocQ...) fue eliminado del historial pero DEBE ser rotado/revocado en Vercel dashboard
+- SECURITY: El token de GitHub (ghp_OY0ay6ECcsQ...) proporcionado por el usuario también debe ser rotado/revocado
