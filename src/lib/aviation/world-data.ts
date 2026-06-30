@@ -11,8 +11,12 @@
  * worldwide airports/navaids/airways/waypoints without loading everything
  * at once.
  */
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
+// Use static JSON imports instead of readFileSync so the data is bundled
+// into the serverless output and works on Vercel (no filesystem access).
+import worldAirportsData from "./world/world-airports.json";
+import worldNavaidsData from "./world/world-navaids.json";
+import worldAirwaysData from "./world/world-airways.json";
+import worldWaypointsExtraData from "./world/world-waypoints-extra.json";
 
 // Type definitions for compact JSON format
 export interface WorldAirport {
@@ -57,60 +61,21 @@ export interface WorldWaypointExtra {
   notif?: boolean;
 }
 
-// Lazy-loaded singletons
-let _airports: WorldAirport[] | null = null;
-let _navaids: WorldNavaid[] | null = null;
-let _airways: WorldAirwayCompact[] | null = null;
-let _extraWaypoints: WorldWaypointExtra[] | null = null;
-
-const DATA_DIR = join(process.cwd(), "src", "lib", "aviation", "world");
-
+// Data is imported at module load time (bundled by Next.js for serverless)
 function loadAirports(): WorldAirport[] {
-  if (_airports) return _airports;
-  try {
-    const raw = readFileSync(join(DATA_DIR, "world-airports.json"), "utf8");
-    _airports = JSON.parse(raw) as WorldAirport[];
-    return _airports!;
-  } catch (e) {
-    console.error("[world-data] failed to load airports:", e);
-    return [];
-  }
+  return worldAirportsData as WorldAirport[];
 }
 
 function loadNavaids(): WorldNavaid[] {
-  if (_navaids) return _navaids;
-  try {
-    const raw = readFileSync(join(DATA_DIR, "world-navaids.json"), "utf8");
-    _navaids = JSON.parse(raw) as WorldNavaid[];
-    return _navaids!;
-  } catch (e) {
-    console.error("[world-data] failed to load navaids:", e);
-    return [];
-  }
+  return worldNavaidsData as WorldNavaid[];
 }
 
 function loadAirways(): WorldAirwayCompact[] {
-  if (_airways) return _airways;
-  try {
-    const raw = readFileSync(join(DATA_DIR, "world-airways.json"), "utf8");
-    _airways = JSON.parse(raw) as WorldAirwayCompact[];
-    return _airways!;
-  } catch (e) {
-    console.error("[world-data] failed to load airways:", e);
-    return [];
-  }
+  return worldAirwaysData as WorldAirwayCompact[];
 }
 
 function loadExtraWaypoints(): WorldWaypointExtra[] {
-  if (_extraWaypoints) return _extraWaypoints;
-  try {
-    const raw = readFileSync(join(DATA_DIR, "world-waypoints-extra.json"), "utf8");
-    _extraWaypoints = JSON.parse(raw) as WorldWaypointExtra[];
-    return _extraWaypoints!;
-  } catch (e) {
-    console.error("[world-data] failed to load extra waypoints:", e);
-    return [];
-  }
+  return worldWaypointsExtraData as WorldWaypointExtra[];
 }
 
 export interface BBox {
