@@ -138,8 +138,7 @@ export function WeatherPanel({ icaoCode, showSelector = false }: WeatherPanelPro
   const [weather, setWeather] = useState<WeatherData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [showRawMetar, setShowRawMetar] = useState(false)
-  const [showRawTaf, setShowRawTaf] = useState(false)
+  // (raw METAR/TAF now always visible — no toggle state needed)
   const [showSpeciDetails, setShowSpeciDetails] = useState(true)
   const [activeIcao, setActiveIcao] = useState(icaoCode)
 
@@ -347,20 +346,11 @@ export function WeatherPanel({ icaoCode, showSelector = false }: WeatherPanelPro
             </div>
           )}
 
-          {/* Raw METAR */}
-          <Collapsible open={showRawMetar} onOpenChange={setShowRawMetar}>
-            <CollapsibleTrigger asChild>
-              <Button variant="ghost" size="sm" className="w-full gap-1.5 text-xs text-muted-foreground">
-                {showRawMetar ? <ChevronUp className="size-3" /> : <ChevronDown className="size-3" />}
-                {showRawMetar ? "Ocultar" : "Ver"} METAR crudo
-              </Button>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <div className="bg-muted/50 rounded-lg p-3 mt-1">
-                <p className="text-xs font-mono">{metar.raw}</p>
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
+          {/* Raw METAR — siempre visible */}
+          <div className="bg-muted/50 rounded-lg p-3 mt-2">
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">METAR crudo</p>
+            <p className="text-sm font-mono leading-relaxed break-all">{metar.raw}</p>
+          </div>
         </CardContent>
       </Card>
 
@@ -486,7 +476,7 @@ export function WeatherPanel({ icaoCode, showSelector = false }: WeatherPanelPro
                       </div>
                     )}
                     <div className="bg-muted/40 dark:bg-muted/20 rounded-md p-2 mt-1">
-                      <p className="text-[11px] font-mono text-muted-foreground break-all">{s.raw}</p>
+                      <p className="text-sm font-mono text-muted-foreground break-all">{s.raw}</p>
                     </div>
                   </motion.div>
                 )
@@ -596,20 +586,11 @@ export function WeatherPanel({ icaoCode, showSelector = false }: WeatherPanelPro
               )
             })}
 
-            {/* Raw TAF */}
-            <Collapsible open={showRawTaf} onOpenChange={setShowRawTaf}>
-              <CollapsibleTrigger asChild>
-                <Button variant="ghost" size="sm" className="w-full gap-1.5 text-xs text-muted-foreground">
-                  {showRawTaf ? <ChevronUp className="size-3" /> : <ChevronDown className="size-3" />}
-                  {showRawTaf ? "Ocultar" : "Ver"} TAF crudo
-                </Button>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <div className="bg-muted/50 rounded-lg p-3 mt-1">
-                  <p className="text-xs font-mono whitespace-pre-wrap">{taf.raw}</p>
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
+            {/* Raw TAF — siempre visible */}
+            <div className="bg-muted/50 rounded-lg p-3 mt-2">
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">TAF crudo</p>
+              <p className="text-sm font-mono leading-relaxed whitespace-pre-wrap break-all">{taf.raw}</p>
+            </div>
           </CardContent>
         </Card>
       )}

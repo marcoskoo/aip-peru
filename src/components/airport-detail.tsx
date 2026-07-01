@@ -156,7 +156,13 @@ function JsonInfoDisplay({
                   <span className="text-xs text-muted-foreground capitalize">
                     {key.replace(/([A-Z])/g, " $1").trim()}
                   </span>
-                  <span className="text-sm font-medium text-right">{String(value)}</span>
+                  <span className="text-sm font-medium text-right">
+                    {typeof value === "object" && value !== null
+                      ? Object.entries(value as Record<string, unknown>)
+                          .map(([k, v]) => `${k}: ${typeof v === "object" ? JSON.stringify(v) : String(v)}`)
+                          .join(" · ")
+                      : String(value)}
+                  </span>
                 </div>
               ))}
             </div>
@@ -176,7 +182,51 @@ function JsonInfoDisplay({
           <p className="text-xs text-muted-foreground capitalize">
             {key.replace(/([A-Z])/g, " $1").trim()}
           </p>
-          <p className="text-sm font-medium">{String(value)}</p>
+          {renderValue(value)}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/**
+ * Render a value that may be a primitive, object, or array.
+ * Avoids the "[object Object]" bug caused by String(value) on objects.
+ */
+function renderValue(value: unknown): React.ReactNode {
+  if (value === null || value === undefined) return null
+  if (typeof value === "string") return <p className="text-sm font-medium break-words">{value}</p>
+  if (typeof value === "number" || typeof value === "boolean") return <p className="text-sm font-medium">{String(value)}</p>
+  if (Array.isArray(value)) {
+    if (value.length === 0) return null
+    // Array of primitives → join with comma; array of objects → list
+    if (value.every((v) => typeof v !== "object" || v === null)) {
+      return <p className="text-sm font-medium break-words">{value.join(", ")}</p>
+    }
+    return (
+      <ul className="text-sm space-y-0.5">
+        {value.map((item, i) => (
+          <li key={i} className="font-medium break-words">
+            {typeof item === "object" && item !== null
+              ? Object.entries(item as Record<string, unknown>)
+                  .map(([k, v]) => `${k}: ${typeof v === "object" ? JSON.stringify(v) : String(v)}`)
+                  .join(" · ")
+              : String(item)}
+          </li>
+        ))}
+      </ul>
+    )
+  }
+  // Plain object → render key/value pairs
+  const obj = value as Record<string, unknown>
+  const objEntries = Object.entries(obj).filter(([, v]) => v !== null && v !== undefined && v !== "")
+  if (objEntries.length === 0) return null
+  return (
+    <div className="space-y-0.5">
+      {objEntries.map(([k, v]) => (
+        <div key={k} className="flex justify-between gap-2 text-sm">
+          <span className="text-muted-foreground">{k}:</span>
+          <span className="font-medium text-right">{typeof v === "object" ? JSON.stringify(v) : String(v)}</span>
         </div>
       ))}
     </div>

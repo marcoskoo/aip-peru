@@ -909,7 +909,7 @@ function MetarPanel({ metar, readable, showJson, onToggleJson }: {
       {/* Raw message */}
       <div>
         <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Mensaje crudo</h4>
-        <div className="rounded-lg bg-slate-900 dark:bg-slate-950 p-3 font-mono text-xs text-slate-100 dark:text-slate-200 overflow-x-auto">
+        <div className="rounded-lg bg-slate-900 dark:bg-slate-950 p-3 font-mono text-sm text-slate-100 dark:text-slate-200 overflow-x-auto break-all">
           {metar.raw}
         </div>
       </div>
@@ -979,7 +979,7 @@ function TafPanel({ taf, readable, showJson, onToggleJson }: {
       {/* Raw message */}
       <div>
         <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Mensaje crudo</h4>
-        <div className="rounded-lg bg-slate-900 dark:bg-slate-950 p-3 font-mono text-xs text-slate-100 dark:text-slate-200 overflow-x-auto">
+        <div className="rounded-lg bg-slate-900 dark:bg-slate-950 p-3 font-mono text-sm text-slate-100 dark:text-slate-200 overflow-x-auto break-all">
           {taf.raw}
         </div>
       </div>
@@ -1582,13 +1582,13 @@ function MultiStationBriefing() {
                     )}
                   </div>
                   {w.metar?.raw && (
-                    <pre className="rounded bg-slate-900 dark:bg-slate-950 p-2 font-mono text-[11px] text-slate-100 dark:text-slate-200 overflow-x-auto whitespace-pre-wrap mb-1.5">
+                    <pre className="rounded bg-slate-900 dark:bg-slate-950 p-2 font-mono text-sm text-slate-100 dark:text-slate-200 overflow-x-auto whitespace-pre-wrap break-all mb-1.5">
                       <span className="text-green-400">METAR </span>
                       {w.metar.raw}
                     </pre>
                   )}
                   {w.taf?.raw && (
-                    <pre className="rounded bg-slate-900 dark:bg-slate-950 p-2 font-mono text-[11px] text-slate-100 dark:text-slate-200 overflow-x-auto whitespace-pre-wrap">
+                    <pre className="rounded bg-slate-900 dark:bg-slate-950 p-2 font-mono text-sm text-slate-100 dark:text-slate-200 overflow-x-auto whitespace-pre-wrap break-all">
                       <span className="text-orange-400">TAF   </span>
                       {w.taf.raw}
                     </pre>
