@@ -874,13 +874,17 @@ export function InteractiveMap({ onSendToFlightPlan }: InteractiveMapProps = {})
       .then((r) => r.json())
       .then((raw: Partial<AirwaysData> & { error?: string }) => {
         if (cancelled) return
-        // Validate the response has the expected shape; if not, use fallback
+        // Validate the response has the expected shape; if not, use fallback.
+        // For airways, also require non-empty segments — the static DB snapshot
+        // (airway.json) has 37 airways WITHOUT segments, so we must fall back to
+        // PERUVIAN_AIRWAYS (106 airways WITH segments from AIP PERÚ ENR 3).
         const hasNavaids = raw.navaids && raw.navaids.length > 0
         const hasWaypoints = raw.waypoints && raw.waypoints.length > 0
-        const hasAirways =
-          raw.airways &&
-          ((raw.airways.conventional && raw.airways.conventional.length > 0) ||
-            (raw.airways.rnav && raw.airways.rnav.length > 0))
+        const apiConv = raw.airways?.conventional ?? []
+        const apiRnav = raw.airways?.rnav ?? []
+        const apiConvHasSegs = apiConv.some((aw) => (aw.segments?.length ?? 0) > 0)
+        const apiRnavHasSegs = apiRnav.some((aw) => (aw.segments?.length ?? 0) > 0)
+        const hasAirways = apiConvHasSegs || apiRnavHasSegs
         const d: AirwaysData = {
           firBoundaries: raw.firBoundaries ?? {},
           adjacentFirs: raw.adjacentFirs ?? [],

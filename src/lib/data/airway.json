@@ -1,1 +1,506 @@
-[{"id":"cmqzfb66r0000skiapqb7d7z4","designator":"A301","type":"CONVENTIONAL","level":"LOWER","createdAt":"2026-06-29T16:19:42.484Z","updatedAt":"2026-06-29T16:19:42.484Z"},{"id":"cmqzfb66u0002skiavtpozalk","designator":"A304","type":"CONVENTIONAL","level":"LOWER","createdAt":"2026-06-29T16:19:42.486Z","updatedAt":"2026-06-29T16:19:42.486Z"},{"id":"cmqzfb66v0004skia5x511h8s","designator":"A566","type":"CONVENTIONAL","level":"LOWER","createdAt":"2026-06-29T16:19:42.487Z","updatedAt":"2026-06-29T16:19:42.487Z"},{"id":"cmqzfb66x000cskiase621gce","designator":"A568","type":"CONVENTIONAL","level":"LOWER","createdAt":"2026-06-29T16:19:42.490Z","updatedAt":"2026-06-29T16:19:42.490Z"},{"id":"cmqzfb66z000eskiaz6n61mfd","designator":"A573","type":"CONVENTIONAL","level":"LOWER","createdAt":"2026-06-29T16:19:42.491Z","updatedAt":"2026-06-29T16:19:42.491Z"},{"id":"cmqzfb670000gskiadayilf5l","designator":"B552","type":"CONVENTIONAL","level":"LOWER","createdAt":"2026-06-29T16:19:42.492Z","updatedAt":"2026-06-29T16:19:42.492Z"},{"id":"cmqzfb671000iskiaq7n5xrbt","designator":"G675","type":"CONVENTIONAL","level":"LOWER","createdAt":"2026-06-29T16:19:42.493Z","updatedAt":"2026-06-29T16:19:42.493Z"},{"id":"cmqzfb673000sskia7ygj38b8","designator":"R567","type":"CONVENTIONAL","level":"LOWER","createdAt":"2026-06-29T16:19:42.496Z","updatedAt":"2026-06-29T16:19:42.496Z"},{"id":"cmqzfb674000uskiaeh1l5yg7","designator":"V1","type":"CONVENTIONAL","level":"LOWER","createdAt":"2026-06-29T16:19:42.497Z","updatedAt":"2026-06-29T16:19:42.497Z"},{"id":"cmqzfb6770018skia5gqsjnwx","designator":"V2","type":"CONVENTIONAL","level":"LOWER","createdAt":"2026-06-29T16:19:42.499Z","updatedAt":"2026-06-29T16:19:42.499Z"},{"id":"cmqzfb678001bskianz37hz77","designator":"V3","type":"CONVENTIONAL","level":"LOWER","createdAt":"2026-06-29T16:19:42.501Z","updatedAt":"2026-06-29T16:19:42.501Z"},{"id":"cmqzfb67a001fskiadv26d8o5","designator":"UV1","type":"CONVENTIONAL","level":"UPPER","createdAt":"2026-06-29T16:19:42.502Z","updatedAt":"2026-06-29T16:19:42.502Z"},{"id":"cmqzfb67b001pskiaprrkw2hg","designator":"UV3","type":"CONVENTIONAL","level":"UPPER","createdAt":"2026-06-29T16:19:42.504Z","updatedAt":"2026-06-29T16:19:42.504Z"},{"id":"cmqzfb67d001vskiasrehol7t","designator":"UV4","type":"CONVENTIONAL","level":"UPPER","createdAt":"2026-06-29T16:19:42.505Z","updatedAt":"2026-06-29T16:19:42.505Z"},{"id":"cmqzfb67f0022skia2vbxytus","designator":"UV5","type":"CONVENTIONAL","level":"UPPER","createdAt":"2026-06-29T16:19:42.507Z","updatedAt":"2026-06-29T16:19:42.507Z"},{"id":"cmqzfb67g002bskiahf9gnjbr","designator":"UV9","type":"CONVENTIONAL","level":"UPPER","createdAt":"2026-06-29T16:19:42.509Z","updatedAt":"2026-06-29T16:19:42.509Z"},{"id":"cmqzfb67i002fskia5423bj3m","designator":"UV10","type":"CONVENTIONAL","level":"UPPER","createdAt":"2026-06-29T16:19:42.510Z","updatedAt":"2026-06-29T16:19:42.510Z"},{"id":"cmqzfb67j002jskia9otnawxg","designator":"UV11","type":"CONVENTIONAL","level":"UPPER","createdAt":"2026-06-29T16:19:42.511Z","updatedAt":"2026-06-29T16:19:42.511Z"},{"id":"cmqzfb67k002oskiaw2mm9dvt","designator":"L302","type":"RNAV","level":"LOWER","createdAt":"2026-06-29T16:19:42.513Z","updatedAt":"2026-06-29T16:19:42.513Z"},{"id":"cmqzfb67l002rskiaf5dxd2e3","designator":"L525","type":"RNAV","level":"LOWER","createdAt":"2026-06-29T16:19:42.514Z","updatedAt":"2026-06-29T16:19:42.514Z"},{"id":"cmqzfb67n002zskiat62n0zmx","designator":"T216","type":"RNAV","level":"LOWER","createdAt":"2026-06-29T16:19:42.516Z","updatedAt":"2026-06-29T16:19:42.516Z"},{"id":"cmqzfb67p0033skia07pooew3","designator":"T218","type":"RNAV","level":"LOWER","createdAt":"2026-06-29T16:19:42.517Z","updatedAt":"2026-06-29T16:19:42.517Z"},{"id":"cmqzfb67r003cskiavv72t3op","designator":"T226","type":"RNAV","level":"LOWER","createdAt":"2026-06-29T16:19:42.519Z","updatedAt":"2026-06-29T16:19:42.519Z"},{"id":"cmqzfc86k0000skm6biihykii","designator":"W50","type":"CONVENTIONAL","level":"LOWER","createdAt":"2026-06-29T16:20:31.724Z","updatedAt":"2026-06-29T16:20:31.724Z"},{"id":"cmqzfc86n0005skm6po930pld","designator":"W86","type":"CONVENTIONAL","level":"LOWER","createdAt":"2026-06-29T16:20:31.727Z","updatedAt":"2026-06-29T16:20:31.727Z"},{"id":"cmqzfc86p0009skm60hpu81hd","designator":"W10","type":"CONVENTIONAL","level":"LOWER","createdAt":"2026-06-29T16:20:31.730Z","updatedAt":"2026-06-29T16:20:31.730Z"},{"id":"cmqzfc86s000dskm6l9bf8hot","designator":"G584","type":"CONVENTIONAL","level":"LOWER","createdAt":"2026-06-29T16:20:31.732Z","updatedAt":"2026-06-29T16:20:31.732Z"},{"id":"cmqzfc86u000hskm6tz4k0h5m","designator":"W60","type":"CONVENTIONAL","level":"LOWER","createdAt":"2026-06-29T16:20:31.734Z","updatedAt":"2026-06-29T16:20:31.734Z"},{"id":"cmqzfc86w000kskm62w1ur3i5","designator":"A206","type":"CONVENTIONAL","level":"LOWER","createdAt":"2026-06-29T16:20:31.736Z","updatedAt":"2026-06-29T16:20:31.736Z"},{"id":"cmqzfc86z000nskm6dftcuc19","designator":"W76","type":"CONVENTIONAL","level":"LOWER","createdAt":"2026-06-29T16:20:31.739Z","updatedAt":"2026-06-29T16:20:31.739Z"},{"id":"cmqzfc871000qskm6oop8klhm","designator":"UW20","type":"RNAV","level":"UPPER","createdAt":"2026-06-29T16:20:31.742Z","updatedAt":"2026-06-29T16:20:31.742Z"},{"id":"cmqzfc873000tskm6ehjdz1vg","designator":"UB432","type":"RNAV","level":"UPPER","createdAt":"2026-06-29T16:20:31.744Z","updatedAt":"2026-06-29T16:20:31.744Z"},{"id":"cmqzfc875000wskm6e2krulfc","designator":"UW80","type":"RNAV","level":"UPPER","createdAt":"2026-06-29T16:20:31.746Z","updatedAt":"2026-06-29T16:20:31.746Z"},{"id":"cmqzfc878000zskm6tjqigl7g","designator":"UB921","type":"RNAV","level":"UPPER","createdAt":"2026-06-29T16:20:31.748Z","updatedAt":"2026-06-29T16:20:31.748Z"},{"id":"cmqzfc8790012skm681vhfapj","designator":"UW44","type":"RNAV","level":"UPPER","createdAt":"2026-06-29T16:20:31.750Z","updatedAt":"2026-06-29T16:20:31.750Z"},{"id":"cmqzfc87b0014skm6l3bobycr","designator":"UB660","type":"RNAV","level":"UPPER","createdAt":"2026-06-29T16:20:31.752Z","updatedAt":"2026-06-29T16:20:31.752Z"},{"id":"cmqzfc87d0016skm6vc241kc5","designator":"UW30","type":"RNAV","level":"UPPER","createdAt":"2026-06-29T16:20:31.753Z","updatedAt":"2026-06-29T16:20:31.753Z"}]
+[
+  {
+    "id": "airway_0001",
+    "designator": "UV1",
+    "type": "CONVENTIONAL",
+    "level": "BOTH",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0002",
+    "designator": "UV3",
+    "type": "CONVENTIONAL",
+    "level": "BOTH",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0003",
+    "designator": "UV4",
+    "type": "CONVENTIONAL",
+    "level": "BOTH",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0004",
+    "designator": "UV5",
+    "type": "CONVENTIONAL",
+    "level": "BOTH",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0005",
+    "designator": "UV9",
+    "type": "CONVENTIONAL",
+    "level": "BOTH",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0006",
+    "designator": "UV10",
+    "type": "CONVENTIONAL",
+    "level": "BOTH",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0007",
+    "designator": "UV11",
+    "type": "CONVENTIONAL",
+    "level": "BOTH",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0008",
+    "designator": "UV12",
+    "type": "CONVENTIONAL",
+    "level": "BOTH",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0009",
+    "designator": "UV14",
+    "type": "CONVENTIONAL",
+    "level": "BOTH",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0010",
+    "designator": "UV15",
+    "type": "CONVENTIONAL",
+    "level": "BOTH",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0011",
+    "designator": "UV18",
+    "type": "CONVENTIONAL",
+    "level": "BOTH",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0012",
+    "designator": "A301",
+    "type": "CONVENTIONAL",
+    "level": "LOWER",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0013",
+    "designator": "A304",
+    "type": "CONVENTIONAL",
+    "level": "LOWER",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0014",
+    "designator": "A566",
+    "type": "CONVENTIONAL",
+    "level": "LOWER",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0015",
+    "designator": "A568",
+    "type": "CONVENTIONAL",
+    "level": "LOWER",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0016",
+    "designator": "A573",
+    "type": "CONVENTIONAL",
+    "level": "LOWER",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0017",
+    "designator": "B552",
+    "type": "CONVENTIONAL",
+    "level": "LOWER",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0018",
+    "designator": "G675",
+    "type": "CONVENTIONAL",
+    "level": "LOWER",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0019",
+    "designator": "R567",
+    "type": "CONVENTIONAL",
+    "level": "LOWER",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0020",
+    "designator": "V1",
+    "type": "CONVENTIONAL",
+    "level": "LOWER",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0021",
+    "designator": "V2",
+    "type": "CONVENTIONAL",
+    "level": "LOWER",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0022",
+    "designator": "V3",
+    "type": "CONVENTIONAL",
+    "level": "LOWER",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0023",
+    "designator": "V4",
+    "type": "CONVENTIONAL",
+    "level": "LOWER",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0024",
+    "designator": "V5",
+    "type": "CONVENTIONAL",
+    "level": "LOWER",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0025",
+    "designator": "V9",
+    "type": "CONVENTIONAL",
+    "level": "LOWER",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0026",
+    "designator": "V10",
+    "type": "CONVENTIONAL",
+    "level": "LOWER",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0027",
+    "designator": "V11",
+    "type": "CONVENTIONAL",
+    "level": "LOWER",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0028",
+    "designator": "V12",
+    "type": "CONVENTIONAL",
+    "level": "LOWER",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0029",
+    "designator": "V14",
+    "type": "CONVENTIONAL",
+    "level": "LOWER",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0030",
+    "designator": "V15",
+    "type": "CONVENTIONAL",
+    "level": "LOWER",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0031",
+    "designator": "V19",
+    "type": "CONVENTIONAL",
+    "level": "LOWER",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0032",
+    "designator": "T218",
+    "type": "RNAV",
+    "level": "BOTH",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0033",
+    "designator": "T232",
+    "type": "RNAV",
+    "level": "BOTH",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0034",
+    "designator": "T234",
+    "type": "RNAV",
+    "level": "BOTH",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0035",
+    "designator": "T246",
+    "type": "RNAV",
+    "level": "BOTH",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0036",
+    "designator": "T311",
+    "type": "RNAV",
+    "level": "BOTH",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0037",
+    "designator": "T315",
+    "type": "RNAV",
+    "level": "BOTH",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0038",
+    "designator": "T317",
+    "type": "RNAV",
+    "level": "BOTH",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0039",
+    "designator": "T319",
+    "type": "RNAV",
+    "level": "BOTH",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0040",
+    "designator": "T327",
+    "type": "RNAV",
+    "level": "BOTH",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0041",
+    "designator": "T329",
+    "type": "RNAV",
+    "level": "BOTH",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0042",
+    "designator": "T330",
+    "type": "RNAV",
+    "level": "BOTH",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0043",
+    "designator": "T334",
+    "type": "RNAV",
+    "level": "BOTH",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0044",
+    "designator": "T335",
+    "type": "RNAV",
+    "level": "BOTH",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0045",
+    "designator": "UL300",
+    "type": "RNAV",
+    "level": "BOTH",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0046",
+    "designator": "UL305",
+    "type": "RNAV",
+    "level": "BOTH",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0047",
+    "designator": "UL306",
+    "type": "RNAV",
+    "level": "BOTH",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0048",
+    "designator": "UL308",
+    "type": "RNAV",
+    "level": "BOTH",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0049",
+    "designator": "UL342",
+    "type": "RNAV",
+    "level": "BOTH",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0050",
+    "designator": "UL344",
+    "type": "RNAV",
+    "level": "BOTH",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0051",
+    "designator": "UL401",
+    "type": "RNAV",
+    "level": "BOTH",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0052",
+    "designator": "UL780",
+    "type": "RNAV",
+    "level": "BOTH",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0053",
+    "designator": "UM414",
+    "type": "RNAV",
+    "level": "BOTH",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0054",
+    "designator": "UM527",
+    "type": "RNAV",
+    "level": "BOTH",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0055",
+    "designator": "UM542",
+    "type": "RNAV",
+    "level": "BOTH",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0056",
+    "designator": "UM548",
+    "type": "RNAV",
+    "level": "BOTH",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0057",
+    "designator": "UM665",
+    "type": "RNAV",
+    "level": "BOTH",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0058",
+    "designator": "UM668",
+    "type": "RNAV",
+    "level": "BOTH",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0059",
+    "designator": "UM674",
+    "type": "RNAV",
+    "level": "BOTH",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0060",
+    "designator": "UM793",
+    "type": "RNAV",
+    "level": "BOTH",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0061",
+    "designator": "UM795",
+    "type": "RNAV",
+    "level": "BOTH",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0062",
+    "designator": "UN420",
+    "type": "RNAV",
+    "level": "BOTH",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  },
+  {
+    "id": "airway_0063",
+    "designator": "UP525",
+    "type": "RNAV",
+    "level": "BOTH",
+    "createdAt": "2026-07-01T11:52:55.060Z",
+    "updatedAt": "2026-07-01T11:52:55.060Z"
+  }
+]
